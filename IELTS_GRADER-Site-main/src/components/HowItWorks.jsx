@@ -34,7 +34,7 @@ const HowItWorks = () => {
             <div className="w-full md:w-[42%]">
               <div className="flex items-center gap-3 mb-4">
                 <span className="relative z-10 w-8 h-8 bg-[#1a1f36] text-white rounded-full flex items-center justify-center text-[14px] font-bold shrink-0">1</span>
-                <h3 className="text-[22px] font-bold text-[#1a1f36]">Evaluate Your Writing Skills</h3>
+                <h3 className="text-[22px] font-bold text-[#1a1f36]">Evaluate Your IELTS Writing Skills</h3>
               </div>
               <p className="text-[15px] text-[#6B7280] leading-relaxed">
                 Upload your essay or practice in a real IELTS-style mock exam to get instant evaluation and improve your writing performance.

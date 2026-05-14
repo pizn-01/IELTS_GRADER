@@ -19,12 +19,12 @@ const CTA = () => {
           </div>
 
           {/* Right - Illustration */}
-          <div className="relative group">
-            <div className="absolute -inset-4 bg-blue-100/30 rounded-full blur-2xl group-hover:bg-blue-100/50 transition-all"></div>
+          <div className="relative group flex justify-center items-center">
+            <div className="absolute -inset-10 bg-blue-100/40 rounded-full blur-3xl group-hover:bg-blue-100/60 transition-all"></div>
             <img
-              src="/images/upload and mock/Clip path group.png"
+              src="/images/cta-banner.svg"
               alt="IELTSGRADER illustration"
-              className="w-[220px] md:w-[260px] relative drop-shadow-lg"
+              className="w-full max-w-[320px] md:max-w-[400px] relative drop-shadow-2xl transition-transform duration-500 group-hover:scale-105"
             />
           </div>
         </div>

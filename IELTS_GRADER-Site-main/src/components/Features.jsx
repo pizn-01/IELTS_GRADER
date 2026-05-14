@@ -3,21 +3,19 @@ import { ArrowUp, LineChart } from 'lucide-react';
 
 const Features = () => {
   return (
-    <section id="sample-report" className="bg-[#1A96F30D] py-20">
-      <div className="max-w-[1200px] mx-auto px-8 lg:px-[60px] grid lg:grid-cols-2 gap-[60px] items-start">
-        {/* Left Column - Cards Image */}
-        <div className="flex flex-col gap-5">
-          <div className="relative z-10 w-full max-w-[600px]">
-            <img src="/images/features-cards.png" alt="Report Cards" className="w-full h-auto" />
-          </div>
+    <section id="sample-report" className="bg-[#1A96F30D] py-24">
+      <div className="max-w-[1300px] mx-auto px-8 lg:px-[60px] grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-[60px] items-center">
+        {/* Left Column - Mockups Image */}
+        <div className="relative z-10 w-full animate-fadeIn order-2 lg:order-1">
+          <img src="/images/features-cards.png" alt="IELTS Report Mockup" className="w-full h-auto drop-shadow-xl" />
         </div>
 
         {/* Right Column - Text & Checklist */}
-        <div>
-          <h2 className="text-[40px] font-bold text-[#1a1f36] leading-[1] tracking-normal mb-6 font-['Nunito',_sans-serif]">
+        <div className="flex flex-col items-start text-left order-1 lg:order-2">
+          <h2 className="text-[32px] md:text-[38px] font-bold text-[#1a1f36] leading-[1.2] tracking-tight mb-8 font-['Nunito',_sans-serif]">
             Stop guessing. See exactly where you lost points and how to rewrite your sentences to hit Band 7.5+.
           </h2>
-          <ul className="flex flex-col gap-[14px] mb-8 list-none">
+          <ul className="flex flex-col gap-4 mb-10 list-none w-full">
             {[
               'Band score for each IELTS criterion',
               'Sentence-by-sentence fix cards',
@@ -27,13 +25,17 @@ const Features = () => {
               'Progress tracking across submissions'
             ].map((item) => (
               <li key={item} className="flex items-center gap-3 text-[16px] font-bold text-[#374151] leading-6 tracking-normal font-['Nunito',_sans-serif]">
-                <span className="w-[22px] h-[22px] bg-[#00C9A7] text-white rounded-full flex items-center justify-center text-[12px] shrink-0 font-bold">✓</span>
+                <span className="w-[22px] h-[22px] bg-[#3B82F6] text-white rounded-full flex items-center justify-center text-[12px] shrink-0 font-bold">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
                 {item}
               </li>
             ))}
           </ul>
-          <div className="flex items-center gap-6">
-            <a href="#" className="bg-[#1a1f36] text-[#FFFFFF] px-6 py-3.5 rounded-[10px] text-[16px] font-semibold no-underline hover:bg-[#2a2f46] transition-all leading-6 tracking-normal font-['Nunito',_sans-serif] shadow-sm">
+          <div className="flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto">
+            <a href="#" className="bg-[#1a1f36] text-[#FFFFFF] px-8 py-3.5 rounded-[12px] text-[16px] font-semibold no-underline hover:bg-[#2a2f46] transition-all leading-6 tracking-normal font-['Nunito',_sans-serif] shadow-md w-full sm:w-auto text-center">
               See Sample Report
             </a>
             <a href="#" className="text-[#101828] font-semibold no-underline text-[16px] hover:text-[#3B82F6] transition-all leading-6 tracking-normal font-['Nunito',_sans-serif] flex items-center gap-1">

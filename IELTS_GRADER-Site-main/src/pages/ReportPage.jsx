@@ -98,7 +98,7 @@ const ReportPage = () => {
     <div className="relative">
       {isGrading && <GradingModal onComplete={() => setIsGrading(false)} />}
       
-      <div className={`transition-all duration-700 ${isGrading ? 'blur-md pointer-events-none overflow-hidden h-screen' : 'blur-0'}`}>
+      <div className={`transition-all duration-700 ${isGrading ? 'pointer-events-none' : 'blur-0'}`}>
         <div className="min-h-screen bg-white font-['Inter',_sans-serif]">
           {/* 1. NAVBAR */}
           <nav className="bg-white border-b border-[#f3f4f6] md:h-[72px] flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-0 sticky top-0 z-50 gap-4 md:gap-0">

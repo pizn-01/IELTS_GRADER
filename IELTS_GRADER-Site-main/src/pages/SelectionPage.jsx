@@ -16,7 +16,7 @@ const SelectionPage = () => {
 
   const handleSignup = (e) => {
     e.preventDefault();
-    startGrading();
+    navigate('/report');
   };
 
   const handlePremiumClick = () => {

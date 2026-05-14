@@ -6,7 +6,7 @@ const Footer = () => {
       <div className="max-w-[1200px] mx-auto px-8 lg:px-[60px] flex flex-col md:flex-row justify-between items-center gap-4">
         {/* Left - Copyright */}
         <p className="text-[13px] text-[#9CA3AF]">
-          © 2018 IELTSGRADER. All rights reserved.
+          © 2026 IELTSGRADER. All rights reserved.
         </p>
 
         {/* Right - Links + Social */}
