@@ -11,6 +11,7 @@ import MockExam from './components/MockExam';
 import ReportsOverview from './components/ReportsOverview';
 import Settings from './components/Settings';
 import { motion } from 'framer-motion';
+import { api } from './services/api';
 
 function App() {
   const [hasData, setHasData] = useState(true);
@@ -21,6 +22,32 @@ function App() {
   const [reportData, setReportData] = useState(null);
   const [reportShowHeader, setReportShowHeader] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+
+  // Dynamic Backend Integrated Workspace Parameters
+  const [currentUser, setCurrentUser] = useState(null);
+  const [analyticsSeries, setAnalyticsSeries] = useState(null);
+  const [isLoadingContext, setIsLoadingContext] = useState(true);
+
+  useEffect(() => {
+    const initializeBackendContext = async () => {
+      try {
+        setIsLoadingContext(true);
+        const userPayload = await api.getMe();
+        setCurrentUser(userPayload);
+        if (userPayload?.profile_image_url) {
+          setProfileImage(userPayload.profile_image_url);
+        }
+
+        const metrics = await api.getDashboardAnalytics();
+        setAnalyticsSeries(metrics);
+      } catch (err) {
+        console.warn('Backend sync warning: running in decoupled demonstrative mode.', err);
+      } finally {
+        setIsLoadingContext(false);
+      }
+    };
+    initializeBackendContext();
+  }, []);
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -86,14 +113,33 @@ function App() {
       <MockExam 
         examType={examConfig.type} 
         taskType={examConfig.task} 
-        onExit={(targetView, data) => {
-          if (data) setReportData(data);
+        onExit={async (targetView, data) => {
+          if (data) {
+            // Trigger downstream API event submission caching
+            try {
+              const attemptResponse = await api.submitAttempt({
+                exam_type: examConfig.type || 'Academic',
+                task_type: examConfig.task || 'Task 2',
+                essay_content: data.essay || '',
+                time_spent_seconds: 2400
+              });
+              // Append dynamic parameter report parsing payload
+              const finalReport = await api.getReport(attemptResponse.submission_id);
+              setReportData({ ...data, ...finalReport });
+            } catch (err) {
+              console.warn('Backend proxy submission offline handling active.', err);
+              setReportData(data);
+            }
+          }
           if (targetView === 'report') setReportShowHeader(true);
           setView(targetView || 'dashboard');
         }} 
       />
     );
   }
+
+  const candidateFirstName = currentUser?.full_name?.split(' ')[0] || 'John';
+  const targetBand = currentUser?.target_band || '7.5';
 
   return (
     <Layout currentView={view === 'dashboard' ? 'dashboard' : view} onNavigate={handleNavigate} profileImage={profileImage}>
@@ -106,8 +152,10 @@ function App() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome back, John</h1>
-            <p className="text-gray-500 font-medium tracking-tight text-sm md:text-base">You're on track for band 7.5 -keep going!</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome back, {candidateFirstName}</h1>
+            <p className="text-gray-500 font-medium tracking-tight text-sm md:text-base">
+              You're on track for band {targetBand} - keep going!
+            </p>
           </motion.div>
           
           <motion.div 
@@ -134,9 +182,10 @@ function App() {
           </motion.div>
         </div>
 
-        <SkillGrowth hasData={hasData} />
+        {/* Downstream Data Binding for Decoupled Components */}
+        <SkillGrowth hasData={hasData} rawSeriesData={analyticsSeries?.chartData} />
         
-        <RecentReports hasData={hasData} />
+        <RecentReports hasData={hasData} dynamicReports={analyticsSeries?.dynamicReports} />
 
         <PracticeModal 
           isOpen={showModal} 

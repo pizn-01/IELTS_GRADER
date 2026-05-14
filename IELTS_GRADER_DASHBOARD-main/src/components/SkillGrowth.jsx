@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Frown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const data = [
+const defaultData = [
   { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
   { name: '', overall: 7.1, response: 6.6, coherence: 6.3, vocabulary: 7.7, grammar: 6.8 },
   { name: 'W2', overall: 6.7, response: 6.2, coherence: 5.9, vocabulary: 7.3, grammar: 6.4 },
@@ -21,7 +21,9 @@ const data = [
   { name: 'W8', overall: 8.1, response: 7.6, coherence: 7.3, vocabulary: 8.6, grammar: 7.8 },
 ];
 
-const SkillGrowth = ({ hasData = true }) => {
+const SkillGrowth = ({ hasData = true, rawSeriesData = null }) => {
+  const chartSeries = rawSeriesData?.length > 0 ? rawSeriesData : defaultData;
+
   if (!hasData) {
     return (
       <motion.div 
@@ -64,7 +66,7 @@ const SkillGrowth = ({ hasData = true }) => {
       
       <div className="h-[300px] md:h-[400px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 20 }}>
+          <LineChart data={chartSeries} margin={{ top: 20, right: 10, left: -20, bottom: 20 }}>
             <defs>
               <filter id="shadow" height="200%" width="200%" x="-50%" y="-50%">
                 <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />

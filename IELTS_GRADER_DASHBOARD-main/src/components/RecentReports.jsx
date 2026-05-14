@@ -1,14 +1,16 @@
 import { FileText, Frown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const reports = [
+const defaultReports = [
   { id: 1, type: 'Academic', task: 'Task 1', date: 'Mar 23, 2026', score: 7.0 },
   { id: 2, type: 'Academic', task: 'Task 2', date: 'Mar 18, 2026', score: 7.5 },
   { id: 3, type: 'General', task: 'Task 1', date: 'Mar 21, 2026', score: 6.5 },
   { id: 4, type: 'General', task: 'Task 2', date: 'Mar 15, 2026', score: 6.0 },
 ];
 
-const RecentReports = ({ hasData = true }) => {
+const RecentReports = ({ hasData = true, dynamicReports = null }) => {
+  const displayReports = dynamicReports?.length > 0 ? dynamicReports : defaultReports;
+
   if (!hasData) {
     return (
       <motion.div 
@@ -77,7 +79,7 @@ const RecentReports = ({ hasData = true }) => {
       </div>
       
       <div className="space-y-3">
-        {reports.map((report, idx) => (
+        {displayReports.map((report, idx) => (
           <motion.div 
             variants={itemVariants}
             key={report.id} 
