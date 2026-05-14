@@ -4,7 +4,7 @@ import { useGrade } from '../context/GradeContext';
 import { useLenis } from '@studio-freight/react-lenis';
 import { Coins, User, Shield, CreditCard, HelpCircle, LogOut } from 'lucide-react';
 
-const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5174/';
+const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || 'https://ielts-grader-akx4.vercel.app/';
 
 const Navbar = ({ showCredits }) => {
   const { userStatus, setUserStatus } = useGrade();
