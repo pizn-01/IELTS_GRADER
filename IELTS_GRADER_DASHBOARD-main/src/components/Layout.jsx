@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, Shield, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3 } from 'lucide-react';
 
+const siteUrl = import.meta.env.VITE_SITE_URL || 'http://localhost:5173/';
+
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -28,7 +30,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
       <nav className="bg-white border-b border-[#E5E7EB] sticky top-0 z-[100] h-[56px] flex items-center">
         <div className="w-full max-w-[1340px] mx-auto px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className="text-[18px] md:text-[20px] tracking-tight text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>IELTSGRADER</div>
+            <a href={siteUrl} className="text-[18px] md:text-[20px] tracking-tight text-[#101828] no-underline hover:opacity-80 transition-opacity cursor-pointer" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>IELTSGRADER</a>
             <div className="h-6 w-px bg-[#E5E7EB]"></div>
 
             {/* Desktop Navigation */}

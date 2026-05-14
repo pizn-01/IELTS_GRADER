@@ -4,6 +4,8 @@ import { useGrade } from '../context/GradeContext';
 import { useLenis } from '@studio-freight/react-lenis';
 import { Coins, User, Shield, CreditCard, HelpCircle, LogOut } from 'lucide-react';
 
+const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5174/';
+
 const Navbar = ({ showCredits }) => {
   const { userStatus, setUserStatus } = useGrade();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -92,12 +94,12 @@ const Navbar = ({ showCredits }) => {
 
           {userStatus.isLoggedIn ? (
             <div className="flex items-center gap-3 md:gap-6 relative" ref={dropdownRef}>
-              <Link 
-                to="/dashboard" 
-                className="hidden md:block text-[14px] font-semibold text-[#0066FF] no-underline hover:text-[#0052CC] transition-colors"
+              <a 
+                href={dashboardUrl} 
+                className="hidden md:block text-[14px] font-semibold text-[#0066FF] no-underline hover:text-[#0052CC] transition-colors cursor-pointer"
               >
                 Switch to Dashboard
-              </Link>
+              </a>
               
               <button className="hidden md:flex p-0 bg-transparent border-none cursor-pointer text-[#9CA3AF] hover:text-[#6B7280] transition-colors items-center justify-center">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -222,13 +224,13 @@ const Navbar = ({ showCredits }) => {
                 Login
               </Link>
             ) : (
-              <Link 
-                to="/dashboard"
+              <a 
+                href={dashboardUrl}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="mt-2 w-full bg-[#F3F4F6] text-[#0066FF] px-6 py-3 rounded-[8px] text-[15px] font-bold text-center hover:bg-[#E5E7EB] transition-colors"
+                className="mt-2 w-full bg-[#F3F4F6] text-[#0066FF] px-6 py-3 rounded-[8px] text-[15px] font-bold text-center hover:bg-[#E5E7EB] transition-colors block no-underline cursor-pointer"
               >
                 Switch to Dashboard
-              </Link>
+              </a>
             )}
           </div>
         </div>
