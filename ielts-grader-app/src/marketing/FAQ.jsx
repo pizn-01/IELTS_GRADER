@@ -25,7 +25,7 @@ const FAQ = () => {
 
   return (
     <section id="faqs" className="bg-white py-24 md:py-32">
-      <div className="max-w-[1200px] mx-auto px-8">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-8">
         <div className="text-center mb-16">
           <h2 className="text-[32px] md:text-[42px] font-extrabold text-[#1a1f36] mb-4 tracking-tight font-['Nunito',_sans-serif]">
             Frequently Asked Questions
@@ -54,10 +54,10 @@ const FAQ = () => {
                 }`}>
                   {faq.q}
                 </span>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeFaq === i ? 'bg-[#3B82F6] text-white rotate-180' : 'bg-[#F3F4F6] text-[#9CA3AF] group-hover:bg-[#EFF6FF] group-hover:text-[#3B82F6]'
+                <div className={`transition-all duration-300 ${
+                  activeFaq === i ? 'text-[#3B82F6] rotate-180' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'
                 }`}>
-                  <ChevronDown className="w-5 h-5" />
+                  <ChevronDown className="w-6 h-6" />
                 </div>
               </div>
               <div 

@@ -19,7 +19,7 @@ const HowItWorks = () => {
 
   return (
     <section id="how-it-works" className="bg-white py-20 overflow-hidden">
-      <div className="max-w-[1280px] mx-auto px-8">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-8">
         {/* Header */}
         <div className="text-center mb-[60px]">
           <h2 className="text-[32px] font-bold text-[#1a1f36] mb-3">How It Works</h2>
@@ -45,7 +45,7 @@ const HowItWorks = () => {
               <div className="relative">
                 {/* Step 1 Card Image */}
                 <div className="relative z-10 w-full max-w-[480px]">
-                  <img src="/images/how-it-works/step1.png" alt="Evaluate Writing Skills" className="w-full h-auto" />
+                  <img src="/images/how-it-works/Background+Border+Shadow.png" alt="Evaluate Writing Skills" className="w-full h-auto" />
                 </div>
  
                 {/* Connector SVG to Step 2 */}
@@ -74,7 +74,7 @@ const HowItWorks = () => {
               <div className="relative">
                 {/* Step 2 Card Image */}
                 <div className="relative z-10 w-full max-w-[480px]">
-                  <img src="/images/how-it-works/step2.png" alt="AI Grading" className="w-full h-auto" />
+                  <img src="/images/how-it-works/Background+Border+Shadow-1.png" alt="AI Grading" className="w-full h-auto" />
                 </div>
  
                 {/* Connector SVG to Step 3 */}
@@ -102,7 +102,7 @@ const HowItWorks = () => {
             <div className="w-full md:w-[50%] flex justify-center">
               {/* Step 3 Card Image */}
               <div className="relative z-10 w-full max-w-[480px]">
-                <img src="/images/how-it-works/step3.png" alt="IELTS Report Dashboard" className="w-full h-auto" />
+                <img src="/images/how-it-works/Background+Border+Shadow-2.png" alt="IELTS Report Dashboard" className="w-full h-auto" />
               </div>
             </div>
           </div>

@@ -22,11 +22,21 @@ const mockDatasets = {
     profile_image_url: null
   },
   chartData: [
-    { name: 'Attempt 1', overall: 6.0, response: 5.5, coherence: 6.0, vocabulary: 6.5, grammar: 5.5 },
-    { name: 'Attempt 2', overall: 6.5, response: 6.0, coherence: 6.5, vocabulary: 7.0, grammar: 6.0 },
-    { name: 'Attempt 3', overall: 6.5, response: 6.5, coherence: 6.5, vocabulary: 6.5, grammar: 6.5 },
-    { name: 'Attempt 4', overall: 7.0, response: 6.5, coherence: 7.5, vocabulary: 7.0, grammar: 6.5 },
-    { name: 'Attempt 5', overall: 7.5, response: 7.0, coherence: 7.5, vocabulary: 8.0, grammar: 7.0 }
+    { name: 'W1', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
+    { name: '1.5', overall: 7.2, response: 6.7, coherence: 6.4, vocabulary: 7.8, grammar: 6.9 },
+    { name: 'W2', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
+    { name: '2.5', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
+    { name: 'W3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
+    { name: '3.5', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
+    { name: 'W4', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.2, grammar: 7.3 },
+    { name: '4.5', overall: 7.8, response: 7.3, coherence: 7.0, vocabulary: 8.4, grammar: 7.5 },
+    { name: 'W5', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.8, grammar: 7.9 },
+    { name: '5.5', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.2, grammar: 7.3 },
+    { name: 'W6', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
+    { name: '6.5', overall: 6.4, response: 5.9, coherence: 5.6, vocabulary: 7.0, grammar: 6.1 },
+    { name: 'W7', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
+    { name: '7.5', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.2, grammar: 7.3 },
+    { name: 'W8', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.8, grammar: 7.9 }
   ],
   frequentErrors: [
     { label: "Repetition of Basic Lexis", count: 12, impact: "High Impact", type: "red" },

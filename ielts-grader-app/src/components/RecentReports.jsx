@@ -21,17 +21,13 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
         className="mt-10"
       >
         <h2 className="text-lg font-bold mb-6">Recent Reports</h2>
-        <div className="card h-[300px] md:h-[400px] flex flex-col items-center justify-center text-gray-400 gap-4">
-           <div className="w-16 h-16 rounded-full border-2 border-gray-300 flex flex-col items-center justify-center gap-1.5 opacity-50">
-            <div className="flex gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
-              <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
-            </div>
-            <div className="w-6 h-0.5 bg-gray-400 rounded-full"></div>
+        <div className="card min-h-[400px] flex flex-col items-center justify-center text-gray-400 gap-4 bg-white">
+           <div className="w-16 h-16 rounded-full border border-gray-200 flex items-center justify-center bg-gray-50 mb-2">
+            <Frown size={32} className="text-gray-300" strokeWidth={1.5} />
           </div>
            <div className="text-center px-4">
-             <p className="text-sm font-bold text-gray-700">No Reports Yet.</p>
-             <p className="text-sm font-medium">Take your first exam and track your history here.</p>
+             <p className="text-sm font-bold text-gray-700 mb-1">No Reports Yet.</p>
+             <p className="text-sm font-medium text-gray-400">Take your first exam and track your history here.</p>
            </div>
         </div>
       </motion.div>
