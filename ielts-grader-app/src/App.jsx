@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 
 // ── Context ──────────────────────────────────────────────────────────────────
@@ -40,6 +40,10 @@ import AnalysisReadyPage from './pages/AnalysisReadyPage';
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 import DashboardApp from './dashboard/DashboardApp';
+import Layout from './components/Layout';
+import ReportsOverview from './components/ReportsOverview';
+import Settings from './components/Settings';
+import { useAuth } from './context/AuthContext';
 
 // ── Landing Page Assembly ─────────────────────────────────────────────────────
 const LandingPage = () => (
@@ -59,6 +63,22 @@ const LandingPage = () => (
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, updateUser } = useAuth();
+
+  // Shared navigation handler for protected routes
+  const handleProtectedNavigate = (target) => {
+    if (target === 'dashboard') navigate('/dashboard');
+    else if (target === 'reports') navigate('/reports');
+    else if (target === 'settings') navigate('/settings');
+    else if (target === 'logout') {
+      logout();
+      navigate('/login');
+    }
+  };
+
+  const profileImage = user?.profile_image_url || null;
+  const setProfileImage = (url) => updateUser({ profile_image_url: url });
 
   // Smooth scroll for hash navigation on landing page
   useEffect(() => {
@@ -72,7 +92,7 @@ function App() {
 
   // Lenis smooth scroll for marketing pages
   useEffect(() => {
-    // Only activate on landing page — dashboard manages its own lenis instance
+    // Only activate on landing page — dashboard/protected pages manage their own lenis instance
     const isMarketingRoute = ['/', '/pricing', '/checkout'].includes(location.pathname);
     if (!isMarketingRoute) return;
 
@@ -118,10 +138,44 @@ function App() {
           <ProtectedRoute><MockExamPage /></ProtectedRoute>
         } />
         <Route path="/report" element={
-          <ProtectedRoute><ReportPage /></ProtectedRoute>
+          <ProtectedRoute>
+            <Layout 
+              currentView="reports" 
+              onNavigate={handleProtectedNavigate} 
+              profileImage={profileImage}
+            >
+              <ReportPage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/analysis-ready" element={
           <ProtectedRoute><AnalysisReadyPage /></ProtectedRoute>
+        } />
+        <Route path="/reports" element={
+          <ProtectedRoute>
+            <Layout 
+              currentView="reports" 
+              onNavigate={handleProtectedNavigate} 
+              profileImage={profileImage}
+            >
+              <ReportsOverview onBack={() => navigate('/dashboard')} />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Layout 
+              currentView="settings" 
+              onNavigate={handleProtectedNavigate} 
+              profileImage={profileImage}
+            >
+              <Settings 
+                profileImage={profileImage} 
+                setProfileImage={setProfileImage} 
+                currentUser={user} 
+              />
+            </Layout>
+          </ProtectedRoute>
         } />
       </Routes>
     </GradeProvider>

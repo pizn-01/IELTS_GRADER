@@ -27,7 +27,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
     <div className="min-h-screen bg-white">
       {/* SECTION 1 — NAVBAR (NO gradient, pure white) */}
       <nav className="bg-white border-b border-[#E5E7EB] sticky top-0 z-[100] h-[56px] flex items-center">
-        <div className="w-full max-w-[1340px] mx-auto px-4 md:px-8 flex items-center justify-between">
+        <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/" className="text-[18px] md:text-[20px] tracking-tight text-[#101828] no-underline hover:opacity-80 transition-opacity cursor-pointer" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>IELTSGRADER</Link>
             <div className="h-6 w-px bg-[#E5E7EB]"></div>

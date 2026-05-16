@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import Layout from '../components/Layout';
 import SkillGrowth from '../components/SkillGrowth';
@@ -15,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 
 function DashboardApp() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
@@ -55,30 +57,13 @@ function DashboardApp() {
   }, []);
 
   const handleNavigate = (target) => {
-    if (target === 'reports') { setReportShowHeader(false); setView('report'); }
+    if (target === 'reports') { navigate('/reports'); }
     else if (target === 'dashboard') { setView('dashboard'); }
-    else if (target === 'settings') { setView('settings'); }
+    else if (target === 'settings') { navigate('/settings'); }
     else if (target === 'logout') { logout(); }
   };
 
-  if (view === 'report') {
-    if (reportShowHeader) {
-      return <ReportView data={reportData} showHeader={true} onBack={() => setView('dashboard')} />;
-    }
-    return (
-      <Layout currentView="reports" onNavigate={handleNavigate} profileImage={profileImage}>
-        <ReportsOverview onBack={() => setView('dashboard')} />
-      </Layout>
-    );
-  }
 
-  if (view === 'settings') {
-    return (
-      <Layout currentView="settings" onNavigate={handleNavigate} profileImage={profileImage}>
-        <Settings profileImage={profileImage} setProfileImage={setProfileImage} currentUser={user} />
-      </Layout>
-    );
-  }
 
   if (view === 'mock-exam') {
     return (
@@ -86,6 +71,7 @@ function DashboardApp() {
         examType={examConfig.type}
         taskType={examConfig.task}
         onExit={async (targetView, data) => {
+          let finalData = data;
           if (data) {
             try {
               const attemptResponse = await api.submitAttempt({
@@ -95,14 +81,18 @@ function DashboardApp() {
                 time_spent_seconds: 2400
               });
               const finalReport = await api.getReport(attemptResponse.submission_id);
-              setReportData({ ...data, ...finalReport });
+              finalData = { ...data, ...finalReport };
+              setReportData(finalData);
             } catch (err) {
               console.warn('Submission offline fallback.', err);
               setReportData(data);
             }
           }
-          if (targetView === 'report') setReportShowHeader(true);
-          setView(targetView || 'dashboard');
+          if (targetView === 'report') {
+            navigate('/report', { state: { reportData: finalData } });
+          } else {
+            setView(targetView || 'dashboard');
+          }
         }}
       />
     );
@@ -114,7 +104,7 @@ function DashboardApp() {
 
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
-      <div className="w-full max-w-[1340px] mx-auto px-4 md:px-8 py-6 md:py-10">
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
         <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
@@ -160,9 +150,8 @@ function DashboardApp() {
             setView('mock-exam');
           }}
           onAnalysisComplete={() => {
-            setReportShowHeader(true);
             setShowModal(false);
-            setView('report');
+            navigate('/report');
           }}
         />
       </div>

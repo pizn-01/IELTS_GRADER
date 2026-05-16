@@ -91,7 +91,7 @@ const GradingModal = ({ onComplete }) => {
             </div>
           </div>
 
-          <h2 className="text-[18px] font-extrabold text-[#1a1f36] mb-1.5 text-center tracking-tight">AI is grading your easy</h2>
+          <h2 className="text-[18px] font-extrabold text-[#1a1f36] mb-1.5 text-center tracking-tight">AI is grading your essay</h2>
           <p className="text-[12px] text-[#4B5563] mb-5 text-center font-medium opacity-80">
             This takes 45-60 seconds. Please keep this tab open.
           </p>

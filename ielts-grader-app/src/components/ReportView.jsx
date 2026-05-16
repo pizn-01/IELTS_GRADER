@@ -224,7 +224,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
       <div className="relative z-10 overflow-hidden" style={{
         background: 'linear-gradient(135deg, #E0F2FE 20%, #FBCFE8 50%, #E0F2FE 80%)'
       }}>
-        <div className="max-w-[1340px] mx-auto px-[50px] pt-12 relative z-20">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-12 relative z-20">
           <div className="flex items-center justify-between mb-[6px]">
             {/* Title Row */}
             <div className="flex items-center gap-[10px]">
@@ -285,7 +285,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
       </div>
 
       {/* SECTION 3 — PAGE CONTENT (white) */}
-      <div className="max-w-[1340px] mx-auto px-[50px] py-[32px] bg-white">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-[32px] bg-white">
         {activeTab === "Overview" ? (
           <div className="space-y-6">
             {!taskTitle.includes('Task 2') ? (

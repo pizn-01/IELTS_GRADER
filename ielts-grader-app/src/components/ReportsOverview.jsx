@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ReportView from './ReportView';
 import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, Search, Calendar, FileText, ChevronRight, Download, Eye, AlertTriangle, TrendingDown, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -23,6 +24,7 @@ const chartData = [
 ];
 
 const ReportsOverview = ({ onBack }) => {
+  const navigate = useNavigate();
   const [isDetailView, setIsDetailView] = useState(false);
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
@@ -30,7 +32,7 @@ const ReportsOverview = ({ onBack }) => {
   if (!isDetailView) {
     return (
       <div className="w-full bg-white min-h-[calc(100vh-80px)]">
-        <div className="max-w-[1340px] mx-auto px-4 md:px-8 py-8 md:py-10 space-y-10">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-8 md:py-10 space-y-10">
           {/* Header Section */}
           <div className="space-y-2">
             <h1 className="text-[32px] md:text-[36px] font-bold text-[#101828] tracking-tight">Reports</h1>
@@ -81,7 +83,7 @@ const ReportsOverview = ({ onBack }) => {
               </div>
             </div>
             <button 
-              onClick={() => setIsDetailView(true)}
+              onClick={() => navigate('/report')}
               className="w-full md:w-auto px-10 h-[48px] bg-[#2C3E50] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
             >
               View Performance
@@ -122,7 +124,11 @@ const ReportsOverview = ({ onBack }) => {
                 { name: "Essay Name Here", date: "Mar 18, 2026", type: "Quick", score: "7.5", color: "#00C9B1" },
                 { name: "Essay Name Here", date: "Mar 15, 2026", type: "Mock", score: "6.0", color: "#F59E0B" }
               ].map((essay, idx) => (
-                <div key={idx} className="bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all cursor-pointer group">
+                <div 
+                  key={idx} 
+                  onClick={() => navigate('/report')}
+                  className="bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all cursor-pointer group"
+                >
                   <div className="flex items-center gap-6">
                     <div className="w-12 h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all">
                       <TrendingUp size={22} />
@@ -167,7 +173,7 @@ const ReportsOverview = ({ onBack }) => {
           opacity: 0.8
         }}></div>
         
-        <div className="max-w-[1340px] mx-auto px-4 md:px-8 pt-12 relative z-10">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-12 relative z-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
             <div className="flex items-center gap-3">
               <button 
@@ -212,7 +218,7 @@ const ReportsOverview = ({ onBack }) => {
         </div>
       </div>
 
-      <div className="max-w-[1340px] mx-auto px-4 md:px-8 py-6 md:py-10">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
         {activeTab === "Overview" ? 
           <div className="space-y-8">
             {/* Main Stats Bar */}
