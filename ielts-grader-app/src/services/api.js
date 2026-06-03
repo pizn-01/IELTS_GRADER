@@ -357,11 +357,16 @@ export const api = {
 
       // Fetch band scores for each submission
       const reportIds = submissions?.map(s => s.id) || [];
-      const { data: reports } = await supabase
-        .from('reports')
-        .select('submission_id, overall_band, task_response_band, coherence_band, lexical_band, grammar_band, created_at')
-        .in('submission_id', reportIds)
-        .order('created_at', { ascending: true });
+      let reports = [];
+      if (reportIds.length > 0) {
+        const { data, error: reportsErr } = await supabase
+          .from('reports')
+          .select('submission_id, overall_band, task_response_band, coherence_band, lexical_band, grammar_band, created_at')
+          .in('submission_id', reportIds)
+          .order('created_at', { ascending: true });
+        if (reportsErr) throw reportsErr;
+        reports = data || [];
+      }
 
       // Build chart series
       const chartData = (reports || []).map((r, i) => ({

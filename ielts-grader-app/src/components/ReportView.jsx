@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut, Info } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const ReportView = ({ onBack, data, showHeader = false }) => {
+  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Overview");
   const [expandedSections, setExpandedSections] = useState({
@@ -237,7 +239,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                       stroke="#1A96F3"
                       strokeWidth="2.5"
                       strokeDasharray="75.4"
-                      strokeDashoffset="30.16"
+                      strokeDashoffset={75.4 - (75.4 * Math.min(Math.max(user?.credits_remaining ?? 0, 0), 5)) / 5}
                       strokeLinecap="round"
                       fill="transparent"
                     />
@@ -245,7 +247,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </div>
                 <div className="flex flex-col leading-tight">
                   <span className="text-[12px] font-semibold text-[#101828]">Weekly Sprint</span>
-                  <span className="text-[12px] font-bold text-[#101828]">Credits: 3/5 Remaining</span>
+                  <span className="text-[12px] font-bold text-[#101828]">Credits: {user?.credits_remaining ?? 0}/5 Remaining</span>
                 </div>
               </div>
 
@@ -258,7 +260,13 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="w-10 h-10 bg-[#0F172A] text-white rounded-[12px] flex items-center justify-center text-[14px] font-bold shadow-sm overflow-hidden hover:opacity-90 transition-all leading-none"
                 >
-                  <span className="translate-y-[0.5px]">JD</span>
+                  {user?.profile_image_url ? (
+                    <img src={user.profile_image_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="translate-y-[0.5px]">
+                      {user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'US'}
+                    </span>
+                  )}
                 </button>
 
                 {/* Profile Dropdown */}
@@ -270,11 +278,15 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                     {/* User Info Section */}
                     <div className="px-6 py-5 flex items-center gap-4">
                       <div className="w-14 h-14 bg-[#2C3E50] rounded-full flex items-center justify-center text-white text-[18px] font-bold overflow-hidden shrink-0 leading-none">
-                        <span className="translate-y-[1px]">JD</span>
+                        {user?.profile_image_url ? (
+                          <img src={user.profile_image_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'US'
+                        )}
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[16px] font-bold text-[#101828] truncate">John Doe</span>
-                        <span className="text-[14px] text-gray-400 truncate">johndoe@gmail.com</span>
+                        <span className="text-[16px] font-bold text-[#101828] truncate">{user?.full_name || 'Candidate'}</span>
+                        <span className="text-[14px] text-gray-400 truncate">{user?.email || ''}</span>
                       </div>
                     </div>
 

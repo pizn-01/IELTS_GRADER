@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, Shield, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
+  const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -71,7 +73,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                       stroke="#1A96F3"
                       strokeWidth="2.5"
                       strokeDasharray="75.4"
-                      strokeDashoffset="30.16"
+                      strokeDashoffset={75.4 - (75.4 * Math.min(Math.max(user?.credits_remaining ?? 0, 0), 5)) / 5}
                       strokeLinecap="round"
                       fill="transparent"
                     />
@@ -79,7 +81,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                 </div>
                 <div className="flex flex-col leading-tight">
                   <span className="text-[12px] font-semibold text-[#101828]">Weekly Sprint</span>
-                  <span className="text-[12px] font-bold text-[#101828]">Credits: 3/5 Remaining</span>
+                  <span className="text-[12px] font-bold text-[#101828]">Credits: {user?.credits_remaining ?? 0}/5 Remaining</span>
                 </div>
               </div>
 
@@ -95,7 +97,9 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="translate-y-[0.5px]">JD</span>
+                    <span className="translate-y-[0.5px]">
+                      {user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'US'}
+                    </span>
                   )}
                 </button>
                 {/* Profile Dropdown logic remains same... */}
@@ -112,12 +116,12 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                         {profileImage ? (
                           <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                          "JD"
+                          user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'US'
                         )}
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[16px] font-bold text-[#101828] truncate">John Doe</span>
-                        <span className="text-[14px] text-gray-400 truncate">johndoe@gmail.com</span>
+                        <span className="text-[16px] font-bold text-[#101828] truncate">{user?.full_name || 'Candidate'}</span>
+                        <span className="text-[14px] text-gray-400 truncate">{user?.email || ''}</span>
                       </div>
                     </div>
 
@@ -181,12 +185,12 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                 {profileImage ? (
                   <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  "JD"
+                  user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'US'
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[18px] font-bold text-[#101828] truncate">John Doe</span>
-                <span className="text-[15px] text-gray-400 truncate mt-0.5">johndoe@gmail.com</span>
+                <span className="text-[18px] font-bold text-[#101828] truncate">{user?.full_name || 'Candidate'}</span>
+                <span className="text-[15px] text-gray-400 truncate mt-0.5">{user?.email || ''}</span>
               </div>
             </div>
 
