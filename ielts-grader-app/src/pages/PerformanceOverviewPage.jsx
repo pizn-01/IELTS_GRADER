@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 
 const chartData = [
   { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
@@ -26,75 +24,8 @@ const chartData = [
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
-  const [reports, setReports] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (authLoading || !user) return;
-
-    setIsLoading(true);
-    api.getPerformanceAnalytics(activeTask)
-      .then(data => {
-        setReports(data || []);
-      })
-      .catch(err => {
-        console.warn('[PerformanceOverviewPage] Failed to fetch performance analytics:', err);
-        setReports([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [activeTask, authLoading, user]);
-
-  // Derived calculations
-  const scores = reports.map(r => r.overall_band).filter(Boolean);
-  const latestScore = scores[scores.length - 1] || 7.0;
-  const firstScore = scores[0] || 5.5;
-  const attemptsCount = reports.length;
-  const delta = latestScore - firstScore;
-  const deltaText = delta >= 0 ? `+${delta.toFixed(1)}` : delta.toFixed(1);
-  const avgScore = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "6.7";
-  const bestScore = scores.length ? Math.max(...scores).toFixed(1) : "7.5";
-
-  // Date formatted strings
-  const formattedDateOfFirst = reports[0]?.created_at
-    ? new Date(reports[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : "";
-  const formattedDateOfLatest = reports[reports.length - 1]?.created_at
-    ? new Date(reports[reports.length - 1].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    : "";
-  const studyPeriod = reports.length
-    ? (reports.length === 1 ? formattedDateOfFirst : `${formattedDateOfFirst} - ${formattedDateOfLatest}`)
-    : "Feb 22 - Mar 6, 2026";
-
-  // Sub-criteria averages
-  const avgResponse = reports.length ? (reports.reduce((sum, r) => sum + (r.task_response_band || 0), 0) / reports.length) : 6.0;
-  const avgCoherence = reports.length ? (reports.reduce((sum, r) => sum + (r.coherence_band || 0), 0) / reports.length) : 7.0;
-  const avgVocabulary = reports.length ? (reports.reduce((sum, r) => sum + (r.lexical_band || 0), 0) / reports.length) : 6.5;
-  const avgGrammar = reports.length ? (reports.reduce((sum, r) => sum + (r.grammar_band || 0), 0) / reports.length) : 6.5;
-  
-  const criteriaScores = [
-    { name: "Task Response", score: avgResponse },
-    { name: "Coherence & Cohesion", score: avgCoherence },
-    { name: "Lexical Resource", score: avgVocabulary },
-    { name: "Grammatical Range & Accuracy", score: avgGrammar }
-  ];
-  criteriaScores.sort((a, b) => b.score - a.score);
-  const strongest = criteriaScores[0];
-  const weakest = criteriaScores[criteriaScores.length - 1];
-
-  const dynamicChartData = reports.map((r, i) => ({
-    name: `W${Math.ceil((i + 1) / 2)}`,
-    overall: r.overall_band || 6.5,
-    response: r.task_response_band || 6.0,
-    coherence: r.coherence_band || 6.0,
-    vocabulary: r.lexical_band || 6.5,
-    grammar: r.grammar_band || 6.5,
-  }));
-  const dataToRender = dynamicChartData.length > 0 ? dynamicChartData : chartData;
 
   const handleExport = () => {
     window.print();
@@ -166,32 +97,32 @@ const PerformanceOverviewPage = ({ onBack }) => {
             >
               {/* Latest Band */}
               <div className="flex-1 px-8 md:pl-12 py-6 md:py-0 flex flex-col justify-center">
-                <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>{latestScore.toFixed(1)}</span>
+                <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>7.0</span>
                 <span className="text-[14px] text-[#667085] mt-1.5 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Latest Band</span>
               </div>
 
               {/* First */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>First</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{firstScore.toFixed(1)}</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>5.5</span>
               </div>
 
               {/* Average */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Average</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{avgScore}</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>6.7</span>
               </div>
 
               {/* Best */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Best</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{bestScore}</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>7.5</span>
               </div>
 
               {/* Change */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Change</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{deltaText}</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>+1.5</span>
               </div>
             </motion.div>
 
@@ -205,11 +136,11 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <div className="p-8 space-y-10 flex-1">
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Exam Completed</p>
-                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{attemptsCount}</p>
+                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>11</p>
                   </div>
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Study Period</p>
-                    <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{studyPeriod}</p>
+                    <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Feb 22_ Mar 6' 2026</p>
                   </div>
                 </div>
               </div>
@@ -223,13 +154,13 @@ const PerformanceOverviewPage = ({ onBack }) => {
                   <div className="space-y-2">
                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>On the Rise</p>
                     <p className="text-[16px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Overall improvements: {deltaText} from first to latest attempt.
+                      Overall improvements: +1.5 from first to latest attempt.
                     </p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Top Priority Fixes</p>
                     <p className="text-[14.5px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Focus heavily on reducing mistakes in your primary bottleneck: {weakest.name.toLowerCase()}.
+                      Focus heavily on reducing: Repetition of basic lexis, imprecise word choice, ideas underdeveloped.
                     </p>
                   </div>
                 </div>
@@ -246,8 +177,8 @@ const PerformanceOverviewPage = ({ onBack }) => {
                       <TrendingUp className="text-[#30C3A9]" size={20} strokeWidth={2.5} />
                     </div>
                     <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#30C3A9]">{strongest.name}:</span> <span className="font-bold text-[#101828]">currently {strongest.score.toFixed(1)}</span><br />
-                      <span className="font-bold text-[#101828]">(Keep this stable while you lift your weakest areas).</span>
+                      <span className="font-bold text-[#30C3A9]">Coherence & cohesion:</span> <span className="font-bold text-[#101828]">currently 7.0</span><br />
+                      <span className="font-bold text-[#101828]">(Keep this stable while you lift your<br className="sm:hidden" /> weakest areas).</span>
                     </p>
                   </div>
                   <div className="px-6 py-5 bg-[#FFF7F7] rounded-[16px] border border-[#FEEDED] flex items-center gap-5">
@@ -255,8 +186,8 @@ const PerformanceOverviewPage = ({ onBack }) => {
                       <TrendingDown className="text-[#EA4335]" size={20} strokeWidth={2.5} />
                     </div>
                     <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#EA4335]">{weakest.name}:</span> <span className="font-bold text-[#101828]">currently {weakest.score.toFixed(1)}</span><br />
-                      <span className="font-bold text-[#101828]">(This is your primary bottleneck, focus here).</span>
+                      <span className="font-bold text-[#EA4335]">Grammatical Range:</span> <span className="font-bold text-[#101828]">currently 5.5</span><br />
+                      <span className="font-bold text-[#101828]">(This is your primary bottleneck,<br className="sm:hidden" /> focus here).</span>
                     </p>
                   </div>
                 </div>
@@ -271,7 +202,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 
                 <div className="h-[320px] w-full mb-8">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={dataToRender} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                       <XAxis 
                         dataKey="name" 

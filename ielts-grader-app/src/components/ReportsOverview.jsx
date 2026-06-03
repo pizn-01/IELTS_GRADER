@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReportView from './ReportView';
 import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, Search, Calendar, FileText, ChevronRight, Download, Eye, AlertTriangle, TrendingDown, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 
 const chartData = [
   { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
@@ -27,72 +25,9 @@ const chartData = [
 
 const ReportsOverview = ({ onBack }) => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
   const [isDetailView, setIsDetailView] = useState(false);
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
-  const [attempts, setAttempts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    if (authLoading || !user) return;
-    
-    setIsLoading(true);
-    api.getReportsList(activeTask)
-      .then(data => {
-        setAttempts(data || []);
-      })
-      .catch(err => {
-        console.warn('[ReportsOverview] Failed to fetch reports list:', err);
-        setAttempts([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [activeTask, authLoading, user]);
-
-  // Derived calculations
-  const scores = attempts.map(a => a.reports?.[0]?.overall_band || a.reports?.overall_band || a.score).filter(Boolean);
-  const latestScore = scores[0] || 6.5;
-  const firstScore = scores[scores.length - 1] || 6.0;
-  const attemptsCount = attempts.length;
-  const delta = latestScore - firstScore;
-  const deltaText = delta >= 0 ? `+${delta.toFixed(1)}` : delta.toFixed(1);
-  const avgScore = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "6.7";
-  const bestScore = scores.length ? Math.max(...scores).toFixed(1) : "7.5";
-
-  const formattedDateOfLatest = attempts[0]?.created_at
-    ? new Date(attempts[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    : "";
-  const formattedDateOfFirst = attempts[attempts.length - 1]?.created_at
-    ? new Date(attempts[attempts.length - 1].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : "";
-  const studyPeriod = attempts.length 
-    ? (attempts.length === 1 ? formattedDateOfFirst : `${formattedDateOfFirst} - ${formattedDateOfLatest}`)
-    : "Feb 22 - Mar 6, 2026";
-
-  const dynamicChartData = [...attempts].reverse().map((r, i) => {
-    const score = r.reports?.[0]?.overall_band || r.reports?.overall_band || r.score || 0;
-    const rep = r.reports?.[0] || r.reports || {};
-    return {
-      name: `W${Math.ceil((i + 1) / 2)}`,
-      overall: score || 6.5,
-      response: rep.task_response_band || score || 6.0,
-      coherence: rep.coherence_band || score || 6.0,
-      vocabulary: rep.lexical_band || score || 6.5,
-      grammar: rep.grammar_band || score || 6.5,
-    };
-  });
-  const dataToRender = dynamicChartData.length > 0 ? dynamicChartData : chartData;
-
-  const filteredAttempts = attempts.filter(essay => {
-    const query = searchQuery.toLowerCase();
-    const contentMatch = essay.essay_content?.toLowerCase().includes(query);
-    const questionMatch = essay.question_text?.toLowerCase().includes(query);
-    const nameMatch = essay.name?.toLowerCase().includes(query);
-    return contentMatch || questionMatch || nameMatch || query === "";
-  });
 
   if (!isDetailView) {
     return (
@@ -135,25 +70,15 @@ const ReportsOverview = ({ onBack }) => {
               <div className="relative w-28 h-28 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="56" cy="56" r="50" fill="none" stroke="#F1F5F9" strokeWidth="8" />
-                  <circle 
-                    cx="56" 
-                    cy="56" 
-                    r="50" 
-                    fill="none" 
-                    stroke="#1A96F3" 
-                    strokeWidth="8" 
-                    strokeDasharray="314.159" 
-                    strokeDashoffset={314.159 - (314.159 * parseFloat(latestScore)) / 9.0} 
-                    strokeLinecap="round" 
-                  />
+                  <circle cx="56" cy="56" r="50" fill="none" stroke="#1A96F3" strokeWidth="8" strokeDasharray="314.159" strokeDashoffset="109.95" strokeLinecap="round" />
                 </svg>
-                <span className="absolute text-[22px] font-black text-[#101828]">{latestScore.toFixed(1)}</span>
+                <span className="absolute text-[22px] font-black text-[#101828]">6.5</span>
               </div>
               <div>
                 <h2 className="text-[24px] md:text-[28px] font-bold text-[#101828] mb-2">{activeTask}</h2>
                 <div className="flex items-center justify-center md:justify-start gap-4 text-[14px] font-bold">
-                  <span className="text-gray-400">Attempts: <span className="text-[#101828]">{attemptsCount}</span></span>
-                  <span className={delta >= 0 ? "text-[#00C9B1]" : "text-[#FF4D4D]"}>{deltaText}</span>
+                  <span className="text-gray-400">Attempts: <span className="text-[#101828]">5</span></span>
+                  <span className="text-[#00C9B1]">+0.5</span>
                 </div>
               </div>
             </div>
@@ -176,8 +101,6 @@ const ReportsOverview = ({ onBack }) => {
                 <input 
                   type="text" 
                   placeholder="Search essays..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-12 pr-4 h-[52px] bg-white border border-gray-100 rounded-[14px] text-[14px] focus:outline-none focus:border-[#1A96F3] focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                 />
               </div>
@@ -195,53 +118,37 @@ const ReportsOverview = ({ onBack }) => {
 
             {/* List */}
             <div className="space-y-4">
-              {isLoading ? (
-                <div className="py-10 text-center text-gray-400 font-medium">Loading attempts...</div>
-              ) : filteredAttempts.length === 0 ? (
-                <div className="py-10 text-center text-gray-400 font-medium">No attempts found for this search.</div>
-              ) : (
-                filteredAttempts.map((essay, idx) => {
-                  const score = essay.reports?.[0]?.overall_band || essay.reports?.overall_band || essay.score || 6.5;
-                  const formattedDate = new Date(essay.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                  const essayName = essay.essay_content 
-                    ? (essay.essay_content.slice(0, 50) + "...")
-                    : `Essay Attempt #${attempts.length - idx}`;
-                  const essayType = essay.type || "Quick";
-                  const color = score >= 7.0 ? "#00C9B1" : score >= 6.0 ? "#F59E0B" : "#FF4D4D";
-                  
-                  return (
-                    <div 
-                      key={essay.id} 
-                      onClick={() => navigate('/report', { state: { reportId: essay.id } })}
-                      className="bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-6">
-                        <div className="w-12 h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all">
-                          <TrendingUp size={22} />
-                        </div>
-                        <div>
-                          <h4 className="text-[16px] font-bold text-[#101828] mb-1">{essayName}</h4>
-                          <p className="text-[14px] text-gray-400 font-medium">{formattedDate}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-8">
-                        <span className="px-5 py-1.5 bg-gray-50 text-gray-400 rounded-full text-[12px] font-bold uppercase tracking-wider">{essayType}</span>
-                        <div className="w-[60px] h-[34px] border rounded-[10px] flex items-center justify-center text-[14px] font-black" style={{ color: color, borderColor: color + '33', backgroundColor: color + '0D' }}>
-                          {score.toFixed(1)}
-                        </div>
-                        <button 
-                          className="p-2 text-gray-300 hover:text-gray-600 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <MoreHorizontal size={20} />
-                        </button>
-                      </div>
+              {[
+                { name: "Essay Name Here", date: "Mar 23, 2026", type: "Mock", score: "7.0", color: "#00C9B1" },
+                { name: "Essay Name Here", date: "Mar 21, 2026", type: "Quick", score: "6.5", color: "#F59E0B" },
+                { name: "Essay Name Here", date: "Mar 18, 2026", type: "Quick", score: "7.5", color: "#00C9B1" },
+                { name: "Essay Name Here", date: "Mar 15, 2026", type: "Mock", score: "6.0", color: "#F59E0B" }
+              ].map((essay, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => navigate('/report')}
+                  className="bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all">
+                      <TrendingUp size={22} />
                     </div>
-                  );
-                })
-              )}
+                    <div>
+                      <h4 className="text-[16px] font-bold text-[#101828] mb-1">{essay.name}</h4>
+                      <p className="text-[14px] text-gray-400 font-medium">{essay.date}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-8">
+                    <span className="px-5 py-1.5 bg-gray-50 text-gray-400 rounded-full text-[12px] font-bold uppercase tracking-wider">{essay.type}</span>
+                    <div className="w-[60px] h-[34px] border rounded-[10px] flex items-center justify-center text-[14px] font-black" style={{ color: essay.color, borderColor: essay.color + '33', backgroundColor: essay.color + '0D' }}>
+                      {essay.score}
+                    </div>
+                    <button className="p-2 text-gray-300 hover:text-gray-600 transition-colors">
+                      <MoreHorizontal size={20} />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, HelpCircle, Upload, Trash2, CheckCircle2, ChevronDown, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../services/api';
 
 const MockExam = ({ examType, taskType, onExit }) => {
   const [essay, setEssay] = useState('');
@@ -11,12 +10,6 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const [isGrading, setIsGrading] = useState(false);
   const [gradingProgress, setGradingProgress] = useState(0);
   const [completedCriteria, setCompletedCriteria] = useState([]);
-  const [gradingError, setGradingError] = useState(null);
-  const pollRef = useRef(null);
-  // Default question text for mock exams (since no prompt file is uploaded)
-  const mockQuestionText = taskType === 'Task 1'
-    ? 'The diagram below shows the water cycle. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.'
-    : 'Some people think that the best way to reduce crime is to give longer prison sentences. Others, however, believe there are better alternative ways of reducing crime. Discuss both views and give your own opinion.';
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -55,89 +48,35 @@ const MockExam = ({ examType, taskType, onExit }) => {
     setIsGrading(true);
   };
 
-  // ── Real grading pipeline ──────────────────────────────────────────────────
-  // Triggered when isGrading becomes true.
-  // Flow: createSubmission → /grade (async) → poll Supabase → getReport → onExit
   useEffect(() => {
-    if (!isGrading) return;
-
-    setGradingProgress(0);
-    setCompletedCriteria([]);
-    setGradingError(null);
-
-    const runGrading = async () => {
-      try {
-        // 1. Create submission record in Supabase
-        setGradingProgress(10);
-        const submissionId = await api.createSubmission({
-          task_type: taskType || 'Task 2',
-          exam_type: examType || 'Academic',
-          essay_content: essay,
-          question_text: mockQuestionText,
+    let interval;
+    if (isGrading) {
+      setGradingProgress(0);
+      setCompletedCriteria([]);
+      
+      interval = setInterval(() => {
+        setGradingProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              if (onExit) onExit('report', { essay, examType, taskType });
+            }, 1000);
+            return 100;
+          }
+          const next = prev + 1; // 1% every 100ms = 10 seconds total
+          
+          // Update checklist based on progress
+          if (next > 15 && !completedCriteria.includes(0)) setCompletedCriteria(p => [...p, 0]);
+          if (next > 40 && !completedCriteria.includes(1)) setCompletedCriteria(p => [...p, 1]);
+          if (next > 65 && !completedCriteria.includes(2)) setCompletedCriteria(p => [...p, 2]);
+          if (next >= 90 && !completedCriteria.includes(3)) setCompletedCriteria(p => [...p, 3]);
+          
+          return next;
         });
-        setGradingProgress(20);
-
-        // 2. Send to Fly.io grading service (returns 202 immediately)
-        await api.submitAttempt({
-          submission_id: submissionId,
-          task_type: taskType || 'Task 2',
-          exam_type: examType || 'Academic',
-          essay_content: essay,
-          question_text: mockQuestionText,
-        });
-        setGradingProgress(25);
-
-        // 3. Poll Supabase every 2s for real status
-        await new Promise((resolve, reject) => {
-          pollRef.current = setInterval(async () => {
-            try {
-              const { status, progress_pct } = await api.checkStatus(submissionId);
-              const realPct = Math.max(25, Math.min(95, progress_pct ?? 0));
-              setGradingProgress(realPct);
-
-              if (realPct > 15) setCompletedCriteria(p => p.includes(0) ? p : [...p, 0]);
-              if (realPct > 40) setCompletedCriteria(p => p.includes(1) ? p : [...p, 1]);
-              if (realPct > 65) setCompletedCriteria(p => p.includes(2) ? p : [...p, 2]);
-              if (realPct >= 90) setCompletedCriteria(p => p.includes(3) ? p : [...p, 3]);
-
-              if (status === 'graded') {
-                clearInterval(pollRef.current);
-                resolve(submissionId);
-              } else if (status === 'failed') {
-                clearInterval(pollRef.current);
-                reject(new Error('Grading failed on the server.'));
-              }
-            } catch (pollErr) {
-              clearInterval(pollRef.current);
-              reject(pollErr);
-            }
-          }, 2000);
-        });
-
-        // 4. Fetch the full report
-        setGradingProgress(97);
-        setCompletedCriteria([0, 1, 2, 3]);
-        const reportData = await api.getReport(submissionId);
-        setGradingProgress(100);
-
-        // 5. Exit with real report data
-        setTimeout(() => {
-          if (onExit) onExit('report', reportData);
-        }, 800);
-
-      } catch (err) {
-        console.error('[MockExam] Grading error:', err);
-        setGradingError(err.message || 'Something went wrong. Please try again.');
-        setGradingProgress(0);
-      }
-    };
-
-    runGrading();
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [isGrading]);
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [isGrading, onExit]);
 
   const handleSubmit = () => {
     setIsGrading(true);
@@ -323,30 +262,24 @@ const MockExam = ({ examType, taskType, onExit }) => {
                 <X size={24} strokeWidth={1.5} />
               </button>
 
-              {gradingError ? (
-                <div className="w-full text-center space-y-5 py-2">
-                  <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto text-red-500">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  </div>
-                  <h3 className="text-[18px] font-bold text-[#111827]">Grading Failed</h3>
-                  <p className="text-[13px] text-gray-500 max-w-[280px] mx-auto">{gradingError}</p>
-                  <div className="space-y-2 pt-1">
-                    <button onClick={() => { setGradingError(null); setIsGrading(false); setTimeout(() => setIsGrading(true), 100); }} className="w-full bg-[#2C3E50] text-white h-[44px] rounded-[10px] text-[14px] font-bold hover:bg-[#34495E] transition-all">
-                      Retry
-                    </button>
-                    <button onClick={() => { setIsGrading(false); setGradingError(null); }} className="w-full border border-gray-200 text-[#344054] h-[44px] rounded-[10px] text-[14px] font-bold hover:bg-gray-50 transition-all">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-              <>
               {/* Brain Circle Animation */}
               <div className="relative w-[70px] h-[70px] mb-8">
                  <svg className="w-full h-full transform -rotate-90">
-                   <circle cx="35" cy="35" r="32" fill="transparent" stroke="#F0F9FF" strokeWidth="4" />
+                   <circle
+                     cx="35"
+                     cy="35"
+                     r="32"
+                     fill="transparent"
+                     stroke="#F0F9FF"
+                     strokeWidth="4"
+                   />
                    <motion.circle
-                     cx="35" cy="35" r="32" fill="transparent" stroke="#00A3FF" strokeWidth="4"
+                     cx="35"
+                     cy="35"
+                     r="32"
+                     fill="transparent"
+                     stroke="#00A3FF"
+                     strokeWidth="4"
                      strokeDasharray={2 * Math.PI * 32}
                      initial={{ strokeDashoffset: 2 * Math.PI * 32 }}
                      animate={{ strokeDashoffset: (2 * Math.PI * 32) * (1 - gradingProgress / 100) }}
@@ -421,8 +354,6 @@ const MockExam = ({ examType, taskType, onExit }) => {
                   );
                 })}
               </div>
-              </>
-              )}
             </motion.div>
           </div>
         )}

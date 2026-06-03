@@ -85,12 +85,8 @@ function App() {
   useEffect(() => {
     if (!location.hash) return;
     const timeout = setTimeout(() => {
-      try {
-        const element = document.querySelector(location.hash);
-        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch (err) {
-        console.warn('[App] Invalid scroll anchor hash:', location.hash);
-      }
+      const element = document.querySelector(location.hash);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
     return () => clearTimeout(timeout);
   }, [location.hash]);

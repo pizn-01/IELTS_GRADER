@@ -5,7 +5,7 @@ import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
 
 const SignupPage5 = () => {
-  const { register, loginWithGoogle } = useAuth();
+  const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -221,13 +221,6 @@ const SignupPage5 = () => {
           {/* Google Button */}
           <button
             type="button"
-            onClick={async () => {
-              try {
-                await loginWithGoogle();
-              } catch (err) {
-                setError(err.message || 'Google sign-in failed. Please try again.');
-              }
-            }}
             style={{
               width: '100%',
               height: '54px',

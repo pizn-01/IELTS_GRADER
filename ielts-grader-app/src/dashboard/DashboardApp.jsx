@@ -15,7 +15,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function DashboardApp() {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
@@ -29,10 +29,8 @@ function DashboardApp() {
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
   const [hasData, setHasData] = useState(true);
 
-  // Fetch analytics when user session is hydrated
+  // Fetch analytics on mount
   useEffect(() => {
-    if (isLoading || !user) return;
-
     const fetchAnalytics = async () => {
       try {
         const metrics = await api.getDashboardAnalytics();
@@ -43,7 +41,7 @@ function DashboardApp() {
       }
     };
     fetchAnalytics();
-  }, [isLoading, user]);
+  }, []);
 
   // Lenis smooth scroll
   useEffect(() => {
@@ -72,10 +70,26 @@ function DashboardApp() {
       <MockExam
         examType={examConfig.type}
         taskType={examConfig.task}
-        onExit={(targetView, data) => {
-          // MockExam already ran the full grading pipeline and passes the real reportData
-          if (targetView === 'report' && data) {
-            navigate('/report', { state: { reportData: data } });
+        onExit={async (targetView, data) => {
+          let finalData = data;
+          if (data) {
+            try {
+              const attemptResponse = await api.submitAttempt({
+                exam_type: examConfig.type || 'Academic',
+                task_type: examConfig.task || 'Task 2',
+                essay_content: data.essay || '',
+                time_spent_seconds: 2400
+              });
+              const finalReport = await api.getReport(attemptResponse.submission_id);
+              finalData = { ...data, ...finalReport };
+              setReportData(finalData);
+            } catch (err) {
+              console.warn('Submission offline fallback.', err);
+              setReportData(data);
+            }
+          }
+          if (targetView === 'report') {
+            navigate('/report', { state: { reportData: finalData } });
           } else {
             setView(targetView || 'dashboard');
           }
@@ -135,10 +149,9 @@ function DashboardApp() {
             setShowModal(false);
             setView('mock-exam');
           }}
-          onAnalysisComplete={(reportData) => {
+          onAnalysisComplete={() => {
             setShowModal(false);
-            // Navigate with real reportData passed from PracticeModal
-            navigate('/report', { state: { reportData } });
+            navigate('/report');
           }}
         />
       </div>

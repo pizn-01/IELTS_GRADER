@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Camera, Eye, EyeOff, CreditCard, ArrowRight, X, Target, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import PaymentPage from './PaymentPage';
-import { api } from '../services/api';
 
-const Settings = ({ profileImage, setProfileImage, currentUser }) => {
+const Settings = ({ profileImage, setProfileImage }) => {
   const [activeTab, setActiveTab] = useState('Profile');
   const [showRetentionModal, setShowRetentionModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -13,7 +12,7 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
   const [selectedPack, setSelectedPack] = useState('Smart Top Up');
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [showPaymentPage, setShowPaymentPage] = useState(false);
-  const [successType, setSuccessType] = useState('subscription'); // 'subscription' | 'cancellation' | 'profile' | 'password'
+  const [successType, setSuccessType] = useState('subscription'); // 'subscription' or 'cancellation'
   
   // Password visibility states
   const [showCurrent, setShowCurrent] = useState(false);
@@ -21,109 +20,6 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [isDragging, setIsDragging] = useState(false);
-  const [subscription, setSubscription] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Refs for Profile Tab
-  const firstNameRef = React.useRef(null);
-  const lastNameRef = React.useRef(null);
-  const phoneRef = React.useRef(null);
-  const addressRef = React.useRef(null);
-  const stateRef = React.useRef(null);
-  const countryRef = React.useRef(null);
-  const postalCodeRef = React.useRef(null);
-
-  // Refs for Change Password Tab
-  const currentPasswordRef = React.useRef(null);
-  const newPasswordRef = React.useRef(null);
-  const confirmPasswordRef = React.useRef(null);
-
-  // Refs for Support Tab
-  const topicRef = React.useRef(null);
-  const descriptionRef = React.useRef(null);
-
-  useEffect(() => {
-    if (activeTab === 'Subscription') {
-      api.getSubscription()
-        .then(data => setSubscription(data))
-        .catch(err => console.warn('Failed to fetch subscription:', err));
-    }
-  }, [activeTab]);
-
-  const handleSaveProfile = async () => {
-    setIsSaving(true);
-    const updates = {
-      first_name: firstNameRef.current?.value || "",
-      last_name: lastNameRef.current?.value || "",
-      full_name: `${firstNameRef.current?.value || ""} ${lastNameRef.current?.value || ""}`.trim(),
-      phone: phoneRef.current?.value || "",
-      address: addressRef.current?.value || "",
-      state: stateRef.current?.value || "",
-      country: countryRef.current?.value || "",
-      postal_code: postalCodeRef.current?.value || "",
-    };
-    try {
-      await api.updateProfile(updates);
-      if (currentUser) {
-        Object.assign(currentUser, updates);
-      }
-      setSuccessType('profile');
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error(err);
-      setShowErrorModal(true);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    const newPassword = newPasswordRef.current?.value || "";
-    const confirmPassword = confirmPasswordRef.current?.value || "";
-
-    if (!newPassword || newPassword !== confirmPassword) {
-      alert("New passwords do not match!");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await api.changePassword({ newPassword });
-      setSuccessType('password');
-      setShowSuccessModal(true);
-      if (currentPasswordRef.current) currentPasswordRef.current.value = "";
-      if (newPasswordRef.current) newPasswordRef.current.value = "";
-      if (confirmPasswordRef.current) confirmPasswordRef.current.value = "";
-    } catch (err) {
-      console.error(err);
-      setShowErrorModal(true);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleSendSupport = async () => {
-    const topic = topicRef.current?.value || "";
-    const description = descriptionRef.current?.value || "";
-
-    if (!topic || topic === "Select" || !description) {
-      alert("Please select a topic and fill in the description.");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await api.sendSupportMessage({ topic, description });
-      setShowSupportSuccessModal(true);
-      if (topicRef.current) topicRef.current.value = "Select";
-      if (descriptionRef.current) descriptionRef.current.value = "";
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send message. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleImageUpload = (file) => {
     if (file && file.type.startsWith('image/')) {
@@ -227,7 +123,7 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
                 />
               </div>
               <div className="text-center">
-                <span className="text-[16px] font-bold text-[#101828] block">{currentUser?.full_name || "John Doe"}</span>
+                <span className="text-[16px] font-bold text-[#101828] block">John Doe</span>
                 <span className="text-[12px] text-gray-400 font-medium">Click icon or drag & drop</span>
               </div>
             </div>
@@ -239,8 +135,7 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
                   <label className="text-[14px] font-bold text-[#101828]">First Name</label>
                   <input 
                     type="text" 
-                    ref={firstNameRef}
-                    defaultValue={currentUser?.first_name || ""}
+                    defaultValue="John"
                     className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
@@ -248,8 +143,7 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
                   <label className="text-[14px] font-bold text-[#101828]">Last Name</label>
                   <input 
                     type="text" 
-                    ref={lastNameRef}
-                    defaultValue={currentUser?.last_name || ""}
+                    defaultValue="Doe"
                     className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
@@ -257,19 +151,15 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
                   <label className="text-[14px] font-bold text-[#101828]">Email</label>
                   <input 
                     type="email" 
-                    ref={emailRef}
-                    defaultValue={currentUser?.email || ""}
-                    readOnly
-                    className="w-full h-[52px] px-5 bg-gray-50 border border-gray-100 rounded-[12px] text-[14px] text-gray-400 focus:outline-none cursor-not-allowed"
+                    placeholder="Enter"
+                    className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[14px] font-bold text-[#101828]">Phone</label>
                   <input 
                     type="tel" 
-                    ref={phoneRef}
-                    defaultValue={currentUser?.phone || ""}
-                    placeholder="Enter phone"
+                    placeholder="Enter"
                     className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
@@ -277,9 +167,7 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
                   <label className="text-[14px] font-bold text-[#101828]">Address</label>
                   <input 
                     type="text" 
-                    ref={addressRef}
-                    defaultValue={currentUser?.address || ""}
-                    placeholder="Enter address"
+                    placeholder="Enter"
                     className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
@@ -288,29 +176,26 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
                     <label className="text-[14px] font-bold text-[#101828]">State</label>
                     <input 
                       type="text" 
-                      ref={stateRef}
-                      defaultValue={currentUser?.state || ""}
-                      placeholder="Enter state"
+                      placeholder="Enter"
                       className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[14px] font-bold text-[#101828]">Country</label>
-                    <input 
-                      type="text" 
-                      ref={countryRef}
-                      defaultValue={currentUser?.country || ""}
-                      placeholder="Enter country"
-                      className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
-                    />
+                    <div className="relative">
+                      <select className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#9CA3AF] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none">
+                        <option>Select</option>
+                      </select>
+                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <ChevronDown size={20} />
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[14px] font-bold text-[#101828]">Postal Code</label>
                     <input 
                       type="text" 
-                      ref={postalCodeRef}
-                      defaultValue={currentUser?.postal_code || ""}
-                      placeholder="Enter postal code"
+                      placeholder="Enter"
                       className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                     />
                   </div>
@@ -319,26 +204,11 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
-                <button 
-                  onClick={() => {
-                    if (firstNameRef.current) firstNameRef.current.value = currentUser?.first_name || "";
-                    if (lastNameRef.current) lastNameRef.current.value = currentUser?.last_name || "";
-                    if (phoneRef.current) phoneRef.current.value = currentUser?.phone || "";
-                    if (addressRef.current) addressRef.current.value = currentUser?.address || "";
-                    if (stateRef.current) stateRef.current.value = currentUser?.state || "";
-                    if (countryRef.current) countryRef.current.value = currentUser?.country || "";
-                    if (postalCodeRef.current) postalCodeRef.current.value = currentUser?.postal_code || "";
-                  }}
-                  className="px-10 h-[48px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
-                >
+                <button className="px-10 h-[48px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
                   Cancel
                 </button>
-                <button 
-                  onClick={handleSaveProfile}
-                  disabled={isSaving}
-                  className="px-10 h-[48px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50"
-                >
-                  {isSaving ? "Saving..." : "Save"}
+                <button className="px-10 h-[48px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
+                  Save
                 </button>
               </div>
             </div>
@@ -353,7 +223,6 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
               <div className="relative">
                 <input 
                   type={showCurrent ? "text" : "password"} 
-                  ref={currentPasswordRef}
                   placeholder="Enter"
                   className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
@@ -371,7 +240,6 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
               <div className="relative">
                 <input 
                   type={showNew ? "text" : "password"} 
-                  ref={newPasswordRef}
                   placeholder="Enter"
                   className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
@@ -389,7 +257,6 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
               <div className="relative">
                 <input 
                   type={showConfirm ? "text" : "password"} 
-                  ref={confirmPasswordRef}
                   placeholder="Enter"
                   className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
@@ -405,22 +272,11 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-12 border-t border-gray-50 mt-12">
-            <button 
-              onClick={() => {
-                if (currentPasswordRef.current) currentPasswordRef.current.value = "";
-                if (newPasswordRef.current) newPasswordRef.current.value = "";
-                if (confirmPasswordRef.current) confirmPasswordRef.current.value = "";
-              }}
-              className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
-            >
+            <button className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
               Cancel
             </button>
-            <button 
-              onClick={handleChangePassword}
-              disabled={isSaving}
-              className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50"
-            >
-              {isSaving ? "Updating..." : "Change Password"}
+            <button className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
+              Change Password
             </button>
           </div>
         </div>
@@ -433,36 +289,29 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] font-bold text-[#101828]">Current Plan</span>
-                  <span className="text-[14px] font-medium text-gray-500">{subscription?.plan_name || "Weekly Sprint"}</span>
+                  <span className="text-[14px] font-medium text-gray-500">Weekly Sprint</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] font-bold text-[#101828]">Renewal Date</span>
-                  <span className="text-[14px] font-medium text-gray-500">{subscription?.renewal_date || "Mar 30, 2026"}</span>
+                  <span className="text-[14px] font-medium text-gray-500">Mar 30, 2026</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] font-bold text-[#101828]">Billing</span>
-                  <span className="text-[14px] font-medium text-gray-500">{subscription?.billing_amount || "$9.99 / week"}</span>
+                  <span className="text-[14px] font-medium text-gray-500">$9.99 / week</span>
                 </div>
                 
-                {(() => {
-                  const used = subscription?.credits_used ?? 18;
-                  const total = subscription?.credits_total ?? 20;
-                  const pct = Math.min(100, Math.round((used / total) * 100));
-                  return (
-                    <div className="space-y-4 pt-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[14px] font-bold text-[#101828]">{used}/{total} test used</span>
-                        <span className="text-[14px] font-bold text-[#101828]">{pct}%</span>
-                      </div>
-                      <div className="h-[8px] bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-1000 ${pct >= 90 ? "bg-[#EA4335]" : "bg-[#10B981]"}`} 
-                          style={{ width: `${pct}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[14px] font-bold text-[#101828]">{isSimulationMode ? "20/20 test used" : "18/20 test used"}</span>
+                    <span className="text-[14px] font-bold text-[#101828]">{isSimulationMode ? "100%" : "20%"}</span>
+                  </div>
+                  <div className="h-[8px] bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-1000 ${isSimulationMode ? "bg-[#EA4335]" : "bg-[#10B981]"}`} 
+                      style={{ width: isSimulationMode ? '100%' : '20%' }}
+                    ></div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-12">
@@ -534,12 +383,8 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
             <div className="space-y-3">
               <label className="text-[16px] font-bold text-[#101828]">Select Topic</label>
               <div className="relative">
-                <select 
-                  ref={topicRef}
-                  defaultValue="Select"
-                  className="w-full max-w-[400px] h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none"
-                >
-                  <option disabled value="Select">Select</option>
+                <select className="w-full max-w-[400px] h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#9CA3AF] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none">
+                  <option>Select</option>
                   <option className="text-[#101828]">Technical Issue</option>
                   <option className="text-[#101828]">Billing Question</option>
                   <option className="text-[#101828]">Feedback</option>
@@ -555,7 +400,6 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
             <div className="space-y-3">
               <label className="text-[16px] font-bold text-[#101828]">Description</label>
               <textarea 
-                ref={descriptionRef}
                 placeholder="Type here..."
                 className="w-full min-h-[200px] p-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all resize-none"
               ></textarea>
@@ -563,21 +407,14 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-4 pt-6 border-t border-gray-50">
-              <button 
-                onClick={() => {
-                  if (topicRef.current) topicRef.current.value = "Select";
-                  if (descriptionRef.current) descriptionRef.current.value = "";
-                }}
-                className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
-              >
+              <button className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
                 Cancel
               </button>
               <button 
-                onClick={handleSendSupport}
-                disabled={isSaving}
-                className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50"
+                onClick={() => setShowSupportSuccessModal(true)}
+                className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm"
               >
-                {isSaving ? "Sending..." : "Send Message"}
+                Send Message
               </button>
             </div>
           </div>
@@ -672,16 +509,12 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
               </div>
 
               <h2 className="text-[20px] md:text-[24px] font-bold text-[#101828] mb-4">
-                {successType === 'subscription' && 'Subscription Successful'}
-                {successType === 'cancellation' && 'Subscription Cancelled'}
-                {successType === 'profile' && 'Profile Updated'}
-                {successType === 'password' && 'Password Changed'}
+                {successType === 'subscription' ? 'Subscription Successful' : 'Subscription Cancelled'}
               </h2>
               <p className="text-[14px] md:text-[15px] text-gray-500 font-medium leading-relaxed mb-8 md:mb-10 max-w-[400px]">
-                {successType === 'subscription' && `You have successfully subscribed to the ${selectedPack}. Your credits have been added to your account.`}
-                {successType === 'cancellation' && 'Your subscription has been cancelled successfully. You will continue to have access until the end of your current billing period.'}
-                {successType === 'profile' && 'Your profile details have been saved successfully.'}
-                {successType === 'password' && 'Your password has been changed successfully.'}
+                {successType === 'subscription' 
+                  ? `You have successfully subscribed to the ${selectedPack}. Your credits have been added to your account.`
+                  : 'Your subscription has been cancelled successfully. You will continue to have access until the end of your current billing period.'}
               </p>
 
               <div className="w-full space-y-4">
@@ -689,7 +522,7 @@ const Settings = ({ profileImage, setProfileImage, currentUser }) => {
                   onClick={() => setShowSuccessModal(false)}
                   className="w-full h-[52px] md:h-[56px] bg-[#344054] text-white rounded-[12px] text-[14px] md:text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
                 >
-                  {successType === 'subscription' || successType === 'profile' || successType === 'password' ? 'Done' : 'Go to Dashboard'}
+                  {successType === 'subscription' ? 'Done' : 'Go to Dashboard'}
                 </button>
                 {successType === 'cancellation' && (
                   <button 
