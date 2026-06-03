@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHori
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const chartData = [
   { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
@@ -26,6 +27,7 @@ const chartData = [
 
 const ReportsOverview = ({ onBack }) => {
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const [isDetailView, setIsDetailView] = useState(false);
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
@@ -34,6 +36,8 @@ const ReportsOverview = ({ onBack }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    if (authLoading || !user) return;
+    
     setIsLoading(true);
     api.getReportsList(activeTask)
       .then(data => {
@@ -46,7 +50,7 @@ const ReportsOverview = ({ onBack }) => {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [activeTask]);
+  }, [activeTask, authLoading, user]);
 
   // Derived calculations
   const scores = attempts.map(a => a.reports?.[0]?.overall_band || a.reports?.overall_band || a.score).filter(Boolean);

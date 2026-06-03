@@ -15,7 +15,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function DashboardApp() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
@@ -29,8 +29,10 @@ function DashboardApp() {
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
   const [hasData, setHasData] = useState(true);
 
-  // Fetch analytics on mount
+  // Fetch analytics when user session is hydrated
   useEffect(() => {
+    if (isLoading || !user) return;
+
     const fetchAnalytics = async () => {
       try {
         const metrics = await api.getDashboardAnalytics();
@@ -41,7 +43,7 @@ function DashboardApp() {
       }
     };
     fetchAnalytics();
-  }, []);
+  }, [isLoading, user]);
 
   // Lenis smooth scroll
   useEffect(() => {

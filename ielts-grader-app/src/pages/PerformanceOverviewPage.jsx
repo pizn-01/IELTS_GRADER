@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const chartData = [
   { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
@@ -25,12 +26,15 @@ const chartData = [
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     setIsLoading(true);
     api.getPerformanceAnalytics(activeTask)
       .then(data => {
@@ -43,7 +47,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [activeTask]);
+  }, [activeTask, authLoading, user]);
 
   // Derived calculations
   const scores = reports.map(r => r.overall_band).filter(Boolean);
