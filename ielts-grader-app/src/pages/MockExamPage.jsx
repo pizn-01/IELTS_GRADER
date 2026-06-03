@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Send, ChevronLeft, ChevronDown, Info } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../marketing/Footer';
 
 const MockExamPage = () => {
   const navigate = useNavigate();
-  const { essayData, updateEssayData, userStatus } = useGrade();
+  const { essayData, updateEssayData } = useGrade();
+  const { isAuthenticated } = useAuth();
   const [activeTask, setActiveTask] = useState(essayData.taskType || 'Task 2');
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const [task1Content, setTask1Content] = useState('');
@@ -35,8 +37,8 @@ const MockExamPage = () => {
       task2Content,
       taskType: activeTask
     });
-    if (userStatus.isLoggedIn) {
-      navigate('/analysis-ready');
+    if (isAuthenticated) {
+      navigate('/report');
     } else {
       navigate('/selection');
     }

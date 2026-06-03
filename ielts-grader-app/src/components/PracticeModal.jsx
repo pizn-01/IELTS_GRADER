@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Clock, Info, FileText, ChevronDown } from 'lucide-react';
+import { api } from '../services/api';
 
 const FileIcon = ({ size = 24, className = "" }) => (
   <svg 
@@ -28,36 +29,93 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const [essayFile, setEssayFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [completedItems, setCompletedItems] = useState([]);
+  const [gradingError, setGradingError] = useState(null);
+  const pollRef = useRef(null);
 
-  // Simulate progress when Step 3 is reached
+  // ── Real grading pipeline ──────────────────────────────────────────────────
+  // Triggered when step becomes 3 (analysis screen).
+  // Flow: extractText → createSubmission → /grade (async) → poll status → getReport
   React.useEffect(() => {
-    let interval;
-    if (step === 3 && isOpen) {
-      setProgress(0);
-      setCompletedItems([]);
-      
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              onAnalysisComplete();
-            }, 1000);
-            return 100;
-          }
-          const next = prev + 5;
-          
-          // Update checklist based on progress
-          if (next > 25 && !completedItems.includes(0)) setCompletedItems(p => [...p, 0]);
-          if (next > 50 && !completedItems.includes(1)) setCompletedItems(p => [...p, 1]);
-          if (next > 75 && !completedItems.includes(2)) setCompletedItems(p => [...p, 2]);
-          if (next >= 100 && !completedItems.includes(3)) setCompletedItems(p => [...p, 3]);
-          
-          return next;
+    if (step !== 3 || !isOpen) return;
+
+    setProgress(0);
+    setCompletedItems([]);
+    setGradingError(null);
+
+    const runGrading = async () => {
+      try {
+        // 1. Extract text from uploaded files
+        setProgress(5);
+        const { question_text, essay_content } = await api.extractText(promptFile, essayFile);
+        setProgress(15);
+
+        // 2. Create a submission record in Supabase
+        const submissionId = await api.createSubmission({
+          task_type: taskType,
+          exam_type: examType,
+          essay_content,
+          question_text,
         });
-      }, 150);
-    }
-    return () => clearInterval(interval);
+        setProgress(20);
+
+        // 3. Send to Fly.io grading service (returns 202 immediately)
+        await api.submitAttempt({
+          submission_id: submissionId,
+          task_type: taskType,
+          exam_type: examType,
+          essay_content,
+          question_text,
+        });
+        setProgress(25);
+
+        // 4. Poll Supabase for real status every 2 seconds
+        await new Promise((resolve, reject) => {
+          pollRef.current = setInterval(async () => {
+            try {
+              const { status, progress_pct } = await api.checkStatus(submissionId);
+              const realPct = Math.max(25, Math.min(95, (progress_pct ?? 0)));
+              setProgress(realPct);
+
+              // Advance checklist based on real progress
+              if (realPct > 30) setCompletedItems(p => p.includes(0) ? p : [...p, 0]);
+              if (realPct > 55) setCompletedItems(p => p.includes(1) ? p : [...p, 1]);
+              if (realPct > 75) setCompletedItems(p => p.includes(2) ? p : [...p, 2]);
+
+              if (status === 'graded') {
+                clearInterval(pollRef.current);
+                resolve(submissionId);
+              } else if (status === 'failed') {
+                clearInterval(pollRef.current);
+                reject(new Error('Grading failed on the server.'));
+              }
+            } catch (pollErr) {
+              clearInterval(pollRef.current);
+              reject(pollErr);
+            }
+          }, 2000);
+        });
+
+        // 5. Fetch the full report
+        setProgress(97);
+        setCompletedItems([0, 1, 2, 3]);
+        const reportData = await api.getReport(submissionId);
+        setProgress(100);
+
+        // 6. Navigate — pass real report data up
+        setTimeout(() => onAnalysisComplete(reportData), 800);
+
+      } catch (err) {
+        console.error('[PracticeModal] Grading error:', err);
+        setGradingError(err.message || 'Something went wrong. Please try again.');
+        setProgress(0);
+      }
+    };
+
+    runGrading();
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, [step, isOpen]);
 
   const resetAndClose = () => {
@@ -310,6 +368,25 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                 </div>
               ) : (
                 <div className="flex flex-col items-center py-6 font-sans">
+                  {/* Error State */}
+                  {gradingError ? (
+                    <div className="w-full text-center space-y-4 py-4">
+                      <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto text-red-500">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      </div>
+                      <h2 className="text-[18px] font-bold text-[#111827]">Grading Failed</h2>
+                      <p className="text-[13px] text-gray-500 max-w-[280px] mx-auto">{gradingError}</p>
+                      <div className="space-y-2 pt-2">
+                        <button onClick={() => { setStep(2); setGradingError(null); }} className="w-full bg-[#2C3E50] text-white h-[44px] rounded-[10px] text-[14px] font-bold hover:bg-[#34495E] transition-all">
+                          Try Again
+                        </button>
+                        <button onClick={resetAndClose} className="w-full border border-gray-200 text-[#2C3E50] h-[44px] rounded-[10px] text-[14px] font-bold hover:bg-gray-50 transition-all">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                  <>
                   {/* Brain Loading Animation */}
                   <div className="relative w-16 h-16 mb-6">
                     <motion.div 
@@ -332,6 +409,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                     <h2 className="text-[20px] font-bold text-[#111827] mb-2">AI is grading your essay</h2>
                     <p className="text-[13px] text-gray-500">This takes 45-60 seconds. Please keep this tab open.</p>
                   </div>
+                  </>
+                  )}
 
                   {/* Progress Card */}
                   <div className="w-full bg-[#F0F7FF] rounded-[20px] p-5 mb-6">

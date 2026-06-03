@@ -39,23 +39,19 @@ const FAQ = () => {
           {faqs.map((faq, i) => (
             <div
               key={i}
-              className={`border rounded-[16px] transition-all duration-300 overflow-hidden ${
-                activeFaq === i 
-                  ? 'border-[#3B82F6] bg-[#F8FAFF] shadow-[0_10px_30px_-10px_rgba(59,130,246,0.1)]' 
-                  : 'border-[#E5E7EB] bg-white hover:border-[#3B82F6]/50'
+              className={`border border-[#E5E7EB] rounded-[16px] transition-all duration-300 overflow-hidden ${
+                activeFaq === i ? 'bg-white shadow-sm' : 'bg-white hover:border-gray-300'
               }`}
             >
               <div
                 className="py-6 px-8 flex justify-between items-center cursor-pointer group"
                 onClick={() => toggleFaq(i)}
               >
-                <span className={`text-[16px] md:text-[18px] font-bold transition-colors ${
-                  activeFaq === i ? 'text-[#3B82F6]' : 'text-[#1a1f36]'
-                }`}>
+                <span className="text-[16px] md:text-[18px] font-bold text-[#1a1f36] transition-colors">
                   {faq.q}
                 </span>
                 <div className={`transition-all duration-300 ${
-                  activeFaq === i ? 'text-[#3B82F6] rotate-180' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'
+                  activeFaq === i ? 'rotate-180 text-[#1a1f36]' : 'text-[#9CA3AF] group-hover:text-[#1a1f36]'
                 }`}>
                   <ChevronDown className="w-6 h-6" />
                 </div>
@@ -65,8 +61,8 @@ const FAQ = () => {
                   activeFaq === i ? 'pb-8 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
                 }`}
               >
-                <div className="pt-2 border-t border-[#E5E7EB]/50">
-                  <p className="text-[15px] md:text-[16px] text-[#4B5563] leading-[1.7] mt-4">
+                <div>
+                  <p className="text-[15px] md:text-[16px] text-[#4B5563] leading-[1.7]">
                     {faq.a}
                   </p>
                 </div>

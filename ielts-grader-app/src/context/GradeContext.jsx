@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { useAuth } from './AuthContext';
 
 const GradeContext = createContext();
 
@@ -8,33 +9,40 @@ export const GradeProvider = ({ children }) => {
     taskType: '',
     promptFile: null,
     essayFile: null,
+    essayContent: '',
+    questionText: '',
+    submissionId: null,
   });
-  const [gradingStatus, setGradingStatus] = useState('idle'); // idle, processing, completed
-  const [userStatus, setUserStatus] = useState({
-    isLoggedIn: false, // Reverting to false to test the actual login flow
-    isPremium: false,
-    credits: 3,
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'johndoe@gmail.com',
-  });
+  const [gradingStatus, setGradingStatus] = useState('idle'); // idle | processing | completed | failed
 
   const updateEssayData = (data) => setEssayData(prev => ({ ...prev, ...data }));
-  
-  const startGrading = () => {
-    setGradingStatus('processing');
-    // Simulation logic will be handled in the component
+
+  const startGrading = () => setGradingStatus('processing');
+  const completeGrading = () => setGradingStatus('completed');
+  const failGrading = () => setGradingStatus('failed');
+  const resetGrading = () => {
+    setGradingStatus('idle');
+    setEssayData({
+      examType: '',
+      taskType: '',
+      promptFile: null,
+      essayFile: null,
+      essayContent: '',
+      questionText: '',
+      submissionId: null,
+    });
   };
 
   return (
-    <GradeContext.Provider value={{ 
-      essayData, 
-      updateEssayData, 
-      gradingStatus, 
+    <GradeContext.Provider value={{
+      essayData,
+      updateEssayData,
+      gradingStatus,
       setGradingStatus,
       startGrading,
-      userStatus,
-      setUserStatus
+      completeGrading,
+      failGrading,
+      resetGrading,
     }}>
       {children}
     </GradeContext.Provider>

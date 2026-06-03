@@ -1,5 +1,6 @@
 import { FileText, Frown } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const defaultReports = [
   { id: 1, type: 'Academic', task: 'Task 1', date: 'Mar 23, 2026', score: 7.0 },
@@ -9,6 +10,7 @@ const defaultReports = [
 ];
 
 const RecentReports = ({ hasData = true, dynamicReports = null }) => {
+  const navigate = useNavigate();
   const displayReports = dynamicReports?.length > 0 ? dynamicReports : defaultReports;
 
   if (!hasData) {
@@ -105,8 +107,8 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-gray-50 md:justify-end">
-              <button className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Exam History</button>
-              <button className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Performance</button>
+              <button onClick={() => navigate('/report', { state: { reportId: report.id } })} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Exam History</button>
+              <button onClick={() => navigate('/performance')} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Performance</button>
             </div>
           </motion.div>
         ))}

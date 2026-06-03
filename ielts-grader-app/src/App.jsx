@@ -37,6 +37,7 @@ import SelectionPage from './pages/SelectionPage';
 import MockExamPage from './pages/MockExamPage';
 import ReportPage from './pages/ReportPage';
 import AnalysisReadyPage from './pages/AnalysisReadyPage';
+import PerformanceOverviewPage from './pages/PerformanceOverviewPage';
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 import DashboardApp from './dashboard/DashboardApp';
@@ -159,6 +160,17 @@ function App() {
               profileImage={profileImage}
             >
               <ReportsOverview onBack={() => navigate('/dashboard')} />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/performance" element={
+          <ProtectedRoute>
+            <Layout 
+              currentView="reports" 
+              onNavigate={handleProtectedNavigate} 
+              profileImage={profileImage}
+            >
+              <PerformanceOverviewPage onBack={() => navigate('/reports')} />
             </Layout>
           </ProtectedRoute>
         } />

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ReportView from './ReportView';
-import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, Search, Calendar, FileText, ChevronRight, Download, Eye, AlertTriangle, TrendingDown, X, Check } from 'lucide-react';
+import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../services/api';
@@ -24,24 +23,22 @@ const chartData = [
   { name: 'W8', overall: 8.1, response: 7.6, coherence: 7.3, vocabulary: 8.6, grammar: 7.8 },
 ];
 
-const ReportsOverview = ({ onBack }) => {
+const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
-  const [isDetailView, setIsDetailView] = useState(false);
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
-  const [attempts, setAttempts] = useState([]);
+  const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setIsLoading(true);
-    api.getReportsList(activeTask)
+    api.getPerformanceAnalytics(activeTask)
       .then(data => {
-        setAttempts(data || []);
+        setReports(data || []);
       })
       .catch(err => {
-        console.warn('[ReportsOverview] Failed to fetch reports list:', err);
-        setAttempts([]);
+        console.warn('[PerformanceOverviewPage] Failed to fetch performance analytics:', err);
+        setReports([]);
       })
       .finally(() => {
         setIsLoading(false);
@@ -49,209 +46,55 @@ const ReportsOverview = ({ onBack }) => {
   }, [activeTask]);
 
   // Derived calculations
-  const scores = attempts.map(a => a.reports?.[0]?.overall_band || a.reports?.overall_band || a.score).filter(Boolean);
-  const latestScore = scores[0] || 6.5;
-  const firstScore = scores[scores.length - 1] || 6.0;
-  const attemptsCount = attempts.length;
+  const scores = reports.map(r => r.overall_band).filter(Boolean);
+  const latestScore = scores[scores.length - 1] || 7.0;
+  const firstScore = scores[0] || 5.5;
+  const attemptsCount = reports.length;
   const delta = latestScore - firstScore;
   const deltaText = delta >= 0 ? `+${delta.toFixed(1)}` : delta.toFixed(1);
   const avgScore = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "6.7";
   const bestScore = scores.length ? Math.max(...scores).toFixed(1) : "7.5";
 
-  const formattedDateOfLatest = attempts[0]?.created_at
-    ? new Date(attempts[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  // Date formatted strings
+  const formattedDateOfFirst = reports[0]?.created_at
+    ? new Date(reports[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : "";
-  const formattedDateOfFirst = attempts[attempts.length - 1]?.created_at
-    ? new Date(attempts[attempts.length - 1].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const formattedDateOfLatest = reports[reports.length - 1]?.created_at
+    ? new Date(reports[reports.length - 1].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : "";
-  const studyPeriod = attempts.length 
-    ? (attempts.length === 1 ? formattedDateOfFirst : `${formattedDateOfFirst} - ${formattedDateOfLatest}`)
+  const studyPeriod = reports.length
+    ? (reports.length === 1 ? formattedDateOfFirst : `${formattedDateOfFirst} - ${formattedDateOfLatest}`)
     : "Feb 22 - Mar 6, 2026";
 
-  const dynamicChartData = [...attempts].reverse().map((r, i) => {
-    const score = r.reports?.[0]?.overall_band || r.reports?.overall_band || r.score || 0;
-    const rep = r.reports?.[0] || r.reports || {};
-    return {
-      name: `W${Math.ceil((i + 1) / 2)}`,
-      overall: score || 6.5,
-      response: rep.task_response_band || score || 6.0,
-      coherence: rep.coherence_band || score || 6.0,
-      vocabulary: rep.lexical_band || score || 6.5,
-      grammar: rep.grammar_band || score || 6.5,
-    };
-  });
+  // Sub-criteria averages
+  const avgResponse = reports.length ? (reports.reduce((sum, r) => sum + (r.task_response_band || 0), 0) / reports.length) : 6.0;
+  const avgCoherence = reports.length ? (reports.reduce((sum, r) => sum + (r.coherence_band || 0), 0) / reports.length) : 7.0;
+  const avgVocabulary = reports.length ? (reports.reduce((sum, r) => sum + (r.lexical_band || 0), 0) / reports.length) : 6.5;
+  const avgGrammar = reports.length ? (reports.reduce((sum, r) => sum + (r.grammar_band || 0), 0) / reports.length) : 6.5;
+  
+  const criteriaScores = [
+    { name: "Task Response", score: avgResponse },
+    { name: "Coherence & Cohesion", score: avgCoherence },
+    { name: "Lexical Resource", score: avgVocabulary },
+    { name: "Grammatical Range & Accuracy", score: avgGrammar }
+  ];
+  criteriaScores.sort((a, b) => b.score - a.score);
+  const strongest = criteriaScores[0];
+  const weakest = criteriaScores[criteriaScores.length - 1];
+
+  const dynamicChartData = reports.map((r, i) => ({
+    name: `W${Math.ceil((i + 1) / 2)}`,
+    overall: r.overall_band || 6.5,
+    response: r.task_response_band || 6.0,
+    coherence: r.coherence_band || 6.0,
+    vocabulary: r.lexical_band || 6.5,
+    grammar: r.grammar_band || 6.5,
+  }));
   const dataToRender = dynamicChartData.length > 0 ? dynamicChartData : chartData;
 
-  const filteredAttempts = attempts.filter(essay => {
-    const query = searchQuery.toLowerCase();
-    const contentMatch = essay.essay_content?.toLowerCase().includes(query);
-    const questionMatch = essay.question_text?.toLowerCase().includes(query);
-    const nameMatch = essay.name?.toLowerCase().includes(query);
-    return contentMatch || questionMatch || nameMatch || query === "";
-  });
-
-  if (!isDetailView) {
-    return (
-      <div className="w-full bg-white min-h-[calc(100vh-80px)]">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-8 md:py-10 space-y-10">
-          {/* Header Section */}
-          <div className="space-y-2">
-            <h1 className="text-[32px] md:text-[36px] font-bold text-[#101828] tracking-tight">Reports</h1>
-            <p className="text-[14px] md:text-[16px] text-gray-400 font-medium tracking-tight">Choose a task to analyze performance or review past attempts.</p>
-          </div>
-
-          {/* Task Selection Tabs */}
-          <div className="flex items-center gap-8 md:gap-10 border-b border-gray-100 overflow-x-auto no-scrollbar">
-            {["Academic Task 1", "Academic Task 2", "General Task 1", "General Task 2"].map((task) => (
-              <div 
-                key={task} 
-                className="relative py-4 cursor-pointer group whitespace-nowrap"
-                onClick={() => setActiveTask(task)}
-              >
-                <span className={`text-[14px] font-bold transition-colors ${activeTask === task ? "text-[#101828]" : "text-gray-400 group-hover:text-gray-700"}`}>
-                  {task}
-                </span>
-                {activeTask === task && (
-                  <motion.div 
-                    layoutId="activeLandingTab"
-                    className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1A96F3] rounded-t-full" 
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* High-Level Performance Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[24px] p-8 md:p-10 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-8 hover:shadow-md transition-shadow"
-          >
-            <div className="flex flex-col md:flex-row items-center gap-10 text-center md:text-left">
-              <div className="relative w-28 h-28 flex items-center justify-center">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="56" cy="56" r="50" fill="none" stroke="#F1F5F9" strokeWidth="8" />
-                  <circle 
-                    cx="56" 
-                    cy="56" 
-                    r="50" 
-                    fill="none" 
-                    stroke="#1A96F3" 
-                    strokeWidth="8" 
-                    strokeDasharray="314.159" 
-                    strokeDashoffset={314.159 - (314.159 * parseFloat(latestScore)) / 9.0} 
-                    strokeLinecap="round" 
-                  />
-                </svg>
-                <span className="absolute text-[22px] font-black text-[#101828]">{latestScore.toFixed(1)}</span>
-              </div>
-              <div>
-                <h2 className="text-[24px] md:text-[28px] font-bold text-[#101828] mb-2">{activeTask}</h2>
-                <div className="flex items-center justify-center md:justify-start gap-4 text-[14px] font-bold">
-                  <span className="text-gray-400">Attempts: <span className="text-[#101828]">{attemptsCount}</span></span>
-                  <span className={delta >= 0 ? "text-[#00C9B1]" : "text-[#FF4D4D]"}>{deltaText}</span>
-                </div>
-              </div>
-            </div>
-            <button 
-              onClick={() => navigate('/performance')}
-              className="w-full md:w-auto px-10 h-[48px] bg-[#2C3E50] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
-            >
-              View Performance
-            </button>
-          </motion.div>
-
-          {/* History List */}
-          <div className="space-y-8">
-            <h3 className="text-[20px] font-bold text-[#101828]">History</h3>
-            
-            {/* Filter Bar */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1A96F3] transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Search essays..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 h-[52px] bg-white border border-gray-100 rounded-[14px] text-[14px] focus:outline-none focus:border-[#1A96F3] focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
-                />
-              </div>
-              <div className="relative group">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1A96F3] transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Date" 
-                  readOnly
-                  className="w-full md:w-[200px] pl-12 pr-10 h-[52px] bg-white border border-gray-100 rounded-[14px] text-[14px] focus:outline-none focus:border-[#1A96F3] transition-all cursor-pointer"
-                />
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              </div>
-            </div>
-
-            {/* List */}
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="py-10 text-center text-gray-400 font-medium">Loading attempts...</div>
-              ) : filteredAttempts.length === 0 ? (
-                <div className="py-10 text-center text-gray-400 font-medium">No attempts found for this search.</div>
-              ) : (
-                filteredAttempts.map((essay, idx) => {
-                  const score = essay.reports?.[0]?.overall_band || essay.reports?.overall_band || essay.score || 6.5;
-                  const formattedDate = new Date(essay.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                  const essayName = essay.essay_content 
-                    ? (essay.essay_content.slice(0, 50) + "...")
-                    : `Essay Attempt #${attempts.length - idx}`;
-                  const essayType = essay.type || "Quick";
-                  const color = score >= 7.0 ? "#00C9B1" : score >= 6.0 ? "#F59E0B" : "#FF4D4D";
-                  
-                  return (
-                    <div 
-                      key={essay.id} 
-                      onClick={() => navigate('/report', { state: { reportId: essay.id } })}
-                      className="bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-6">
-                        <div className="w-12 h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all">
-                          <TrendingUp size={22} />
-                        </div>
-                        <div>
-                          <h4 className="text-[16px] font-bold text-[#101828] mb-1">{essayName}</h4>
-                          <p className="text-[14px] text-gray-400 font-medium">{formattedDate}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-8">
-                        <span className="px-5 py-1.5 bg-gray-50 text-gray-400 rounded-full text-[12px] font-bold uppercase tracking-wider">{essayType}</span>
-                        <div className="w-[60px] h-[34px] border rounded-[10px] flex items-center justify-center text-[14px] font-black" style={{ color: color, borderColor: color + '33', backgroundColor: color + '0D' }}>
-                          {score.toFixed(1)}
-                        </div>
-                        <button 
-                          className="p-2 text-gray-300 hover:text-gray-600 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <MoreHorizontal size={20} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (activeTask.includes("Task 2")) {
-    return (
-      <div className="-mx-4 md:-mx-8">
-        <ReportView onBack={() => setIsDetailView(false)} showHeader={false} />
-      </div>
-    );
-  }
+  const handleExport = () => {
+    window.print();
+  };
 
   return (
     <div className="-mx-4 md:-mx-8">
@@ -266,7 +109,7 @@ const ReportsOverview = ({ onBack }) => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => setIsDetailView(false)}
+                onClick={() => onBack ? onBack() : navigate(-1)}
                 className="w-6 h-6 rounded-full border border-[#101828] flex items-center justify-center text-[#101828] hover:bg-black/5 transition-all bg-transparent"
               >
                 <ArrowLeft size={14} strokeWidth={2} />
@@ -276,7 +119,7 @@ const ReportsOverview = ({ onBack }) => {
                 <ChevronDown size={22} className="text-[#101828] mt-0.5" />
               </div>
             </div>
-            <button className="w-full md:w-auto px-6 h-[42px] bg-[#344054] text-white rounded-[8px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
+            <button onClick={handleExport} className="w-full md:w-auto px-6 h-[42px] bg-[#344054] text-white rounded-[8px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
               Export Report
             </button>
           </div>
@@ -297,7 +140,7 @@ const ReportsOverview = ({ onBack }) => {
                 </span>
                 {activeTab === tab && (
                   <motion.div 
-                    layoutId="activeTabUnderline"
+                    layoutId="activeTabUnderlinePerformance"
                     className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1A96F3] rounded-t-full" 
                   />
                 )}
@@ -315,44 +158,36 @@ const ReportsOverview = ({ onBack }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm flex items-center h-[120px]"
+              className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm flex flex-col md:flex-row md:items-center h-auto md:h-[120px] divide-y md:divide-y-0 md:divide-x divide-[#E5E7EB]"
             >
               {/* Latest Band */}
-              <div className="flex-1 pl-12 flex flex-col justify-center">
-                <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>7.0</span>
+              <div className="flex-1 px-8 md:pl-12 py-6 md:py-0 flex flex-col justify-center">
+                <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>{latestScore.toFixed(1)}</span>
                 <span className="text-[14px] text-[#667085] mt-1.5 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Latest Band</span>
               </div>
 
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
-
               {/* First */}
-              <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>First</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>27</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{firstScore.toFixed(1)}</span>
               </div>
-
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
 
               {/* Average */}
-              <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Average</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>6.7</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{avgScore}</span>
               </div>
-
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
 
               {/* Best */}
-              <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Best</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>7.5</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{bestScore}</span>
               </div>
 
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
-
               {/* Change */}
-              <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Change</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>+1.5</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{deltaText}</span>
               </div>
             </motion.div>
 
@@ -366,11 +201,11 @@ const ReportsOverview = ({ onBack }) => {
                 <div className="p-8 space-y-10 flex-1">
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Exam Completed</p>
-                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>11</p>
+                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{attemptsCount}</p>
                   </div>
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Study Period</p>
-                    <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Feb 22_ Mar 6' 2026</p>
+                    <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{studyPeriod}</p>
                   </div>
                 </div>
               </div>
@@ -384,32 +219,40 @@ const ReportsOverview = ({ onBack }) => {
                   <div className="space-y-2">
                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>On the Rise</p>
                     <p className="text-[16px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Overall improvements: +15 from first to latest attempt.
+                      Overall improvements: {deltaText} from first to latest attempt.
                     </p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Top Priority Fixes</p>
                     <p className="text-[14.5px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Focus heavily on reducing: Repetition of basic lexis, imprecise word choice, ideas underdeveloped.
+                      Focus heavily on reducing mistakes in your primary bottleneck: {weakest.name.toLowerCase()}.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Core Strengths */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+              {/* Strengths & Weaknesses */}
+              <div className="bg-white rounded-[24px] border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden">
                 <div className="px-8 py-6 border-b border-[#F2F4F7]">
-                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '20px' }}>Core Strengths</h3>
+                  <h3 className="text-[17px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Strengths & Weaknesses</h3>
                 </div>
                 <div className="p-8 space-y-5 flex-1">
-                  <div className="p-5 bg-[#F0FDF9] rounded-[20px] border border-[#CCFBEF] flex items-center">
-                    <p className="text-[16px] leading-[1.5] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#30C3A9]">Coherence & cohesion:</span> <span className="font-bold text-[#101828]">currently 7.0 (Keep this stable while you lift your weakest areas).</span>
+                  <div className="px-6 py-5 bg-[#F4FCF9] rounded-[16px] border border-[#E6F8F3] flex items-center gap-5">
+                    <div className="w-[44px] h-[44px] rounded-full bg-white flex items-center justify-center shrink-0">
+                      <TrendingUp className="text-[#30C3A9]" size={20} strokeWidth={2.5} />
+                    </div>
+                    <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      <span className="font-bold text-[#30C3A9]">{strongest.name}:</span> <span className="font-bold text-[#101828]">currently {strongest.score.toFixed(1)}</span><br />
+                      <span className="font-bold text-[#101828]">(Keep this stable while you lift your weakest areas).</span>
                     </p>
                   </div>
-                  <div className="p-5 bg-[#F0FDF9] rounded-[20px] border border-[#CCFBEF] flex items-center">
-                    <p className="text-[16px] leading-[1.5] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#30C3A9]">Lexical Resources:</span> <span className="font-bold text-[#101828]">currently 7.0 (Keep this stable while you lift your weakest areas).</span>
+                  <div className="px-6 py-5 bg-[#FFF7F7] rounded-[16px] border border-[#FEEDED] flex items-center gap-5">
+                    <div className="w-[44px] h-[44px] rounded-full bg-white flex items-center justify-center shrink-0">
+                      <TrendingDown className="text-[#EA4335]" size={20} strokeWidth={2.5} />
+                    </div>
+                    <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      <span className="font-bold text-[#EA4335]">{weakest.name}:</span> <span className="font-bold text-[#101828]">currently {weakest.score.toFixed(1)}</span><br />
+                      <span className="font-bold text-[#101828]">(This is your primary bottleneck, focus here).</span>
                     </p>
                   </div>
                 </div>
@@ -424,7 +267,7 @@ const ReportsOverview = ({ onBack }) => {
                 
                 <div className="h-[320px] w-full mb-8">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <LineChart data={dataToRender} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                       <XAxis 
                         dataKey="name" 
@@ -1056,4 +899,4 @@ const ReportsOverview = ({ onBack }) => {
   );
 };
 
-export default ReportsOverview;
+export default PerformanceOverviewPage;

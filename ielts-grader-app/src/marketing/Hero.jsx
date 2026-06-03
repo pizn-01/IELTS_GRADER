@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, FileText, X } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
   const navigate = useNavigate();
-  const { essayData, updateEssayData, userStatus } = useGrade();
+  const { essayData, updateEssayData } = useGrade();
+  const { isAuthenticated } = useAuth();
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
   const [cardView, setCardView] = useState('default'); // 'default', 'mock', 'upload'
@@ -319,7 +321,7 @@ const Hero = () => {
 
                 <button 
                   onClick={() => {
-                    if (userStatus.isLoggedIn) {
+                    if (isAuthenticated) {
                       navigate('/analysis-ready');
                     } else {
                       navigate('/selection');

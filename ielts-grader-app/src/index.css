@@ -158,12 +158,10 @@ html.lenis body {
 /* --- Marketing Site Specific --- */
 .connector-line {
   stroke: #E2E8F0;
-  stroke-width: 2.98;
-  stroke-dasharray: 10.9 10.9;
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
   fill: none;
-  animation: lineFlow 10s linear infinite;
   stroke-linecap: round;
-  opacity: 0.8;
   z-index: 0;
 }
 

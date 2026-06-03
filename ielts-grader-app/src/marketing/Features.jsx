@@ -7,7 +7,7 @@ const Features = () => {
       <div className="max-w-[1440px] mx-auto px-6 lg:px-[60px] grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-[60px] items-center">
         {/* Left Column - Mockups Image */}
         <div className="relative z-10 w-full animate-fadeIn order-2 lg:order-1">
-          <img src="/images/features-cards.png" alt="IELTS Report Mockup" className="w-full h-auto drop-shadow-xl" />
+          <img src="/images/Group 1597890526.png" alt="IELTS Report Mockup" className="w-full h-auto drop-shadow-xl" />
         </div>
 
         {/* Right Column - Text & Checklist */}

@@ -70,26 +70,10 @@ function DashboardApp() {
       <MockExam
         examType={examConfig.type}
         taskType={examConfig.task}
-        onExit={async (targetView, data) => {
-          let finalData = data;
-          if (data) {
-            try {
-              const attemptResponse = await api.submitAttempt({
-                exam_type: examConfig.type || 'Academic',
-                task_type: examConfig.task || 'Task 2',
-                essay_content: data.essay || '',
-                time_spent_seconds: 2400
-              });
-              const finalReport = await api.getReport(attemptResponse.submission_id);
-              finalData = { ...data, ...finalReport };
-              setReportData(finalData);
-            } catch (err) {
-              console.warn('Submission offline fallback.', err);
-              setReportData(data);
-            }
-          }
-          if (targetView === 'report') {
-            navigate('/report', { state: { reportData: finalData } });
+        onExit={(targetView, data) => {
+          // MockExam already ran the full grading pipeline and passes the real reportData
+          if (targetView === 'report' && data) {
+            navigate('/report', { state: { reportData: data } });
           } else {
             setView(targetView || 'dashboard');
           }
@@ -149,9 +133,10 @@ function DashboardApp() {
             setShowModal(false);
             setView('mock-exam');
           }}
-          onAnalysisComplete={() => {
+          onAnalysisComplete={(reportData) => {
             setShowModal(false);
-            navigate('/report');
+            // Navigate with real reportData passed from PracticeModal
+            navigate('/report', { state: { reportData } });
           }}
         />
       </div>
