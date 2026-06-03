@@ -1044,7 +1044,9 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   </div>
                 );
               });
-                   ) : activeTab === "Grammar" ? (
+            })()}
+          </div>
+        ) : activeTab === "Grammar" ? (
           <div className="space-y-8">
             {/* Overview Card */}
             {(() => {
