@@ -361,7 +361,7 @@ export const api = {
       if (reportIds.length > 0) {
         const { data, error: reportsErr } = await supabase
           .from('reports')
-          .select('submission_id, overall_band, task_response_band, coherence_band, lexical_band, grammar_band, created_at')
+          .select('submission_id, overall_band, task_response_band:response_band, coherence_band, lexical_band:vocabulary_band, grammar_band, created_at')
           .in('submission_id', reportIds)
           .order('created_at', { ascending: true });
         if (reportsErr) throw reportsErr;
@@ -432,7 +432,7 @@ export const api = {
       const { data, error } = await supabase
         .from('reports')
         .select(`
-          overall_band, task_response_band, coherence_band, lexical_band, grammar_band, created_at,
+          overall_band, task_response_band:response_band, coherence_band, lexical_band:vocabulary_band, grammar_band, created_at,
           submissions!inner(user_id, exam_type, task_type, status)
         `)
         .eq('submissions.user_id', user?.id)
@@ -531,9 +531,9 @@ function normalizeReport(row) {
     task_question: row.question_text || '',
     submitted_at: row.created_at,
     criteria: {
-      task_response: { band: row.task_response_band },
+      task_response: { band: row.task_response_band || row.response_band },
       coherence_cohesion: { band: row.coherence_band },
-      lexical_resource: { band: row.lexical_band },
+      lexical_resource: { band: row.lexical_band || row.vocabulary_band },
       grammatical_range: { band: row.grammar_band },
     },
     strengths: row.strengths || [],
