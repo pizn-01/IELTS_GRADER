@@ -11,16 +11,18 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState("Overview");
   const [chartData, setChartData] = useState([]);
   const [frequentErrors, setFrequentErrors] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getDashboardAnalytics()
-      .then(d => {
-        setChartData(d.chartData || []);
-        setFrequentErrors(d.frequentErrors || []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.getDashboardAnalytics(),
+      api.getSubmissions({ limit: 100 }),
+    ]).then(([analytics, subRes]) => {
+      setChartData(analytics.chartData || []);
+      setFrequentErrors((analytics.frequentErrors || []).slice().sort((a, b) => b.count - a.count));
+      setSubmissions((subRes.data || []).filter(s => s.status === 'graded'));
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   // Derived stats from real chart data
@@ -30,6 +32,56 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const avgBand    = overallScores.length ? (overallScores.reduce((a, b) => a + b, 0) / overallScores.length).toFixed(1) : null;
   const bestBand   = overallScores.length ? Math.max(...overallScores).toFixed(1) : null;
   const bandChange = (latestBand && firstBand) ? (latestBand - firstBand).toFixed(1) : null;
+
+  // Activity profile — real submission data
+  const examCount = submissions.length;
+  const studyPeriod = (() => {
+    if (submissions.length === 0) return 'No exams yet';
+    const dates = submissions.map(s => new Date(s.created_at)).sort((a, b) => a - b);
+    if (dates.length === 1) return dates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `${dates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${dates[dates.length - 1].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  })();
+
+  // Executive summary — computed from real data
+  const trendLabel  = bandChange == null ? 'Getting Started' : parseFloat(bandChange) > 0.4 ? 'On the Rise' : parseFloat(bandChange) < -0.4 ? 'Declining' : 'Holding Steady';
+  const trendDetail = bandChange == null
+    ? 'Complete your first exam to begin tracking progress.'
+    : `Overall improvement: ${parseFloat(bandChange) >= 0 ? '+' : ''}${bandChange} from first to latest attempt.`;
+  const topErrors   = frequentErrors.slice(0, 3).map(e => e.label);
+  const topPriorityText = topErrors.length > 0
+    ? `Focus heavily on reducing: ${topErrors.join(', ')}.`
+    : 'Complete more exams to identify patterns.';
+
+  // Strengths & weaknesses — highest/lowest avg criterion band
+  const avgCriteria = [
+    { name: 'Coherence & Cohesion', field: 'coherence' },
+    { name: 'Lexical Resource',     field: 'vocabulary' },
+    { name: 'Task Response',        field: 'response' },
+    { name: 'Grammatical Range',    field: 'grammar' },
+  ].map(c => {
+    const vals = chartData.map(d => d[c.field]).filter(Boolean);
+    return { name: c.name, avg: vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : null };
+  }).filter(c => c.avg != null).sort((a, b) => b.avg - a.avg);
+  const strongestCrit  = avgCriteria[0]  ?? { name: 'Coherence & Cohesion', avg: null };
+  const bottleneckCrit = avgCriteria[avgCriteria.length - 1] ?? { name: 'Grammatical Range', avg: null };
+
+  // Criterion trend cards
+  const criterionCards = [
+    { label: "Task Response",   field: "response" },
+    { label: "Lexical Resource",field: "vocabulary" },
+    { label: "Coherence",       field: "coherence" },
+    { label: "Grammatical",     field: "grammar" },
+  ].map(c => {
+    const vals = chartData.map(d => d[c.field]).filter(v => v != null);
+    const first  = vals.length > 0 ? parseFloat(vals[0]).toFixed(1) : null;
+    const latest = vals.length > 0 ? parseFloat(vals[vals.length - 1]).toFixed(1) : null;
+    const growth = (first && latest) ? (parseFloat(latest) - parseFloat(first)).toFixed(1) : null;
+    return { label: c.label, first: first ?? '—', latest: latest ?? '—', growth: growth != null ? (parseFloat(growth) >= 0 ? `+${growth}` : growth) : '—', positive: growth != null ? parseFloat(growth) >= 0 : true };
+  });
+
+  // Mistake frequency stats
+  const totalInstances = frequentErrors.reduce((s, e) => s + (e.count || 0), 0);
+  const uniqueTypes    = frequentErrors.length;
 
   const handleExport = () => {
     window.print();
@@ -144,11 +196,11 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <div className="p-8 space-y-10 flex-1">
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Exam Completed</p>
-                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>11</p>
+                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{loading ? '…' : examCount}</p>
                   </div>
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Study Period</p>
-                    <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Feb 22_ Mar 6' 2026</p>
+                    <p className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{loading ? '…' : studyPeriod}</p>
                   </div>
                 </div>
               </div>
@@ -160,15 +212,15 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 </div>
                 <div className="p-8 space-y-10 flex-1">
                   <div className="space-y-2">
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>On the Rise</p>
+                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{trendLabel}</p>
                     <p className="text-[16px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Overall improvements: +1.5 from first to latest attempt.
+                      {trendDetail}
                     </p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Top Priority Fixes</p>
                     <p className="text-[14.5px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Focus heavily on reducing: Repetition of basic lexis, imprecise word choice, ideas underdeveloped.
+                      {topPriorityText}
                     </p>
                   </div>
                 </div>
@@ -185,8 +237,9 @@ const PerformanceOverviewPage = ({ onBack }) => {
                       <TrendingUp className="text-[#30C3A9]" size={20} strokeWidth={2.5} />
                     </div>
                     <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#30C3A9]">Coherence & cohesion:</span> <span className="font-bold text-[#101828]">currently 7.0</span><br />
-                      <span className="font-bold text-[#101828]">(Keep this stable while you lift your<br className="sm:hidden" /> weakest areas).</span>
+                      <span className="font-bold text-[#30C3A9]">{strongestCrit.name}:</span>{' '}
+                      <span className="font-bold text-[#101828]">{strongestCrit.avg != null ? `currently ${strongestCrit.avg.toFixed(1)}` : 'Complete exams to see data'}</span><br />
+                      <span className="font-bold text-[#101828]">(Keep this stable while you lift your weakest areas).</span>
                     </p>
                   </div>
                   <div className="px-6 py-5 bg-[#FFF7F7] rounded-[16px] border border-[#FEEDED] flex items-center gap-5">
@@ -194,8 +247,9 @@ const PerformanceOverviewPage = ({ onBack }) => {
                       <TrendingDown className="text-[#EA4335]" size={20} strokeWidth={2.5} />
                     </div>
                     <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#EA4335]">Grammatical Range:</span> <span className="font-bold text-[#101828]">currently 5.5</span><br />
-                      <span className="font-bold text-[#101828]">(This is your primary bottleneck,<br className="sm:hidden" /> focus here).</span>
+                      <span className="font-bold text-[#EA4335]">{bottleneckCrit.name}:</span>{' '}
+                      <span className="font-bold text-[#101828]">{bottleneckCrit.avg != null ? `currently ${bottleneckCrit.avg.toFixed(1)}` : 'Complete exams to see data'}</span><br />
+                      <span className="font-bold text-[#101828]">(This is your primary bottleneck, focus here).</span>
                     </p>
                   </div>
                 </div>
@@ -267,31 +321,27 @@ const PerformanceOverviewPage = ({ onBack }) => {
                   {/* Stats Bar */}
                   <div className="bg-[#F9FAFB] rounded-[12px] p-3 flex items-center justify-between mb-4">
                     <span className="text-[14px] font-semibold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Total Instances: <span className="text-[#101828] font-bold">89</span>
+                      Total Instances: <span className="text-[#101828] font-bold">{totalInstances}</span>
                     </span>
                     <span className="text-[14px] font-semibold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Unique Types: <span className="text-[#101828] font-bold">28</span>
+                      Unique Types: <span className="text-[#101828] font-bold">{uniqueTypes}</span>
                     </span>
                   </div>
 
                   {/* Mistake Rows */}
                   <div className="space-y-0 flex-1">
-                    {[
-                      { label: "Repetition of Basic Lexis", count: "58", type: "red" },
-                      { label: "Imprecise Word Choice", count: "44", type: "red" },
-                      { label: "Ideas Underdeveloped", count: "27", type: "yellow" },
-                      { label: "Unclear Referencing", count: "26", type: "yellow" },
-                      { label: "Logical Progression Gap", count: "11", type: "gray" },
-                      { label: "Imprecise Word Choice", count: "44", type: "red" }
-                    ].map((item, index) => {
+                    {frequentErrors.length === 0 ? (
+                      <p className="text-[13px] text-gray-400 py-4">No error data yet. Complete more exams.</p>
+                    ) : frequentErrors.slice(0, 6).map((item, index, arr) => {
+                      const type = item.type === 'red' ? 'red' : item.type === 'yellow' ? 'yellow' : 'gray';
                       const colors = {
-                        red: "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
+                        red:    "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
                         yellow: "text-[#DC6803] bg-[#FFFAEB] border-[#FEC84B]",
-                        gray: "text-[#344054] bg-[#F2F4F7] border-[#D0D5DD]"
+                        gray:   "text-[#344054] bg-[#F2F4F7] border-[#D0D5DD]"
                       };
                       return (
-                        <div key={index} className={`flex items-center justify-between py-3 ${index !== 5 ? 'border-b border-[#F2F4F7]' : ''}`}>
-                          <span className={`px-4 py-1.5 rounded-full border text-[13px] font-bold ${colors[item.type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        <div key={index} className={`flex items-center justify-between py-3 ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
+                          <span className={`px-4 py-1.5 rounded-full border text-[13px] font-bold ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
                             {item.label}
                           </span>
                           <span className="px-4 py-1.5 bg-[#1018280D] rounded-full text-[13px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
@@ -313,10 +363,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Col 1: Task Response & Lexical Resource */}
               <div className="space-y-8">
-                {[
-                  { label: "Task Response", first: "6.0", latest: "7.0", growth: "+1.0" },
-                  { label: "Lexical Resource", first: "5.0", latest: "7.0", growth: "+2.0" }
-                ].map(item => (
+                {criterionCards.slice(0, 2).map(item => (
                   <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                     <div className="px-8 py-5 border-b border-[#F2F4F7]">
                       <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
@@ -332,7 +379,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
                       </div>
                       <div className="flex items-center justify-between py-1">
                         <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Growth</span>
-                        <div className="bg-[#F0FDF9] text-[#30C3A9] px-4 py-1.5 rounded-full text-[13px] font-bold border border-[#30C3A94D]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        <div className={`px-4 py-1.5 rounded-full text-[13px] font-bold border ${item.positive ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A94D]' : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
                           {item.growth}
                         </div>
                       </div>
@@ -343,10 +390,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
 
               {/* Col 2: Coherence & Grammatical */}
               <div className="space-y-8">
-                {[
-                  { label: "Coherence", first: "5.5", latest: "7.0", growth: "+1.5" },
-                  { label: "Grammatical", first: "5.0", latest: "6.5", growth: "+1.5" }
-                ].map(item => (
+                {criterionCards.slice(2, 4).map(item => (
                   <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                     <div className="px-8 py-5 border-b border-[#F2F4F7]">
                       <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
@@ -362,7 +406,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
                       </div>
                       <div className="flex items-center justify-between py-1">
                         <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Growth</span>
-                        <div className="bg-[#F0FDF9] text-[#30C3A9] px-4 py-1.5 rounded-full text-[13px] font-bold border border-[#30C3A980]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        <div className={`px-4 py-1.5 rounded-full text-[13px] font-bold border ${item.positive ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A980]' : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
                           {item.growth}
                         </div>
                       </div>
@@ -376,29 +420,23 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <div className="px-6 py-4 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>High-Impact Areas to Fix</h3>
                 </div>
-                
+
                 <div className="px-6 pt-0 pb-5 flex-1 flex flex-col">
-                  {/* Impact Rows */}
                   <div className="space-y-0 flex-1">
-                    {[
-                      { label: "Repetition of basic lexis", impact: "High Impact", type: "red" },
-                      { label: "Imprecise word choice", impact: "High Impact", type: "red" },
-                      { label: "Ideas underdeveloped", impact: "Medium Impact", type: "yellow" },
-                      { label: "Imprecise word choice", impact: "High Impact", type: "red" },
-                      { label: "Imprecise word choice", impact: "High Impact", type: "red" },
-                      { label: "Ideas underdeveloped", impact: "Medium Impact", type: "yellow" },
-                      { label: "Imprecise word choice", impact: "High Impact", type: "red" }
-                    ].map((item, index) => {
+                    {frequentErrors.length === 0 ? (
+                      <p className="text-[14px] text-gray-400 py-4">No data yet.</p>
+                    ) : frequentErrors.slice(0, 7).map((item, index, arr) => {
+                      const type = item.type === 'red' ? 'red' : 'yellow';
                       const colors = {
-                        red: "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
+                        red:    "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
                         yellow: "text-[#DC6803] bg-[#FFFAEB] border-[#FEC84B]"
                       };
                       return (
-                        <div key={index} className={`flex items-center justify-between ${index === 6 ? 'pt-3 pb-1' : 'py-3'} ${index !== 6 ? 'border-b border-[#F2F4F7]' : ''}`}>
+                        <div key={index} className={`flex items-center justify-between ${index === arr.length - 1 ? 'pt-3 pb-1' : 'py-3'} ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
                           <span className="text-[16px] font-bold text-[#344054]" style={{ fontFamily: "'Nunito', sans-serif" }}>
                             {item.label}
                           </span>
-                          <span className={`px-4 py-1.5 rounded-full border text-[14px] font-bold ${colors[item.type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          <span className={`px-4 py-1.5 rounded-full border text-[14px] font-bold ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
                             {item.impact}
                           </span>
                         </div>
@@ -422,14 +460,14 @@ const PerformanceOverviewPage = ({ onBack }) => {
                   <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Total Growth</h4>
                   <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Since First Attempt</p>
                 </div>
-                <span className="text-[20px] font-bold text-[#00C9B1]">+1.5</span>
+                <span className="text-[20px] font-bold text-[#00C9B1]">{bandChange != null ? (parseFloat(bandChange) >= 0 ? `+${bandChange}` : bandChange) : '—'}</span>
               </div>
               <div className="bg-[#F8FAFC] rounded-[12px] p-6 flex items-center justify-between border border-gray-50/50">
                 <div className="space-y-1">
                   <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Current Status</h4>
                   <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Overall Band Score</p>
                 </div>
-                <span className="text-[20px] font-bold text-[#00C9B1]">7.0</span>
+                <span className="text-[20px] font-bold text-[#00C9B1]">{latestBand ?? '—'}</span>
               </div>
             </div>
 
@@ -439,10 +477,12 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <h3 className="text-[16px] font-bold text-[#101828]">Tutor's Verdict</h3>
                 <p className="text-[16px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Personalized assessment</p>
               </div>
-              
+
               <div className="space-y-8">
-                <p className="text-[15px] font-normal text-[#101828] whitespace-nowrap" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
-                  You have reached on overall band of 7.0, showing an impressive improvement of +1.5 since your first attempt. keep applying the feedback to maintain this upwars momentum.
+                <p className="text-[15px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
+                  {latestBand != null
+                    ? `You have reached an overall band of ${latestBand}${bandChange != null ? `, showing ${parseFloat(bandChange) >= 0 ? 'an improvement' : 'a change'} of ${parseFloat(bandChange) >= 0 ? '+' : ''}${bandChange} since your first attempt` : ''}. Keep applying the feedback to maintain this momentum.`
+                    : 'Complete your first exam to see your personalized verdict.'}
                 </p>
 
                 <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
@@ -475,94 +515,33 @@ const PerformanceOverviewPage = ({ onBack }) => {
               </div>
             </div>
           </div>
-        : activeTab === "Fix Cards" ? 
+        : activeTab === "Fix Cards" ?
           <div className="space-y-8">
-            {/* Errors by Criterion */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-              <div className="px-8 py-5 border-b border-[#F2F4F7]">
-                <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Errors by Criterion</h3>
-              </div>
-              
-              <div className="p-5 space-y-3">
-                {[
-                  { label: "Lexical Resource", count: 153 },
-                  { label: "Coherence & Cohesion", count: 51 },
-                  { label: "Grammatical Range & Accuracy", count: 47 },
-                  { label: "Task Response", count: 38 }
-                ].map((item, index) => (
-                  <div key={index} className="flex items-center justify-between px-6 py-4 bg-white border border-[#E5E7EB] rounded-[12px] hover:border-gray-200 transition-colors">
-                    <span className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</span>
-                    <span className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Top Error Sub-Categories */}
-            {/* Top Error Sub-Categories */}
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
                <div className="px-8 py-5 border-b border-[#F2F4F7]">
-                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Top Error Sub-Categories</h3>
+                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Fix Cards — Priority Errors</h3>
+                 <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Your most frequent error patterns across all submissions.</p>
                </div>
-               
-               <div className="p-6 space-y-3">
-                  {[
-                    { label: "Word Choice", count: "89" },
-                    { label: "Range", count: "58" },
-                    { label: "Accuracy", count: "37" },
-                    { label: "Development", count: "27" },
-                    { label: "Referencing", count: "26" },
-                    { label: "Progression", count: "11" },
-                    { label: "Cohesive Devices", count: "8" },
-                    { label: "Punctuation", count: "6" }
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-8 py-5 bg-white border border-[#E5E7EB] rounded-[12px] hover:border-gray-200 transition-all cursor-pointer group">
-                       <span className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</span>
-                       <span className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.count}</span>
-                    </div>
-                  ))}
-               </div>
-            </div>
-
-            {/* Fix Cards-Priority Errors */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-8 py-5 border-b border-[#F2F4F7]">
-                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Fix Cards-Priority Errors</h3>
-                 <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Click "Details" to view examples & actionable playbook drills.</p>
-               </div>
-
                <div className="p-8 space-y-4">
-                  {[
-                    { title: "Repetition of Basic Lexis", desc: "Mostly affects: Lexical resource", impact: "High Impact", count: "58", colors: "text-[#EA4335] bg-[#EA43351A] text-[14px]" },
-                    { title: "Imprecise Word Choice", desc: "Mostly affects: Lexical resource", impact: "High Impact", count: "44", colors: "text-[#EA4335] bg-[#EA43351A] text-[14px]" },
-                    { title: "Ideas Underdeveloped", desc: "Mostly affects: Lexical resource", impact: "Medium Impact", count: "27", colors: "text-[#F59E0B] bg-[#F59E0B1A] text-[13px]" },
-                    { title: "Unclear Referencing", desc: "Mostly affects: Coherence & cohesion", impact: "Medium Impact", count: "26", colors: "text-[#F59E0B] bg-[#F59E0B1A] text-[13px]" },
-                    { title: "Logical Progression Gap", desc: "Mostly affects: Coherence & cohesion", impact: "Low Impact", count: "11", colors: "text-[#101828] bg-[#1018280D] text-[14px]" },
-                    { title: "Collection Error", desc: "Mostly affects: Lexical resource", impact: "Low Impact", count: "18", colors: "text-[#101828] bg-[#1018280D] text-[14px]" },
-                    { title: "Task Achievement Partial", desc: "Mostly affects: Task response", impact: "Low Impact", count: "5", colors: "text-[#101828] bg-[#1018280D] text-[14px]" },
-                    { title: "Wrong Word Form", desc: "Mostly affects: Lexical resource", impact: "Low Impact", count: "14", colors: "text-[#101828] bg-[#1018280D] text-[14px]" }
-                  ].map((card, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
+                 {frequentErrors.length === 0 ? (
+                   <p className="text-[14px] text-gray-400 text-center py-8">Complete more exams to generate your Fix Cards.</p>
+                 ) : frequentErrors.map((e, idx) => {
+                   const isHigh = e.type === 'red' || e.impact === 'High Impact';
+                   const isMed  = !isHigh && (e.type === 'yellow' || e.impact === 'Medium Impact');
+                   const colors = isHigh ? "text-[#EA4335] bg-[#EA43351A] text-[14px]" : isMed ? "text-[#F59E0B] bg-[#F59E0B1A] text-[13px]" : "text-[#101828] bg-[#1018280D] text-[14px]";
+                   const impact = isHigh ? 'High Impact' : isMed ? 'Medium Impact' : 'Low Impact';
+                   return (
+                     <div key={idx} className="flex items-center justify-between p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
                        <div className="flex-1">
-                          <h4 className="text-[16px] font-bold text-[#101828] mb-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{card.title}</h4>
-                          <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
-                             <span className="font-bold">Mostly affects:</span> {card.desc.split(': ')[1]}
-                          </p>
+                         <h4 className="text-[16px] font-bold text-[#101828] mb-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{e.label}</h4>
                        </div>
-                       
                        <div className="flex items-center gap-6">
-                          <div className={`w-[130px] px-4 py-1.5 rounded-full font-bold ${card.colors} text-center`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
-                             {card.impact}
-                          </div>
-                          <div className="w-[100px] px-4 py-1.5 bg-[#1018280D] rounded-full text-[14px] font-bold text-[#101828] text-center" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
-                             Count: {card.count}
-                          </div>
-                          <button className="px-5 py-2.5 bg-[#2C3E50] text-white rounded-[8px] text-[13px] font-bold hover:bg-[#1D2939] transition-all" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                             Details
-                          </button>
+                         <div className={`w-[130px] px-4 py-1.5 rounded-full font-bold ${colors} text-center`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>{impact}</div>
+                         <div className="w-[100px] px-4 py-1.5 bg-[#1018280D] rounded-full text-[14px] font-bold text-[#101828] text-center" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Count: {e.count}</div>
                        </div>
-                    </div>
-                  ))}
+                     </div>
+                   );
+                 })}
                </div>
             </div>
           </div>
@@ -574,11 +553,11 @@ const PerformanceOverviewPage = ({ onBack }) => {
             <div className="grid grid-cols-2 gap-6">
               <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[12px] p-6">
                 <span className="text-[14px] font-bold text-[#00C9B1] block mb-2">Strongest Area</span>
-                <p className="text-[16px] font-medium text-[#101828]">Coherence & cohesion</p>
+                <p className="text-[16px] font-medium text-[#101828]">{strongestCrit.name}</p>
               </div>
               <div className="bg-[#FFF5F5] border border-[#FED7D7] rounded-[12px] p-6">
                 <span className="text-[14px] font-bold text-[#EA4335] block mb-2">Primary Bottleneck</span>
-                <p className="text-[16px] font-medium text-[#101828]">Grammatical range & accuracy</p>
+                <p className="text-[16px] font-medium text-[#101828]">{bottleneckCrit.name}</p>
               </div>
             </div>
 

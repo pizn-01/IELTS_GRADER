@@ -88,21 +88,14 @@ function DashboardApp() {
         examType={examConfig.type}
         taskType={examConfig.task}
         onExit={async (targetView, data) => {
+          // MockExam already submitted and polled until 'graded' — just fetch the report.
           let finalData = data;
-          if (data) {
+          if (data?.submissionId) {
             try {
-              const attemptResponse = await api.submitAttempt({
-                exam_type: examConfig.type || 'Academic',
-                task_type: examConfig.task || 'Task 2',
-                essay_content: data.essay || '',
-                time_spent_seconds: 2400
-              });
-              const finalReport = await api.getReport(attemptResponse.submission_id);
-              finalData = { ...data, ...finalReport };
-              setReportData(finalData);
+              const report = await api.getReport(data.submissionId);
+              finalData = { ...data, ...report };
             } catch (err) {
-              console.warn('Submission offline fallback.', err);
-              setReportData(data);
+              console.warn('Report fetch failed, navigating with partial data.', err);
             }
           }
           if (targetView === 'report') {
@@ -168,7 +161,7 @@ function DashboardApp() {
           }}
           onAnalysisComplete={() => {
             setShowModal(false);
-            navigate('/report');
+            navigate('/reports');
           }}
         />
       </div>

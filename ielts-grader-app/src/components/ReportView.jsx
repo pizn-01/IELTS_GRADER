@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut, Info } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const ReportView = ({ onBack, data, showHeader = false }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -31,6 +32,19 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
+
+  const { user } = useAuth();
+  const userInitials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+  const userName = user?.full_name || 'User';
+  const userEmail = user?.email || '';
+  const creditsRem = user?.credits_remaining ?? 0;
+  const creditsMax = 5;
+  const creditsOffset = creditsMax > 0 ? (75.4 * (1 - creditsRem / creditsMax)).toFixed(2) : 75.4;
+  const reportDate = data?.created_at
+    ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : '';
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -125,30 +139,13 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               <div className="bg-[#DDF2FF] rounded-full px-4 py-1.5 flex items-center gap-3 text-left">
                 <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="14"
-                      cy="14"
-                      r="12"
-                      stroke="#C7E3F9"
-                      strokeWidth="2.5"
-                      fill="transparent"
-                    />
-                    <circle
-                      cx="14"
-                      cy="14"
-                      r="12"
-                      stroke="#1A96F3"
-                      strokeWidth="2.5"
-                      strokeDasharray="75.4"
-                      strokeDashoffset="30.16"
-                      strokeLinecap="round"
-                      fill="transparent"
-                    />
+                    <circle cx="14" cy="14" r="12" stroke="#C7E3F9" strokeWidth="2.5" fill="transparent" />
+                    <circle cx="14" cy="14" r="12" stroke="#1A96F3" strokeWidth="2.5" strokeDasharray="75.4" strokeDashoffset={creditsOffset} strokeLinecap="round" fill="transparent" />
                   </svg>
                 </div>
                 <div className="flex flex-col leading-tight">
                   <span className="text-[12px] font-semibold text-[#101828]">Weekly Sprint</span>
-                  <span className="text-[12px] font-bold text-[#101828]">Credits: 3/5 Remaining</span>
+                  <span className="text-[12px] font-bold text-[#101828]">Credits: {creditsRem}/{creditsMax} Remaining</span>
                 </div>
               </div>
 
@@ -161,7 +158,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="w-10 h-10 bg-[#0F172A] text-white rounded-[12px] flex items-center justify-center text-[14px] font-bold shadow-sm overflow-hidden hover:opacity-90 transition-all leading-none"
                 >
-                  <span className="translate-y-[0.5px]">JD</span>
+                  <span className="translate-y-[0.5px]">{userInitials}</span>
                 </button>
 
                 {/* Profile Dropdown */}
@@ -173,11 +170,11 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                     {/* User Info Section */}
                     <div className="px-6 py-5 flex items-center gap-4">
                       <div className="w-14 h-14 bg-[#2C3E50] rounded-full flex items-center justify-center text-white text-[18px] font-bold overflow-hidden shrink-0 leading-none">
-                        <span className="translate-y-[1px]">JD</span>
+                        <span className="translate-y-[1px]">{userInitials}</span>
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[16px] font-bold text-[#101828] truncate">John Doe</span>
-                        <span className="text-[14px] text-gray-400 truncate">johndoe@gmail.com</span>
+                        <span className="text-[16px] font-bold text-[#101828] truncate">{userName}</span>
+                        <span className="text-[14px] text-gray-400 truncate">{userEmail}</span>
                       </div>
                     </div>
 
@@ -237,7 +234,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               <div className="flex items-center">
                 <h1 className="text-[20px] font-bold text-[#101828] leading-none">{taskTitle}</h1>
                 <span className="text-[#101828] opacity-30 font-normal mx-2 text-[20px] leading-none">.</span>
-                <h1 className="text-[20px] font-bold text-[#101828] leading-none">Mar 23, 2026</h1>
+                <h1 className="text-[20px] font-bold text-[#101828] leading-none">{reportDate}</h1>
               </div>
             </div>
 
@@ -249,7 +246,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               >
                 View Exam
               </button>
-              <button className="bg-[#1a1f36] text-white rounded-[8px] px-[18px] py-[8px] text-[14px] font-semibold hover:bg-[#2d3a4a] transition-all border-none">
+              <button
+                onClick={() => window.print()}
+                className="bg-[#1a1f36] text-white rounded-[8px] px-[18px] py-[8px] text-[14px] font-semibold hover:bg-[#2d3a4a] transition-all border-none"
+              >
                 Export Report
               </button>
             </div>
@@ -258,7 +258,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           {/* Subtitle Row */}
           <div className="mb-[16px] flex items-center gap-1">
             <span className="text-[13px] font-semibold text-[#101828]">Overall Band Score</span>
-            <span className="text-[13px] font-semibold text-[#101828]">{data?.overall_band ?? 7.0}</span>
+            <span className="text-[13px] font-semibold text-[#101828]">{data?.overall_band ?? '—'}</span>
           </div>
 
           {/* Tab Bar Navigation */}
@@ -296,30 +296,34 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         <div className="relative w-[130px] h-[130px] flex items-center justify-center">
                           <svg className="w-full h-full transform -rotate-90">
                             <circle cx="65" cy="65" r="58" stroke="#F0F7FF" strokeWidth="10" fill="transparent" />
-                            <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset={364.42 * (1 - ((data?.overall_band ?? 6.5) - 1) / 8)} strokeLinecap="round" />
+                            <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset={data?.overall_band != null ? 364.42 * (1 - (parseFloat(data.overall_band) - 1) / 8) : 364.42} strokeLinecap="round" />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[42px] font-bold text-[#1A96F3] tracking-tight">{data?.overall_band ?? 6.5}</span></div>
+                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[42px] font-bold text-[#1A96F3] tracking-tight">{data?.overall_band ?? '—'}</span></div>
                         </div>
                         <span className="text-[14px] font-bold text-[#101828] whitespace-nowrap mt-4">Overall Band Score</span>
                       </div>
                     </div>
                     <div className="flex-1 space-y-6 pl-8 pr-12">
                       {[
-                        { label: "Task Response", score: data?.response_band ?? 5.5, color: (data?.response_band ?? 5.5) >= 7 ? "#00C9B1" : (data?.response_band ?? 5.5) >= 5.5 ? "#FF9F00" : "#EF4444" },
-                        { label: "Coherence & Cohesion", score: data?.coherence_band ?? 7.0, color: (data?.coherence_band ?? 7.0) >= 7 ? "#00C9B1" : (data?.coherence_band ?? 7.0) >= 5.5 ? "#FF9F00" : "#EF4444" },
-                        { label: "Lexical Resource", score: data?.vocabulary_band ?? 6.5, color: (data?.vocabulary_band ?? 6.5) >= 7 ? "#00C9B1" : (data?.vocabulary_band ?? 6.5) >= 5.5 ? "#FF9F00" : "#EF4444" },
-                        { label: "Grammatical Range & Accuracy", score: data?.grammar_band ?? 6.5, color: (data?.grammar_band ?? 6.5) >= 7 ? "#00C9B1" : (data?.grammar_band ?? 6.5) >= 5.5 ? "#FF9F00" : "#EF4444" }
-                      ].map((item, idx) => (
+                        { label: "Task Response", score: data?.response_band },
+                        { label: "Coherence & Cohesion", score: data?.coherence_band },
+                        { label: "Lexical Resource", score: data?.vocabulary_band },
+                        { label: "Grammatical Range & Accuracy", score: data?.grammar_band },
+                      ].map((item, idx) => {
+                        const val = item.score != null ? parseFloat(item.score) : null;
+                        const color = val == null ? "#D1D5DB" : val >= 7 ? "#00C9B1" : val >= 5.5 ? "#FF9F00" : "#EF4444";
+                        return (
                         <div key={idx} className="flex items-center justify-between w-full">
                           <span className="text-[14px] text-[#101828] font-bold">{item.label}</span>
                           <div className="flex items-center gap-4">
-                            <span className="text-[14px] text-[#101828] font-normal w-8 text-right">{item.score}</span>
+                            <span className="text-[14px] text-[#101828] font-normal w-8 text-right">{val ?? '—'}</span>
                             <div className="h-[10px] w-[280px] bg-[#F3F4F6] rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${((item.score - 1) / 8) * 100}%`, backgroundColor: item.color }}></div>
+                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: val != null ? `${((val - 1) / 8) * 100}%` : '0%', backgroundColor: color }}></div>
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -341,23 +345,37 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                       <div className="text-center text-[#101828]">Low</div>
                     </div>
                     <div className="divide-y divide-gray-100">
-                      {[
-                        { name: "Task Response", base: "5", ceiling: "5.5", final: "5.5", color: "#F59E0B", major: "8", high: "5", med: "-", low: "-" },
-                        { name: "Coherence & Cohesion", base: "8", ceiling: "7", final: "7", color: "#10B981", major: "-", high: "-", med: "2", low: "-" },
-                        { name: "Lexical Resource", base: "6.5", ceiling: "6.5", final: "6.5", color: "#10B981", major: "-", high: "3", med: "6", low: "2" },
-                        { name: "Grammatical Range & Accuracy", base: "7", ceiling: "6.5", final: "6.5", color: "#10B981", major: "-", high: "1", med: "-", low: "-" }
-                      ].map((row, i) => (
-                        <div key={i} className="px-8 py-3 grid grid-cols-[2fr,repeat(7,1fr)] items-center text-[14px] hover:bg-gray-50 transition-colors">
-                          <div className="text-[#101828] font-medium whitespace-nowrap">{row.name}</div>
-                          <div className="text-center text-[#101828] font-medium">{row.base}</div>
-                          <div className="text-center text-[#101828] font-medium">{row.ceiling}</div>
-                          <div className="text-center font-medium" style={{ color: row.color }}>{row.final}</div>
-                          <div className="text-center text-[#101828] font-medium">{row.major === "-" ? <span className="opacity-40">-</span> : row.major}</div>
-                          <div className="text-center text-[#101828] font-medium">{row.high === "-" ? <span className="opacity-40">-</span> : row.high}</div>
-                          <div className="text-center text-[#101828] font-medium">{row.med === "-" ? <span className="opacity-40">-</span> : row.med}</div>
-                          <div className="text-center text-[#101828] font-medium">{row.low === "-" ? <span className="opacity-40">-</span> : row.low}</div>
-                        </div>
-                      ))}
+                      {(() => {
+                        const errs = data?.errors || [];
+                        const fmtCount = (n) => n > 0 ? n : '-';
+                        return [
+                          { name: "Task Response", band: data?.response_band, key: "Task Response" },
+                          { name: "Coherence & Cohesion", band: data?.coherence_band, key: "Coherence & Cohesion" },
+                          { name: "Lexical Resource", band: data?.vocabulary_band, key: "Lexical Resource" },
+                          { name: "Grammatical Range & Accuracy", band: data?.grammar_band, key: "Grammatical Range & Accuracy" },
+                        ].map((row, i) => {
+                          const b = row.band != null ? parseFloat(row.band) : null;
+                          const final = b != null ? b.toFixed(1) : '—';
+                          const color = b == null ? '#9CA3AF' : b >= 7 ? '#10B981' : b >= 5.5 ? '#F59E0B' : '#EF4444';
+                          const critErrs = errs.filter(e => e.criteria === row.key);
+                          const major = fmtCount(critErrs.filter(e => e.severity === 'Major').length);
+                          const high  = fmtCount(critErrs.filter(e => e.severity === 'High').length);
+                          const med   = fmtCount(critErrs.filter(e => e.severity === 'Medium').length);
+                          const low   = fmtCount(critErrs.filter(e => e.severity === 'Low').length);
+                          return (
+                            <div key={i} className="px-8 py-3 grid grid-cols-[2fr,repeat(7,1fr)] items-center text-[14px] hover:bg-gray-50 transition-colors">
+                              <div className="text-[#101828] font-medium whitespace-nowrap">{row.name}</div>
+                              <div className="text-center text-[#101828] font-medium">{final}</div>
+                              <div className="text-center text-[#101828] font-medium">{final}</div>
+                              <div className="text-center font-medium" style={{ color }}>{final}</div>
+                              <div className="text-center text-[#101828] font-medium">{major === '-' ? <span className="opacity-40">-</span> : major}</div>
+                              <div className="text-center text-[#101828] font-medium">{high  === '-' ? <span className="opacity-40">-</span> : high}</div>
+                              <div className="text-center text-[#101828] font-medium">{med   === '-' ? <span className="opacity-40">-</span> : med}</div>
+                              <div className="text-center text-[#101828] font-medium">{low   === '-' ? <span className="opacity-40">-</span> : low}</div>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -380,67 +398,57 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </div>
 
                 <div className="space-y-4">
-                  {[
-                    {
-                      id: "taskResponse",
-                      title: "Task Response",
-                      band: "7",
-                      items: [
-                        { label: "Coverage", score: "4.0", text: "Both views and the writer's opinion are addressed, as demonstrated by some people think that AI will replace most human workers... others believe that AI will actually create new kinds of jobs,", style: "bg-[#FFF5F5] text-[#EA4335] border-[#EA4335]" },
-                        { label: "Position", score: "5.0", text: "Opinion is clear and maintained throughout, as demonstrated by In my opinion, although AI may remove some jobs, it will also create new opportunities for workers.", style: "bg-[#FFF7ED] text-[#F59E0B] border-[#F59E0B]" },
-                        { label: "Development", score: "5.0", text: 'While examples are given for both sides, some points lack detailed explanation or specific examples for example, For example, in factories many robots already do the work that workers used to do before. 4 issues detected: "do not need rest, salary" -> "do not need rest, salaries,"; "it can cause economic problems" -> "this can cause economic problems".', style: "bg-[#FFF7ED] text-[#F59E0B] border-[#F59E0B]" },
-                        { label: "Relevance", score: "6.0", text: "All content is focused on the prompt, as demonstrated by Furthermore, AI can help workers do their job more efficiently instead of fully replacing them.", style: "bg-[#E6FFFA] text-[#00C9B1] border-[#00C9B1]" },
-                        { label: "Conclusion", score: "7.0", text: "Conclusion summarises both views and the opinion, as demonstrated by In conclusion, although artificial intelligence may cause some unemployment in certain sectors, it can also generate new job opportunities and improve productivity.", style: "bg-[#E6FFFA] text-[#00C9B1] border-[#00C9B1]" }
-                      ]
-                    },
-                    {
-                      id: "coherenceCohesion",
-                      title: "Coherence & Cohesion",
-                      band: "7.0",
-                      items: []
-                    },
-                    {
-                      id: "lexicalResource",
-                      title: "Lexical Resource",
-                      band: "6.5",
-                      items: []
-                    },
-                    {
-                      id: "grammaticalRange",
-                      title: "Grammatical Range & Accuracy",
-                      band: "6.5",
-                      items: []
-                    }
-                  ].map((section, idx) => {
-                    const isExpanded = expandedSections[section.id];
-                    return (
-                      <div key={idx} className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
-                        <div 
-                          className="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                          onClick={() => toggleSection(section.id)}
-                        >
-                          <div className="flex items-center gap-4">
-                            <span className="text-[16px] font-bold text-[#101828]">{section.title}</span>
-                            <span className="inline-flex items-center justify-center bg-[#E6FFFA] text-[#00C9B1] border border-[#B2F5EA] text-[12px] font-bold px-4 py-1.5 rounded-full uppercase leading-none">Band {section.band}</span>
+                  {(() => {
+                    const allErrors = data?.errors || [];
+                    const sections = [
+                      { id: "taskResponse",    title: "Task Response",                  band: data?.response_band,  key: "Task Response" },
+                      { id: "coherenceCohesion", title: "Coherence & Cohesion",         band: data?.coherence_band, key: "Coherence & Cohesion" },
+                      { id: "lexicalResource", title: "Lexical Resource",               band: data?.vocabulary_band,key: "Lexical Resource" },
+                      { id: "grammaticalRange",title: "Grammatical Range & Accuracy",   band: data?.grammar_band,   key: "Grammatical Range & Accuracy" },
+                    ];
+                    return sections.map((section, idx) => {
+                      const bandVal = section.band != null ? parseFloat(section.band) : null;
+                      const bandStr = bandVal != null ? bandVal.toFixed(1) : '—';
+                      const isExpanded = expandedSections[section.id];
+                      const critErrors = allErrors.filter(e => e.criteria === section.key).slice(0, 6);
+                      return (
+                        <div key={idx} className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
+                          <div
+                            className="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => toggleSection(section.id)}
+                          >
+                            <div className="flex items-center gap-4">
+                              <span className="text-[16px] font-bold text-[#101828]">{section.title}</span>
+                              <span className="inline-flex items-center justify-center bg-[#E6FFFA] text-[#00C9B1] border border-[#B2F5EA] text-[12px] font-bold px-4 py-1.5 rounded-full uppercase leading-none">Band {bandStr}</span>
+                            </div>
+                            <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
                           </div>
-                          <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                          {isExpanded && (
+                            <div className="border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                              {critErrors.length === 0 ? (
+                                <div className="px-8 py-5 text-[13px] text-gray-400">No errors detected in this category.</div>
+                              ) : critErrors.map((err, i) => {
+                                const sevStyle = err.severity === 'Major'
+                                  ? "bg-[#FFF5F5] text-[#EA4335] border-[#EA4335]"
+                                  : err.severity === 'High'
+                                  ? "bg-[#FFF7ED] text-[#F59E0B] border-[#F59E0B]"
+                                  : "bg-[#E6FFFA] text-[#00C9B1] border-[#00C9B1]";
+                                return (
+                                  <div key={i} className="px-8 py-5 border-b border-gray-100 last:border-0">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <span className="text-[14px] font-normal text-[#101828]">{err.sub_category || err.title}</span>
+                                      <span className={`${sevStyle} inline-flex items-center justify-center border-[1px] text-[12px] font-medium px-2.5 py-0.5 rounded-full uppercase leading-none`}>{err.severity}</span>
+                                    </div>
+                                    <p className="text-[13px] text-[#101828] leading-relaxed font-normal">{err.explanation}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                        {isExpanded && (
-                          <div className="border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                            {section.items.map((item, i) => (
-                              <div key={i} className="px-8 py-5 border-b border-gray-100 last:border-0">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <span className="text-[14px] font-normal text-[#101828]">{item.label}</span>
-                                  <span className={`${item.style} inline-flex items-center justify-center border-[1px] text-[12px] font-medium px-2.5 py-0.5 rounded-full uppercase leading-none`}>BAND {item.score}</span>
-                                </div>
-                                <p className="text-[13px] text-[#101828] leading-relaxed font-normal">{item.text}</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>
