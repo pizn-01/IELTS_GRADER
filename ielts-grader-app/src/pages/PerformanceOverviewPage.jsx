@@ -7,7 +7,8 @@ import { api } from '../services/api';
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
-  const [activeTask, setActiveTask] = useState("Academic Task 1");
+  // '' = All Tasks (no filter); specific value = filtered by that task type
+  const [activeTask, setActiveTask] = useState('');
   const [activeTab, setActiveTab] = useState("Overview");
   const [chartData, setChartData] = useState([]);
   const [frequentErrors, setFrequentErrors] = useState([]);
@@ -15,15 +16,22 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    const analyticsArgs = activeTask ? { taskType: activeTask } : undefined;
+    const submissionsArgs = activeTask ? { limit: 100, taskType: activeTask } : { limit: 100 };
     Promise.all([
-      api.getDashboardAnalytics(),
-      api.getSubmissions({ limit: 100 }),
+      api.getDashboardAnalytics(analyticsArgs),
+      api.getSubmissions(submissionsArgs),
     ]).then(([analytics, subRes]) => {
       setChartData(analytics.chartData || []);
       setFrequentErrors((analytics.frequentErrors || []).slice().sort((a, b) => b.count - a.count));
       setSubmissions((subRes.data || []).filter(s => s.status === 'graded'));
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+    }).catch(() => {
+      setChartData([]);
+      setFrequentErrors([]);
+      setSubmissions([]);
+    }).finally(() => setLoading(false));
+  }, [activeTask]);
 
   // Derived stats from real chart data
   const overallScores = chartData.map(d => d.overall).filter(Boolean);
@@ -83,31 +91,66 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const totalInstances = frequentErrors.reduce((s, e) => s + (e.count || 0), 0);
   const uniqueTypes    = frequentErrors.length;
 
-  const handleExport = () => {
-    window.print();
+  const [taskDropdownOpen, setTaskDropdownOpen] = useState(false);
+  const TASK_OPTIONS = ['', 'Academic Task 1', 'Academic Task 2', 'General Task 1', 'General Task 2'];
+  const TASK_LABELS  = { '': 'All Tasks', 'Academic Task 1': 'Academic Task 1', 'Academic Task 2': 'Academic Task 2', 'General Task 1': 'General Task 1', 'General Task 2': 'General Task 2' };
+
+  const handleExport = () => { window.print(); };
+
+  // Reset sub-tab when task type changes (Task 1 / Task 2 have different sub-tabs)
+  const handleTaskChange = (task) => {
+    setActiveTask(task);
+    setActiveTab("Overview");
+    setTaskDropdownOpen(false);
   };
 
+  const isTask2 = activeTask.includes("Task 2");
+  const subTabs = isTask2
+    ? ["Overview", "Error Analysis", "Dual Assessment", "Model Answer", "Vocabulary", "Grammar", "Data Structure", "Flow & Logic"]
+    : ["Overview", "Detailed Breakdown", "Fix Cards", "Strategy", "14-Day sprint", "Templates & Pattern"];
+
   return (
-    <div className="-mx-4 md:-mx-8">
+    <div className="w-full">
       <div className="relative overflow-hidden bg-white border-b border-gray-100">
-        {/* Exact Linear Gradient from gr.png */}
+        {/* Gradient background */}
         <div className="absolute inset-0 pointer-events-none" style={{
           background: 'linear-gradient(90deg, #E0F2FE 0%, #FCE7F3 40%, #FCE7F3 60%, #CFFAFE 100%)',
           opacity: 0.8
         }}></div>
-        
+
         <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-12 relative z-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => onBack ? onBack() : navigate(-1)}
+              <button
+                onClick={() => onBack ? onBack() : navigate('/reports')}
                 className="w-6 h-6 rounded-full border border-[#101828] flex items-center justify-center text-[#101828] hover:bg-black/5 transition-all bg-transparent"
               >
                 <ArrowLeft size={14} strokeWidth={2} />
               </button>
-              <div className="flex items-center gap-2 cursor-pointer group">
-                <h1 className="text-[22px] md:text-[24px] font-bold text-[#101828] tracking-tight">{activeTask}</h1>
-                <ChevronDown size={22} className="text-[#101828] mt-0.5" />
+              {/* Task type dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setTaskDropdownOpen(o => !o)}
+                  className="flex items-center gap-2 cursor-pointer group"
+                >
+                  <h1 className="text-[22px] md:text-[24px] font-bold text-[#101828] tracking-tight">
+                    {TASK_LABELS[activeTask]}
+                  </h1>
+                  <ChevronDown size={22} className={`text-[#101828] mt-0.5 transition-transform ${taskDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {taskDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-[14px] border border-gray-100 shadow-xl z-50 py-1 min-w-[200px]">
+                    {TASK_OPTIONS.map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => handleTaskChange(opt)}
+                        className={`w-full text-left px-5 py-3 text-[14px] font-medium hover:bg-gray-50 transition-colors ${activeTask === opt ? 'text-[#1A96F3] font-bold' : 'text-[#101828]'}`}
+                      >
+                        {TASK_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <button onClick={handleExport} className="w-full md:w-auto px-6 h-[42px] bg-[#344054] text-white rounded-[8px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
@@ -116,13 +159,10 @@ const PerformanceOverviewPage = ({ onBack }) => {
           </div>
 
           {/* Sub Navigation */}
-          <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-            {(activeTask.includes("Task 2") 
-              ? ["Overview", "Error Analysis", "Dual Assessment", "Model Answer", "Vocabulary", "Grammar", "Data Structure", "Flow & Logic"]
-              : ["Overview", "Detailed Breakdown", "Fix Cards", "Strategy", "14-Day sprint", "Templates & Pattern"]
-            ).map((tab) => (
-              <div 
-                key={tab} 
+          <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar">
+            {subTabs.map((tab) => (
+              <div
+                key={tab}
                 className="relative py-4 cursor-pointer group whitespace-nowrap"
                 onClick={() => setActiveTab(tab)}
               >
@@ -130,9 +170,9 @@ const PerformanceOverviewPage = ({ onBack }) => {
                   {tab}
                 </span>
                 {activeTab === tab && (
-                  <motion.div 
+                  <motion.div
                     layoutId="activeTabUnderlinePerformance"
-                    className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1A96F3] rounded-t-full" 
+                    className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1A96F3] rounded-t-full"
                   />
                 )}
               </div>
@@ -263,35 +303,43 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <h3 className="text-[18px] font-bold text-[#101828] mb-10">Skill Growth</h3>
                 
                 <div className="h-[320px] w-full mb-8">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#101828', fontSize: 12, fontWeight: 700 }}
-                        dy={10}
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#101828', fontSize: 12, fontWeight: 700 }}
-                        domain={[5.5, 9]}
-                        ticks={[5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0]}
-                        tickFormatter={(value) => value.toFixed(1)}
-                      />
-                      <Tooltip 
-                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: 700 }}
-                      />
-                      <Line type="monotone" dataKey="overall" stroke="#EA4335" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
-                      <Line type="monotone" dataKey="response" stroke="#F59E0B" strokeWidth={3} dot={false} />
-                      <Line type="monotone" dataKey="coherence" stroke="#00C9B1" strokeWidth={3} dot={false} />
-                      <Line type="monotone" dataKey="vocabulary" stroke="#8B62F3" strokeWidth={3} dot={false} />
-                      <Line type="monotone" dataKey="grammar" stroke="#1A96F3" strokeWidth={3} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  {loading ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gray-50/50 rounded-[16px] border border-gray-100 border-dashed">
+                      <div className="w-8 h-8 border-4 border-[#1A96F3] border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-[13px] font-bold text-gray-400">Loading performance data...</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                        <XAxis 
+                          dataKey="name" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#101828', fontSize: 12, fontWeight: 700 }}
+                          dy={10}
+                        />
+                        <YAxis 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#101828', fontSize: 12, fontWeight: 700 }}
+                          domain={[0, 9]}
+                          ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+                          interval={0}
+                          tickFormatter={(value) => value.toFixed(1)}
+                        />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                          itemStyle={{ fontSize: '12px', fontWeight: 700 }}
+                        />
+                        <Line type="monotone" dataKey="overall" stroke="#EA4335" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="response" stroke="#F59E0B" strokeWidth={3} dot={false} />
+                        <Line type="monotone" dataKey="coherence" stroke="#00C9B1" strokeWidth={3} dot={false} />
+                        <Line type="monotone" dataKey="vocabulary" stroke="#8B62F3" strokeWidth={3} dot={false} />
+                        <Line type="monotone" dataKey="grammar" stroke="#1A96F3" strokeWidth={3} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
 
                 {/* Legend at Bottom */}
