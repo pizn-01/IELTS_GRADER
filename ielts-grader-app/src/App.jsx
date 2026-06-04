@@ -83,11 +83,15 @@ function App() {
   const setProfileImage = (url) => updateUser({ profile_image_url: url });
 
   // Smooth scroll for hash navigation on landing page
+  // Guard: skip OAuth/Supabase fragments like #access_token=... — not valid CSS selectors
   useEffect(() => {
     if (!location.hash) return;
+    if (location.hash.includes('=') || location.hash.includes('&')) return;
     const timeout = setTimeout(() => {
-      const element = document.querySelector(location.hash);
-      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try {
+        const element = document.querySelector(location.hash);
+        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch { /* invalid selector — ignore */ }
     }, 100);
     return () => clearTimeout(timeout);
   }, [location.hash]);

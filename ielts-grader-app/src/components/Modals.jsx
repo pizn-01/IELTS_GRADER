@@ -52,11 +52,19 @@ export const VerifyEmailModal = ({ isOpen, onClose }) => {
   );
 };
 
-export const NotificationBanner = ({ isOpen, onClose }) => {
+export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
+  // Only show when explicitly open and when credits are low or exhausted
   if (!isOpen) return null;
-  
+  if (credits !== null && credits > 2) return null; // hide when user has enough credits
+
+  const message = credits === 0
+    ? "You've used all your evaluation credits. Upgrade to keep practicing."
+    : credits !== null && credits <= 2
+    ? `Only ${credits} evaluation credit${credits === 1 ? '' : 's'} remaining. Upgrade to Monthly Mastery for up to 40 reports.`
+    : "You've used all 5 reports for this week. Upgrade to Monthly Mastery ($19.99) for up to 40 reports.";
+
   return (
-    <div 
+    <div
       style={{ backgroundColor: '#1A96F333' }}
       className="border border-[#3B82F6] rounded-xl px-4 md:px-5 py-3 md:py-0 flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-10 w-full md:h-[60px] gap-4"
     >
@@ -65,7 +73,7 @@ export const NotificationBanner = ({ isOpen, onClose }) => {
            i
         </div>
         <p className="text-[18px] text-[#101828] font-normal leading-[100%] tracking-[0px]">
-          You've used all 5 reports for this week. Upgrade to Monthly Mastery ($19.99) for up to 40 reports.
+          {message}
         </p>
       </div>
       <button className="bg-[#2C3E50] text-white w-full md:w-auto px-8 h-[36px] rounded-lg text-xs font-semibold hover:bg-[#1E293B] transition-all shadow-sm flex items-center justify-center whitespace-nowrap">

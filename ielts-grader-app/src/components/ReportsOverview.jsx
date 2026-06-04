@@ -6,23 +6,7 @@ import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHori
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const chartData = [
-  { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
-  { name: '', overall: 7.1, response: 6.6, coherence: 6.3, vocabulary: 7.7, grammar: 6.8 },
-  { name: 'W2', overall: 6.7, response: 6.2, coherence: 5.9, vocabulary: 7.3, grammar: 6.4 },
-  { name: '', overall: 7.8, response: 7.3, coherence: 7.0, vocabulary: 8.4, grammar: 7.5 },
-  { name: 'W3', overall: 7.3, response: 6.8, coherence: 6.5, vocabulary: 7.9, grammar: 7.0 },
-  { name: '', overall: 7.9, response: 7.4, coherence: 7.1, vocabulary: 8.4, grammar: 7.6 },
-  { name: 'W4', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.1, grammar: 7.3 },
-  { name: '', overall: 7.8, response: 7.3, coherence: 7.0, vocabulary: 8.3, grammar: 7.5 },
-  { name: 'W5', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.7, grammar: 7.9 },
-  { name: '', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 7.9, grammar: 7.1 },
-  { name: 'W6', overall: 7.9, response: 7.4, coherence: 7.1, vocabulary: 8.4, grammar: 7.6 },
-  { name: '', overall: 6.4, response: 5.9, coherence: 5.6, vocabulary: 6.9, grammar: 6.1 },
-  { name: 'W7', overall: 7.9, response: 7.4, coherence: 7.1, vocabulary: 8.4, grammar: 7.6 },
-  { name: '', overall: 7.3, response: 6.8, coherence: 6.5, vocabulary: 7.8, grammar: 7.0 },
-  { name: 'W8', overall: 8.1, response: 7.6, coherence: 7.3, vocabulary: 8.6, grammar: 7.8 },
-];
+// Hardcoded chartData removed — replaced by analyticsData.chartData from API
 
 const ReportsOverview = ({ onBack }) => {
   const navigate = useNavigate();
@@ -51,11 +35,54 @@ const ReportsOverview = ({ onBack }) => {
     }
   };
 
-  // Stats derived from real data
-  const overallScores = (analyticsData?.chartData || []).map(d => d.overall).filter(Boolean);
-  const latestBand = overallScores[overallScores.length - 1] ?? null;
-  const avgBand = overallScores.length ? (overallScores.reduce((a, b) => a + b, 0) / overallScores.length).toFixed(1) : null;
-  const bandColor = (b) => b >= 7.0 ? '#00C9B1' : b >= 5.5 ? '#F59E0B' : '#EF4444';
+  // Stats derived from real analytics data
+  const liveChartData = analyticsData?.chartData || [];
+  const overallScores = liveChartData.map(d => d.overall).filter(Boolean);
+  const latestBand  = overallScores[overallScores.length - 1] ?? null;
+  const firstBand   = overallScores[0] ?? null;
+  const avgBand     = overallScores.length ? (overallScores.reduce((a, b) => a + b, 0) / overallScores.length).toFixed(1) : null;
+  const bestBand    = overallScores.length ? Math.max(...overallScores).toFixed(1) : null;
+  const rawChange   = (latestBand != null && firstBand != null) ? (latestBand - firstBand).toFixed(1) : null;
+  const bandColor   = (b) => b >= 7.0 ? '#00C9B1' : b >= 5.5 ? '#F59E0B' : '#EF4444';
+
+  // Activity Profile — real counts and date range from submissions
+  const gradedSubs = submissions.filter(s => s.status === 'graded');
+  const examCount  = gradedSubs.length;
+  const studyPeriod = (() => {
+    if (gradedSubs.length === 0) return 'No exams yet';
+    const dates = gradedSubs.map(s => new Date(s.created_at)).sort((a, b) => a - b);
+    const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', d: 'numeric', year: 'numeric' });
+    if (dates.length === 1) return fmt(dates[0]);
+    return `${dates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${dates[dates.length - 1].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  })();
+
+  // Executive Summary — trend + top priorities from real error data
+  const trendLabel = rawChange == null ? 'Getting Started' : parseFloat(rawChange) > 0.4 ? 'On the Rise' : parseFloat(rawChange) < -0.4 ? 'Declining' : 'Holding Steady';
+  const trendDetail = rawChange == null
+    ? 'Complete your first exam to begin tracking progress.'
+    : parseFloat(rawChange) >= 0
+    ? `Overall improvement: +${rawChange} from first to latest attempt.`
+    : `Overall change: ${rawChange} from first to latest attempt.`;
+  const topPriorities = (analyticsData?.frequentErrors || [])
+    .filter(e => e.type === 'red' || e.impact === 'High Impact')
+    .slice(0, 3)
+    .map(e => e.label);
+  const topPriorityText = topPriorities.length > 0
+    ? `Focus on reducing: ${topPriorities.join(', ')}.`
+    : 'Complete more exams to identify patterns.';
+
+  // Core Strengths — criteria with fewest high-impact errors
+  const criteriaErrorCount = {};
+  (analyticsData?.frequentErrors || []).forEach(e => {
+    const c = e.label?.split(' ')[0] || e.label;
+    criteriaErrorCount[c] = (criteriaErrorCount[c] || 0) + e.count;
+  });
+  const criteriaScores = [
+    { name: 'Coherence & Cohesion', band: overallScores.length ? (liveChartData.reduce((s, d) => s + (d.coherence || 0), 0) / liveChartData.length).toFixed(1) : null },
+    { name: 'Lexical Resource', band: overallScores.length ? (liveChartData.reduce((s, d) => s + (d.vocabulary || 0), 0) / liveChartData.length).toFixed(1) : null },
+    { name: 'Task Response', band: overallScores.length ? (liveChartData.reduce((s, d) => s + (d.response || 0), 0) / liveChartData.length).toFixed(1) : null },
+    { name: 'Grammar', band: overallScores.length ? (liveChartData.reduce((s, d) => s + (d.grammar || 0), 0) / liveChartData.length).toFixed(1) : null },
+  ].filter(c => c.band && parseFloat(c.band) > 0).sort((a, b) => parseFloat(b.band) - parseFloat(a.band)).slice(0, 2);
 
   if (!isDetailView) {
     return (
@@ -280,7 +307,7 @@ const ReportsOverview = ({ onBack }) => {
               {/* First */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>First</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>27</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{firstBand ?? '—'}</span>
               </div>
 
               <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
@@ -288,7 +315,7 @@ const ReportsOverview = ({ onBack }) => {
               {/* Average */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Average</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>6.7</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{avgBand ?? '—'}</span>
               </div>
 
               <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
@@ -296,7 +323,7 @@ const ReportsOverview = ({ onBack }) => {
               {/* Best */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Best</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>7.5</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{bestBand ?? '—'}</span>
               </div>
 
               <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
@@ -304,7 +331,9 @@ const ReportsOverview = ({ onBack }) => {
               {/* Change */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Change</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>+1.5</span>
+                <span className="text-[28px] font-semibold" style={{ fontFamily: "'Montserrat', sans-serif", color: rawChange == null ? '#101828' : parseFloat(rawChange) >= 0 ? '#00C9B1' : '#EF4444' }}>
+                  {rawChange == null ? '—' : parseFloat(rawChange) >= 0 ? `+${rawChange}` : rawChange}
+                </span>
               </div>
             </motion.div>
 
@@ -317,12 +346,12 @@ const ReportsOverview = ({ onBack }) => {
                 </div>
                 <div className="p-8 space-y-10 flex-1">
                   <div>
-                    <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Exam Completed</p>
-                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>11</p>
+                    <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Exams Completed</p>
+                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{examCount}</p>
                   </div>
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Study Period</p>
-                    <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Feb 22_ Mar 6' 2026</p>
+                    <p className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{studyPeriod}</p>
                   </div>
                 </div>
               </div>
@@ -334,15 +363,15 @@ const ReportsOverview = ({ onBack }) => {
                 </div>
                 <div className="p-8 space-y-10 flex-1">
                   <div className="space-y-2">
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>On the Rise</p>
+                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{trendLabel}</p>
                     <p className="text-[16px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Overall improvements: +15 from first to latest attempt.
+                      {trendDetail}
                     </p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Top Priority Fixes</p>
                     <p className="text-[14.5px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Focus heavily on reducing: Repetition of basic lexis, imprecise word choice, ideas underdeveloped.
+                      {topPriorityText}
                     </p>
                   </div>
                 </div>
@@ -354,16 +383,16 @@ const ReportsOverview = ({ onBack }) => {
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '20px' }}>Core Strengths</h3>
                 </div>
                 <div className="p-8 space-y-5 flex-1">
-                  <div className="p-5 bg-[#F0FDF9] rounded-[20px] border border-[#CCFBEF] flex items-center">
-                    <p className="text-[16px] leading-[1.5] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#30C3A9]">Coherence & cohesion:</span> <span className="font-bold text-[#101828]">currently 7.0 (Keep this stable while you lift your weakest areas).</span>
-                    </p>
-                  </div>
-                  <div className="p-5 bg-[#F0FDF9] rounded-[20px] border border-[#CCFBEF] flex items-center">
-                    <p className="text-[16px] leading-[1.5] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#30C3A9]">Lexical Resources:</span> <span className="font-bold text-[#101828]">currently 7.0 (Keep this stable while you lift your weakest areas).</span>
-                    </p>
-                  </div>
+                  {criteriaScores.length > 0 ? criteriaScores.map((c, i) => (
+                    <div key={i} className="p-5 bg-[#F0FDF9] rounded-[20px] border border-[#CCFBEF] flex items-center">
+                      <p className="text-[16px] leading-[1.5] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        <span className="font-bold text-[#30C3A9]">{c.name}:</span>{' '}
+                        <span className="font-bold text-[#101828]">avg {c.band} — keep this stable while lifting weaker areas.</span>
+                      </p>
+                    </div>
+                  )) : (
+                    <p className="text-[14px] text-gray-400 font-medium p-2">Complete more exams to identify your core strengths.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -376,7 +405,7 @@ const ReportsOverview = ({ onBack }) => {
                 
                 <div className="h-[320px] w-full mb-8">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <LineChart data={liveChartData.length > 0 ? liveChartData : []} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                       <XAxis 
                         dataKey="name" 

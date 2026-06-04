@@ -98,12 +98,16 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
             </div>
             
             <div className="flex items-center justify-center md:justify-start">
-              <div className={`w-[54px] h-[28px] flex items-center justify-center rounded-full text-[14px] font-bold border font-sans leading-none ${
-                idx < 2 ? 'bg-[#30C3A91A] text-[#30C3A9] border-[#30C3A9]' : 
-                'bg-[#F59E0B1A] text-[#F59E0B] border-[#F59E0B]'
-              }`}>
-                {report.score.toFixed(1)}
-              </div>
+              {(() => {
+                const s = parseFloat(report.score);
+                const color = s >= 7 ? '#30C3A9' : s >= 6 ? '#F59E0B' : '#EF4444';
+                return (
+                  <div className="w-[54px] h-[28px] flex items-center justify-center rounded-full text-[14px] font-bold border font-sans leading-none"
+                    style={{ backgroundColor: color + '1A', color, borderColor: color }}>
+                    {isNaN(s) ? '—' : s.toFixed(1)}
+                  </div>
+                );
+              })()}
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-gray-50 md:justify-end">

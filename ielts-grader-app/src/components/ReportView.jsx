@@ -585,127 +585,97 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             </div>
           </div>
           );
-        })() : activeTab === "Dual Assessment" ? (
+        })() : activeTab === "Dual Assessment" ? (() => {
+          const errors = data?.errors || [];
+          const criteriaConfig = [
+            { title: "Task Response",                   band: data?.response_band,  key: "Task Response" },
+            { title: "Coherence & Cohesion",            band: data?.coherence_band, key: "Coherence & Cohesion" },
+            { title: "Lexical Resource",                band: data?.vocabulary_band,key: "Lexical Resource" },
+            { title: "Grammatical Range & Accuracy",    band: data?.grammar_band,   key: "Grammatical Range & Accuracy" },
+          ];
+          return (
           <div className="space-y-6">
-            {[
-              {
-                title: "Task Response",
-                avg: "5.5",
-                gpt4: "5.0",
-                gpt5: "6.0",
-                summary: "The report describes general trends and makes some comparisons, but the data is almost entirely invented and does not reflect the actual chart.",
-                subScores: [
-                  { cat: "Development", avg: "5.0", strength: "Attempts to support trend statements with quantitative data", weakness: "All supporting data is inaccurate and not drawn from the actual chart" },
-                  { cat: "Comparison", avg: "5.5", strength: "Makes comparisons between genders and age groups", weakness: "Comparisons based on incorrect data" },
-                  { cat: "Relevance", avg: "6.0", strength: "No opinions or external information; focused on the chart", weakness: "Content describes a different dataset entirely" },
-                  { cat: "Coverage", avg: "5.0", strength: "Mentions all age and gender groups", weakness: "Misses all actual key features from the reference chart" },
-                  { cat: "Data Accuracy", avg: "3.5", strength: "Attempts to provide specific figures for each group", weakness: "All numerical values are fabricated" },
-                  { cat: "Overview/Position", avg: "5.5", strength: "Provides a clear summary of main trends", weakness: "Summarizes invented information, not real data" }
-                ]
-              },
-              {
-                title: "Coherence & Cohesion",
-                avg: "7.0",
-                gpt4: "8.0",
-                gpt5: "6.0",
-                summary: "The report is well-organised with a clear introduction, overview, and logical body structure. Paragraphing is effective and data flows smoothly.",
-                subScores: [
-                  { cat: "Cohesive Devices", avg: "7.5", strength: "Linking words used appropriately and not overused", weakness: "Some repetition of basic linkers" },
-                  { cat: "Structure", avg: "6.5", strength: "Clear introduction, overview, and body", weakness: "Overview could be more distinct" },
-                  { cat: "Referencing", avg: "8.0", strength: "Pronouns and references always clear", weakness: "No significant weaknesses" },
-                  { cat: "Paragraphing", avg: "8.0", strength: "Paragraphs unified and each covers a single data group", weakness: "Topic sentences could be more explicit" },
-                  { cat: "Progression", avg: "7.5", strength: "Logical order from children to adults", weakness: "Transitions functional but lack sophistication" }
-                ]
-              }
-            ].map((section, sIdx) => (
+            {criteriaConfig.map((crit, sIdx) => {
+              const band = crit.band ? parseFloat(crit.band) : null;
+              const bandStr = band ? band.toFixed(1) : '—';
+              const bandColor = band >= 7 ? "text-[#30C3A9]" : band >= 5.5 ? "text-[#F59E0B]" : "text-[#EF4444]";
+              // Errors for this criterion grouped by sub-category
+              const critErrors = errors.filter(e => e.criteria === crit.key);
+              const subCatMap = {};
+              critErrors.forEach(e => {
+                const k = e.sub_category || 'General';
+                if (!subCatMap[k]) subCatMap[k] = { errors: [] };
+                subCatMap[k].errors.push(e);
+              });
+              const subRows = Object.entries(subCatMap).map(([cat, v]) => ({
+                cat,
+                count: v.errors.length,
+                worstSeverity: v.errors.find(e => e.severity === 'Major') ? 'Major' : v.errors.find(e => e.severity === 'High') ? 'High' : 'Medium',
+                sample: v.errors[0],
+              }));
+              // Summary from strengths/weaknesses filtered by this criterion
+              const relStrength = (data?.strengths || []).find(s => s.toLowerCase().includes(crit.key.toLowerCase().split(' ')[0])) || (data?.strengths || [])[sIdx] || null;
+              const relWeakness = (data?.weaknesses || []).find(w => w.toLowerCase().includes(crit.key.toLowerCase().split(' ')[0])) || (data?.weaknesses || [])[sIdx] || null;
+              const summary = critErrors.length === 0
+                ? `No errors detected in ${crit.title}. Good performance in this area.`
+                : `${critErrors.length} issue${critErrors.length > 1 ? 's' : ''} detected in ${crit.title}. ${critErrors.filter(e => e.severity === 'Major').length > 0 ? 'Major issues require immediate attention.' : 'Focus on the identified patterns.'}`;
+              return (
               <div key={sIdx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div 
-                  className="px-10 py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
-                  onClick={() => toggleSection('dualAssessment', sIdx)}
-                >
-                  <h3 className="text-[16px] font-bold text-[#101828]">{section.title}</h3>
+                <div className="px-10 py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('dualAssessment', sIdx)}>
+                  <h3 className="text-[16px] font-bold text-[#101828]">{crit.title}</h3>
                   <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.dualAssessment.includes(sIdx) ? "rotate-180" : ""}`} />
                 </div>
-
                 {expandedSections.dualAssessment.includes(sIdx) && (
                   <div className="px-10 pb-10 border-t border-[#E5E7EB] pt-10 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {/* Score Header */}
                     <div className="flex items-center border border-[#E5E7EB] rounded-[12px] overflow-hidden mb-8">
                       <div className="w-[100px] h-[100px] border-r border-[#E5E7EB] flex items-center justify-center bg-white">
-                        {(() => {
-                          const val = parseFloat(section.avg);
-                          const color = val >= 7.0 ? "text-[#30C3A9]" : "text-[#F59E0B]";
-                          return (
-                            <span className={`text-[32px] font-bold ${color}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              {section.avg}
-                            </span>
-                          );
-                        })()}
+                        <span className={`text-[32px] font-bold ${bandColor}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{bandStr}</span>
                       </div>
-                      <div className="flex-1 flex items-center justify-around px-10 bg-white">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[16px] font-medium text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>gpt-4.1:</span>
-                          <span className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{section.gpt4}</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[16px] font-medium text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>gpt-5-mini:</span>
-                          <span className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{section.gpt5}</span>
-                        </div>
+                      <div className="flex-1 flex flex-col justify-center px-10 bg-white gap-1">
+                        {relStrength && <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}><span className="font-bold text-[#30C3A9]">✓</span> {relStrength}</p>}
+                        {relWeakness && <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}><span className="font-bold text-[#EF4444]">✗</span> {relWeakness}</p>}
                       </div>
                     </div>
-
-                    <p className="text-[15px] text-[#475467] leading-relaxed mb-10 px-0" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      {section.summary}
-                    </p>
-
-                    {/* Sub-Category Scores Table */}
-                    <div className="space-y-5">
-                      <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Sub Category Scores</h4>
-                      <div className="overflow-hidden border border-[#E5E7EB] rounded-[12px]">
-                        <table className="w-full text-left">
-                          <thead>
-                            <tr className="bg-[#F9FAFB] text-[14px] font-bold text-[#101828]">
-                              <th className="px-6 py-4">Sub Category</th>
-                              <th className="px-6 py-4">Avg</th>
-                              <th className="px-6 py-4">Strength</th>
-                              <th className="px-6 py-4">Weakness</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#F2F4F7]">
-                            {section.subScores.map((row, rIdx) => {
-                              const scoreVal = parseFloat(row.avg);
-                              let scoreColor = "text-[#F59E0B]"; // Default orange
-                              if (scoreVal >= 6.0) scoreColor = "text-[#30C3A9]"; // Updated teal
-                              if (scoreVal < 5.0) scoreColor = "text-[#EF4444]"; // Red
-
-                              return (
-                                <tr key={rIdx} className="text-[14px] hover:bg-gray-50/50 transition-colors">
-                                  <td className="px-6 py-4 font-medium text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.cat}</td>
-                                  <td className={`px-6 py-4 font-bold ${scoreColor}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{row.avg}</td>
-                                  <td className="px-6 py-4 text-[#475467] leading-relaxed font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.strength}</td>
-                                  <td className="px-6 py-4 text-[#475467] leading-relaxed font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.weakness}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                    <p className="text-[15px] text-[#475467] leading-relaxed mb-10" style={{ fontFamily: "'Nunito', sans-serif" }}>{summary}</p>
+                    {subRows.length > 0 && (
+                      <div className="space-y-5">
+                        <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Error Sub-Categories</h4>
+                        <div className="overflow-hidden border border-[#E5E7EB] rounded-[12px]">
+                          <table className="w-full text-left">
+                            <thead>
+                              <tr className="bg-[#F9FAFB] text-[14px] font-bold text-[#101828]">
+                                <th className="px-6 py-4">Sub Category</th>
+                                <th className="px-6 py-4">Count</th>
+                                <th className="px-6 py-4">Severity</th>
+                                <th className="px-6 py-4">Example</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#F2F4F7]">
+                              {subRows.map((row, rIdx) => {
+                                const sc = row.worstSeverity === 'Major' ? 'text-[#EF4444]' : row.worstSeverity === 'High' ? 'text-[#F59E0B]' : 'text-[#30C3A9]';
+                                return (
+                                  <tr key={rIdx} className="text-[14px] hover:bg-gray-50/50 transition-colors">
+                                    <td className="px-6 py-4 font-medium text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.cat}</td>
+                                    <td className={`px-6 py-4 font-bold ${sc}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{row.count}</td>
+                                    <td className={`px-6 py-4 font-bold ${sc}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{row.worstSeverity}</td>
+                                    <td className="px-6 py-4 text-[#475467] font-normal text-[13px]" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.sample?.original_text?.substring(0, 60)}…</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
-            ))}
-
-            {["Lexical Resource", "Grammatical Range & Accuracy"].map((title, i) => (
-              <div key={i} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-10 py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
-                  <h3 className="text-[16px] font-bold text-[#101828]">{title}</h3>
-                  <ChevronDown size={20} className="text-gray-400" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        ) : activeTab === "Model Answer" ? (() => {
+          );
+        })()
+        : activeTab === "Model Answer" ? (() => {
           const ma = data?.model_answer;
           if (!ma) return (
             <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
@@ -1092,18 +1062,24 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           </div>
           );
         })()
-        : activeTab === "Flow & Logic" ? (
+        : activeTab === "Flow & Logic" ? (() => {
+          const dsa = data?.data_structure_analysis;
+          const coherenceErrors = (data?.errors || []).filter(e => e.criteria === 'Coherence & Cohesion');
+          const coherenceBand = data?.coherence_band ? parseFloat(data.coherence_band) : null;
+          // Estimate a 0-100 flow score from coherence band: (band-1)/8 * 100
+          const flowScore = coherenceBand ? Math.round(((coherenceBand - 1) / 8) * 100) : null;
+          return (
           <div className="space-y-6">
             {/* Overall Flow Score Card */}
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-10 py-8 flex items-center justify-between">
               <div className="space-y-1 max-w-[1000px]">
                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overall Flow Score</h3>
-                <p className="text-[14px] text-[#101828] font-normal leading-snug whitespace-nowrap" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                  Coherence is strong: clear intro → overview structure, then logically sequenced body paragraphs by age group with consistent male-female comparisons.
+                <p className="text-[14px] text-[#101828] font-normal leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                  {dsa?.transition_analysis || dsa?.overview || 'Flow analysis based on Coherence & Cohesion assessment.'}
                 </p>
               </div>
               <div className="text-[32px] font-bold shrink-0" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                <span className="text-[#3B82F6]">84</span><span className="text-[#101828]">/100</span>
+                <span className="text-[#3B82F6]">{flowScore ?? '—'}</span><span className="text-[#101828]">{flowScore != null ? '/100' : ''}</span>
               </div>
             </div>
 
@@ -1162,66 +1138,50 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
               {expandedSections.logicalIssues && (
                 <div className="px-8 py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
-                {/* Issue 1 */}
-                <div className="space-y-5">
-                  <h4 className="text-[15px] font-bold text-[#EA4335]" style={{ fontFamily: "'Nunito', sans-serif" }}>Category/Data mismatch (prompt vs report framing) — Introduction and throughout</h4>
-                  <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[16px] text-[#101828] font-semibold leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    "The bar chart illustrates the average calorie intake for males and females in three age groups: children, adolescents and adults, measured in kilocalories."
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[14px] text-[#475467] leading-snug font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      The prompt mentions 'various categories between different groups and timeframes where applicable', implying potentially multiple categories/periods, but the report treats the visual as only three age groups by gender with no time dimension. This creates a framing mismatch that can confuse the reader about what is being grouped and compared.
+                  {coherenceErrors.length > 0 ? coherenceErrors.slice(0, 4).map((err, ei) => (
+                    <div key={ei} className="space-y-5">
+                      <h4 className="text-[15px] font-bold text-[#EA4335]" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.title} — {err.location_text}</h4>
+                      <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[16px] text-[#101828] font-semibold leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        "{err.original_text}"
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[14px] text-[#475467] leading-snug font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          {err.explanation}
+                        </p>
+                        <p className="text-[14px] text-[#475467] leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          <span className="font-bold text-[#101828]">Severity:</span> {err.severity} | <span className="font-bold text-[#101828]">Sub-category:</span> {err.sub_category}
+                        </p>
+                      </div>
+                      <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4">
+                        <p className="text-[16px] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          <span className="font-bold text-[#00C9B1]">Correction:</span> <span className="text-[#101828] font-normal ml-1">{err.correction_text}</span>
+                        </p>
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-[14px] text-gray-400">
+                      {dsa?.authenticity_feedback || 'No significant coherence or flow issues detected in this essay.'}
                     </p>
-                    <p className="text-[14px] text-[#475467] leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#101828]">Impact:</span> Reduces coherence between task statement and description; reader may expect time/categorical breakdowns that never appear.
-                    </p>
-                  </div>
-                  <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4">
-                    <p className="text-[16px] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#00C9B1]">Revision:</span> <span className="text-[#101828] font-normal ml-1">Align the intro with the actual chart dimensions shown (e.g., '...by age group and gender') and avoid mentioning timeframes/categories unless they are present in the chart.</span>
-                    </p>
-                  </div>
+                  )}
                 </div>
-
-                {/* Issue 2 */}
-                <div className="space-y-5">
-                  <h4 className="text-[15px] font-bold text-[#EA4335]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grouping emphasis inconsistency (overview vs detail order) — Overview → Body paragraphs</h4>
-                  <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[16px] text-[#101828] font-semibold leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    "Overall, males consume more calories than females in all age groups. In addition, adolescents have the highest calorie intake... while children consume the lowest amount."
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[14px] text-[#475467] leading-snug font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      The overview foregrounds the 'highest vs lowest' contrast, but the body proceeds sequentially by age (children → adolescents → adults) rather than grouping extremes together (children vs adolescents) first. This is not an error, but it slightly weakens the promised 'extremes' grouping logic.
-                    </p>
-                    <p className="text-[14px] text-[#475467] leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#101828]">Impact:</span> Minor; the reader's expectation of an 'extremes comparison' is delayed until Body 2.
-                    </p>
-                  </div>
-                  <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4">
-                    <p className="text-[16px] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      <span className="font-bold text-[#00C9B1]">Revision:</span> <span className="text-[#101828] font-normal ml-1">Either (a) keep the overview but start Body 1 with adolescents then children to mirror 'highest then lowest', or (b) adjust the overview to say the report will describe the groups in age order.</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
               )}
             </div>
 
-            {/* Collapsed Sections */}
-            {[
-              "Paragraph Unity",
-              "Sentence-Level Flow",
-              "Cohesive Devices"
-            ].map((title, idx) => (
-              <div key={idx} className="bg-white rounded-[24px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-10 py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
-                  <h3 className="text-[16px] font-bold text-[#101828]">{title}</h3>
-                  <ChevronDown size={20} className="text-gray-400" />
+            {/* Authenticity & natural language from data_structure_analysis */}
+            {dsa?.authenticity_feedback && (
+              <div className="bg-white rounded-[24px] border border-[#D1D5DB] shadow-sm overflow-hidden">
+                <div className="px-10 py-6 flex items-center justify-between">
+                  <h3 className="text-[16px] font-bold text-[#101828]">Authenticity & Natural Language</h3>
+                </div>
+                <div className="px-10 pb-8">
+                  <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.authenticity_feedback}</p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
-        ) : (
+          );
+        })()
+        : (
           <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">

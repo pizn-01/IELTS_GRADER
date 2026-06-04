@@ -27,20 +27,37 @@ function DashboardApp() {
   const [profileImage, setProfileImage] = useState(user?.profile_image_url || null);
 
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
+  const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [hasData, setHasData] = useState(true);
 
-  // Fetch analytics on mount
+  // Fetch analytics + recent submissions on mount
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const metrics = await api.getDashboardAnalytics();
+        const [metrics, submissionsRes] = await Promise.all([
+          api.getDashboardAnalytics(),
+          api.getSubmissions({ limit: 4 }),
+        ]);
         setAnalyticsSeries(metrics);
         setHasData((metrics?.chartData?.length || 0) > 0);
+
+        // Shape submissions for RecentReports
+        const formatted = (submissionsRes.data || [])
+          .filter(s => s.status === 'graded' && s.overall_band)
+          .slice(0, 4)
+          .map(s => ({
+            id: s.id,
+            type: s.exam_type,
+            task: s.task_type,
+            date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            score: parseFloat(s.overall_band),
+          }));
+        setRecentSubmissions(formatted);
       } catch (err) {
-        console.warn('Analytics fetch failed:', err);
+        console.warn('Dashboard data fetch failed:', err);
       }
     };
-    fetchAnalytics();
+    fetchDashboardData();
   }, []);
 
   // Lenis smooth scroll
@@ -105,7 +122,7 @@ function DashboardApp() {
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
       <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
-        <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} />
+        <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} credits={creditsRemaining} />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <motion.div
@@ -139,7 +156,7 @@ function DashboardApp() {
         </div>
 
         <SkillGrowth hasData={hasData} rawSeriesData={analyticsSeries?.chartData} />
-        <RecentReports hasData={hasData} dynamicReports={analyticsSeries?.dynamicReports} />
+        <RecentReports hasData={hasData} dynamicReports={recentSubmissions.length > 0 ? recentSubmissions : null} />
 
         <PracticeModal
           isOpen={showModal}
