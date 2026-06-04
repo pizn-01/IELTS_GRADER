@@ -275,4 +275,73 @@ router.post('/change-password', authenticateToken, async (req, res) => {
   }
 });
 
+// ─── POST /api/auth/google ────────────────────────────────────────────────────
+// Called from the frontend OAuth callback page.
+// Accepts a Supabase access_token (from Google OAuth) and returns our JWT.
+router.post('/google', async (req, res) => {
+  const { access_token } = req.body;
+
+  if (!access_token) {
+    return res.status(400).json({ error: 'access_token is required.' });
+  }
+
+  try {
+    // Verify the Supabase access token and get the authenticated user
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(access_token);
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired Google token.' });
+    }
+
+    // Profile is auto-created by DB trigger on first OAuth sign-in; poll briefly
+    let profile = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const { data: p } = await supabaseAdmin
+        .from('profiles')
+        .select('full_name, target_band, credits_remaining, profile_image_url')
+        .eq('id', user.id)
+        .single();
+      if (p) { profile = p; break; }
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    // Fallback: create profile manually if trigger hasn't fired yet
+    if (!profile) {
+      const fullName =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split('@')[0] ||
+        '';
+      const avatarUrl = user.user_metadata?.avatar_url || null;
+
+      const { data: inserted } = await supabaseAdmin
+        .from('profiles')
+        .upsert({ id: user.id, full_name: fullName, profile_image_url: avatarUrl })
+        .select('full_name, target_band, credits_remaining, profile_image_url')
+        .single();
+
+      profile = inserted || {
+        full_name: fullName,
+        target_band: 7.5,
+        credits_remaining: 5,
+        profile_image_url: avatarUrl,
+      };
+    }
+
+    const token = signToken(user.id, user.email);
+
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        ...profile,
+      },
+    });
+  } catch (err) {
+    console.error('[auth/google]', err.message);
+    return res.status(500).json({ error: 'Google authentication failed.' });
+  }
+});
+
 module.exports = router;

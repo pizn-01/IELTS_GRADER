@@ -5,7 +5,19 @@ import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
 
 const SignupPage5 = () => {
-  const { register } = useAuth();
+  const { register, signInWithGoogle } = useAuth();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setIsGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError(err.message || 'Google sign-in failed. Please try again.');
+      setIsGoogleLoading(false);
+    }
+  };
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -221,6 +233,8 @@ const SignupPage5 = () => {
           {/* Google Button */}
           <button
             type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading || isSubmitting}
             style={{
               width: '100%',
               height: '54px',
@@ -231,17 +245,18 @@ const SignupPage5 = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '12px',
-              cursor: 'pointer',
+              cursor: isGoogleLoading ? 'not-allowed' : 'pointer',
               fontSize: '15px',
               fontWeight: 600,
               color: '#374151',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              opacity: isGoogleLoading ? 0.7 : 1,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+            onMouseEnter={(e) => { if (!isGoogleLoading) e.currentTarget.style.backgroundColor = '#F8FAFC'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
           >
             {Icons.google}
-            Continue with Google
+            {isGoogleLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
         </form>
       </div>

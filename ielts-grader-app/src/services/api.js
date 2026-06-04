@@ -240,6 +240,21 @@ export const api = {
     }
   },
 
+  // ─── POST /api/auth/google ───────────────────────────────────────────────────
+  // Exchange Supabase OAuth access_token for our custom JWT
+  googleAuth: async (access_token) => {
+    const res = await fetch(`${BASE_URL}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Google authentication failed.');
+    }
+    return res.json();
+  },
+
   // ─── PATCH /api/auth/profile ─────────────────────────────────────────────────
   updateProfile: async (updates) => {
     const res = await fetch(`${BASE_URL}/auth/profile`, {

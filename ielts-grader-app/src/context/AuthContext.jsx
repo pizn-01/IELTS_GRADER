@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
@@ -70,6 +71,30 @@ export const AuthProvider = ({ children }) => {
     setUser(prev => prev ? { ...prev, ...updates } : prev);
   };
 
+  /**
+   * signInWithGoogle: initiate Google OAuth via Supabase.
+   * The page will redirect — no return value needed.
+   */
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
+  };
+
+  /**
+   * setUserFromToken: called by OAuthCallbackPage after exchanging
+   * the Supabase token for our backend JWT.
+   */
+  const setUserFromToken = (token, userData) => {
+    localStorage.setItem('ielts_token', token);
+    setToken(token);
+    setUser(userData);
+  };
+
   const value = {
     user,
     token,
@@ -79,6 +104,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    signInWithGoogle,
+    setUserFromToken,
   };
 
   return (

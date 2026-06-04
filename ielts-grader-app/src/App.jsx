@@ -27,6 +27,7 @@ import VerifyEmailPage from './auth/VerifyEmailPage10';
 import ResetPasswordPage from './auth/ResetPasswordPage11';
 import AccountVerifiedPage from './auth/AccountVerifiedPage12';
 import PasswordResetSuccessPage from './auth/PasswordResetSuccessPage13';
+import OAuthCallbackPage from './auth/OAuthCallbackPage';
 
 // ── Public Functional Pages ───────────────────────────────────────────────────
 import PricingPage from './pages/PricingPage';
@@ -127,6 +128,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/account-verified" element={<AccountVerifiedPage />} />
         <Route path="/password-reset-success" element={<PasswordResetSuccessPage />} />
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
         {/* ── Protected Pages ───────────────────────────────── */}
         <Route path="/dashboard" element={

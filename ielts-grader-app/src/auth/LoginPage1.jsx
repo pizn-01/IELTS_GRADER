@@ -5,12 +5,24 @@ import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage1 = () => {
-  const { login } = useAuth();
+  const { login, signInWithGoogle } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setIsGoogleLoading(true);
+    try {
+      await signInWithGoogle(); // Redirects — page will navigate away
+    } catch (err) {
+      setError(err.message || 'Google sign-in failed. Please try again.');
+      setIsGoogleLoading(false);
+    }
+  };
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -150,6 +162,8 @@ const LoginPage1 = () => {
           {/* Google Button */}
           <button
             type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading || isSubmitting}
             className="btn-google"
             style={{
               width: '100%',
@@ -161,23 +175,18 @@ const LoginPage1 = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '12px',
-              cursor: 'pointer',
+              cursor: isGoogleLoading ? 'not-allowed' : 'pointer',
               fontSize: '15px',
               fontWeight: 600,
               color: '#374151',
               transition: 'all 0.2s ease',
+              opacity: isGoogleLoading ? 0.7 : 1,
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#F8FAFC';
-              e.currentTarget.style.borderColor = '#CBD5E1';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white';
-              e.currentTarget.style.borderColor = '#E5E7EB';
-            }}
+            onMouseEnter={(e) => { if (!isGoogleLoading) { e.currentTarget.style.backgroundColor = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1'; } }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
           >
             {Icons.google}
-            Continue with Google
+            {isGoogleLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
         </form>
       </div>
