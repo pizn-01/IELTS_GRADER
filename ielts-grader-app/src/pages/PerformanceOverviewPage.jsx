@@ -1,31 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const chartData = [
-  { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
-  { name: '', overall: 7.1, response: 6.6, coherence: 6.3, vocabulary: 7.7, grammar: 6.8 },
-  { name: 'W2', overall: 6.7, response: 6.2, coherence: 5.9, vocabulary: 7.3, grammar: 6.4 },
-  { name: '', overall: 7.8, response: 7.3, coherence: 7.0, vocabulary: 8.4, grammar: 7.5 },
-  { name: 'W3', overall: 7.3, response: 6.8, coherence: 6.5, vocabulary: 7.9, grammar: 7.0 },
-  { name: '', overall: 7.9, response: 7.4, coherence: 7.1, vocabulary: 8.4, grammar: 7.6 },
-  { name: 'W4', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.1, grammar: 7.3 },
-  { name: '', overall: 7.8, response: 7.3, coherence: 7.0, vocabulary: 8.3, grammar: 7.5 },
-  { name: 'W5', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.7, grammar: 7.9 },
-  { name: '', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 7.9, grammar: 7.1 },
-  { name: 'W6', overall: 7.9, response: 7.4, coherence: 7.1, vocabulary: 8.4, grammar: 7.6 },
-  { name: '', overall: 6.4, response: 5.9, coherence: 5.6, vocabulary: 6.9, grammar: 6.1 },
-  { name: 'W7', overall: 7.9, response: 7.4, coherence: 7.1, vocabulary: 8.4, grammar: 7.6 },
-  { name: '', overall: 7.3, response: 6.8, coherence: 6.5, vocabulary: 7.8, grammar: 7.0 },
-  { name: 'W8', overall: 8.1, response: 7.6, coherence: 7.3, vocabulary: 8.6, grammar: 7.8 },
-];
+import { api } from '../services/api';
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
+  const [chartData, setChartData] = useState([]);
+  const [frequentErrors, setFrequentErrors] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getDashboardAnalytics()
+      .then(d => {
+        setChartData(d.chartData || []);
+        setFrequentErrors(d.frequentErrors || []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Derived stats from real chart data
+  const overallScores = chartData.map(d => d.overall).filter(Boolean);
+  const latestBand = overallScores[overallScores.length - 1] ?? null;
+  const firstBand  = overallScores[0] ?? null;
+  const avgBand    = overallScores.length ? (overallScores.reduce((a, b) => a + b, 0) / overallScores.length).toFixed(1) : null;
+  const bestBand   = overallScores.length ? Math.max(...overallScores).toFixed(1) : null;
+  const bandChange = (latestBand && firstBand) ? (latestBand - firstBand).toFixed(1) : null;
 
   const handleExport = () => {
     window.print();
@@ -97,32 +101,36 @@ const PerformanceOverviewPage = ({ onBack }) => {
             >
               {/* Latest Band */}
               <div className="flex-1 px-8 md:pl-12 py-6 md:py-0 flex flex-col justify-center">
-                <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>7.0</span>
+                <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>
+                  {loading ? '…' : latestBand ?? '—'}
+                </span>
                 <span className="text-[14px] text-[#667085] mt-1.5 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Latest Band</span>
               </div>
 
               {/* First */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>First</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>5.5</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{loading ? '…' : firstBand ?? '—'}</span>
               </div>
 
               {/* Average */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Average</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>6.7</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{loading ? '…' : avgBand ?? '—'}</span>
               </div>
 
               {/* Best */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Best</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>7.5</span>
+                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{loading ? '…' : bestBand ?? '—'}</span>
               </div>
 
               {/* Change */}
               <div className="flex-1 py-6 md:py-0 flex flex-col items-center justify-center">
                 <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Change</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>+1.5</span>
+                <span className="text-[28px] font-semibold" style={{ fontFamily: "'Montserrat', sans-serif", color: bandChange && parseFloat(bandChange) >= 0 ? '#00C9B1' : '#EF4444' }}>
+                  {loading ? '…' : bandChange ? (parseFloat(bandChange) >= 0 ? `+${bandChange}` : bandChange) : '—'}
+                </span>
               </div>
             </motion.div>
 

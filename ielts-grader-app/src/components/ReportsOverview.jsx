@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReportView from './ReportView';
+import { api } from '../services/api';
 import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, Search, Calendar, FileText, ChevronRight, Download, Eye, AlertTriangle, TrendingDown, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -28,6 +29,33 @@ const ReportsOverview = ({ onBack }) => {
   const [isDetailView, setIsDetailView] = useState(false);
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
+  const [submissions, setSubmissions] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(null); // submission id being opened
+
+  useEffect(() => {
+    api.getSubmissions().then(res => setSubmissions(res.data || [])).catch(() => {});
+    api.getDashboardAnalytics().then(d => setAnalyticsData(d)).catch(() => {});
+  }, []);
+
+  const handleOpenReport = async (submission) => {
+    if (submission.status !== 'graded') return;
+    setLoadingReport(submission.id);
+    try {
+      const report = await api.getReport(submission.id);
+      navigate('/report', { state: { reportData: { ...report, examType: submission.exam_type, taskType: submission.task_type } } });
+    } catch {
+      navigate('/report');
+    } finally {
+      setLoadingReport(null);
+    }
+  };
+
+  // Stats derived from real data
+  const overallScores = (analyticsData?.chartData || []).map(d => d.overall).filter(Boolean);
+  const latestBand = overallScores[overallScores.length - 1] ?? null;
+  const avgBand = overallScores.length ? (overallScores.reduce((a, b) => a + b, 0) / overallScores.length).toFixed(1) : null;
+  const bandColor = (b) => b >= 7.0 ? '#00C9B1' : b >= 5.5 ? '#F59E0B' : '#EF4444';
 
   if (!isDetailView) {
     return (
@@ -77,8 +105,12 @@ const ReportsOverview = ({ onBack }) => {
               <div>
                 <h2 className="text-[24px] md:text-[28px] font-bold text-[#101828] mb-2">{activeTask}</h2>
                 <div className="flex items-center justify-center md:justify-start gap-4 text-[14px] font-bold">
-                  <span className="text-gray-400">Attempts: <span className="text-[#101828]">5</span></span>
-                  <span className="text-[#00C9B1]">+0.5</span>
+                  <span className="text-gray-400">Attempts: <span className="text-[#101828]">{submissions.filter(s => s.status === 'graded').length}</span></span>
+                  {overallScores.length >= 2 && (
+                    <span style={{ color: overallScores[overallScores.length-1] >= overallScores[0] ? '#00C9B1' : '#EF4444' }}>
+                      {overallScores[overallScores.length-1] >= overallScores[0] ? '+' : ''}{(overallScores[overallScores.length-1] - overallScores[0]).toFixed(1)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -118,37 +150,46 @@ const ReportsOverview = ({ onBack }) => {
 
             {/* List */}
             <div className="space-y-4">
-              {[
-                { name: "Essay Name Here", date: "Mar 23, 2026", type: "Mock", score: "7.0", color: "#00C9B1" },
-                { name: "Essay Name Here", date: "Mar 21, 2026", type: "Quick", score: "6.5", color: "#F59E0B" },
-                { name: "Essay Name Here", date: "Mar 18, 2026", type: "Quick", score: "7.5", color: "#00C9B1" },
-                { name: "Essay Name Here", date: "Mar 15, 2026", type: "Mock", score: "6.0", color: "#F59E0B" }
-              ].map((essay, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => navigate('/report')}
-                  className="bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center gap-6">
-                    <div className="w-12 h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all">
-                      <TrendingUp size={22} />
-                    </div>
-                    <div>
-                      <h4 className="text-[16px] font-bold text-[#101828] mb-1">{essay.name}</h4>
-                      <p className="text-[14px] text-gray-400 font-medium">{essay.date}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-8">
-                    <span className="px-5 py-1.5 bg-gray-50 text-gray-400 rounded-full text-[12px] font-bold uppercase tracking-wider">{essay.type}</span>
-                    <div className="w-[60px] h-[34px] border rounded-[10px] flex items-center justify-center text-[14px] font-black" style={{ color: essay.color, borderColor: essay.color + '33', backgroundColor: essay.color + '0D' }}>
-                      {essay.score}
-                    </div>
-                    <button className="p-2 text-gray-300 hover:text-gray-600 transition-colors">
-                      <MoreHorizontal size={20} />
-                    </button>
-                  </div>
+              {submissions.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                  <FileText size={40} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-[14px] font-medium">No submissions yet. Complete an exam to see your reports here.</p>
                 </div>
-              ))}
+              ) : submissions.map((sub) => {
+                const score = sub.overall_band;
+                const color = score ? bandColor(score) : '#9CA3AF';
+                const dateStr = new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const label = `${sub.exam_type} ${sub.task_type}`;
+                const isLoading = loadingReport === sub.id;
+                return (
+                  <div
+                    key={sub.id}
+                    onClick={() => handleOpenReport(sub)}
+                    className={`bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all group ${sub.status === 'graded' ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all">
+                        <TrendingUp size={22} />
+                      </div>
+                      <div>
+                        <h4 className="text-[16px] font-bold text-[#101828] mb-1">{label}</h4>
+                        <p className="text-[14px] text-gray-400 font-medium">{dateStr}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <span className="px-5 py-1.5 bg-gray-50 text-gray-400 rounded-full text-[12px] font-bold uppercase tracking-wider">
+                        {sub.status === 'grading' ? 'Grading…' : sub.status === 'failed' ? 'Failed' : sub.word_count ? `${sub.word_count}w` : sub.task_type}
+                      </span>
+                      <div className="w-[60px] h-[34px] border rounded-[10px] flex items-center justify-center text-[14px] font-black" style={{ color, borderColor: color + '33', backgroundColor: color + '0D' }}>
+                        {isLoading ? '…' : score ? score.toFixed(1) : '—'}
+                      </div>
+                      <button className="p-2 text-gray-300 hover:text-gray-600 transition-colors">
+                        <MoreHorizontal size={20} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

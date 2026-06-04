@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = '/api';
 
 const getHeaders = () => {
   const headers = {
@@ -188,6 +188,70 @@ export const api = {
     } catch (err) {
       console.warn('[MOCK] Forgot password — simulating email sent.', err.message);
       return { message: 'Password reset email sent. Check your inbox.' };
+    }
+  },
+
+  updateProfile: async (updates) => {
+    try {
+      const res = await fetch(`${BASE_URL}/auth/profile`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Profile update failed.');
+      }
+      return await res.json();
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  changePassword: async ({ currentPassword, newPassword }) => {
+    try {
+      const res = await fetch(`${BASE_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Password change failed.');
+      }
+      return await res.json();
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  submitSupport: async ({ topic, message }) => {
+    try {
+      const res = await fetch(`${BASE_URL}/support`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ topic, message }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Support submission failed.');
+      }
+      return await res.json();
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  getSubmissions: async ({ limit = 50, offset = 0 } = {}) => {
+    try {
+      const res = await fetch(`${BASE_URL}/submissions?limit=${limit}&offset=${offset}`, {
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error('Failed to fetch submissions.');
+      return await res.json();
+    } catch (err) {
+      console.warn('[api.getSubmissions] fallback:', err.message);
+      return { data: [], total: 0 };
     }
   },
 

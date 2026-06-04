@@ -258,7 +258,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           {/* Subtitle Row */}
           <div className="mb-[16px] flex items-center gap-1">
             <span className="text-[13px] font-semibold text-[#101828]">Overall Band Score</span>
-            <span className="text-[13px] font-semibold text-[#101828]">7.0</span>
+            <span className="text-[13px] font-semibold text-[#101828]">{data?.overall_band ?? 7.0}</span>
           </div>
 
           {/* Tab Bar Navigation */}
@@ -296,26 +296,26 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         <div className="relative w-[130px] h-[130px] flex items-center justify-center">
                           <svg className="w-full h-full transform -rotate-90">
                             <circle cx="65" cy="65" r="58" stroke="#F0F7FF" strokeWidth="10" fill="transparent" />
-                            <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset="127.55" strokeLinecap="round" />
+                            <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset={364.42 * (1 - ((data?.overall_band ?? 6.5) - 1) / 8)} strokeLinecap="round" />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[42px] font-bold text-[#1A96F3] tracking-tight">6.5</span></div>
+                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[42px] font-bold text-[#1A96F3] tracking-tight">{data?.overall_band ?? 6.5}</span></div>
                         </div>
                         <span className="text-[14px] font-bold text-[#101828] whitespace-nowrap mt-4">Overall Band Score</span>
                       </div>
                     </div>
                     <div className="flex-1 space-y-6 pl-8 pr-12">
                       {[
-                        { label: "Task Response", score: "5.5", color: "#FF9F00", width: "61%" },
-                        { label: "Coherence & Cohesion", score: "7.0", color: "#00C9B1", width: "77%" },
-                        { label: "Lexical Resource", score: "6.5", color: "#00C9B1", width: "72%" },
-                        { label: "Grammatical Range & Accuracy", score: "6.5", color: "#00C9B1", width: "72%" }
+                        { label: "Task Response", score: data?.response_band ?? 5.5, color: (data?.response_band ?? 5.5) >= 7 ? "#00C9B1" : (data?.response_band ?? 5.5) >= 5.5 ? "#FF9F00" : "#EF4444" },
+                        { label: "Coherence & Cohesion", score: data?.coherence_band ?? 7.0, color: (data?.coherence_band ?? 7.0) >= 7 ? "#00C9B1" : (data?.coherence_band ?? 7.0) >= 5.5 ? "#FF9F00" : "#EF4444" },
+                        { label: "Lexical Resource", score: data?.vocabulary_band ?? 6.5, color: (data?.vocabulary_band ?? 6.5) >= 7 ? "#00C9B1" : (data?.vocabulary_band ?? 6.5) >= 5.5 ? "#FF9F00" : "#EF4444" },
+                        { label: "Grammatical Range & Accuracy", score: data?.grammar_band ?? 6.5, color: (data?.grammar_band ?? 6.5) >= 7 ? "#00C9B1" : (data?.grammar_band ?? 6.5) >= 5.5 ? "#FF9F00" : "#EF4444" }
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between w-full">
                           <span className="text-[14px] text-[#101828] font-bold">{item.label}</span>
                           <div className="flex items-center gap-4">
                             <span className="text-[14px] text-[#101828] font-normal w-8 text-right">{item.score}</span>
                             <div className="h-[10px] w-[280px] bg-[#F3F4F6] rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: item.width, backgroundColor: item.color }}></div>
+                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${((item.score - 1) / 8) * 100}%`, backgroundColor: item.color }}></div>
                             </div>
                           </div>
                         </div>
@@ -368,14 +368,14 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                       <h3 className="text-[16px] font-bold text-[#101828] mb-1">Strengths</h3>
                       <p className="text-[14px] text-gray-500">What you did well</p>
                     </div>
-                    <div className="p-8"><ul className="space-y-5">{["Clear introduction identifying chart type and subject", "Logical body structure organized by age group", "Effective use of cohesive devices and linking words", "Good paragraphing with unified topic focus"].map((text, i) => (<li key={i} className="flex items-start gap-4"><div className="mt-1 text-[#00C9B1]"><TrendingUp size={20} /></div><span className="text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-8"><ul className="space-y-5">{(data?.strengths || ["Clear introduction identifying chart type and subject", "Logical body structure organized by age group", "Effective use of cohesive devices and linking words", "Good paragraphing with unified topic focus"]).map((text, i) => (<li key={i} className="flex items-start gap-4"><div className="mt-1 text-[#00C9B1]"><TrendingUp size={20} /></div><span className="text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
                   <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-8 py-6 border-b border-gray-100">
                       <h3 className="text-[16px] font-bold text-[#101828] mb-1">Weaknesses</h3>
                       <p className="text-[14px] text-gray-500">Areas for improvement</p>
                     </div>
-                    <div className="p-8"><ul className="space-y-5">{["Data accuracy issues — numerical values don't match reference", "Coverage gaps — misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"].map((text, i) => (<li key={i} className="flex items-start gap-4"><div className="mt-1 text-[#FF4D4D]"><TrendingDown size={20} /></div><span className="text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-8"><ul className="space-y-5">{(data?.weaknesses || ["Data accuracy issues — numerical values don't match reference", "Coverage gaps — misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-4"><div className="mt-1 text-[#FF4D4D]"><TrendingDown size={20} /></div><span className="text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
                 </div>
 
@@ -444,15 +444,25 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </div>
               </div>
             </div>
-        ) : activeTab === "Error Analysis" ? (
+        ) : activeTab === "Error Analysis" ? (() => {
+          const errors = data?.errors || [];
+          const majorCount = errors.filter(e => e.severity === 'Major').length;
+          const highCount  = errors.filter(e => e.severity === 'High').length;
+          const medCount   = errors.filter(e => e.severity === 'Medium').length;
+          // Sub-category aggregation
+          const subCatMap = {};
+          errors.forEach(e => { subCatMap[e.sub_category] = (subCatMap[e.sub_category] || 0) + 1; });
+          const subCats = Object.entries(subCatMap).sort((a,b) => b[1]-a[1]);
+          const maxSubCat = subCats[0]?.[1] || 1;
+          return (
           <div className="space-y-8">
             {/* Header Info Cards */}
             <div className="grid grid-cols-4 gap-6">
               {[
-                { label: "Total Errors", count: "27", color: "text-[#00C9B1]" },
-                { label: "Major", count: "8", color: "text-[#EA4335]" },
-                { label: "High Severity", count: "9", color: "text-[#F59E0B]" },
-                { label: "Medium", count: "8", color: "text-[#1A96F3]" }
+                { label: "Total Errors", count: String(errors.length), color: "text-[#00C9B1]" },
+                { label: "Major", count: String(majorCount), color: "text-[#EA4335]" },
+                { label: "High Severity", count: String(highCount), color: "text-[#F59E0B]" },
+                { label: "Medium", count: String(medCount), color: "text-[#1A96F3]" }
               ].map((item, idx) => (
                 <div key={idx} className="bg-white rounded-[16px] p-6 border border-gray-100 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
                   <div>
@@ -469,29 +479,23 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             {/* Errors by Sub-Category */}
             <div className="bg-white rounded-[8px] p-8 border border-[#E5E7EB] shadow-sm">
               <h3 className="text-[15px] font-bold text-[#101828] mb-8">Errors by Sub-Category</h3>
+              {subCats.length === 0 ? (
+                <p className="text-[14px] text-gray-400">No errors detected.</p>
+              ) : (
               <div className="space-y-5">
-                {[
-                  { label: "Data Accuracy", count: 7, width: "90%" },
-                  { label: "Word Choice", count: 6, width: "80%" },
-                  { label: "Range", count: 5, width: "65%" },
-                  { label: "Coverage", count: 4, width: "10%" },
-                  { label: "Overview/Position", count: 1, width: "5%" },
-                  { label: "Comparison", count: 1, width: "5%" },
-                  { label: "Structure", count: 1, width: "5%" },
-                  { label: "Referencing", count: 1, width: "5%" },
-                  { label: "Accuracy", count: 1, width: "5%" }
-                ].map((item, idx) => (
+                {subCats.map(([label, count], idx) => (
                   <div key={idx} className="flex items-center">
-                    <span className="text-[13px] font-medium text-[#475467] w-[640px] shrink-0">{item.label}</span>
+                    <span className="text-[13px] font-medium text-[#475467] w-[240px] shrink-0">{label}</span>
                     <div className="flex-1 flex items-center gap-8">
-                      <span className="text-[13px] font-bold text-[#101828] w-6">{item.count}</span>
+                      <span className="text-[13px] font-bold text-[#101828] w-6">{count}</span>
                       <div className="h-[10px] flex-1 bg-[#F2F4F7] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#1A96F3] rounded-full" style={{ width: item.width }}></div>
+                        <div className="h-full bg-[#1A96F3] rounded-full" style={{ width: `${(count / maxSubCat) * 100}%` }}></div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              )}
             </div>
 
             {/* Detailed Error Breakdown — Unified Box */}
@@ -506,41 +510,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
               {expandedSections.errorAnalysis && (
                 <div className="p-8 space-y-8 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {[
-                    {
-                      id: "1",
-                      title: "Data Accuracy Error",
-                      severity: "Major",
-                      criteria: "Task Response",
-                      sub: "Data Accuracy",
-                      loc: "Paragraph 1, Sentence 1",
-                      original: "measured in kilocalories",
-                      correction: "measured in units (as shown in the chart)",
-                      explanation: "The reference data specifies the unit as generic 'Units' (no multiplier), but the report states 'kilocalories', which is not supported by the provided chart data."
-                    },
-                    {
-                      id: "2",
-                      title: "Task Achievement Partial",
-                      severity: "Major",
-                      criteria: "Task Response",
-                      sub: "Coverage",
-                      loc: "Paragraph 1, Sentence 1",
-                      original: "males and females in three",
-                      correction: "Series A and Series B in 2000, 2010 and 2020",
-                      explanation: "The report describes gender and age groups, but the reference chart is organised by years (2000/2010/2020) and two series (A/B)."
-                    },
-                    {
-                      id: "3",
-                      title: "Vocabulary Precision",
-                      severity: "High",
-                      criteria: "Lexical Resource",
-                      sub: "Word Choice",
-                      loc: "Paragraph 2, Sentence 2",
-                      original: "falls slightly",
-                      correction: "decreases marginally / dips slightly",
-                      explanation: "While understandable, more precise academic vocabulary would improve the lexical resource score."
-                    }
-                  ].map((error) => (
+                  {errors.length === 0 && (
+                    <p className="text-[14px] text-gray-400 text-center py-8">No errors detected in this submission.</p>
+                  )}
+                  {errors.map((rawError, _ei) => {
+                    const error = { id: String(_ei + 1), title: rawError.title, severity: rawError.severity, criteria: rawError.criteria, sub: rawError.sub_category, loc: rawError.location_text, original: rawError.original_text, correction: rawError.correction_text, explanation: rawError.explanation };
+                    return (
                     <div key={error.id} className="rounded-[12px] border border-[#E5E7EB] overflow-hidden bg-[#F9FAFB]/30">
                       {/* Error Header */}
                       <div className="px-6 py-4 flex items-center justify-between border-b border-[#E5E7EB] bg-white">
@@ -603,12 +578,14 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               )}
             </div>
           </div>
-        ) : activeTab === "Dual Assessment" ? (
+          );
+        })() : activeTab === "Dual Assessment" ? (
           <div className="space-y-6">
             {[
               {
@@ -728,42 +705,39 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
             ))}
           </div>
-        ) : activeTab === "Model Answer" ? (
+        ) : activeTab === "Model Answer" ? (() => {
+          const ma = data?.model_answer;
+          if (!ma) return (
+            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
+                <h3 className="text-[18px] font-bold text-[#101828]">Model Answer</h3>
+                <p className="text-gray-400 text-[14px]">Model answer is being generated. Please check back shortly.</p>
+              </div>
+            </div>
+          );
+          const wordCount = ma.text ? ma.text.trim().split(/\s+/).length : 0;
+          return (
           <div className="space-y-8">
-            {/* Improved Report Card */}
             <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-10 py-6 border-b border-gray-100 flex items-center justify-between">
                 <div>
                   <h3 className="text-[16px] font-bold text-[#101828]">Improved Report</h3>
-                  <p className="text-[13px] text-gray-400 mt-0.5">Word count: 175</p>
+                  <p className="text-[13px] text-gray-400 mt-0.5">Word count: {wordCount}</p>
                 </div>
                 <div className="bg-[#ECFDF5] text-[#10B981] px-4 py-1.5 rounded-full text-[12px] font-black tracking-tight border border-[#D1FAE5]">
-                  BAND 8.0
+                  BAND {ma.estimated_band ?? 8.0}
                 </div>
               </div>
-
               <div className="p-10">
                 <div className="bg-[#F0FDF4] rounded-[16px] p-10 border border-[#DCFCE7]">
                   <h4 className="text-[14px] font-bold text-[#101828] mb-6 uppercase tracking-wider">Revised Report</h4>
-                  <div className="space-y-6">
-                    <p className="text-[15px] text-[#101828] leading-[1.8] font-semibold">
-                      The bar chart compares average daily calorie intake for males and females in three age groups — children, adolescents and adults — expressed in kilocalories.
-                    </p>
-                    <p className="text-[15px] text-[#101828] leading-[1.8] font-semibold">
-                      Overall, males consume more calories than females in every age category. Calorie intake rises from childhood to adolescence and then falls slightly in adulthood, with adolescents showing the highest consumption.
-                    </p>
-                    <p className="text-[15px] text-[#101828] leading-[1.8] font-semibold">
-                      In the children group, boys consume about 1,800 kcal per day compared with approximately 1,600 kcal for girls, a difference of roughly 200 kcal. Intake increases substantially among adolescents: male adolescents register the highest value at around 2,600 kcal, while female adolescents consume about 2,100 kcal, widening the gender gap to approximately 500 kcal.
-                    </p>
-                    <p className="text-[15px] text-[#101828] leading-[1.8] font-semibold">
-                      For adults, calorie intake falls slightly relative to adolescents. Adult males take in roughly 2,400 kcal and adult females about 1,900 kcal, so the gender gap remains at about 500 kcal in adulthood. In summary, calorie intake peaks in adolescence and males consistently have higher intakes than females across all age groups.
-                    </p>
-                  </div>
+                  <p className="text-[15px] text-[#101828] leading-[1.8] font-semibold whitespace-pre-wrap">{ma.text}</p>
                 </div>
               </div>
             </div>
 
-            {/* Key Improvements Made */}
+            {ma.key_changes && ma.key_changes.length > 0 && (
             <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-10 py-6 border-b border-gray-100">
                 <h3 className="text-[16px] font-bold text-[#101828]">Key Improvements Made</h3>
@@ -771,12 +745,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
               <div className="p-10">
                 <ul className="space-y-6">
-                  {[
-                    "Introduction was a near-verbatim copy of the prompt — rewritten as a concise paraphrase identifying chart type, subject and units",
-                    "Overview contained specific figures in the original — removed numerical data and replaced with general trend statements",
-                    "Body paragraphs listed figures without clear grouping — reorganised by age group with direct comparisons and exact differences between genders",
-                    "Speculative or informal phrasing was present — replaced with objective, academic language and corrected inaccurate claim about the gender gap"
-                  ].map((item, idx) => (
+                  {ma.key_changes.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-4">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-2.5 shrink-0" />
                       <span className="text-[14px] text-[#101828] leading-relaxed font-semibold">{item}</span>
@@ -785,92 +754,80 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </ul>
               </div>
             </div>
+            )}
           </div>
-        ) : activeTab === "Vocabulary" ? (
-          <div className="space-y-6">
-            {/* Trend Verbs Accordion - Expanded by default in ref */}
-            <div className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div 
-                className="px-10 py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
-                onClick={() => toggleSection('trendVerbs')}
-              >
-                <div>
-                  <h3 className="text-[16px] font-bold text-[#101828]">Trend Verbs</h3>
-                  <p className="text-[16px] text-[#101828] mt-1 leading-none font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    Essential verbs for describing data movements
-                  </p>
-                </div>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.trendVerbs ? "rotate-180" : ""}`} />
+          );
+        })()
+        : activeTab === "Vocabulary" ? (() => {
+          const va = data?.vocabulary_analysis;
+          if (!va || !va.categories?.length) return (
+            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
+                <h3 className="text-[18px] font-bold text-[#101828]">Vocabulary Analysis</h3>
+                <p className="text-gray-400 text-[14px]">Vocabulary analysis is being generated. Please check back shortly.</p>
               </div>
-
-              {expandedSections.trendVerbs && (
-                <div className="p-10 space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
-                {[
-                  { word: "Peak", def: "to reach the highest level, or point in a given period or category", usage: "\"measured in kilocalories\"" },
-                  { word: "Dip", def: "to fall slightly, often temporarily", usage: "\"After peaking among teenagers, the figures dip marginally for adults.\"" },
-                  { word: "Climb", def: "to increase steadily over time or across categories", usage: "\"The average intake climbs from the child cohort to the adolescent group.\"" },
-                  { word: "Taper off", def: "to decrease gradually after a period of increase or stability", usage: "\"Male consumption tapers off slightly from adolescence to adulthood.\"" },
-                  { word: "Outstrip", def: "to exceed or surpass by a noticeable margin", usage: "\"In every age band, males outstrip females in average kilocalories consumed.\"" }
-                ].map((item, idx) => (
-                  <div key={idx} className="bg-white border border-[#D1D5DB] rounded-[12px] overflow-hidden">
-                    <div className="px-8 py-5 border-b border-[#E5E7EB]">
-                      <h4 className="text-[14px] font-bold text-[#101828]">{item.word}</h4>
-                    </div>
-                    <div className="p-8 space-y-6">
-                      <p className="text-[16px] text-[#101828] leading-none font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        {item.def}
-                      </p>
-                      <div 
-                        className="w-full h-[49px] bg-[#1018280D] rounded-[10px] px-6 text-[16px] text-[#101828] font-semibold border border-[#10182826] leading-none flex items-center"
-                        style={{ fontFamily: "'Nunito', sans-serif" }}
-                      >
-                        {item.usage}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              )}
             </div>
-
-            {/* Other Vocabulary Sections - Collapsed */}
-            {[
-              "Trend Nouns",
-              "Adverbs of Degree",
-              "Data Adjectives",
-              "Comparison Phrases",
-              "Data Collocations"
-            ].map((title, idx) => {
-              const sectionIdx = idx + 10; // Use a distinct offset for these
+          );
+          return (
+          <div className="space-y-6">
+            {va.categories.map((cat, catIdx) => {
+              const sectionKey = `vocab_${catIdx}`;
+              const isOpen = expandedSections.vocabulary?.includes(catIdx) ?? catIdx === 0;
               return (
-                <div key={idx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                  <div 
-                    className="px-10 py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
-                    onClick={() => toggleSection('vocabulary', sectionIdx)}
-                  >
-                    <h3 className="text-[16px] font-bold text-[#101828]">{title}</h3>
-                    <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.vocabulary.includes(sectionIdx) ? "rotate-180" : ""}`} />
+              <div key={catIdx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
+                <div className="px-10 py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('vocabulary', catIdx)}>
+                  <div>
+                    <h3 className="text-[16px] font-bold text-[#101828]">{cat.name}</h3>
+                    {cat.description && <p className="text-[14px] text-[#101828] mt-1 font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{cat.description}</p>}
                   </div>
-                  {expandedSections.vocabulary.includes(sectionIdx) && (
-                    <div className="p-10 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200">
-                      <p className="text-gray-400 text-[14px]">Vocabulary details for {title} coming soon...</p>
-                    </div>
-                  )}
+                  <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
                 </div>
+                {isOpen && (
+                  <div className="p-10 space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {(cat.words || []).map((item, idx) => (
+                      <div key={idx} className="bg-white border border-[#D1D5DB] rounded-[12px] overflow-hidden">
+                        <div className="px-8 py-5 border-b border-[#E5E7EB]">
+                          <h4 className="text-[14px] font-bold text-[#101828]">{item.word}</h4>
+                        </div>
+                        <div className="p-8 space-y-6">
+                          <p className="text-[16px] text-[#101828] leading-none font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.definition}</p>
+                          <div className="w-full h-[49px] bg-[#1018280D] rounded-[10px] px-6 text-[16px] text-[#101828] font-semibold border border-[#10182826] leading-none flex items-center" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                            {item.example}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               );
             })}
           </div>
-        ) : activeTab === "Grammar" ? (
+          );
+        })()
+        : activeTab === "Grammar" ? (() => {
+          const ga = data?.grammar_analysis;
+          if (!ga) return (
+            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
+                <h3 className="text-[18px] font-bold text-[#101828]">Grammar Analysis</h3>
+                <p className="text-gray-400 text-[14px]">Grammar analysis is being generated. Please check back shortly.</p>
+              </div>
+            </div>
+          );
+          return (
           <div className="space-y-8">
             {/* Overview Card */}
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-6 h-[185px] flex flex-col justify-center">
               <h3 className="text-[18px] font-bold text-[#101828] mb-3 leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
               <div className="space-y-2">
                 <p className="text-[15px] text-[#101828] leading-[1.1] font-semibold line-clamp-2 overflow-hidden tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                  <span className="font-bold">Strengths:</span> clear use of present simple for trends, appropriate use of comparatives and superlatives, effective approximating language, and logical paragraphing and linkers that make the description easy to follow.
+                  <span className="font-bold">Strengths:</span> {ga.overview_strengths || '—'}
                 </p>
                 <p className="text-[15px] text-[#101828] leading-[1.1] font-semibold line-clamp-2 overflow-hidden tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                  <span className="font-bold">Weaknesses:</span> sentence variety is limited (predominantly simple/compound sentences), overuse of basic comparative phrasing rather than precise quantified comparisons, occasional grammatical slippage (subject-verb agreement error: 'remain' → 'remains'), and missed opportunities to use reduced clauses and nominalisation.
+                  <span className="font-bold">Weaknesses:</span> {ga.overview_weaknesses || '—'}
                 </p>
               </div>
             </div>
@@ -884,16 +841,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               <div className="p-10">
                 <ul className="space-y-6">
                   {/* List of structures */}
-                  {[
-                    "Present simple for general description and trends (e.g., 'males consume', 'adolescents have')",
-                    "Comparatives and superlatives to compare groups (e.g., 'highest', 'lowest', 'slightly less')",
-                    "Adverbials and degree modifiers for approximation (e.g., 'about', 'around', 'approximately')",
-                    "Adverbial clause of contrast with 'while' and coordinating contrast with 'but'",
-                    "Topic-signalling linkers for organisation (e.g., 'Overall', 'In addition', 'For children')",
-                    "Prepositional phrases for comparison (e.g., 'compared with', 'in all age groups')",
-                    "Passive participle phrase used attributively (measured in kilocalories)",
-                    "Use of verbs of reporting and description (e.g., 'illustrates', 'can be seen', 'consume')"
-                  ].map((item, idx) => (
+                  {(ga.structures_used || []).map((item, idx) => (
                     <li key={idx} className="flex items-start gap-4">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-2 shrink-0" />
                       <span className="text-[16px] text-[#101828] leading-none font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>{item}</span>
@@ -911,51 +859,26 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
 
               <div className="p-8 space-y-10">
-                {/* Item 1 */}
-                <div className="space-y-3">
-                  <h4 className="text-[18px] font-semibold text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>Precise comparative quantification with 'by' and numeric difference</h4>
-                  <p className="text-[16px] text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>Gives exact, compact statements of difference that are the norm in high-band Task 1 answers; reduces vagueness and increases accuracy.</p>
-                  <div className="bg-[#1018280D] rounded-[10px] px-6 h-[49px] flex items-center text-[16px] text-[#101828] font-semibold leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    Male adolescents consumed 2,600 kcal, about 500 kcal more than female adolescents (i.e., higher by 500 kcal).
+                {(ga.enrichment_suggestions || []).map((item, idx) => (
+                  <div key={idx} className="space-y-3">
+                    <h4 className="text-[18px] font-semibold text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.original}</h4>
+                    <p className="text-[16px] text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.explanation}</p>
+                    <div className="bg-[#1018280D] rounded-[10px] px-6 py-3 flex items-center text-[16px] text-[#101828] font-semibold leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      {item.improved}
+                    </div>
                   </div>
-                </div>
-
-                {/* Item 2 */}
-                <div className="space-y-3">
-                  <h4 className="text-[18px] font-semibold text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>Reduced relative/participle clauses to compress information</h4>
-                  <p className="text-[16px] text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>Allows more complex sentence structures without repetition, improving cohesion and grammatical range.</p>
-                  <div className="bg-[#1018280D] rounded-[10px] px-6 h-[49px] flex items-center text-[16px] text-[#101828] font-semibold leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    Adults, consuming roughly 2,400 kcal (males) and 1,900 kcal (females), showed a slight decline from adolescent intake.
-                  </div>
-                </div>
-
-                {/* Item 3 */}
-                <div className="space-y-3">
-                  <h4 className="text-[18px] font-semibold text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>Nominalisation and complex noun phrases for concise trend statements (e.g., 'a marked gender-based disparity in intake')</h4>
-                  <p className="text-[16px] text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>Transforms clauses into compact noun phrases that raise formality and allow clearer comparative statements typical of Band 8+ reports.</p>
-                  <div className="bg-[#1018280D] rounded-[10px] px-6 h-[49px] flex items-center text-[16px] text-[#101828] font-semibold leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    There is a marked gender-based disparity in calorie intake, especially among adolescents, with males consistently consuming more.
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Expert Tips */}
+            {ga.expert_tips && ga.expert_tips.length > 0 && (
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
               <div className="px-8 py-5 border-b border-[#E5E7EB]">
                 <h3 className="text-[18px] font-bold text-[#101828] leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Expert Tips</h3>
               </div>
               <div className="p-8">
                 <ul className="space-y-6">
-                  {[
-                    "Express differences numerically where possible: use 'by' + number (e.g., 'male adolescents consumed 500 kcal more than females') to increase precision.",
-                    "Vary sentence openings with reduced participle clauses: transform 'For adults, the caloric consumption decreases...' into 'Adults, consuming slightly fewer calories, ...' to show grammatical range.",
-                    "Use nominalisation to summarise trends: replace repeated verbs with nouns (e.g., 'a rise from childhood to adolescence' rather than 'calorie intake rises...').",
-                    "Fix subject-verb agreement errors: check third-person singular verbs in final proofing ('the gender gap remains').",
-                    "Reduce repetition of the noun 'calories' by using pronouns and noun phrases after first mention (e.g., 'this level', 'that figure', 'the intake').",
-                    "Practise data preposition collocations: 'increase BY', 'rise TO', 'fall FROM X TO Y', 'stand AT'.",
-                    "Create reference notes for past simple tense forms of trend verbs (rose, fell, remained, stood, reached, peaked)."
-                  ].map((item, idx) => (
+                  {ga.expert_tips.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-4">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-2 shrink-0" />
                       <span className="text-[16px] text-[#101828] leading-[1.15] font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>{item}</span>
@@ -964,14 +887,28 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </ul>
               </div>
             </div>
+            )}
           </div>
-        ) : activeTab === "Data Structure" ? (
+          );
+        })()
+        : activeTab === "Data Structure" ? (() => {
+          const dsa = data?.data_structure_analysis;
+          if (!dsa) return (
+            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
+                <h3 className="text-[18px] font-bold text-[#101828]">Data Structure Analysis</h3>
+                <p className="text-gray-400 text-[14px]">Data structure analysis is being generated. Please check back shortly.</p>
+              </div>
+            </div>
+          );
+          return (
           <div className="space-y-8">
             {/* Overview Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden pl-[32px] pr-[48px] h-[180px] flex flex-col justify-center">
+            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden pl-[32px] pr-[48px] py-6 flex flex-col justify-center">
               <h3 className="text-[18px] font-bold text-[#101828] mb-3 leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
               <p className="text-[16px] text-[#101828] leading-snug font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                Data selection cannot be credited because the report describes the wrong variables, unit, and category structure (gender/age groups in kcal) instead of Series A vs Series B across 2000/2010/2020 in units. Although it uses comparisons and precise numbers, they are not supported by the reference data, so major features (steady rise in Series A; dip then surge in Series B with a sharp late increase) are entirely missed. Authenticity is weakened less by stock phrases than by strong evidence of rehearsed content not aligned to the prompt/data.
+                {dsa.overview}
               </p>
             </div>
 
@@ -1153,7 +1090,9 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
             ))}
           </div>
-        ) : activeTab === "Flow & Logic" ? (
+          );
+        })()
+        : activeTab === "Flow & Logic" ? (
           <div className="space-y-6">
             {/* Overall Flow Score Card */}
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-10 py-8 flex items-center justify-between">

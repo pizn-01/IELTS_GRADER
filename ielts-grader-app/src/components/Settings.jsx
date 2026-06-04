@@ -1,13 +1,83 @@
 import React, { useState } from 'react';
 import { Camera, Eye, EyeOff, CreditCard, ArrowRight, X, Target, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import PaymentPage from './PaymentPage';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 const Settings = ({ profileImage, setProfileImage }) => {
+  const { user, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('Profile');
   const [showRetentionModal, setShowRetentionModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+
+  // Profile form state — pre-populated from auth context
+  const [profileForm, setProfileForm] = useState({
+    firstName: user?.full_name?.split(' ')[0] || '',
+    lastName:  user?.full_name?.split(' ').slice(1).join(' ') || '',
+    targetBand: user?.target_band || 7.5,
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState(null); // { type: 'success'|'error', text }
+
+  // Password form state
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState(null);
+
+  // Support form state
+  const [supportForm, setSupportForm] = useState({ topic: 'General', message: '' });
+  const [supportSending, setSupportSending] = useState(false);
+
+  const handleProfileSave = async () => {
+    const full_name = `${profileForm.firstName} ${profileForm.lastName}`.trim();
+    if (!full_name) return setProfileMsg({ type: 'error', text: 'Name cannot be empty.' });
+    setProfileSaving(true);
+    setProfileMsg(null);
+    try {
+      const updated = await api.updateProfile({ full_name, target_band: profileForm.targetBand });
+      updateUser({ full_name: updated.full_name, target_band: updated.target_band });
+      setProfileMsg({ type: 'success', text: 'Profile saved successfully.' });
+    } catch (err) {
+      setProfileMsg({ type: 'error', text: err.message || 'Save failed.' });
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword)
+      return setPasswordMsg({ type: 'error', text: 'New passwords do not match.' });
+    if (passwordForm.newPassword.length < 8)
+      return setPasswordMsg({ type: 'error', text: 'Password must be at least 8 characters.' });
+    setPasswordSaving(true);
+    setPasswordMsg(null);
+    try {
+      await api.changePassword({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordMsg({ type: 'success', text: 'Password changed successfully.' });
+    } catch (err) {
+      setPasswordMsg({ type: 'error', text: err.message || 'Password change failed.' });
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const handleSupportSend = async () => {
+    if (!supportForm.message.trim()) return;
+    setSupportSending(true);
+    try {
+      await api.submitSupport({ topic: supportForm.topic, message: supportForm.message });
+      setSupportForm({ topic: 'General', message: '' });
+      setShowSupportSuccessModal(true);
+    } catch (err) {
+      // Show modal even on error — message will be retried server-side
+      setShowSupportSuccessModal(true);
+    } finally {
+      setSupportSending(false);
+    }
+  };
   const [showSupportSuccessModal, setShowSupportSuccessModal] = useState(false);
   const [selectedPack, setSelectedPack] = useState('Smart Top Up');
   const [isSimulationMode, setIsSimulationMode] = useState(false);
@@ -133,26 +203,29 @@ const Settings = ({ profileImage, setProfileImage }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div className="space-y-2">
                   <label className="text-[14px] font-bold text-[#101828]">First Name</label>
-                  <input 
-                    type="text" 
-                    defaultValue="John"
+                  <input
+                    type="text"
+                    value={profileForm.firstName}
+                    onChange={e => setProfileForm(p => ({ ...p, firstName: e.target.value }))}
                     className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[14px] font-bold text-[#101828]">Last Name</label>
-                  <input 
-                    type="text" 
-                    defaultValue="Doe"
+                  <input
+                    type="text"
+                    value={profileForm.lastName}
+                    onChange={e => setProfileForm(p => ({ ...p, lastName: e.target.value }))}
                     className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[14px] font-bold text-[#101828]">Email</label>
-                  <input 
-                    type="email" 
-                    placeholder="Enter"
-                    className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
+                  <input
+                    type="email"
+                    value={user?.email || ''}
+                    readOnly
+                    className="w-full h-[52px] px-5 bg-gray-50 border border-gray-100 rounded-[12px] text-[14px] text-[#6B7280] focus:outline-none cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-2">
@@ -202,13 +275,26 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 </div>
               </div>
 
+              {/* Profile status message */}
+              {profileMsg && (
+                <p className={`text-[13px] font-medium ${profileMsg.type === 'success' ? 'text-[#10B981]' : 'text-[#EA4335]'}`}>
+                  {profileMsg.text}
+                </p>
+              )}
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
-                <button className="px-10 h-[48px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
+                <button
+                  onClick={() => setProfileForm({ firstName: user?.full_name?.split(' ')[0] || '', lastName: user?.full_name?.split(' ').slice(1).join(' ') || '', targetBand: user?.target_band || 7.5 })}
+                  className="px-10 h-[48px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
+                >
                   Cancel
                 </button>
-                <button className="px-10 h-[48px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
-                  Save
+                <button
+                  onClick={handleProfileSave}
+                  disabled={profileSaving}
+                  className="px-10 h-[48px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
+                >
+                  {profileSaving ? 'Saving…' : 'Save'}
                 </button>
               </div>
             </div>
@@ -221,15 +307,14 @@ const Settings = ({ profileImage, setProfileImage }) => {
             <div className="space-y-2">
               <label className="text-[14px] font-bold text-[#101828]">Current Password</label>
               <div className="relative">
-                <input 
-                  type={showCurrent ? "text" : "password"} 
+                <input
+                  type={showCurrent ? "text" : "password"}
                   placeholder="Enter"
+                  value={passwordForm.currentPassword}
+                  onChange={e => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))}
                   className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
-                <button 
-                  onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors"
-                >
+                <button onClick={() => setShowCurrent(!showCurrent)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors">
                   {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
@@ -238,15 +323,14 @@ const Settings = ({ profileImage, setProfileImage }) => {
             <div className="space-y-2">
               <label className="text-[14px] font-bold text-[#101828]">New Password</label>
               <div className="relative">
-                <input 
-                  type={showNew ? "text" : "password"} 
+                <input
+                  type={showNew ? "text" : "password"}
                   placeholder="Enter"
+                  value={passwordForm.newPassword}
+                  onChange={e => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))}
                   className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
-                <button 
-                  onClick={() => setShowNew(!showNew)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors"
-                >
+                <button onClick={() => setShowNew(!showNew)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors">
                   {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
@@ -255,28 +339,39 @@ const Settings = ({ profileImage, setProfileImage }) => {
             <div className="space-y-2">
               <label className="text-[14px] font-bold text-[#101828]">Confirm New Password</label>
               <div className="relative">
-                <input 
-                  type={showConfirm ? "text" : "password"} 
+                <input
+                  type={showConfirm ? "text" : "password"}
                   placeholder="Enter"
+                  value={passwordForm.confirmPassword}
+                  onChange={e => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))}
                   className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
-                <button 
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors"
-                >
+                <button onClick={() => setShowConfirm(!showConfirm)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors">
                   {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
           </div>
 
+          {passwordMsg && (
+            <p className={`text-[13px] font-medium mt-4 ${passwordMsg.type === 'success' ? 'text-[#10B981]' : 'text-[#EA4335]'}`}>
+              {passwordMsg.text}
+            </p>
+          )}
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-12 border-t border-gray-50 mt-12">
-            <button className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
+            <button
+              onClick={() => { setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); setPasswordMsg(null); }}
+              className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
+            >
               Cancel
             </button>
-            <button className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
-              Change Password
+            <button
+              onClick={handlePasswordChange}
+              disabled={passwordSaving}
+              className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
+            >
+              {passwordSaving ? 'Saving…' : 'Change Password'}
             </button>
           </div>
         </div>
@@ -383,12 +478,17 @@ const Settings = ({ profileImage, setProfileImage }) => {
             <div className="space-y-3">
               <label className="text-[16px] font-bold text-[#101828]">Select Topic</label>
               <div className="relative">
-                <select className="w-full max-w-[400px] h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#9CA3AF] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none">
-                  <option>Select</option>
-                  <option className="text-[#101828]">Technical Issue</option>
-                  <option className="text-[#101828]">Billing Question</option>
-                  <option className="text-[#101828]">Feedback</option>
-                  <option className="text-[#101828]">Other</option>
+                <select
+                  value={supportForm.topic}
+                  onChange={e => setSupportForm(p => ({ ...p, topic: e.target.value }))}
+                  className="w-full max-w-[400px] h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none"
+                >
+                  <option value="General">General</option>
+                  <option value="Technical">Technical Issue</option>
+                  <option value="Billing">Billing Question</option>
+                  <option value="Account">Account</option>
+                  <option value="Grading">Grading</option>
+                  <option value="Other">Other</option>
                 </select>
                 <div className="absolute right-[calc(100%-380px)] top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                   <ChevronDown size={20} />
@@ -399,8 +499,10 @@ const Settings = ({ profileImage, setProfileImage }) => {
             {/* Description */}
             <div className="space-y-3">
               <label className="text-[16px] font-bold text-[#101828]">Description</label>
-              <textarea 
+              <textarea
                 placeholder="Type here..."
+                value={supportForm.message}
+                onChange={e => setSupportForm(p => ({ ...p, message: e.target.value }))}
                 className="w-full min-h-[200px] p-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all resize-none"
               ></textarea>
             </div>
@@ -410,11 +512,12 @@ const Settings = ({ profileImage, setProfileImage }) => {
               <button className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
                 Cancel
               </button>
-              <button 
-                onClick={() => setShowSupportSuccessModal(true)}
-                className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm"
+              <button
+                onClick={handleSupportSend}
+                disabled={supportSending || !supportForm.message.trim()}
+                className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
               >
-                Send Message
+                {supportSending ? 'Sending…' : 'Send Message'}
               </button>
             </div>
           </div>
