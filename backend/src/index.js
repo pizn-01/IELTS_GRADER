@@ -9,6 +9,9 @@ const analyticsRoutes = require('./routes/analytics');
 const tasksRoutes = require('./routes/tasks');
 const supportRoutes = require('./routes/support');
 const storageRoutes = require('./routes/storage');
+const adminRoutes = require('./routes/admin');
+const { bootstrapRouter } = require('./routes/admin');
+const discountsRoutes = require('./routes/discounts');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +31,9 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_SECRET)
+app.use('/api/discounts', discountsRoutes);
 
 // Global error handler
 app.use((err, _req, res, _next) => {
