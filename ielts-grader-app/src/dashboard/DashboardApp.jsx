@@ -27,8 +27,9 @@ function DashboardApp() {
   const [profileImage, setProfileImage] = useState(user?.profile_image_url || null);
 
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
-  const [recentSubmissions, setRecentSubmissions] = useState([]);
-  const [hasData, setHasData] = useState(true);
+  const [recentSubmissions, setRecentSubmissions] = useState(null); // null = loading, [] = loaded+empty
+  const [hasData, setHasData] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch analytics + recent submissions on mount
   useEffect(() => {
@@ -39,22 +40,28 @@ function DashboardApp() {
           api.getSubmissions({ limit: 4 }),
         ]);
         setAnalyticsSeries(metrics);
-        setHasData((metrics?.chartData?.length || 0) > 0);
 
-        // Shape submissions for RecentReports
+        // Shape graded submissions for RecentReports (all graded, even if band not set yet)
         const formatted = (submissionsRes.data || [])
-          .filter(s => s.status === 'graded' && s.overall_band)
+          .filter(s => s.status === 'graded')
           .slice(0, 4)
           .map(s => ({
             id: s.id,
             type: s.exam_type,
             task: s.task_type,
             date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            score: parseFloat(s.overall_band),
+            score: s.overall_band != null ? parseFloat(s.overall_band) : null,
           }));
-        setRecentSubmissions(formatted);
+        setRecentSubmissions(formatted); // always an array (never null after load)
+
+        // hasData: true if any graded submission exists (either source confirms it)
+        const hasGraded = formatted.length > 0 || (metrics?.chartData?.length || 0) > 0;
+        setHasData(hasGraded);
       } catch (err) {
         console.warn('Dashboard data fetch failed:', err);
+        setRecentSubmissions([]); // ensure not stuck on null
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchDashboardData();
@@ -148,8 +155,8 @@ function DashboardApp() {
           </motion.div>
         </div>
 
-        <SkillGrowth hasData={hasData} rawSeriesData={analyticsSeries?.chartData} />
-        <RecentReports hasData={hasData} dynamicReports={recentSubmissions.length > 0 ? recentSubmissions : null} />
+        <SkillGrowth hasData={hasData} rawSeriesData={analyticsSeries?.chartData} isLoading={isLoading} />
+        <RecentReports hasData={hasData} dynamicReports={recentSubmissions} />
 
         <PracticeModal
           isOpen={showModal}

@@ -11,9 +11,14 @@ const defaultReports = [
 
 const RecentReports = ({ hasData = true, dynamicReports = null }) => {
   const navigate = useNavigate();
-  const displayReports = dynamicReports?.length > 0 ? dynamicReports : defaultReports;
+  // null  = still loading (show defaults as placeholder)
+  // []    = loaded, no graded submissions yet
+  // [...] = real reports
+  const isLoaded = dynamicReports !== null;
+  const displayReports = (isLoaded && dynamicReports.length > 0) ? dynamicReports
+    : (!isLoaded ? defaultReports : null); // null when loaded+empty
 
-  if (!hasData) {
+  if (!hasData || (isLoaded && dynamicReports.length === 0)) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -77,7 +82,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
       </div>
       
       <div className="space-y-3">
-        {displayReports.map((report, idx) => (
+        {(displayReports || []).map((report, idx) => (
           <motion.div 
             variants={itemVariants}
             key={report.id} 
@@ -111,7 +116,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-gray-50 md:justify-end">
-              <button onClick={() => navigate('/report')} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Exam History</button>
+              <button onClick={() => navigate('/reports')} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Exam History</button>
               <button onClick={() => navigate('/performance')} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Performance</button>
             </div>
           </motion.div>
