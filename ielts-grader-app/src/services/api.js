@@ -1,141 +1,158 @@
 const BASE_URL = '/api';
 
 const getHeaders = () => {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
+  const headers = { 'Content-Type': 'application/json' };
   const token = localStorage.getItem('ielts_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 };
 
-// Fallback Mock Datasets to keep the application 100% functional and demonstrative offline
-const mockDatasets = {
+// ─── Offline-only fallbacks ───────────────────────────────────────────────────
+// These are ONLY used when the server is genuinely unreachable (network error).
+// They are NEVER used when the server responds with an HTTP error code.
+const offlineFallbacks = {
   user: {
     id: 'user-mock-uuid-999',
     email: 'candidate@ielts.org',
     full_name: 'John Candidate',
     target_band: 7.5,
     credits_remaining: 4,
-    profile_image_url: null
+    profile_image_url: null,
   },
   chartData: [
-    { name: 'W1', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
-    { name: '1.5', overall: 7.2, response: 6.7, coherence: 6.4, vocabulary: 7.8, grammar: 6.9 },
-    { name: 'W2', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
-    { name: '2.5', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
-    { name: 'W3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
-    { name: '3.5', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
-    { name: 'W4', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.2, grammar: 7.3 },
-    { name: '4.5', overall: 7.8, response: 7.3, coherence: 7.0, vocabulary: 8.4, grammar: 7.5 },
-    { name: 'W5', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.8, grammar: 7.9 },
-    { name: '5.5', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.2, grammar: 7.3 },
-    { name: 'W6', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
-    { name: '6.5', overall: 6.4, response: 5.9, coherence: 5.6, vocabulary: 7.0, grammar: 6.1 },
-    { name: 'W7', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
-    { name: '7.5', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.2, grammar: 7.3 },
-    { name: 'W8', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.8, grammar: 7.9 }
+    { name: 'A1', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
+    { name: 'A2', overall: 7.2, response: 6.7, coherence: 6.4, vocabulary: 7.8, grammar: 6.9 },
+    { name: 'A3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
   ],
   frequentErrors: [
-    { label: "Repetition of Basic Lexis", count: 12, impact: "High Impact", type: "red" },
-    { label: "Imprecise Word Choice", count: 9, impact: "High Impact", type: "red" },
-    { label: "Ideas Underdeveloped", count: 7, impact: "Medium Impact", type: "yellow" },
-    { label: "Unclear Referencing", count: 4, impact: "Medium Impact", type: "yellow" },
-    { label: "Logical Progression Gap", count: 2, impact: "Low Impact", type: "gray" }
-  ]
+    { label: 'Repetition of Basic Lexis', count: 12, impact: 'High Impact', type: 'red' },
+    { label: 'Imprecise Word Choice', count: 9, impact: 'High Impact', type: 'red' },
+    { label: 'Ideas Underdeveloped', count: 7, impact: 'Medium Impact', type: 'yellow' },
+  ],
 };
 
+// Returns true when err is a network-level failure (server unreachable),
+// false when the server responded with an HTTP error code.
+const isNetworkError = (err) => err instanceof TypeError || err.name === 'TypeError';
+
 export const api = {
+  // ─── POST /api/auth/login ───────────────────────────────────────────────────
   login: async (credentials) => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       });
+      serverReachable = true;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Invalid login authentication parameters.');
+        throw new Error(data.error || 'Invalid email or password.');
       }
       return await res.json();
     } catch (err) {
-      console.warn('[MOCK] Backend unreachable — using mock auth payload.', err.message);
-      // Mock fallback: AuthContext handles localStorage persistence
-      const token = 'mock_jwt_session_token_xyz_778899';
-      return { token, user: { ...mockDatasets.user, email: credentials.email || mockDatasets.user.email } };
+      if (serverReachable) throw err; // Real server error — show to user
+      // Network unreachable — offline demo mode only
+      console.warn('[DEMO] Backend unreachable — offline mock login.', err.message);
+      return {
+        token: 'mock_jwt_session_token_xyz_778899',
+        user: { ...offlineFallbacks.user, email: credentials.email || offlineFallbacks.user.email },
+      };
     }
   },
 
+  // ─── POST /api/auth/register ────────────────────────────────────────────────
   register: async (profile) => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
       });
+      serverReachable = true;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Registration processing exception.');
+        throw new Error(data.error || 'Registration failed.');
       }
       return await res.json();
     } catch (err) {
-      console.warn('[MOCK] Backend offline — using mock registration payload.', err.message);
-      // Mock fallback: AuthContext handles localStorage persistence
-      const token = 'mock_jwt_session_token_xyz_778899';
+      if (serverReachable) throw err;
+      console.warn('[DEMO] Backend unreachable — offline mock register.', err.message);
       const fullName = `${profile.first_name || ''} ${profile.last_name || profile.full_name || 'Candidate'}`.trim();
-      return { token, user: { ...mockDatasets.user, full_name: fullName, email: profile.email || mockDatasets.user.email } };
+      return {
+        token: 'mock_jwt_session_token_xyz_778899',
+        user: { ...offlineFallbacks.user, full_name: fullName, email: profile.email || offlineFallbacks.user.email },
+      };
     }
   },
 
+  // ─── GET /api/auth/me ───────────────────────────────────────────────────────
+  // CRITICAL: re-throw on HTTP errors so AuthContext can clear an invalid token.
   getMe: async () => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/auth/me`, { headers: getHeaders() });
-      if (!res.ok) throw new Error('Session metadata unavailable.');
+      serverReachable = true;
+      if (!res.ok) throw new Error(`Session invalid (${res.status}).`);
       return await res.json();
     } catch (err) {
-      console.warn('Offline state trigger: Providing static local workspace profile properties.', err);
-      return mockDatasets.user;
+      if (serverReachable) throw err; // 401/403 — token invalid, let AuthContext clear it
+      // Network unreachable — offline demo mode
+      console.warn('[DEMO] Backend unreachable — offline profile.', err.message);
+      return offlineFallbacks.user;
     }
   },
 
+  // ─── POST /api/submissions ──────────────────────────────────────────────────
   submitAttempt: async (payload) => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/submissions`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(payload),
       });
+      serverReachable = true;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Submission execution context rejected.');
+        throw new Error(data.error || 'Submission failed.');
       }
       return await res.json();
     } catch (err) {
-      console.warn('Simulating asynchronous automated essay parsing task.', err);
-      return { submission_id: `mock-sub-${Date.now()}`, message: 'Mock Evaluator proxy active.' };
+      if (serverReachable) throw err;
+      console.warn('[DEMO] Backend unreachable — mock submission.', err.message);
+      return { submission_id: `mock-sub-${Date.now()}`, message: 'Offline demo mode.' };
     }
   },
 
+  // ─── GET /api/submissions/status/:id ────────────────────────────────────────
   checkStatus: async (subId) => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/submissions/status/${subId}`, { headers: getHeaders() });
-      if (!res.ok) throw new Error('Status unreadable.');
+      serverReachable = true;
+      if (!res.ok) throw new Error(`Status check failed (${res.status}).`);
       return await res.json();
     } catch (err) {
-      // Simulate real-time progress switch
-      return { status: 'graded', progress_pct: 100 };
+      if (serverReachable) throw err;
+      return { status: 'graded', progress_pct: 100 }; // Offline fallback
     }
   },
 
+  // ─── GET /api/reports/:submissionId ─────────────────────────────────────────
   getReport: async (subId) => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/reports/${subId}`, { headers: getHeaders() });
-      if (!res.ok) throw new Error('Diagnostic matrix matrices non-existent.');
+      serverReachable = true;
+      if (!res.ok) throw new Error(`Report not found (${res.status}).`);
       return await res.json();
     } catch (err) {
-      console.warn('Fallback diagnostic report structure mapped downstream.', err);
+      if (serverReachable) throw err;
+      // Offline demo report
+      console.warn('[DEMO] Backend unreachable — offline mock report.', err.message);
       return {
         id: subId,
         overall_band: 7.0,
@@ -143,130 +160,125 @@ export const api = {
         coherence_band: 7.5,
         vocabulary_band: 7.0,
         grammar_band: 6.5,
-        strengths: ["Highly integrated intro paragraph structure", "Lexical linking patterns maintained"],
-        weaknesses: ["Repetition of fundamental lexis arrays", "Quantification parameters missing"],
-        errors: [
-          {
-            id: "err-1",
-            title: "Data Accuracy Error",
-            severity: "Major",
-            criteria: "Task Response",
-            sub_category: "Data Accuracy",
-            location_text: "Paragraph 1, Sentence 1",
-            original_text: "measured in kilocalories",
-            correction_text: "measured in raw scalar reference base units",
-            explanation: "Model parsed scalar discrepancies comparing textual string parameters against raw matrix chart constraints."
-          }
-        ]
+        strengths: ['Well-structured introduction', 'Effective use of cohesive devices'],
+        weaknesses: ['Limited vocabulary range', 'Some data accuracy issues'],
+        errors: [],
       };
     }
   },
 
+  // ─── GET /api/analytics/dashboard ───────────────────────────────────────────
   getDashboardAnalytics: async () => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/analytics/dashboard`, { headers: getHeaders() });
-      if (!res.ok) throw new Error('Analytic statistics context inaccessible.');
+      serverReachable = true;
+      if (!res.ok) throw new Error(`Analytics unavailable (${res.status}).`);
       return await res.json();
     } catch (err) {
-      console.warn('Providing default static workspace analytics distribution vectors.', err);
-      return {
-        chartData: mockDatasets.chartData,
-        frequentErrors: mockDatasets.frequentErrors
-      };
+      if (serverReachable) {
+        // Server reachable but error — return empty (no fake data)
+        return { chartData: [], frequentErrors: [] };
+      }
+      // Network unreachable — show demo data
+      console.warn('[DEMO] Backend unreachable — offline analytics.', err.message);
+      return { chartData: offlineFallbacks.chartData, frequentErrors: offlineFallbacks.frequentErrors };
     }
   },
 
+  // ─── GET /api/submissions ────────────────────────────────────────────────────
+  getSubmissions: async ({ limit = 50, offset = 0 } = {}) => {
+    let serverReachable = false;
+    try {
+      const res = await fetch(`${BASE_URL}/submissions?limit=${limit}&offset=${offset}`, { headers: getHeaders() });
+      serverReachable = true;
+      if (!res.ok) throw new Error(`Failed to fetch submissions (${res.status}).`);
+      return await res.json();
+    } catch (err) {
+      if (serverReachable) return { data: [], total: 0 }; // Server error — empty, not mock
+      console.warn('[DEMO] Backend unreachable — empty submissions.', err.message);
+      return { data: [], total: 0 };
+    }
+  },
+
+  // ─── POST /api/auth/forgot-password ─────────────────────────────────────────
   forgotPassword: async ({ email }) => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+      serverReachable = true;
       if (!res.ok) throw new Error('Request failed.');
       return await res.json();
     } catch (err) {
-      console.warn('[MOCK] Forgot password — simulating email sent.', err.message);
+      if (serverReachable) throw err;
       return { message: 'Password reset email sent. Check your inbox.' };
     }
   },
 
-  updateProfile: async (updates) => {
-    try {
-      const res = await fetch(`${BASE_URL}/auth/profile`, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        body: JSON.stringify(updates),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Profile update failed.');
-      }
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
-  },
-
-  changePassword: async ({ currentPassword, newPassword }) => {
-    try {
-      const res = await fetch(`${BASE_URL}/auth/change-password`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Password change failed.');
-      }
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
-  },
-
-  submitSupport: async ({ topic, message }) => {
-    try {
-      const res = await fetch(`${BASE_URL}/support`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ topic, message }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Support submission failed.');
-      }
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
-  },
-
-  getSubmissions: async ({ limit = 50, offset = 0 } = {}) => {
-    try {
-      const res = await fetch(`${BASE_URL}/submissions?limit=${limit}&offset=${offset}`, {
-        headers: getHeaders(),
-      });
-      if (!res.ok) throw new Error('Failed to fetch submissions.');
-      return await res.json();
-    } catch (err) {
-      console.warn('[api.getSubmissions] fallback:', err.message);
-      return { data: [], total: 0 };
-    }
-  },
-
+  // ─── POST /api/auth/reset-password ──────────────────────────────────────────
   resetPassword: async ({ token, newPassword }) => {
+    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),
       });
-      if (!res.ok) throw new Error('Reset failed.');
+      serverReachable = true;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Reset failed.');
+      }
       return await res.json();
     } catch (err) {
-      console.warn('[MOCK] Reset password — simulating success.', err.message);
+      if (serverReachable) throw err;
       return { message: 'Password reset successful.' };
     }
+  },
+
+  // ─── PATCH /api/auth/profile ─────────────────────────────────────────────────
+  updateProfile: async (updates) => {
+    const res = await fetch(`${BASE_URL}/auth/profile`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Profile update failed.');
+    }
+    return res.json();
+  },
+
+  // ─── POST /api/auth/change-password ─────────────────────────────────────────
+  changePassword: async ({ currentPassword, newPassword }) => {
+    const res = await fetch(`${BASE_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Password change failed.');
+    }
+    return res.json();
+  },
+
+  // ─── POST /api/support ───────────────────────────────────────────────────────
+  submitSupport: async ({ topic, message }) => {
+    const res = await fetch(`${BASE_URL}/support`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ topic, message }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Support submission failed.');
+    }
+    return res.json();
   },
 };
