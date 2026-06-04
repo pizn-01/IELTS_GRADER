@@ -19,6 +19,15 @@ const FullPageLoader = () => (
  * Shows loader during bootstrap, redirects to /login if unauthenticated,
  * and preserves the intended destination via location state.
  */
+export const AdminRoute = ({ children }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
+  if (isLoading) return <FullPageLoader />;
+  if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!user?.is_admin) return <Navigate to="/dashboard" replace />;
+  return children;
+};
+
 export const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();

@@ -283,6 +283,31 @@ export const api = {
     return res.json();
   },
 
+  // ─── Admin API ───────────────────────────────────────────────────────────────
+  admin: {
+    getStats: () => fetch(`${BASE_URL}/admin/stats`, { headers: getHeaders() }).then(r => r.json()),
+    getUsers: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/users?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getUser: (id) => fetch(`${BASE_URL}/admin/users/${id}`, { headers: getHeaders() }).then(r => r.json()),
+    updateUser: (id, body) => fetch(`${BASE_URL}/admin/users/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    adjustCredits: (id, amount, reason) => fetch(`${BASE_URL}/admin/users/${id}/credits`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ amount, reason }) }).then(r => r.json()),
+    getSubmissions: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/submissions?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getSupport: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/support?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    updateSupport: (id, body) => fetch(`${BASE_URL}/admin/support/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    getDiscounts: () => fetch(`${BASE_URL}/admin/discounts`, { headers: getHeaders() }).then(r => r.json()),
+    createDiscount: (body) => fetch(`${BASE_URL}/admin/discounts`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    updateDiscount: (id, body) => fetch(`${BASE_URL}/admin/discounts/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    deleteDiscount: (id) => fetch(`${BASE_URL}/admin/discounts/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
+  },
+
   // ─── POST /api/support ───────────────────────────────────────────────────────
   submitSupport: async ({ topic, message }) => {
     const res = await fetch(`${BASE_URL}/support`, {

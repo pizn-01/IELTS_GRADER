@@ -6,7 +6,8 @@ import Lenis from 'lenis';
 import { GradeProvider } from './context/GradeContext';
 
 // ── Route Guard ───────────────────────────────────────────────────────────────
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
+import AdminPage from './pages/AdminPage';
 
 // ── Marketing Site Components ─────────────────────────────────────────────────
 import Navbar from './marketing/Navbar';
@@ -179,6 +180,9 @@ function App() {
               <PerformanceOverviewPage onBack={() => navigate('/reports')} />
             </Layout>
           </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <AdminRoute><AdminPage /></AdminRoute>
         } />
         <Route path="/settings" element={
           <ProtectedRoute>
