@@ -14,7 +14,7 @@ function signToken(userId, email) {
 async function fetchProfile(userId) {
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('full_name, target_band, credits_remaining, profile_image_url')
+    .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
     .eq('id', userId)
     .single();
   if (error) throw new Error(`Profile fetch failed: ${error.message}`);
@@ -85,7 +85,7 @@ router.post('/register', async (req, res) => {
       await new Promise(r => setTimeout(r, 400));
       const { data: p } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, target_band, credits_remaining, profile_image_url')
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
         .eq('id', data.user.id)
         .single();
       if (p) { profile = p; break; }
@@ -96,7 +96,7 @@ router.post('/register', async (req, res) => {
       const { data: inserted, error: insErr } = await supabaseAdmin
         .from('profiles')
         .insert({ id: data.user.id, full_name: name })
-        .select('full_name, target_band, credits_remaining, profile_image_url')
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
         .single();
       if (insErr) console.error('[auth/register] Profile fallback insert error:', insErr.message);
       profile = inserted || { full_name: name, target_band: 7.5, credits_remaining: 5, profile_image_url: null };
@@ -220,7 +220,7 @@ router.patch('/profile', authenticateToken, async (req, res) => {
       .from('profiles')
       .update(updates)
       .eq('id', userId)
-      .select('full_name, target_band, credits_remaining, profile_image_url')
+      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
       .single();
 
     if (error) throw error;
@@ -298,7 +298,7 @@ router.post('/google', async (req, res) => {
     for (let attempt = 0; attempt < 4; attempt++) {
       const { data: p } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, target_band, credits_remaining, profile_image_url')
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
         .eq('id', user.id)
         .single();
       if (p) { profile = p; break; }
@@ -317,7 +317,7 @@ router.post('/google', async (req, res) => {
       const { data: inserted } = await supabaseAdmin
         .from('profiles')
         .upsert({ id: user.id, full_name: fullName, profile_image_url: avatarUrl })
-        .select('full_name, target_band, credits_remaining, profile_image_url')
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
         .single();
 
       profile = inserted || {
