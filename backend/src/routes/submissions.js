@@ -110,53 +110,78 @@ router.get('/status/:id', authenticateToken, async (req, res) => {
 });
 
 // ─── GET /api/submissions ─────────────────────────────────────────────────────
-// Full history list used by ReportsOverview. Returns submissions joined with
-// their report band score (if graded) for rendering the history cards.
+// Full history list used by ReportsOverview. Uses two explicit queries instead
+// of PostgREST embedded resources to avoid FK relationship detection issues.
 router.get('/', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
-  const { limit = 50, offset = 0 } = req.query;
+  const { limit = 50, offset = 0, task } = req.query;
 
-  const { data, error } = await supabaseAdmin
-    .from('submissions')
-    .select(`
-      id,
-      exam_type,
-      task_type,
-      word_count,
-      time_spent_seconds,
-      status,
-      created_at,
-      reports ( overall_band, response_band, coherence_band, vocabulary_band, grammar_band )
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range(Number(offset), Number(offset) + Number(limit) - 1);
+  try {
+    // 1. Fetch submissions (no join — avoids PostgREST relationship detection)
+    let query = supabaseAdmin
+      .from('submissions')
+      .select('id, exam_type, task_type, word_count, time_spent_seconds, status, created_at')
+      .eq('user_id', userId);
 
-  if (error) {
-    console.error('[submissions/list]', error.message);
+    if (task) {
+      const [examType, taskNum] = task.split(' Task ');
+      if (examType && taskNum) {
+        query = query.eq('exam_type', examType).eq('task_type', `Task ${taskNum}`);
+      }
+    }
+
+    const { data: submissions, error: subError } = await query
+      .order('created_at', { ascending: false })
+      .range(Number(offset), Number(offset) + Number(limit) - 1);
+
+    if (subError) {
+      console.error('[submissions/list] submissions query:', subError.message);
+      return res.status(500).json({ error: 'Failed to fetch submissions.' });
+    }
+
+    if (!submissions || submissions.length === 0) {
+      return res.json({ data: [], total: 0 });
+    }
+
+    // 2. Fetch band scores for these submission IDs separately
+    const submissionIds = submissions.map(s => s.id);
+    const { data: reports, error: repError } = await supabaseAdmin
+      .from('reports')
+      .select('submission_id, overall_band, response_band, coherence_band, vocabulary_band, grammar_band')
+      .in('submission_id', submissionIds);
+
+    if (repError) {
+      console.error('[submissions/list] reports query:', repError.message);
+      // Non-fatal — return submissions without band data rather than failing
+    }
+
+    // 3. Build lookup map and merge
+    const reportMap = {};
+    (reports || []).forEach(r => { reportMap[r.submission_id] = r; });
+
+    const flattened = submissions.map(s => {
+      const r = reportMap[s.id];
+      return {
+        id:                s.id,
+        exam_type:         s.exam_type,
+        task_type:         s.task_type,
+        word_count:        s.word_count,
+        time_spent_seconds: s.time_spent_seconds,
+        status:            s.status,
+        created_at:        s.created_at,
+        overall_band:      r ? parseFloat(r.overall_band)   : null,
+        response_band:     r ? parseFloat(r.response_band)  : null,
+        coherence_band:    r ? parseFloat(r.coherence_band) : null,
+        vocabulary_band:   r ? parseFloat(r.vocabulary_band): null,
+        grammar_band:      r ? parseFloat(r.grammar_band)   : null,
+      };
+    });
+
+    return res.json({ data: flattened, total: flattened.length });
+  } catch (err) {
+    console.error('[submissions/list] unexpected:', err.message);
     return res.status(500).json({ error: 'Failed to fetch submissions.' });
   }
-
-  // Flatten the report data into each submission row for easy frontend consumption
-  const flattened = (data || []).map(s => {
-    const report = Array.isArray(s.reports) ? s.reports[0] : s.reports;
-    return {
-      id: s.id,
-      exam_type: s.exam_type,
-      task_type: s.task_type,
-      word_count: s.word_count,
-      time_spent_seconds: s.time_spent_seconds,
-      status: s.status,
-      created_at: s.created_at,
-      overall_band: report ? parseFloat(report.overall_band) : null,
-      response_band: report ? parseFloat(report.response_band) : null,
-      coherence_band: report ? parseFloat(report.coherence_band) : null,
-      vocabulary_band: report ? parseFloat(report.vocabulary_band) : null,
-      grammar_band: report ? parseFloat(report.grammar_band) : null,
-    };
-  });
-
-  return res.json({ data: flattened, total: flattened.length });
 });
 
 module.exports = router;
