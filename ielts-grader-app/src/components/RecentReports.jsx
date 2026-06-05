@@ -41,33 +41,8 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
     );
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.5 }
-    }
-  };
-
   return (
-    <motion.div 
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      variants={containerVariants}
-      className="mt-10 overflow-hidden"
-    >
+    <div className="mt-10">
       <h2 className="text-lg font-bold mb-6">Reports</h2>
       
       {/* Desktop Header */}
@@ -81,10 +56,12 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
         <div className="text-[16px] font-semibold text-[#101828] font-sans leading-none text-right pr-4">Actions</div>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-3 relative z-10">
         {(displayReports || []).map((report, idx) => (
           <motion.div 
-            variants={itemVariants}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: idx * 0.05 }}
             key={report.id} 
             className="bg-white border border-gray-100 rounded-[12px] md:rounded-[10px] p-4 md:py-3 md:px-8 flex flex-col md:grid md:grid-cols-4 md:items-center gap-4 md:gap-0 transition-all hover:bg-gray-50 hover:shadow-md shadow-sm md:shadow-none"
           >
@@ -122,7 +99,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
           </motion.div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 };
 

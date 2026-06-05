@@ -35,7 +35,7 @@ const SelectionPage = () => {
 
   return (
     <div className="min-h-screen bg-white font-['Inter',_sans-serif]">
-      <div className={`transition-all duration-700 ${gradingStatus === 'processing' ? 'blur-md pointer-events-none' : 'blur-0'}`}>
+      <div className="transition-all duration-700">
         <Navbar />
         
         <main className="max-w-[960px] mx-auto px-6 pt-12 pb-20">

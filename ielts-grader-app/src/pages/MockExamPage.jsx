@@ -2,11 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Send, ChevronLeft, ChevronDown, Info } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../marketing/Footer';
 
 const MockExamPage = () => {
   const navigate = useNavigate();
-  const { essayData, updateEssayData, userStatus } = useGrade();
+  const { essayData, updateEssayData } = useGrade();
+  const { user } = useAuth();
+  
+  // Derive display name and initials from auth user
+  const displayName = user?.full_name || 'Candidate';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('');
+
   const [activeTask, setActiveTask] = useState(essayData.taskType || 'Task 2');
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const [task1Content, setTask1Content] = useState('');
@@ -35,8 +47,8 @@ const MockExamPage = () => {
       task2Content,
       taskType: activeTask
     });
-    if (userStatus.isLoggedIn) {
-      navigate('/report');
+    if (user) {
+      navigate('/analysis-ready');
     } else {
       navigate('/selection');
     }
@@ -48,11 +60,11 @@ const MockExamPage = () => {
       <header className="h-[64px] md:h-[72px] border-b border-[#E5E7EB] px-4 md:px-8 flex items-center justify-between bg-white shrink-0 relative z-[100]">
         <div className="flex items-center gap-3 md:gap-3.5">
           <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] bg-[#EFF6FF] rounded-[8px] md:rounded-[10px] flex items-center justify-center text-[#3B82F6] text-[13px] md:text-[14px] font-bold">
-            JD
+            {initials}
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-[13px] md:text-[14px] font-semibold text-[#1a1f36]">Candidate</span>
+              <span className="text-[13px] md:text-[14px] font-semibold text-[#1a1f36]">{displayName}</span>
               <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] hidden sm:block" />
             </div>
             <span className="text-[11px] md:text-[12px] text-[#6B7280]">

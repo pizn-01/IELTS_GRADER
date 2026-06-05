@@ -10,12 +10,21 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
 
   try {
     // 1. All graded submissions for this user (chronological)
-    const { data: submissions, error: subError } = await supabaseAdmin
+    let subQuery = supabaseAdmin
       .from('submissions')
       .select('id')
       .eq('user_id', userId)
       .eq('status', 'graded')
       .order('created_at', { ascending: true });
+
+    if (req.query.task) {
+      const [examType, taskNum] = req.query.task.split(' Task ');
+      if (examType && taskNum) {
+        subQuery = subQuery.eq('exam_type', examType).eq('task_type', `Task ${taskNum}`);
+      }
+    }
+
+    const { data: submissions, error: subError } = await subQuery;
 
     if (subError) throw subError;
 
@@ -40,7 +49,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     );
 
     const chartData = sortedReports.map((row, idx) => ({
-      name: `A${idx + 1}`,
+      name: `W${idx + 1}`,
       overall: parseFloat(row.overall_band),
       response: parseFloat(row.response_band),
       coherence: parseFloat(row.coherence_band),

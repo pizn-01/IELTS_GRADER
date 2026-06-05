@@ -31,15 +31,21 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(403).json({ error: 'Insufficient evaluation credits. Please purchase more to continue.' });
   }
 
-  // Deduct 1 credit atomically
-  const { error: deductError } = await supabaseAdmin
+  // Deduct 1 credit atomically with optimistic lock — verify a row was actually updated
+  const { error: deductError, count: deductCount } = await supabaseAdmin
     .from('profiles')
     .update({ credits_remaining: profile.credits_remaining - 1 })
     .eq('id', userId)
-    .eq('credits_remaining', profile.credits_remaining); // Optimistic lock
+    .eq('credits_remaining', profile.credits_remaining) // Optimistic lock
+    .select('*', { count: 'exact' });
 
   if (deductError) {
     return res.status(500).json({ error: 'Failed to deduct credit. Please try again.' });
+  }
+
+  // count === 0 means another request already changed the balance (race condition)
+  if (deductCount === 0) {
+    return res.status(409).json({ error: 'Credit balance changed concurrently. Please try again.' });
   }
 
   // Create the submission record
@@ -120,7 +126,7 @@ router.get('/', authenticateToken, async (req, res) => {
     // 1. Fetch submissions (no join — avoids PostgREST relationship detection)
     let query = supabaseAdmin
       .from('submissions')
-      .select('id, exam_type, task_type, word_count, time_spent_seconds, status, created_at')
+      .select('id, exam_type, task_type, word_count, time_spent_seconds, status, created_at, essay_content', { count: 'exact' })
       .eq('user_id', userId);
 
     if (task) {
@@ -130,7 +136,7 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     }
 
-    const { data: submissions, error: subError } = await query
+    const { data: submissions, count, error: subError } = await query
       .order('created_at', { ascending: false })
       .range(Number(offset), Number(offset) + Number(limit) - 1);
 
@@ -169,6 +175,7 @@ router.get('/', authenticateToken, async (req, res) => {
         time_spent_seconds: s.time_spent_seconds,
         status:            s.status,
         created_at:        s.created_at,
+        essay_content:     s.essay_content,
         overall_band:      r ? parseFloat(r.overall_band)   : null,
         response_band:     r ? parseFloat(r.response_band)  : null,
         coherence_band:    r ? parseFloat(r.coherence_band) : null,
@@ -177,7 +184,7 @@ router.get('/', authenticateToken, async (req, res) => {
       };
     });
 
-    return res.json({ data: flattened, total: flattened.length });
+    return res.json({ data: flattened, total: count || 0, page_count: flattened.length });
   } catch (err) {
     console.error('[submissions/list] unexpected:', err.message);
     return res.status(500).json({ error: 'Failed to fetch submissions.' });

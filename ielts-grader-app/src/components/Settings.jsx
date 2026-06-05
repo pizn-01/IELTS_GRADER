@@ -1,12 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Camera, Eye, EyeOff, CreditCard, ArrowRight, X, Target, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import PaymentPage from './PaymentPage';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
 const Settings = ({ profileImage, setProfileImage }) => {
+  const location = useLocation();
+  const getInitialTab = () => {
+    let tab = location.state?.activeTab || 'Profile';
+    if (tab === 'Security') return 'Change Password';
+    return tab;
+  };
+
   const { user, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('Profile');
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      let tab = location.state.activeTab;
+      if (tab === 'Security') tab = 'Change Password';
+      setActiveTab(tab);
+    }
+  }, [location.state?.activeTab]);
+
   const [showRetentionModal, setShowRetentionModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -18,6 +35,15 @@ const Settings = ({ profileImage, setProfileImage }) => {
     lastName:  user?.full_name?.split(' ').slice(1).join(' ') || '',
     targetBand: user?.target_band || 7.5,
   });
+
+  // Derive initials and display name from live user data
+  const displayName = user?.full_name || 'User';
+  const avatarInitials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('') || 'U';
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState(null); // { type: 'success'|'error', text }
 
@@ -171,7 +197,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                       className="w-full h-full object-cover animate-in fade-in duration-500"
                     />
                   ) : (
-                    <span className="animate-in zoom-in duration-300">JD</span>
+                    <span className="animate-in zoom-in duration-300">{avatarInitials}</span>
                   )}
                   {isDragging && (
                     <div className="absolute inset-0 bg-[#1A96F3]/20 backdrop-blur-[2px] flex items-center justify-center rounded-full">
@@ -193,7 +219,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 />
               </div>
               <div className="text-center">
-                <span className="text-[16px] font-bold text-[#101828] block">John Doe</span>
+                <span className="text-[16px] font-bold text-[#101828] block">{displayName}</span>
                 <span className="text-[12px] text-gray-400 font-medium">Click icon or drag & drop</span>
               </div>
             </div>

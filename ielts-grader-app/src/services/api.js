@@ -2,7 +2,7 @@ const BASE_URL = '/api';
 
 const getHeaders = () => {
   const headers = { 'Content-Type': 'application/json' };
-  const token = localStorage.getItem('ielts_token');
+  const token = localStorage.getItem('token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 };
@@ -20,9 +20,9 @@ const offlineFallbacks = {
     profile_image_url: null,
   },
   chartData: [
-    { name: 'A1', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
-    { name: 'A2', overall: 7.2, response: 6.7, coherence: 6.4, vocabulary: 7.8, grammar: 6.9 },
-    { name: 'A3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
+    { name: 'W1', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
+    { name: 'W2', overall: 7.2, response: 6.7, coherence: 6.4, vocabulary: 7.8, grammar: 6.9 },
+    { name: 'W3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
   ],
   frequentErrors: [
     { label: 'Repetition of Basic Lexis', count: 12, impact: 'High Impact', type: 'red' },
@@ -91,17 +91,17 @@ export const api = {
   // ─── GET /api/auth/me ───────────────────────────────────────────────────────
   // CRITICAL: re-throw on HTTP errors so AuthContext can clear an invalid token.
   getMe: async () => {
-    let serverReachable = false;
     try {
       const res = await fetch(`${BASE_URL}/auth/me`, { headers: getHeaders() });
-      serverReachable = true;
-      if (!res.ok) throw new Error(`Session invalid (${res.status}).`);
+      if (!res.ok) {
+        const err = new Error(`Session invalid (${res.status}).`);
+        err.status = res.status;
+        throw err;
+      }
       return await res.json();
     } catch (err) {
-      if (serverReachable) throw err; // 401/403 — token invalid, let AuthContext clear it
-      // Network unreachable — offline demo mode
-      console.warn('[DEMO] Backend unreachable — offline profile.', err.message);
-      return offlineFallbacks.user;
+      console.warn('Session verification failed:', err.message);
+      throw err;
     }
   },
 
@@ -168,10 +168,14 @@ export const api = {
   },
 
   // ─── GET /api/analytics/dashboard ───────────────────────────────────────────
-  getDashboardAnalytics: async () => {
+  getDashboardAnalytics: async ({ taskType } = {}) => {
     let serverReachable = false;
     try {
-      const res = await fetch(`${BASE_URL}/analytics/dashboard`, { headers: getHeaders() });
+      let url = `${BASE_URL}/analytics/dashboard`;
+      if (taskType) {
+        url += `?task=${encodeURIComponent(taskType)}`;
+      }
+      const res = await fetch(url, { headers: getHeaders() });
       serverReachable = true;
       if (!res.ok) throw new Error(`Analytics unavailable (${res.status}).`);
       return await res.json();
@@ -187,10 +191,14 @@ export const api = {
   },
 
   // ─── GET /api/submissions ────────────────────────────────────────────────────
-  getSubmissions: async ({ limit = 50, offset = 0 } = {}) => {
+  getSubmissions: async ({ limit = 50, offset = 0, taskType } = {}) => {
     let serverReachable = false;
     try {
-      const res = await fetch(`${BASE_URL}/submissions?limit=${limit}&offset=${offset}`, { headers: getHeaders() });
+      let url = `${BASE_URL}/submissions?limit=${limit}&offset=${offset}`;
+      if (taskType) {
+        url += `&task=${encodeURIComponent(taskType)}`;
+      }
+      const res = await fetch(url, { headers: getHeaders() });
       serverReachable = true;
       if (!res.ok) throw new Error(`Failed to fetch submissions (${res.status}).`);
       return await res.json();

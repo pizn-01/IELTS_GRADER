@@ -1,7 +1,7 @@
 const OpenAI = require('openai');
 const { supabaseAdmin } = require('./supabase');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000 });
 
 // Clamp a raw score to valid IELTS 0.5-increment bands (1.0–9.0)
 function clampBand(raw) {

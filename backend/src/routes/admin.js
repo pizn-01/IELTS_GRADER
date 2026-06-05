@@ -66,58 +66,73 @@ router.get('/users', async (req, res) => {
   const perPage = Math.min(parseInt(per_page), 100);
 
   try {
-    // Get profiles
+    // Build profile query — push name search to DB to avoid pulling all records
     let profileQuery = supabaseAdmin
       .from('profiles')
       .select('id, full_name, target_band, credits_remaining, is_admin, created_at')
       .order('created_at', { ascending: false })
       .range((page - 1) * perPage, page * perPage - 1);
 
+    if (search) {
+      profileQuery = profileQuery.ilike('full_name', `%${search}%`);
+    }
+
     const { data: profiles, error: profileError } = await profileQuery;
     if (profileError) throw profileError;
 
-    // Get matching auth users for their emails
     const userIds = (profiles || []).map(p => p.id);
-    const emailMap = {};
 
-    await Promise.all(
-      userIds.map(async (id) => {
-        const { data } = await supabaseAdmin.auth.admin.getUserById(id);
-        if (data?.user) emailMap[id] = data.user.email;
-      })
-    );
+    // Single batch call for all emails — avoids N+1 per-user requests
+    const { data: authData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    const emailMap = {};
+    (authData?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+
+    // Filter by email if search didn't match any names (best-effort email search)
+    const emailMatches = search
+      ? (authData?.users || [])
+          .filter(u => u.email?.toLowerCase().includes(search.toLowerCase()))
+          .map(u => u.id)
+      : [];
+
+    // Combine name-matched profiles with any email-only matches not already included
+    const allIds = new Set(userIds);
+    const extraEmailIds = emailMatches.filter(id => !allIds.has(id));
+
+    let allProfiles = profiles || [];
+    if (extraEmailIds.length > 0) {
+      const { data: extraProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name, target_band, credits_remaining, is_admin, created_at')
+        .in('id', extraEmailIds);
+      allProfiles = [...allProfiles, ...(extraProfiles || [])];
+    }
+
+    const allUserIds = allProfiles.map(p => p.id);
 
     // Get submission counts per user
     const { data: submissionCounts } = await supabaseAdmin
       .from('submissions')
       .select('user_id')
-      .in('user_id', userIds);
+      .in('user_id', allUserIds);
 
     const submissionMap = {};
     (submissionCounts || []).forEach(s => {
       submissionMap[s.user_id] = (submissionMap[s.user_id] || 0) + 1;
     });
 
-    const users = (profiles || []).map(p => ({
+    const users = allProfiles.map(p => ({
       ...p,
       email: emailMap[p.id] || '—',
       submission_count: submissionMap[p.id] || 0,
     }));
 
-    // Apply search filter after merge (search by name or email)
-    const filtered = search
-      ? users.filter(u =>
-          u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-          u.email?.toLowerCase().includes(search.toLowerCase())
-        )
-      : users;
-
-    return res.json({ data: filtered, page: parseInt(page), per_page: perPage });
+    return res.json({ data: users, page: parseInt(page), per_page: perPage });
   } catch (err) {
     console.error('[admin/users]', err.message);
     return res.status(500).json({ error: 'Failed to fetch users.' });
   }
 });
+
 
 // ─── GET /api/admin/users/:id ─────────────────────────────────────────────────
 router.get('/users/:id', async (req, res) => {

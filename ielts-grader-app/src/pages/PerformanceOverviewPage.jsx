@@ -14,6 +14,8 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const [frequentErrors, setFrequentErrors] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [latestReport, setLatestReport] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -32,6 +34,40 @@ const PerformanceOverviewPage = ({ onBack }) => {
       setSubmissions([]);
     }).finally(() => setLoading(false));
   }, [activeTask]);
+
+  // Fetch the most recent Task 2 report whenever submissions or task filter changes
+  useEffect(() => {
+    const isT2 = activeTask.includes('Task 2');
+    if (!isT2) { setLatestReport(null); return; }
+    
+    let cancelled = false;
+    setReportLoading(true);
+    
+    // Fetch all submissions (limit 100) to find the most recent Task 2 overall
+    api.getSubmissions({ limit: 100 })
+      .then(res => {
+        if (cancelled) return;
+        const allSubs = res.data || [];
+        const task2Subs = allSubs.filter(s => s.task_type === 'Task 2' && s.status === 'graded');
+        if (task2Subs.length === 0) {
+          setLatestReport(null);
+          setReportLoading(false);
+          return;
+        }
+        api.getReport(task2Subs[0].id)
+          .then(r => { if (!cancelled) setLatestReport(r); })
+          .catch(() => { if (!cancelled) setLatestReport(null); })
+          .finally(() => { if (!cancelled) setReportLoading(false); });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLatestReport(null);
+          setReportLoading(false);
+        }
+      });
+      
+    return () => { cancelled = true; };
+  }, [activeTask, submissions]);
 
   // Derived stats from real chart data
   const overallScores = chartData.map(d => d.overall).filter(Boolean);
@@ -96,6 +132,28 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const TASK_LABELS  = { '': 'All Tasks', 'Academic Task 1': 'Academic Task 1', 'Academic Task 2': 'Academic Task 2', 'General Task 1': 'General Task 1', 'General Task 2': 'General Task 2' };
 
   const handleExport = () => { window.print(); };
+
+  // Shared loading / empty-state wrapper for all Task 2 deep-analysis tabs.
+  // contentFn is a thunk so latestReport is only accessed when it exists.
+  const renderTask2Tab = (contentFn) => {
+    if (reportLoading) return (
+      <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+        <div className="w-8 h-8 border-4 border-[#1A96F3] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+    if (!latestReport) return (
+      <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+            <MoreHorizontal className="text-gray-300" />
+          </div>
+          <h3 className="text-[18px] font-bold text-[#101828]">No Task 2 Data Yet</h3>
+          <p className="text-gray-400 text-[14px]">Complete a Task 2 exam to unlock this section.</p>
+        </div>
+      </div>
+    );
+    return contentFn();
+  };
 
   // Reset sub-tab when task type changes (Task 1 / Task 2 have different sub-tabs)
   const handleTaskChange = (task) => {
@@ -533,11 +591,13 @@ const PerformanceOverviewPage = ({ onBack }) => {
                     : 'Complete your first exam to see your personalized verdict.'}
                 </p>
 
-                <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
-                   <p className="text-[16.5px] leading-relaxed text-[#101828] font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                     <span className="text-[#DC6803] font-bold">Tutor Notice (Plateau):</span> You've been scoring exactly the same over the last 5 attempts (stagnant). This is a habit loop. Focus entirely on your highest priority Fix Cards to break it.
-                   </p>
-                </div>
+                {bandChange != null && Math.abs(parseFloat(bandChange)) < 0.5 && overallScores.length >= 3 && (
+                  <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
+                     <p className="text-[16.5px] leading-relaxed text-[#101828] font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                       <span className="text-[#DC6803] font-bold">Tutor Notice (Plateau):</span> Your score has been relatively stable across recent attempts. Focus entirely on your highest priority Fix Cards to break through.
+                     </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -554,11 +614,15 @@ const PerformanceOverviewPage = ({ onBack }) => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-white border border-gray-100 rounded-[16px] p-8 shadow-sm flex flex-col justify-center space-y-2 h-[110px]">
                    <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
-                   <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>+0.4</p>
+                   <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                     {latestBand != null ? (latestBand >= 7.5 ? 'Target Reached' : `+${(7.5 - latestBand).toFixed(1)}`) : '—'}
+                   </p>
                 </div>
                 <div className="bg-white border border-gray-100 rounded-[16px] p-8 shadow-sm flex flex-col justify-center space-y-2 h-[110px]">
                    <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>Lowest Hanging Fruit</p>
-                   <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grammatical Range & Accuracy</p>
+                   <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                     {bottleneckCrit.avg != null ? bottleneckCrit.name : '—'}
+                   </p>
                 </div>
               </div>
             </div>
@@ -664,7 +728,11 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <ul className="space-y-5 font-sans">
                   <li className="flex items-start gap-3">
                     <div className="w-1 h-1 rounded-full bg-[#101828] mt-2 shrink-0"></div>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Focus on the top 2 error targets for 7 days; Repetition of basic lexis, Imprecise word choice.</p>
+                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
+                       Focus on the top {Math.min(2, frequentErrors.length)} error target{frequentErrors.length !== 1 ? 's' : ''} for 7 days
+                       {frequentErrors[0] ? <span>: <strong>{frequentErrors[0].label}</strong></span> : null}
+                       {frequentErrors[1] ? <span>, <strong>{frequentErrors[1].label}</strong></span> : null}.
+                     </p>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="w-1 h-1 rounded-full bg-[#101828] mt-2 shrink-0"></div>
@@ -853,7 +921,282 @@ const PerformanceOverviewPage = ({ onBack }) => {
                </div>
             </div>
           </div>
-        : 
+        : activeTab === "Error Analysis" ? renderTask2Tab(() => {
+            const sevColors = { Major: 'text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]', High: 'text-[#DC6803] bg-[#FFFAEB] border-[#FEC84B]', Medium: 'text-[#344054] bg-[#F2F4F7] border-[#D0D5DD]', Low: 'text-[#475467] bg-[#F9FAFB] border-[#E4E7EC]' };
+            const groups = ['Task Response','Coherence & Cohesion','Lexical Resource','Grammatical Range & Accuracy']
+              .map(c => ({ criteria: c, errors: (latestReport.errors || []).filter(e => e.criteria === c) }))
+              .filter(g => g.errors.length > 0);
+            return (
+              <div className="space-y-8">
+                {groups.length === 0 ? (
+                  <div className="bg-white rounded-[24px] p-10 text-center border border-gray-100 shadow-sm"><p className="text-[14px] text-gray-400">No errors recorded for this submission.</p></div>
+                ) : groups.map((group, gi) => (
+                  <div key={gi} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
+                    <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                      <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{group.criteria}</h3>
+                      <p className="text-[13px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>{group.errors.length} error{group.errors.length !== 1 ? 's' : ''} identified</p>
+                    </div>
+                    <div className="p-8 space-y-5">
+                      {group.errors.map((err, ei) => (
+                        <div key={ei} className="border border-[#E5E7EB] rounded-[16px] p-6 space-y-4 hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.title}</h4>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`px-3 py-1 rounded-full border text-[12px] font-bold ${sevColors[err.severity] || sevColors.Medium}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{err.severity}</span>
+                              <span className="px-3 py-1 rounded-full bg-[#F2F4F7] border border-[#E4E7EC] text-[12px] font-bold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.sub_category}</span>
+                            </div>
+                          </div>
+                          {err.location_text && <p className="text-[12px] text-[#667085] font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.location_text}</p>}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-[#FEF3F2] border border-[#FDA29B] rounded-[10px] px-4 py-3">
+                              <p className="text-[11px] font-bold text-[#D92D20] mb-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>ORIGINAL</p>
+                              <p className="text-[14px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.original_text}</p>
+                            </div>
+                            <div className="bg-[#F0FDF9] border border-[#6EE7B7] rounded-[10px] px-4 py-3">
+                              <p className="text-[11px] font-bold text-[#059669] mb-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>CORRECTION</p>
+                              <p className="text-[14px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.correction_text}</p>
+                            </div>
+                          </div>
+                          <p className="text-[14px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.explanation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })
+        : activeTab === "Dual Assessment" ? renderTask2Tab(() => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
+                <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Strengths</h3>
+                  <p className="text-[13px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>What you did well in this submission</p>
+                </div>
+                <div className="p-8 space-y-4 flex-1">
+                  {(latestReport.strengths || []).map((s, i) => (
+                    <div key={i} className="px-6 py-4 bg-[#F4FCF9] rounded-[12px] border border-[#E6F8F3] flex items-start gap-4">
+                      <div className="w-2 h-2 rounded-full bg-[#30C3A9] mt-2 shrink-0" />
+                      <p className="text-[15px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{s}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
+                <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Weaknesses</h3>
+                  <p className="text-[13px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Areas that lowered your band score</p>
+                </div>
+                <div className="p-8 space-y-4 flex-1">
+                  {(latestReport.weaknesses || []).map((w, i) => (
+                    <div key={i} className="px-6 py-4 bg-[#FFF7F7] rounded-[12px] border border-[#FEEDED] flex items-start gap-4">
+                      <div className="w-2 h-2 rounded-full bg-[#EA4335] mt-2 shrink-0" />
+                      <p className="text-[15px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{w}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))
+        : activeTab === "Model Answer" ? renderTask2Tab(() => !latestReport.model_answer ? (
+            <div className="bg-white rounded-[24px] p-10 text-center border border-gray-100 shadow-sm"><p className="text-[14px] text-gray-400">Model answer not available for this submission.</p></div>
+          ) : (
+            <div className="space-y-8">
+              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                <div className="px-8 py-5 border-b border-[#F2F4F7] flex items-center justify-between">
+                  <div>
+                    <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Band 8.0 Model Answer</h3>
+                    <p className="text-[13px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Written for the same prompt at a higher band level</p>
+                  </div>
+                  <span className="px-4 py-1.5 bg-[#F0FDF9] border border-[#6EE7B7] rounded-full text-[13px] font-bold text-[#059669]" style={{ fontFamily: "'Nunito', sans-serif" }}>Band {latestReport.model_answer.estimated_band ?? 8.0}</span>
+                </div>
+                <div className="p-8">
+                  <p className="text-[16px] text-[#101828] leading-[1.8] whitespace-pre-wrap" style={{ fontFamily: "'Nunito', sans-serif" }}>{latestReport.model_answer.text}</p>
+                </div>
+              </div>
+              {(latestReport.model_answer.key_changes || []).length > 0 && (
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                    <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Key Improvements vs Your Essay</h3>
+                  </div>
+                  <div className="p-8 space-y-4">
+                    {latestReport.model_answer.key_changes.map((change, i) => (
+                      <div key={i} className="flex items-start gap-4">
+                        <span className="w-6 h-6 rounded-full bg-[#1A96F3] text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                        <p className="text-[15px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{change}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        : activeTab === "Vocabulary" ? renderTask2Tab(() => !latestReport.vocabulary_analysis ? (
+            <div className="bg-white rounded-[24px] p-10 text-center border border-gray-100 shadow-sm"><p className="text-[14px] text-gray-400">Vocabulary analysis not available for this submission.</p></div>
+          ) : (
+            <div className="space-y-8">
+              {(latestReport.vocabulary_analysis.categories || []).map((cat, ci) => (
+                <div key={ci} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                    <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{cat.name}</h3>
+                    {cat.description && <p className="text-[13px] text-[#475467] mt-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{cat.description}</p>}
+                  </div>
+                  <div className="p-8 space-y-4">
+                    {(cat.words || []).map((word, wi) => (
+                      <div key={wi} className="border border-[#E5E7EB] rounded-[12px] p-5 space-y-2 hover:shadow-sm transition-all">
+                        <p className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{word.word}</p>
+                        <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}><span className="font-semibold text-[#101828]">Definition:</span> {word.definition}</p>
+                        <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[8px] px-4 py-2.5">
+                          <p className="text-[14px] text-[#101828] italic" style={{ fontFamily: "'Nunito', sans-serif" }}>{word.example}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))
+        : activeTab === "Grammar" ? renderTask2Tab(() => !latestReport.grammar_analysis ? (
+            <div className="bg-white rounded-[24px] p-10 text-center border border-gray-100 shadow-sm"><p className="text-[14px] text-gray-400">Grammar analysis not available for this submission.</p></div>
+          ) : (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]"><h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grammar Strengths</h3></div>
+                  <div className="p-8"><p className="text-[15px] text-[#101828] leading-[1.7]" style={{ fontFamily: "'Nunito', sans-serif" }}>{latestReport.grammar_analysis.overview_strengths}</p></div>
+                </div>
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]"><h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grammar Weaknesses</h3></div>
+                  <div className="p-8"><p className="text-[15px] text-[#101828] leading-[1.7]" style={{ fontFamily: "'Nunito', sans-serif" }}>{latestReport.grammar_analysis.overview_weaknesses}</p></div>
+                </div>
+              </div>
+              {(latestReport.grammar_analysis.structures_used || []).length > 0 && (
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]"><h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grammatical Structures Used</h3></div>
+                  <div className="p-8 flex flex-wrap gap-3">
+                    {latestReport.grammar_analysis.structures_used.map((s, i) => (
+                      <span key={i} className="px-4 py-2 bg-[#F0F9FF] border border-[#E0F2FE] rounded-full text-[13px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(latestReport.grammar_analysis.enrichment_suggestions || []).length > 0 && (
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]"><h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Enrichment Suggestions</h3></div>
+                  <div className="p-8 space-y-5">
+                    {latestReport.grammar_analysis.enrichment_suggestions.map((sug, i) => (
+                      <div key={i} className="border border-[#E5E7EB] rounded-[14px] p-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-[#FEF3F2] border border-[#FDA29B] rounded-[10px] px-4 py-3">
+                            <p className="text-[11px] font-bold text-[#D92D20] mb-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>ORIGINAL</p>
+                            <p className="text-[14px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{sug.original}</p>
+                          </div>
+                          <div className="bg-[#F0FDF9] border border-[#6EE7B7] rounded-[10px] px-4 py-3">
+                            <p className="text-[11px] font-bold text-[#059669] mb-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>IMPROVED</p>
+                            <p className="text-[14px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{sug.improved}</p>
+                          </div>
+                        </div>
+                        <p className="text-[14px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{sug.explanation}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(latestReport.grammar_analysis.expert_tips || []).length > 0 && (
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]"><h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Expert Grammar Tips</h3></div>
+                  <div className="p-8 space-y-4">
+                    {latestReport.grammar_analysis.expert_tips.map((tip, i) => (
+                      <div key={i} className="flex items-start gap-4">
+                        <span className="w-6 h-6 rounded-full bg-[#8B62F3] text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                        <p className="text-[15px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{tip}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        : activeTab === "Data Structure" ? renderTask2Tab(() => !latestReport.data_structure_analysis ? (
+            <div className="bg-white rounded-[24px] p-10 text-center border border-gray-100 shadow-sm"><p className="text-[14px] text-gray-400">Data structure analysis not available for this submission.</p></div>
+          ) : (
+            <div className="space-y-8">
+              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                <div className="px-8 py-5 border-b border-[#F2F4F7] flex items-center justify-between">
+                  <div><h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Structure Overview</h3></div>
+                  {latestReport.data_structure_analysis.task_achievement_rating && (
+                    <span className={`px-4 py-1.5 rounded-full text-[13px] font-bold border ${{ Excellent: 'bg-[#F0FDF9] border-[#6EE7B7] text-[#059669]', Good: 'bg-[#F0F9FF] border-[#BAE6FD] text-[#0369A1]', Adequate: 'bg-[#FFFAEB] border-[#FEC84B] text-[#DC6803]' }[latestReport.data_structure_analysis.task_achievement_rating] || 'bg-[#FEF3F2] border-[#FDA29B] text-[#D92D20]'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      {latestReport.data_structure_analysis.task_achievement_rating}
+                    </span>
+                  )}
+                </div>
+                <div className="p-8 space-y-4">
+                  <p className="text-[15px] text-[#101828] leading-[1.7]" style={{ fontFamily: "'Nunito', sans-serif" }}>{latestReport.data_structure_analysis.overview}</p>
+                  {latestReport.data_structure_analysis.task_achievement_feedback && (
+                    <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] px-5 py-4">
+                      <p className="text-[14px] text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{latestReport.data_structure_analysis.task_achievement_feedback}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                  { label: 'Introduction', strengths: latestReport.data_structure_analysis.introduction_strengths, weaknesses: latestReport.data_structure_analysis.introduction_weaknesses },
+                  { label: 'Body Paragraphs', detail: latestReport.data_structure_analysis.body_analysis },
+                  { label: 'Conclusion', strengths: latestReport.data_structure_analysis.conclusion_strengths, weaknesses: latestReport.data_structure_analysis.conclusion_weaknesses },
+                ].map((section, si) => (
+                  <div key={si} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                    <div className="px-6 py-5 border-b border-[#F2F4F7]"><h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{section.label}</h4></div>
+                    <div className="p-6 space-y-3">
+                      {section.detail ? (
+                        <p className="text-[14px] text-[#475467] leading-[1.7]" style={{ fontFamily: "'Nunito', sans-serif" }}>{section.detail}</p>
+                      ) : (
+                        <>
+                          {(section.strengths || []).map((s, i) => (
+                            <div key={`s${i}`} className="flex items-start gap-3">
+                              <div className="w-2 h-2 rounded-full bg-[#30C3A9] mt-1.5 shrink-0" />
+                              <p className="text-[14px] text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{s}</p>
+                            </div>
+                          ))}
+                          {(section.weaknesses || []).map((w, i) => (
+                            <div key={`w${i}`} className="flex items-start gap-3">
+                              <div className="w-2 h-2 rounded-full bg-[#EA4335] mt-1.5 shrink-0" />
+                              <p className="text-[14px] text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{w}</p>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        : activeTab === "Flow & Logic" ? renderTask2Tab(() => !latestReport.data_structure_analysis ? (
+            <div className="bg-white rounded-[24px] p-10 text-center border border-gray-100 shadow-sm"><p className="text-[14px] text-gray-400">Flow analysis not available for this submission.</p></div>
+          ) : (
+            <div className="space-y-8">
+              {latestReport.data_structure_analysis.transition_analysis && (
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                    <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Transition & Flow Analysis</h3>
+                    <p className="text-[13px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>How well your ideas connect and flow between paragraphs</p>
+                  </div>
+                  <div className="p-8"><p className="text-[15px] text-[#101828] leading-[1.7]" style={{ fontFamily: "'Nunito', sans-serif" }}>{latestReport.data_structure_analysis.transition_analysis}</p></div>
+                </div>
+              )}
+              {latestReport.data_structure_analysis.authenticity_feedback && (
+                <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden">
+                  <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                    <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Authenticity & Naturalness</h3>
+                    <p className="text-[13px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>How natural and genuine your writing sounds to an examiner</p>
+                  </div>
+                  <div className="p-8"><p className="text-[15px] text-[#101828] leading-[1.7]" style={{ fontFamily: "'Nunito', sans-serif" }}>{latestReport.data_structure_analysis.authenticity_feedback}</p></div>
+                </div>
+              )}
+            </div>
+          ))
+        :
           <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
              <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">

@@ -70,10 +70,10 @@ function App() {
   const { user, logout, updateUser } = useAuth();
 
   // Shared navigation handler for protected routes
-  const handleProtectedNavigate = (target) => {
+  const handleProtectedNavigate = (target, label) => {
     if (target === 'dashboard') navigate('/dashboard');
     else if (target === 'reports') navigate('/reports');
-    else if (target === 'settings') navigate('/settings');
+    else if (target === 'settings') navigate('/settings', { state: { activeTab: label } });
     else if (target === 'logout') {
       logout();
       navigate('/login');
@@ -96,6 +96,11 @@ function App() {
     }, 100);
     return () => clearTimeout(timeout);
   }, [location.hash]);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Lenis smooth scroll for marketing pages
   useEffect(() => {

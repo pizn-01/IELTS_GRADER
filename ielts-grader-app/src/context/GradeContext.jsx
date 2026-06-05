@@ -10,31 +10,23 @@ export const GradeProvider = ({ children }) => {
     essayFile: null,
   });
   const [gradingStatus, setGradingStatus] = useState('idle'); // idle, processing, completed
-  const [userStatus, setUserStatus] = useState({
-    isLoggedIn: false, // Reverting to false to test the actual login flow
-    isPremium: false,
-    credits: 3,
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'johndoe@gmail.com',
-  });
+  const [submissionId, setSubmissionId] = useState(null); // set by MockExam after api.submitAttempt succeeds
 
   const updateEssayData = (data) => setEssayData(prev => ({ ...prev, ...data }));
-  
+
   const startGrading = () => {
     setGradingStatus('processing');
-    // Simulation logic will be handled in the component
   };
 
   return (
-    <GradeContext.Provider value={{ 
-      essayData, 
-      updateEssayData, 
-      gradingStatus, 
+    <GradeContext.Provider value={{
+      essayData,
+      updateEssayData,
+      gradingStatus,
       setGradingStatus,
       startGrading,
-      userStatus,
-      setUserStatus
+      submissionId,
+      setSubmissionId,
     }}>
       {children}
     </GradeContext.Provider>

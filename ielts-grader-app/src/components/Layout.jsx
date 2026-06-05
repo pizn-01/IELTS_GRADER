@@ -1,8 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, Shield, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
+  const { user } = useAuth();
+  const displayName = user?.full_name || 'Candidate';
+  const email = user?.email || '';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('');
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -71,15 +82,16 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                       stroke="#1A96F3"
                       strokeWidth="2.5"
                       strokeDasharray="75.4"
-                      strokeDashoffset="30.16"
+                      strokeDashoffset={75.4 - (75.4 * (user?.credits_remaining ?? 0) / 5)}
                       strokeLinecap="round"
                       fill="transparent"
+                      style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                     />
                   </svg>
                 </div>
                 <div className="flex flex-col leading-tight">
                   <span className="text-[12px] font-semibold text-[#101828]">Weekly Sprint</span>
-                  <span className="text-[12px] font-bold text-[#101828]">Credits: 3/5 Remaining</span>
+                  <span className="text-[12px] font-bold text-[#101828]">Credits: {user?.credits_remaining ?? 0}/5 Remaining</span>
                 </div>
               </div>
 
@@ -95,7 +107,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="translate-y-[0.5px]">JD</span>
+                    <span className="translate-y-[0.5px]">{initials}</span>
                   )}
                 </button>
                 {/* Profile Dropdown logic remains same... */}
@@ -112,12 +124,12 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                         {profileImage ? (
                           <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                          "JD"
+                          initials
                         )}
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[16px] font-bold text-[#101828] truncate">John Doe</span>
-                        <span className="text-[14px] text-gray-400 truncate">johndoe@gmail.com</span>
+                        <span className="text-[16px] font-bold text-[#101828] truncate">{displayName}</span>
+                        <span className="text-[14px] text-gray-400 truncate">{email}</span>
                       </div>
                     </div>
 
@@ -134,7 +146,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                         <button
                           key={idx}
                           onClick={() => {
-                            onNavigate && onNavigate(item.id);
+                            onNavigate && onNavigate(item.id, item.label);
                             setIsProfileOpen(false);
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-[#101828] hover:bg-gray-50 rounded-xl transition-colors group"
@@ -181,12 +193,12 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                 {profileImage ? (
                   <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  "JD"
+                  initials
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[18px] font-bold text-[#101828] truncate">John Doe</span>
-                <span className="text-[15px] text-gray-400 truncate mt-0.5">johndoe@gmail.com</span>
+                <span className="text-[18px] font-bold text-[#101828] truncate">{displayName}</span>
+                <span className="text-[15px] text-gray-400 truncate mt-0.5">{email}</span>
               </div>
             </div>
 
@@ -205,7 +217,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                 <button
                   key={idx}
                   onClick={() => {
-                    onNavigate && onNavigate(item.id);
+                    onNavigate && onNavigate(item.id, item.label);
                     setIsMenuOpen(false);
                   }}
                   className={`w-full flex items-center gap-5 px-4 py-4 rounded-xl transition-all ${currentView === item.id && item.id !== 'settings'

@@ -85,7 +85,7 @@ const Navbar = ({ showCredits }) => {
                 to="/dashboard"
                 className="hidden md:block text-[14px] font-semibold text-[#0066FF] no-underline hover:text-[#0052CC] transition-colors cursor-pointer"
               >
-                Dashboard
+                Switch to Dashboard
               </Link>
               
               <button className="hidden md:flex p-0 bg-transparent border-none cursor-pointer text-[#9CA3AF] hover:text-[#6B7280] transition-colors items-center justify-center">
@@ -216,7 +216,7 @@ const Navbar = ({ showCredits }) => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="mt-2 w-full bg-[#F3F4F6] text-[#0066FF] px-6 py-3 rounded-[8px] text-[15px] font-bold text-center hover:bg-[#E5E7EB] transition-colors block no-underline cursor-pointer"
               >
-                Dashboard
+                Switch to Dashboard
               </Link>
             )}
           </div>

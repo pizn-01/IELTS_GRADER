@@ -296,7 +296,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         <div className="relative w-[130px] h-[130px] flex items-center justify-center">
                           <svg className="w-full h-full transform -rotate-90">
                             <circle cx="65" cy="65" r="58" stroke="#F0F7FF" strokeWidth="10" fill="transparent" />
-                            <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset={data?.overall_band != null ? 364.42 * (1 - (parseFloat(data.overall_band) - 1) / 8) : 364.42} strokeLinecap="round" />
+                            <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset={data?.overall_band != null ? 364.42 * (1 - (parseFloat(data.overall_band) / 9)) : 364.42} strokeLinecap="round" />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center"><span className="text-[42px] font-bold text-[#1A96F3] tracking-tight">{data?.overall_band ?? '—'}</span></div>
                         </div>

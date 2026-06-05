@@ -80,10 +80,10 @@ function DashboardApp() {
     return () => lenis.destroy();
   }, []);
 
-  const handleNavigate = (target) => {
+  const handleNavigate = (target, label) => {
     if (target === 'reports') { navigate('/reports'); }
     else if (target === 'dashboard') { setView('dashboard'); }
-    else if (target === 'settings') { navigate('/settings'); }
+    else if (target === 'settings') { navigate('/settings', { state: { activeTab: label } }); }
     else if (target === 'logout') { logout(); }
   };
 

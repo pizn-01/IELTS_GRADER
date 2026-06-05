@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReportView from './ReportView';
 import { api } from '../services/api';
@@ -17,10 +17,51 @@ const ReportsOverview = ({ onBack }) => {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [loadingReport, setLoadingReport] = useState(null); // submission id being opened
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('All Time');
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const dateDropdownRef = useRef(null);
+
   useEffect(() => {
-    api.getSubmissions().then(res => setSubmissions(res.data || [])).catch(() => {});
-    api.getDashboardAnalytics().then(d => setAnalyticsData(d)).catch(() => {});
+    const handleClickOutside = (event) => {
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(event.target)) {
+        setShowDateDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const filteredSubmissions = submissions.filter(sub => {
+    // 1. Search term match (matches exam_type, task_type or essay_content)
+    const matchesSearch = 
+      !searchTerm.trim() ||
+      (sub.exam_type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sub.task_type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sub.essay_content || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+    if (dateFilter === 'All Time') return true;
+    
+    const createdDate = new Date(sub.created_at);
+    const now = new Date();
+    const diffTime = Math.abs(now - createdDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (dateFilter === 'Today') {
+      return createdDate.toDateString() === now.toDateString();
+    } else if (dateFilter === 'Last 7 Days') {
+      return diffDays <= 7;
+    } else if (dateFilter === 'Last 30 Days') {
+      return diffDays <= 30;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    api.getSubmissions({ taskType: activeTask }).then(res => setSubmissions(res.data || [])).catch(() => {});
+    api.getDashboardAnalytics({ taskType: activeTask }).then(d => setAnalyticsData(d)).catch(() => {});
+  }, [activeTask]);
 
   const handleOpenReport = async (submission) => {
     if (submission.status !== 'graded') return;
@@ -150,7 +191,7 @@ const ReportsOverview = ({ onBack }) => {
               <div className="relative w-28 h-28 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="56" cy="56" r="50" fill="none" stroke="#F1F5F9" strokeWidth="8" />
-                  <circle cx="56" cy="56" r="50" fill="none" stroke="#1A96F3" strokeWidth="8" strokeDasharray="314.159" strokeDashoffset={latestBand != null ? (314.159 * (1 - (latestBand - 1) / 8)).toFixed(2) : 314.159} strokeLinecap="round" />
+                  <circle cx="56" cy="56" r="50" fill="none" stroke="#1A96F3" strokeWidth="8" strokeDasharray="314.159" strokeDashoffset={latestBand != null ? (314.159 * (1 - (latestBand / 9))).toFixed(2) : 314.159} strokeLinecap="round" />
                 </svg>
                 <span className="absolute text-[22px] font-black text-[#101828]">{latestBand ?? '—'}</span>
               </div>
@@ -185,18 +226,43 @@ const ReportsOverview = ({ onBack }) => {
                 <input 
                   type="text" 
                   placeholder="Search essays..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-12 pr-4 h-[52px] bg-white border border-gray-100 rounded-[14px] text-[14px] focus:outline-none focus:border-[#1A96F3] focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                 />
               </div>
-              <div className="relative group">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1A96F3] transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Date" 
-                  readOnly
-                  className="w-full md:w-[200px] pl-12 pr-10 h-[52px] bg-white border border-gray-100 rounded-[14px] text-[14px] focus:outline-none focus:border-[#1A96F3] transition-all cursor-pointer"
-                />
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <div className="relative z-30" ref={dateDropdownRef}>
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <button
+                  type="button"
+                  onClick={() => setShowDateDropdown(!showDateDropdown)}
+                  className="w-full md:w-[200px] pl-12 pr-10 h-[52px] bg-white border border-gray-100 rounded-[14px] text-[14px] text-left focus:outline-none focus:border-[#1A96F3] transition-all flex items-center justify-between cursor-pointer"
+                >
+                  <span className="text-[#101828] font-medium">
+                    {dateFilter}
+                  </span>
+                  <ChevronDown className="text-gray-400" size={18} />
+                </button>
+                
+                {showDateDropdown && (
+                  <div className="absolute right-0 mt-2 w-full md:w-[200px] bg-white border border-gray-100 rounded-[14px] shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {['All Time', 'Today', 'Last 7 Days', 'Last 30 Days'].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => {
+                          setDateFilter(option);
+                          setShowDateDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-[14px] transition-colors hover:bg-gray-50 ${
+                          dateFilter === option ? 'text-[#1A96F3] font-bold bg-blue-50/40' : 'text-[#344054]'
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -207,7 +273,12 @@ const ReportsOverview = ({ onBack }) => {
                   <FileText size={40} className="mx-auto mb-3 opacity-30" />
                   <p className="text-[14px] font-medium">No submissions yet. Complete an exam to see your reports here.</p>
                 </div>
-              ) : submissions.map((sub) => {
+              ) : filteredSubmissions.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                  <FileText size={40} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-[14px] font-medium">No submissions found matching your filters.</p>
+                </div>
+              ) : filteredSubmissions.map((sub) => {
                 const score = sub.overall_band;
                 const color = score ? bandColor(score) : '#9CA3AF';
                 const dateStr = new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -235,8 +306,8 @@ const ReportsOverview = ({ onBack }) => {
                       <div className="w-[60px] h-[34px] border rounded-[10px] flex items-center justify-center text-[14px] font-black" style={{ color, borderColor: color + '33', backgroundColor: color + '0D' }}>
                         {isLoading ? '…' : score ? score.toFixed(1) : '—'}
                       </div>
-                      <button className="p-2 text-gray-300 hover:text-gray-600 transition-colors">
-                        <MoreHorizontal size={20} />
+                      <button className="p-2 text-gray-300 hover:text-[#1A96F3] transition-colors">
+                        <ChevronRight size={20} />
                       </button>
                     </div>
                   </div>
@@ -249,13 +320,6 @@ const ReportsOverview = ({ onBack }) => {
     );
   }
 
-  if (activeTask.includes("Task 2")) {
-    return (
-      <div className="-mx-4 md:-mx-8">
-        <ReportView onBack={() => setIsDetailView(false)} showHeader={false} />
-      </div>
-    );
-  }
 
   return (
     <div className="-mx-4 md:-mx-8">
@@ -626,14 +690,18 @@ const ReportsOverview = ({ onBack }) => {
                   <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Total Growth</h4>
                   <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Since First Attempt</p>
                 </div>
-                <span className="text-[20px] font-bold text-[#00C9B1]">+1.5</span>
+                <span className="text-[20px] font-bold" style={{ color: rawChange == null ? '#101828' : parseFloat(rawChange) >= 0 ? '#00C9B1' : '#EF4444' }}>
+                  {rawChange == null ? '—' : parseFloat(rawChange) >= 0 ? `+${rawChange}` : rawChange}
+                </span>
               </div>
               <div className="bg-[#F8FAFC] rounded-[12px] p-6 flex items-center justify-between border border-gray-50/50">
                 <div className="space-y-1">
                   <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Current Status</h4>
                   <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Overall Band Score</p>
                 </div>
-                <span className="text-[20px] font-bold text-[#00C9B1]">7.0</span>
+                <span className="text-[20px] font-bold" style={{ color: latestBand != null ? bandColor(latestBand) : '#101828' }}>
+                  {latestBand ?? '—'}
+                </span>
               </div>
             </div>
 
@@ -646,14 +714,22 @@ const ReportsOverview = ({ onBack }) => {
               
               <div className="space-y-8">
                 <p className="text-[15px] font-normal text-[#101828] whitespace-nowrap" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
-                  You have reached on overall band of 7.0, showing an impressive improvement of +1.5 since your first attempt. keep applying the feedback to maintain this upwars momentum.
+                  {latestBand != null
+                    ? `You have reached an overall band of ${latestBand}${
+                        rawChange != null && parseFloat(rawChange) !== 0
+                          ? `, showing ${parseFloat(rawChange) > 0 ? 'an improvement' : 'a change'} of ${parseFloat(rawChange) > 0 ? '+' : ''}${rawChange} since your first attempt.`
+                          : '.'
+                      } Keep applying the feedback to maintain this momentum.`
+                    : 'Complete your first exam to receive a personalized assessment.'}
                 </p>
 
-                <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
-                   <p className="text-[16.5px] leading-relaxed text-[#101828] font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                     <span className="text-[#DC6803] font-bold">Tutor Notice (Plateau):</span> You've been scoring exactly the same over the last 5 attempts (stagnant). This is a habit loop. Focus entirely on your highest priority Fix Cards to break it.
-                   </p>
-                </div>
+                {rawChange != null && Math.abs(parseFloat(rawChange)) < 0.5 && overallScores.length >= 3 && (
+                  <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
+                     <p className="text-[16.5px] leading-relaxed text-[#101828] font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                       <span className="text-[#DC6803] font-bold">Tutor Notice (Plateau):</span> Your score has been relatively stable across recent attempts. Focus on your highest priority Fix Cards to break through.
+                     </p>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -43,7 +43,7 @@ const AIProcessingModal = ({ isOpen, onComplete }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/10 backdrop-blur-md transition-all duration-500"></div>
       

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, HelpCircle, Upload, Trash2, CheckCircle2, ChevronDown, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useGrade } from '../context/GradeContext';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -25,11 +27,22 @@ const QUESTION_BANK = {
 };
 
 const MockExam = ({ examType, taskType, onExit }) => {
+  const { user } = useAuth();
+  const { setSubmissionId: setContextSubmissionId } = useGrade();
   const isTask1 = (taskType || '').includes('1');
   const startSeconds = isTask1 ? 1199 : 2399;
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
   const bank = QUESTION_BANK[key] || QUESTION_BANK['Academic-Task 2'];
   const question = bank[Math.floor(Date.now() / 86400000) % bank.length];
+
+  // Derive display name and initials from auth user
+  const displayName = user?.full_name || 'Candidate';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('');
 
   const [essay, setEssay] = useState('');
   const [timeLeft, setTimeLeft] = useState(startSeconds);
@@ -81,6 +94,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
         time_spent_seconds: timeSpent,
       });
       setSubmissionId(res.submission_id);
+      setContextSubmissionId(res.submission_id); // persist for AnalysisReadyPage polling
     } catch (err) {
       // If server is reachable and threw a real error (e.g. no credits), surface it
       if (err.message && !err.message.toLowerCase().includes('offline') && !err.message.toLowerCase().includes('demo')) {
@@ -188,11 +202,11 @@ const MockExam = ({ examType, taskType, onExit }) => {
       <header className="h-[64px] border-b border-gray-100 flex items-center justify-between px-4 md:px-6 bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex w-8 h-8 rounded-full bg-[#E0F2FE] items-center justify-center text-[#0EA5E9] font-bold text-[12px]">
-            JD
+            {initials || 'U'}
           </div>
           <div>
             <div className="flex items-center gap-1.5 cursor-pointer">
-              <span className="text-[13px] md:text-[14px] font-semibold text-[#101828]">Candidate</span>
+              <span className="text-[13px] md:text-[14px] font-semibold text-[#101828]">{displayName}</span>
               <ChevronDown size={14} className="text-gray-400" />
             </div>
             <div className="text-[10px] md:text-[11px] text-gray-500 font-medium truncate max-w-[120px] md:max-w-none">

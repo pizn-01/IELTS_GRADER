@@ -6,13 +6,13 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('ielts_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
   // On mount: if a token exists, silently validate it and hydrate user state
   useEffect(() => {
     const bootstrap = async () => {
-      const storedToken = localStorage.getItem('ielts_token');
+      const storedToken = localStorage.getItem('token');
       if (!storedToken) {
         setIsLoading(false);
         return;
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
       } catch {
         // Token invalid or expired — clear it out
-        localStorage.removeItem('ielts_token');
+        localStorage.removeItem('token');
         setToken(null);
       } finally {
         setIsLoading(false);
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
    */
   const login = async (credentials) => {
     const { token: t, user: u } = await api.login(credentials);
-    localStorage.setItem('ielts_token', t);
+    localStorage.setItem('token', t);
     setToken(t);
     setUser(u);
     return u;
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
    */
   const register = async (profile) => {
     const { token: t, user: u } = await api.register(profile);
-    localStorage.setItem('ielts_token', t);
+    localStorage.setItem('token', t);
     setToken(t);
     setUser(u);
     return u;
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
    * Logout: clear persisted token and reset all auth state.
    */
   const logout = () => {
-    localStorage.removeItem('ielts_token');
+    localStorage.removeItem('token');
     setToken(null);
     setUser(null);
   };
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }) => {
    * the Supabase token for our backend JWT.
    */
   const setUserFromToken = (token, userData) => {
-    localStorage.setItem('ielts_token', token);
+    localStorage.setItem('token', token);
     setToken(token);
     setUser(userData);
   };
