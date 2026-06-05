@@ -7,7 +7,6 @@ import RecentReports from '../components/RecentReports';
 import PracticeModal from '../components/PracticeModal';
 import { NotificationBanner } from '../components/Modals';
 import ReportView from '../components/ReportView';
-import MockExam from '../components/MockExam';
 import ReportsOverview from '../components/ReportsOverview';
 import Settings from '../components/Settings';
 import { motion } from 'framer-motion';
@@ -20,8 +19,6 @@ function DashboardApp() {
 
   const [showModal, setShowModal] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
-  const [view, setView] = useState('dashboard');
-  const [examConfig, setExamConfig] = useState({ type: '', task: '' });
   const [reportData, setReportData] = useState(null);
   const [reportShowHeader, setReportShowHeader] = useState(false);
   const [profileImage, setProfileImage] = useState(user?.profile_image_url || null);
@@ -99,34 +96,6 @@ function DashboardApp() {
     else if (target === 'logout') { logout(); }
   };
 
-
-
-  if (view === 'mock-exam') {
-    return (
-      <MockExam
-        examType={examConfig.type}
-        taskType={examConfig.task}
-        onExit={async (targetView, data) => {
-          // MockExam already submitted and polled until 'graded' — just fetch the report.
-          let finalData = data;
-          if (data?.submissionId) {
-            try {
-              const report = await api.getReport(data.submissionId);
-              finalData = { ...data, ...report };
-            } catch (err) {
-              console.warn('Report fetch failed, navigating with partial data.', err);
-            }
-          }
-          if (targetView === 'report') {
-            navigate('/report', { state: { reportData: finalData } });
-          } else {
-            setView(targetView || 'dashboard');
-          }
-        }}
-      />
-    );
-  }
-
   const candidateFirstName = user?.full_name?.split(' ')[0] || 'Candidate';
   const targetBand = user?.target_band || '7.5';
   const creditsRemaining = user?.credits_remaining ?? 4;
@@ -174,9 +143,9 @@ function DashboardApp() {
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           onStartMock={(type, task) => {
-            setExamConfig({ type, task });
             setShowModal(false);
-            setView('mock-exam');
+            // Navigate to the dedicated /mock-exam route with exam config in state
+            navigate('/mock-exam', { state: { examType: type, taskType: task } });
           }}
           onAnalysisComplete={async (submissionId, reportData) => {
             setShowModal(false);

@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Clock, Send, ChevronLeft, ChevronDown, Info } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Clock, Send, ChevronLeft, ChevronDown, Info, Upload } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../marketing/Footer';
 
 const MockExamPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { essayData, updateEssayData } = useGrade();
   const { user } = useAuth();
+  const fileInputRef = useRef(null);
   
   // Derive display name and initials from auth user
   const displayName = user?.full_name || 'Candidate';
@@ -19,7 +21,9 @@ const MockExamPage = () => {
     .map(w => w[0].toUpperCase())
     .join('');
 
-  const [activeTask, setActiveTask] = useState(essayData.taskType || 'Task 2');
+  // Read exam config from router state (when navigated from dashboard) or GradeContext
+  const routeState = location.state || {};
+  const [activeTask, setActiveTask] = useState(routeState.taskType || essayData.taskType || 'Task 2');
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const [task1Content, setTask1Content] = useState('');
   const [task2Content, setTask2Content] = useState('');
@@ -38,6 +42,19 @@ const MockExamPage = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result || '';
+      setcurrentContent(text);
+    };
+    reader.readAsText(file);
+    // reset so same file can be re-selected
+    e.target.value = '';
   };
 
   const handleSubmit = () => {
@@ -141,7 +158,7 @@ const MockExamPage = () => {
         <div className="flex w-full md:w-auto items-center justify-center gap-3 md:gap-2.5 bg-[#F3F4F6] p-1 rounded-[10px] md:bg-transparent md:p-0 md:rounded-none">
           <button 
             onClick={() => setActiveTask('Task 1')}
-            className={`flex-1 md:flex-none h-[44px] md:h-auto md:py-2 rounded-[8px] text-[14px] md:text-[13px] font-bold transition-all ${
+            className={`flex-1 md:flex-none min-w-[90px] md:min-w-[100px] h-[44px] md:h-auto md:py-2 px-6 md:px-8 rounded-[8px] text-[14px] md:text-[13px] font-bold transition-all ${
               activeTask === 'Task 1' 
                 ? 'bg-white text-[#1a1f36] shadow-sm md:shadow-none md:bg-[#1a1f36] md:text-white' 
                 : 'text-[#6B7280] hover:text-[#1a1f36] md:bg-white md:border md:border-[#E5E7EB] md:text-[#1a1f36] md:hover:bg-gray-50'
@@ -151,7 +168,7 @@ const MockExamPage = () => {
           </button>
           <button 
             onClick={() => setActiveTask('Task 2')}
-            className={`flex-1 md:flex-none h-[44px] md:h-auto md:py-2 rounded-[8px] text-[14px] md:text-[13px] font-bold transition-all ${
+            className={`flex-1 md:flex-none min-w-[90px] md:min-w-[100px] h-[44px] md:h-auto md:py-2 px-6 md:px-8 rounded-[8px] text-[14px] md:text-[13px] font-bold transition-all ${
               activeTask === 'Task 2' 
                 ? 'bg-white text-[#1a1f36] shadow-sm md:shadow-none md:bg-[#1a1f36] md:text-white' 
                 : 'text-[#6B7280] hover:text-[#1a1f36] md:bg-white md:border md:border-[#E5E7EB] md:text-[#1a1f36] md:hover:bg-gray-50'
@@ -167,7 +184,19 @@ const MockExamPage = () => {
             {currentContent.split(/\s+/).filter(x => x).length} words
           </span>
           <div className="flex w-full sm:w-auto items-center gap-3 md:gap-2.5">
-            <button className="hidden sm:block px-4 md:px-5 h-[48px] md:h-[40px] bg-white border border-[#E5E7EB] rounded-[10px] md:rounded-[8px] text-[14px] md:text-[13px] font-semibold text-[#1a1f36] hover:bg-gray-50 transition-all">
+            {/* Hidden file input for Upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.doc,.docx,text/plain"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="hidden sm:flex items-center gap-2 px-4 md:px-5 h-[48px] md:h-[40px] bg-white border border-[#E5E7EB] rounded-[10px] md:rounded-[8px] text-[14px] md:text-[13px] font-semibold text-[#1a1f36] hover:bg-gray-50 transition-all"
+            >
+              <Upload size={15} />
               Upload
             </button>
             <button 

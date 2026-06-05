@@ -330,13 +330,13 @@ const PerformanceOverviewPage = ({ onBack }) => {
               </div>
 
               {/* Strengths & Weaknesses */}
-              <div className="bg-white rounded-[24px] border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden">
+              <div className="bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-visible">
                 <div className="px-8 py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[17px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Strengths & Weaknesses</h3>
                 </div>
                 <div className="p-8 space-y-5 flex-1">
-                  <div className="px-6 py-5 bg-[#F4FCF9] rounded-[16px] border border-[#E6F8F3] flex items-center gap-5">
-                    <div className="w-[44px] h-[44px] rounded-full bg-white flex items-center justify-center shrink-0">
+                  <div className="px-6 py-5 bg-[#F4FCF9] rounded-[16px] border border-[#E6F8F3] flex items-start gap-5">
+                    <div className="w-[44px] h-[44px] rounded-full bg-white flex items-center justify-center shrink-0 mt-0.5">
                       <TrendingUp className="text-[#30C3A9]" size={20} strokeWidth={2.5} />
                     </div>
                     <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
@@ -345,8 +345,8 @@ const PerformanceOverviewPage = ({ onBack }) => {
                       <span className="font-bold text-[#101828]">(Keep this stable while you lift your weakest areas).</span>
                     </p>
                   </div>
-                  <div className="px-6 py-5 bg-[#FFF7F7] rounded-[16px] border border-[#FEEDED] flex items-center gap-5">
-                    <div className="w-[44px] h-[44px] rounded-full bg-white flex items-center justify-center shrink-0">
+                  <div className="px-6 py-5 bg-[#FFF7F7] rounded-[16px] border border-[#FEEDED] flex items-start gap-5">
+                    <div className="w-[44px] h-[44px] rounded-full bg-white flex items-center justify-center shrink-0 mt-0.5">
                       <TrendingDown className="text-[#EA4335]" size={20} strokeWidth={2.5} />
                     </div>
                     <p className="text-[15px] leading-[1.6] tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>

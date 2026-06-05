@@ -99,7 +99,9 @@ const Navbar = ({ showCredits }) => {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="w-[34px] h-[34px] md:w-[38px] md:h-[38px] bg-[#313E50] rounded-[8px] md:rounded-[10px] flex items-center justify-center text-white text-[13px] md:text-[14px] font-bold tracking-tight cursor-pointer hover:bg-[#252f3d] transition-colors shadow-sm"
               >
-                {user?.full_name?.[0]?.toUpperCase() || 'U'}
+                {user?.full_name
+                  ? user.full_name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+                  : 'U'}
               </div>
 
               {/* Dropdown Modal */}
@@ -107,7 +109,9 @@ const Navbar = ({ showCredits }) => {
                 <div className="absolute top-[46px] md:top-[50px] right-0 w-[260px] md:w-[280px] bg-white rounded-[16px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-[#F3F4F6] py-4 z-[1001] animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-5 md:px-6 py-2 flex items-center gap-3 md:gap-4 mb-2">
                     <div className="w-[48px] h-[48px] md:w-[52px] md:h-[52px] bg-[#313E50] rounded-full flex items-center justify-center text-white text-[16px] md:text-[18px] font-bold">
-                      {user?.full_name?.[0]?.toUpperCase() || 'U'}
+                      {user?.full_name
+                        ? user.full_name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+                        : 'U'}
                     </div>
                     <div className="flex flex-col overflow-hidden">
                       <span className="text-[15px] md:text-[16px] font-bold text-[#111827] truncate">{user?.full_name}</span>

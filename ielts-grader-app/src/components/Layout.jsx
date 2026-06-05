@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, Shield, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const displayName = user?.full_name || 'Candidate';
   const email = user?.email || '';
   const initials = displayName
@@ -13,6 +14,13 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
     .slice(0, 2)
     .map(w => w[0].toUpperCase())
     .join('');
+
+  // Re-fetch user profile on mount so credits_remaining is always fresh
+  useEffect(() => {
+    api.getMe().then(freshUser => {
+      if (freshUser) updateUser(freshUser);
+    }).catch(() => {}); // silently ignore if offline
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -66,23 +74,23 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
               {/* Credits Pill */}
               <div className="bg-[#DDF2FF] rounded-full px-4 py-1.5 flex items-center gap-3">
                 <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90">
+                  <svg viewBox="0 0 28 28" className="w-full h-full transform -rotate-90">
                     <circle
                       cx="14"
                       cy="14"
-                      r="12"
+                      r="11"
                       stroke="#C7E3F9"
-                      strokeWidth="2.5"
+                      strokeWidth="3"
                       fill="transparent"
                     />
                     <circle
                       cx="14"
                       cy="14"
-                      r="12"
+                      r="11"
                       stroke="#1A96F3"
-                      strokeWidth="2.5"
-                      strokeDasharray="75.4"
-                      strokeDashoffset={75.4 - (75.4 * (user?.credits_remaining ?? 0) / 5)}
+                      strokeWidth="3"
+                      strokeDasharray={2 * Math.PI * 11}
+                      strokeDashoffset={2 * Math.PI * 11 * (1 - (user?.credits_remaining ?? 0) / 5)}
                       strokeLinecap="round"
                       fill="transparent"
                       style={{ transition: 'stroke-dashoffset 0.5s ease' }}
