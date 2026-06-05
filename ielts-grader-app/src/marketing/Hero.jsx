@@ -3,6 +3,7 @@ import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, 
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { extractFileText } from '../utils/extractFileText';
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -26,26 +27,6 @@ const Hero = () => {
   );
 
   const [fileReadError, setFileReadError] = useState('');
-
-  const readFileAsText = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result || '');
-      reader.onerror = () => reject(new Error('Could not read file.'));
-      reader.readAsText(file, 'UTF-8');
-    });
-
-  const handleFileChange = (type, file) => {
-    setFiles(prev => ({ ...prev, [type]: file }));
-    updateEssayData({ [`${type}File`]: file });
-  };
-
-  const removeFile = (type) => {
-    setFiles(prev => ({ ...prev, [type]: null }));
-    updateEssayData({ [`${type}File`]: null });
-    if (type === 'essay') updateEssayData({ essayContent: '' });
-    if (type === 'prompt') updateEssayData({ questionContent: '' });
-  };
 
   const isUploadFormValid = essayData.examType && essayData.taskType && files.essay;
 
@@ -339,15 +320,11 @@ const Hero = () => {
                   onClick={async () => {
                     setFileReadError('');
                     try {
-                      const essayText = await readFileAsText(files.essay);
-                      if (essayText.includes('\u0000')) {
-                        setFileReadError('Unsupported file type. Please upload a plain text (.txt) file.');
-                        return;
-                      }
-                      const questionText = files.prompt ? await readFileAsText(files.prompt) : '';
+                      const essayText = await extractFileText(files.essay);
+                      const questionText = files.prompt ? await extractFileText(files.prompt).catch(() => '') : '';
                       updateEssayData({ essayContent: essayText, questionContent: questionText });
-                    } catch {
-                      setFileReadError('Could not read file. Please use a plain text (.txt) file.');
+                    } catch (err) {
+                      setFileReadError(err.message || 'Could not read file. Please upload a .txt, .pdf, or .docx file.');
                       return;
                     }
                     if (user && user.credits_remaining > 0) {

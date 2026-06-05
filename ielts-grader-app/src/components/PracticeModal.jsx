@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Clock, Info, ChevronDown, FileText } from 'lucide-react';
 import { api } from '../services/api';
+import { extractFileText } from '../utils/extractFileText';
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
   const [step, setStep] = useState(1);
@@ -24,39 +25,26 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
 
   const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
 
-  const readFileAsText = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result || '');
-      reader.onerror = () => reject(new Error('Could not read file.'));
-      reader.readAsText(file, 'UTF-8');
-    });
-
   const handleEssayFileSelect = async (file) => {
     if (!file) return;
     setFileReadError('');
     try {
-      const text = await readFileAsText(file);
-      if (text.includes('\u0000')) {
-        setFileReadError('Unsupported file type. Please upload a plain text (.txt) file.');
-        return;
-      }
+      const text = await extractFileText(file);
       setEssayFile(file);
       setEssayText(text);
-    } catch {
-      setFileReadError('Could not read file. Please upload a plain text (.txt) file.');
+    } catch (err) {
+      setFileReadError(err.message || 'Could not read file. Please upload a .txt, .pdf, or .docx file.');
     }
   };
 
   const handleQuestionFileSelect = async (file) => {
     if (!file) return;
     try {
-      const text = await readFileAsText(file);
-      if (text.includes('\u0000')) return; // silently ignore binary prompt files
+      const text = await extractFileText(file);
       setQuestionFile(file);
       setQuestionText(text);
     } catch {
-      // optional field — fail silently
+      // optional field - fail silently
     }
   };
 
