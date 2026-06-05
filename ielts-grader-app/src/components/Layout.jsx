@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, Shield, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
   const { user, updateUser } = useAuth();
@@ -14,13 +13,6 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
     .slice(0, 2)
     .map(w => w[0].toUpperCase())
     .join('');
-
-  // Re-fetch user profile on mount so credits_remaining is always fresh
-  useEffect(() => {
-    api.getMe().then(freshUser => {
-      if (freshUser) updateUser(freshUser);
-    }).catch(() => {}); // silently ignore if offline
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);

@@ -65,17 +65,6 @@ function DashboardApp() {
     fetchDashboardData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-fetch when user returns to this tab (e.g. after completing an exam)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchDashboardData();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Lenis smooth scroll
   useEffect(() => {
     const lenis = new Lenis({

@@ -17,6 +17,11 @@ const discountsRoutes = require('./routes/discounts');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ── Trust the first proxy hop (Vercel / Fly.io edge) ──────────────────────────
+// Without this, req.ip is the shared proxy IP and ALL users hit the same
+// rate-limit bucket, causing 429s after just a few requests across the whole app.
+app.set('trust proxy', 1);
+
 // Allow all origins — security is enforced via JWT on protected routes
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -30,29 +35,52 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Rate limiters ──────────────────────────────────────────────────────────
+// ── Rate limiters ──────────────────────────────────────────────────────────────
+
+// Global catch-all — generous, real enforcement is per-route below
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  windowMs: 15 * 60 * 1000,
+  max: 600,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please try again later.' },
 });
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // max 15 auth attempts per 15 min per IP
+// Auth WRITE (POST /login, /register) — brute-force protection, strict
+const authWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts. Please wait 15 minutes.' },
 });
 
-const submissionsLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 25, // max 25 submissions per hour per IP
+// Auth READ (GET /me) — very permissive, just prevents scraping
+const authReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please slow down.' },
+});
+
+// Submission WRITE (POST) — each costs a credit, keep strict
+const submissionsWriteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Submission rate limit exceeded. Please wait before submitting again.' },
+});
+
+// Submission READ (GET list + status polling) — must be very permissive:
+// status polling fires every 3s for up to 2 minutes per grading session.
+const submissionsReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again in a moment.' },
 });
 
 app.use(globalLimiter);
@@ -61,8 +89,27 @@ app.get('/health', (_req, res) =>
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 );
 
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/submissions', submissionsLimiter, submissionsRoutes);
+// ── Auth routes — differentiated write vs read limits ─────────────────────────
+app.use('/api/auth/login', authWriteLimiter);
+app.use('/api/auth/register', authWriteLimiter);
+app.use('/api/auth', (req, res, next) => {
+  if (req.path === '/login' || req.path === '/register') {
+    return next();
+  }
+  authReadLimiter(req, res, next);
+});
+app.use('/api/auth', authRoutes);
+
+// ── Submissions — strict write, very permissive read ──────────────────────────
+app.post('/api/submissions', submissionsWriteLimiter);
+app.use('/api/submissions', (req, res, next) => {
+  if (req.method === 'POST' && (req.path === '/' || req.path === '')) {
+    return next();
+  }
+  submissionsReadLimiter(req, res, next);
+});
+app.use('/api/submissions', submissionsRoutes);
+
 app.use('/api/reports', reportsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/tasks', tasksRoutes);

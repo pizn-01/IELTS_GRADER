@@ -133,11 +133,17 @@ export const api = {
     try {
       const res = await fetch(`${BASE_URL}/submissions/status/${subId}`, { headers: getHeaders() });
       serverReachable = true;
+      // On 429 (rate limit) — don't throw: let polling continue on the next tick
+      if (res.status === 429) {
+        console.warn('[checkStatus] Rate limited — continuing to poll.');
+        return { status: 'grading', progress_pct: 50 };
+      }
       if (!res.ok) throw new Error(`Status check failed (${res.status}).`);
       return await res.json();
     } catch (err) {
       if (serverReachable) throw err;
-      return { status: 'graded', progress_pct: 100 }; // Offline fallback
+      // Network unreachable — assume still grading
+      return { status: 'grading', progress_pct: 50 };
     }
   },
 
@@ -177,11 +183,14 @@ export const api = {
       }
       const res = await fetch(url, { headers: getHeaders() });
       serverReachable = true;
+      if (res.status === 429) {
+        console.warn('[getDashboardAnalytics] Rate limited — returning empty.');
+        return { chartData: [], frequentErrors: [], rateLimited: true };
+      }
       if (!res.ok) throw new Error(`Analytics unavailable (${res.status}).`);
       return await res.json();
     } catch (err) {
       if (serverReachable) {
-        // Server reachable but error — return empty (no fake data)
         return { chartData: [], frequentErrors: [] };
       }
       // Network unreachable — show demo data
@@ -200,10 +209,14 @@ export const api = {
       }
       const res = await fetch(url, { headers: getHeaders() });
       serverReachable = true;
+      if (res.status === 429) {
+        console.warn('[getSubmissions] Rate limited — returning empty to avoid false empty state.');
+        return { data: [], total: 0, rateLimited: true };
+      }
       if (!res.ok) throw new Error(`Failed to fetch submissions (${res.status}).`);
       return await res.json();
     } catch (err) {
-      if (serverReachable) return { data: [], total: 0 }; // Server error — empty, not mock
+      if (serverReachable) return { data: [], total: 0 };
       console.warn('[DEMO] Backend unreachable — empty submissions.', err.message);
       return { data: [], total: 0 };
     }

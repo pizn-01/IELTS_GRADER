@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Coins, User, Shield, CreditCard, HelpCircle, LogOut } from 'lucide-react';
 
 const Navbar = ({ showCredits }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -130,6 +131,10 @@ const Navbar = ({ showCredits }) => {
                     ].map((item) => (
                       <button 
                         key={item.label}
+                        onClick={() => {
+                          navigate('/settings', { state: { activeTab: item.label } });
+                          setIsProfileOpen(false);
+                        }}
                         className="flex items-center gap-3 px-3 md:px-4 py-2.5 rounded-[10px] hover:bg-[#F9FAFB] text-[#374151] hover:text-[#111827] transition-all border-none bg-transparent cursor-pointer text-left w-full"
                       >
                         <span className="text-[#6B7280]">{item.icon}</span>

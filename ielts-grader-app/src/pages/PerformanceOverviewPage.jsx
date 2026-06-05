@@ -174,7 +174,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
 
   return (
     <div className="w-full">
-      <div className="relative overflow-hidden bg-white border-b border-gray-100">
+      <div className="relative overflow-visible bg-white border-b border-gray-100">
         {/* Gradient background */}
         <div className="absolute inset-0 pointer-events-none" style={{
           background: 'linear-gradient(90deg, #E0F2FE 0%, #FCE7F3 40%, #FCE7F3 60%, #CFFAFE 100%)',
