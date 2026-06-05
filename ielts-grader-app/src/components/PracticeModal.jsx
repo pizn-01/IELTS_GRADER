@@ -1,71 +1,123 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Clock, Info, FileText, ChevronDown } from 'lucide-react';
-
-const FileIcon = ({ size = 24, className = "" }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M13 2H6a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V10l-8-8z" />
-    <path d="M13 2v8h8" />
-  </svg>
-);
+import { X, Upload, Clock, Info, ChevronDown } from 'lucide-react';
+import { api } from '../services/api';
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
   const [step, setStep] = useState(1);
   const [examType, setExamType] = useState('');
   const [taskType, setTaskType] = useState('');
   const [selectedOption, setSelectedOption] = useState('upload'); // 'upload' or 'mock'
-  const [promptFile, setPromptFile] = useState(null);
-  const [essayFile, setEssayFile] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [completedItems, setCompletedItems] = useState([]);
+  const [questionText, setQuestionText] = useState('');
+  const [essayText, setEssayText] = useState('');
 
-  // Simulate progress when Step 3 is reached
-  React.useEffect(() => {
-    let interval;
-    if (step === 3 && isOpen) {
-      setProgress(0);
-      setCompletedItems([]);
-      
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              onAnalysisComplete();
-            }, 1000);
-            return 100;
-          }
-          const next = prev + 5;
-          
-          // Update checklist based on progress
-          if (next > 25 && !completedItems.includes(0)) setCompletedItems(p => [...p, 0]);
-          if (next > 50 && !completedItems.includes(1)) setCompletedItems(p => [...p, 1]);
-          if (next > 75 && !completedItems.includes(2)) setCompletedItems(p => [...p, 2]);
-          if (next >= 100 && !completedItems.includes(3)) setCompletedItems(p => [...p, 3]);
-          
-          return next;
-        });
-      }, 150);
+  // Grading state
+  const [gradingProgress, setGradingProgress] = useState(0);
+  const [completedItems, setCompletedItems] = useState([]);
+  const [gradingError, setGradingError] = useState('');
+  const pollRef = useRef(null);
+  const progressRef = useRef(0);
+  const progressIntervalRef = useRef(null);
+
+  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+
+  // Start the smooth visual progress animation (0 → 88%, then real status drives to 100%)
+  const startProgressAnimation = () => {
+    progressRef.current = 0;
+    setGradingProgress(0);
+    setCompletedItems([]);
+    progressIntervalRef.current = setInterval(() => {
+      if (progressRef.current < 88) {
+        progressRef.current = Math.min(88, progressRef.current + 2);
+        const p = Math.round(progressRef.current);
+        setGradingProgress(p);
+        if (p > 25) setCompletedItems(prev => prev.includes(0) ? prev : [...prev, 0]);
+        if (p > 50) setCompletedItems(prev => prev.includes(1) ? prev : [...prev, 1]);
+        if (p > 75) setCompletedItems(prev => prev.includes(2) ? prev : [...prev, 2]);
+      }
+    }, 200);
+  };
+
+  const stopProgressAnimation = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
     }
-    return () => clearInterval(interval);
-  }, [step, isOpen]);
+  };
+
+  const handleAnalyzeEssay = async () => {
+    if (!examType || !taskType || wordCount < 10) return;
+
+    setStep(3);
+    setGradingError('');
+    startProgressAnimation();
+
+    let submissionId;
+    try {
+      const res = await api.submitAttempt({
+        exam_type: examType,
+        task_type: taskType,
+        essay_content: essayText,
+        time_spent_seconds: 0,
+      });
+      submissionId = res.submission_id;
+    } catch (err) {
+      stopProgressAnimation();
+      setGradingError(err.message || 'Submission failed. Please check your credits and try again.');
+      return;
+    }
+
+    // Poll until graded
+    let attempts = 0;
+    const maxAttempts = 40; // ~2 min at 3s intervals
+
+    pollRef.current = setInterval(async () => {
+      attempts++;
+      try {
+        const { status } = await api.checkStatus(submissionId);
+
+        if (status === 'graded') {
+          clearInterval(pollRef.current);
+          stopProgressAnimation();
+          setGradingProgress(100);
+          setCompletedItems([0, 1, 2, 3]);
+
+          setTimeout(async () => {
+            try {
+              const report = await api.getReport(submissionId);
+              onAnalysisComplete(submissionId, report);
+            } catch {
+              onAnalysisComplete(submissionId, null);
+            }
+          }, 800);
+        } else if (status === 'failed' || attempts >= maxAttempts) {
+          clearInterval(pollRef.current);
+          stopProgressAnimation();
+          setGradingError('Grading failed. Your credit has been refunded. Please try again.');
+        }
+      } catch {
+        if (attempts >= maxAttempts) {
+          clearInterval(pollRef.current);
+          stopProgressAnimation();
+          setGradingError('Connection lost. Please refresh and try again.');
+        }
+      }
+    }, 3000);
+  };
 
   const resetAndClose = () => {
+    // Cleanup
+    if (pollRef.current) clearInterval(pollRef.current);
+    stopProgressAnimation();
+
     setStep(1);
-    setPromptFile(null);
-    setEssayFile(null);
+    setEssayText('');
+    setQuestionText('');
     setExamType('');
     setTaskType('');
+    setGradingProgress(0);
+    setCompletedItems([]);
+    setGradingError('');
     onClose();
   };
 
@@ -80,6 +132,14 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
     };
   }, [isOpen]);
 
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      stopProgressAnimation();
+    };
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -90,7 +150,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={resetAndClose}
+            onClick={step === 3 ? undefined : resetAndClose}
             className="absolute inset-0 bg-[#00000066] backdrop-blur-sm"
           />
           
@@ -98,17 +158,19 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative bg-white w-full max-w-[440px] h-auto max-h-[95vh] rounded-[24px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+            className="relative bg-white w-full max-w-[480px] h-auto max-h-[95vh] rounded-[24px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
           >
-            {/* Close Button */}
-            <button 
-              onClick={resetAndClose}
-              className="absolute top-5 right-6 text-gray-400 hover:text-[#111827] transition-colors z-10"
-            >
-              <X size={20} strokeWidth={1.5} />
-            </button>
+            {/* Close Button — hidden during grading */}
+            {step !== 3 && (
+              <button 
+                onClick={resetAndClose}
+                className="absolute top-5 right-6 text-gray-400 hover:text-[#111827] transition-colors z-10"
+              >
+                <X size={20} strokeWidth={1.5} />
+              </button>
+            )}
 
-            <div className="p-6 md:p-8 font-sans">
+            <div className="p-6 md:p-8 font-sans overflow-y-auto">
               {step === 1 ? (
                 <div className="flex flex-col">
                   <div className="mb-5">
@@ -131,7 +193,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                         <Info size={13} className="text-gray-300" strokeWidth={2} />
                       </div>
                       <p className="text-[11px] text-gray-400 max-w-[240px] leading-snug">
-                        Upload your question and answer (PDF, Word, JPG, etc.)
+                        Paste your question and essay for instant AI grading
                       </p>
                     </div>
 
@@ -148,7 +210,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                         <Info size={13} className="text-gray-300" strokeWidth={2} />
                       </div>
                       <p className="text-[11px] text-gray-400 max-w-[240px] leading-snug">
-                        Practice in a real IELTS computer- based environment with timer
+                        Practice in a real IELTS computer-based environment with timer
                       </p>
                     </div>
                   </div>
@@ -172,7 +234,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                 <div className="flex flex-col font-sans h-full">
                   <div className="mb-5">
                     <h2 className="text-[18px] font-bold text-[#111827]">
-                      {selectedOption === 'upload' ? 'Upload Essay' : 'Mock Exam'}
+                      {selectedOption === 'upload' ? 'Paste Your Essay' : 'Mock Exam'}
                     </h2>
                   </div>
 
@@ -187,8 +249,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                           className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] appearance-none text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-gray-500 font-medium"
                         >
                           <option value="" disabled>Select</option>
-                          <option>Academic</option>
-                          <option>General</option>
+                          <option value="Academic">Academic</option>
+                          <option value="General">General</option>
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                       </div>
@@ -204,8 +266,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                           className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] appearance-none text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-gray-500 font-medium"
                         >
                           <option value="" disabled>Select</option>
-                          <option>Task 1</option>
-                          <option>Task 2</option>
+                          <option value="Task 1">Task 1</option>
+                          <option value="Task 2">Task 2</option>
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                       </div>
@@ -213,74 +275,31 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
 
                     {selectedOption === 'upload' && (
                       <>
-                        {/* Prompt Upload */}
+                        {/* Question / Prompt (optional) */}
                         <div className="space-y-1">
-                          <label className="text-[12px] font-bold text-[#111827]">Upload Prompt / Question</label>
-                          {promptFile ? (
-                            <div className="border border-[#1A96F3] bg-[#EBF5FF] rounded-[12px] p-3 flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="text-[#1A96F3]">
-                                  <FileIcon size={20} />
-                                </div>
-                                <div>
-                                  <div className="text-[13px] font-medium text-[#111827]">{promptFile.name}</div>
-                                  <div className="text-[11px] text-gray-500">{(promptFile.size / 1024).toFixed(0)} KB</div>
-                                </div>
-                              </div>
-                              <button onClick={() => setPromptFile(null)} className="text-gray-400 hover:text-[#111827] transition-colors">
-                                <X size={18} strokeWidth={1.5} />
-                              </button>
-                            </div>
-                          ) : (
-                            <div 
-                              className="border border-dashed border-gray-200 rounded-[12px] p-3 flex flex-col items-center justify-center cursor-pointer hover:border-[#1A96F3] bg-[#F9FAFB]/50"
-                              onClick={() => document.getElementById('prompt-input').click()}
-                            >
-                              <div className="w-6 h-6 bg-[#E3F2FD] rounded-md flex items-center justify-center text-[#1A96F3] mb-1">
-                                <Upload size={12} />
-                              </div>
-                              <div className="text-[10px] text-gray-600">
-                                Drag & Drop Or <span className="text-[#1A96F3] font-bold underline">Browse</span>
-                              </div>
-                              <p className="text-[8px] text-gray-400 mt-0.5 uppercase tracking-tight">PDF, JPG, PNG</p>
-                              <input id="prompt-input" type="file" className="hidden" onChange={(e) => setPromptFile(e.target.files[0])} />
-                            </div>
-                          )}
+                          <label className="text-[12px] font-bold text-[#111827]">
+                            Question / Prompt <span className="text-gray-400 font-normal">(optional)</span>
+                          </label>
+                          <textarea
+                            value={questionText}
+                            onChange={(e) => setQuestionText(e.target.value)}
+                            placeholder="Paste the exam question or prompt here..."
+                            rows={2}
+                            className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-[#111827] placeholder:text-gray-400 resize-none"
+                          />
                         </div>
 
-                        {/* Essay Upload */}
+                        {/* Essay Text */}
                         <div className="space-y-1">
-                          <label className="text-[12px] font-bold text-[#111827]">Upload Your Essay</label>
-                          {essayFile ? (
-                            <div className="border border-[#1A96F3] bg-[#EBF5FF] rounded-[12px] p-3 flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="text-[#1A96F3]">
-                                  <FileIcon size={20} />
-                                </div>
-                                <div>
-                                  <div className="text-[13px] font-medium text-[#111827]">{essayFile.name}</div>
-                                  <div className="text-[11px] text-gray-500">{(essayFile.size / 1024).toFixed(0)} KB</div>
-                                </div>
-                              </div>
-                              <button onClick={() => setEssayFile(null)} className="text-gray-400 hover:text-[#111827] transition-colors">
-                                <X size={18} strokeWidth={1.5} />
-                              </button>
-                            </div>
-                          ) : (
-                            <div 
-                              className="border border-dashed border-gray-200 rounded-[12px] p-3 flex flex-col items-center justify-center cursor-pointer hover:border-[#1A96F3] bg-[#F9FAFB]/50"
-                              onClick={() => document.getElementById('essay-input').click()}
-                            >
-                              <div className="w-6 h-6 bg-[#E3F2FD] rounded-md flex items-center justify-center text-[#1A96F3] mb-1">
-                                <Upload size={12} />
-                              </div>
-                              <div className="text-[10px] text-gray-600">
-                                Drag & Drop Or <span className="text-[#1A96F3] font-bold underline">Browse</span>
-                              </div>
-                              <p className="text-[8px] text-gray-400 mt-0.5 uppercase tracking-tight">PDF, DOCX, JPG, PNG</p>
-                              <input id="essay-input" type="file" className="hidden" onChange={(e) => setEssayFile(e.target.files[0])} />
-                            </div>
-                          )}
+                          <label className="text-[12px] font-bold text-[#111827]">Your Essay</label>
+                          <textarea
+                            value={essayText}
+                            onChange={(e) => setEssayText(e.target.value)}
+                            placeholder="Paste your essay here..."
+                            rows={6}
+                            className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-[#111827] placeholder:text-gray-400 resize-none"
+                          />
+                          <p className="text-[11px] text-gray-400 text-right">{wordCount} words</p>
                         </div>
                       </>
                     )}
@@ -292,10 +311,14 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                         if (selectedOption === 'mock') {
                           onStartMock(examType, taskType);
                         } else {
-                          setStep(3);
+                          handleAnalyzeEssay();
                         }
                       }}
-                      disabled={selectedOption === 'upload' ? (!promptFile || !essayFile) : (!examType || !taskType)}
+                      disabled={
+                        selectedOption === 'upload'
+                          ? (!examType || !taskType || wordCount < 10)
+                          : (!examType || !taskType)
+                      }
                       className="w-full bg-[#2C3E50] text-white h-[46px] rounded-[10px] text-[15px] font-bold flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#34495E]"
                     >
                       {selectedOption === 'upload' ? 'Analyze My Essay' : 'Start Mock Exam'}
@@ -309,6 +332,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                   </div>
                 </div>
               ) : (
+                /* Step 3 — Real grading in progress */
                 <div className="flex flex-col items-center py-6 font-sans">
                   {/* Brain Loading Animation */}
                   <div className="relative w-16 h-16 mb-6">
@@ -328,67 +352,85 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                     </div>
                   </div>
 
-                  <div className="text-center mb-8">
-                    <h2 className="text-[20px] font-bold text-[#111827] mb-2">AI is grading your essay</h2>
-                    <p className="text-[13px] text-gray-500">This takes 45-60 seconds. Please keep this tab open.</p>
-                  </div>
-
-                  {/* Progress Card */}
-                  <div className="w-full bg-[#F0F7FF] rounded-[20px] p-5 mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-[14px] font-bold text-[#111827]">Finalizing Band Score</span>
-                      <span className="text-[13px] font-bold text-[#1A96F3]">{progress}%</span>
+                  {gradingError ? (
+                    <div className="w-full space-y-4 text-center">
+                      <h2 className="text-[18px] font-bold text-[#111827]">Grading Failed</h2>
+                      <p className="text-[13px] text-red-500 leading-relaxed">{gradingError}</p>
+                      <button
+                        onClick={() => {
+                          setGradingError('');
+                          setStep(2);
+                        }}
+                        className="w-full bg-[#2C3E50] text-white h-[46px] rounded-[10px] text-[15px] font-bold"
+                      >
+                        Go Back & Try Again
+                      </button>
                     </div>
-                    <div className="w-full h-2.5 bg-gray-200/50 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ type: "spring", bounce: 0, duration: 0.5 }}
-                        className="h-full bg-[#1A96F3] rounded-full"
-                      />
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="text-center mb-8">
+                        <h2 className="text-[20px] font-bold text-[#111827] mb-2">AI is grading your essay</h2>
+                        <p className="text-[13px] text-gray-500">This takes 45–60 seconds. Please keep this tab open.</p>
+                      </div>
 
-                  {/* Checklist */}
-                  <div className="w-full space-y-3 px-2">
-                    {[
-                      { label: "Task Response", id: 0 },
-                      { label: "Coherence", id: 1 },
-                      { label: "Lexical Resource", id: 2 },
-                      { label: "Grammatical", id: 3 }
-                    ].map((item, idx) => {
-                      const isComplete = completedItems.includes(item.id);
-                      const isLoading = !isComplete && (completedItems.length === idx);
-                      
-                      return (
-                        <div key={idx} className="flex items-center gap-3">
-                          {isComplete ? (
-                            <motion.div 
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="w-5 h-5 bg-[#26D07C] rounded-full flex items-center justify-center text-white"
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            </motion.div>
-                          ) : isLoading ? (
-                            <div className="relative w-5 h-5">
-                              <div className="absolute inset-0 border-2 border-gray-100 rounded-full" />
-                              <motion.div 
-                                className="absolute inset-0 border-2 border-[#1A96F3] rounded-full border-t-transparent"
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-5 h-5 border-2 border-gray-100 rounded-full" />
-                          )}
-                          <span className={`text-[14px] transition-colors duration-300 ${isComplete ? "text-gray-400" : isLoading ? "text-[#111827] font-medium" : "text-gray-300"}`}>
-                            {item.label}
-                          </span>
+                      {/* Progress Card */}
+                      <div className="w-full bg-[#F0F7FF] rounded-[20px] p-5 mb-6">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-[14px] font-bold text-[#111827]">Finalizing Band Score</span>
+                          <span className="text-[13px] font-bold text-[#1A96F3]">{gradingProgress}%</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="w-full h-2.5 bg-gray-200/50 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${gradingProgress}%` }}
+                            transition={{ type: "spring", bounce: 0, duration: 0.5 }}
+                            className="h-full bg-[#1A96F3] rounded-full"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Checklist */}
+                      <div className="w-full space-y-3 px-2">
+                        {[
+                          { label: "Task Response", id: 0 },
+                          { label: "Coherence", id: 1 },
+                          { label: "Lexical Resource", id: 2 },
+                          { label: "Grammatical", id: 3 }
+                        ].map((item, idx) => {
+                          const isComplete = completedItems.includes(item.id);
+                          const isLoading = !isComplete && (completedItems.length === idx);
+                          
+                          return (
+                            <div key={idx} className="flex items-center gap-3">
+                              {isComplete ? (
+                                <motion.div 
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="w-5 h-5 bg-[#26D07C] rounded-full flex items-center justify-center text-white"
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </motion.div>
+                              ) : isLoading ? (
+                                <div className="relative w-5 h-5">
+                                  <div className="absolute inset-0 border-2 border-gray-100 rounded-full" />
+                                  <motion.div 
+                                    className="absolute inset-0 border-2 border-[#1A96F3] rounded-full border-t-transparent"
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 border-2 border-gray-100 rounded-full" />
+                              )}
+                              <span className={`text-[14px] transition-colors duration-300 ${isComplete ? "text-gray-400" : isLoading ? "text-[#111827] font-medium" : "text-gray-300"}`}>
+                                {item.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

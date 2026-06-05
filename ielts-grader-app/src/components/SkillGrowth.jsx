@@ -3,17 +3,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Frown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const defaultData = [
-  { name: 'W1', overall: 6.6, response: 6.1, coherence: 5.8, vocabulary: 7.2, grammar: 6.3 },
-  { name: 'W2', overall: 7.8, response: 7.3, coherence: 7.0, vocabulary: 8.4, grammar: 7.5 },
-  { name: 'W3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
-  { name: 'W4', overall: 7.6, response: 7.1, coherence: 6.8, vocabulary: 8.2, grammar: 7.3 },
-  { name: 'W5', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.8, grammar: 7.9 },
-  { name: 'W6', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
-  { name: 'W7', overall: 8.0, response: 7.5, coherence: 7.2, vocabulary: 8.6, grammar: 7.7 },
-  { name: 'W8', overall: 8.2, response: 7.7, coherence: 7.4, vocabulary: 8.8, grammar: 7.9 },
-];
-
 const SkillGrowth = ({ hasData = true, rawSeriesData = null, isLoading = false }) => {
   if (isLoading) {
     return (
@@ -28,20 +17,21 @@ const SkillGrowth = ({ hasData = true, rawSeriesData = null, isLoading = false }
     );
   }
 
-  let chartSeries = defaultData;
-  if (rawSeriesData && rawSeriesData.length > 0) {
-    chartSeries = rawSeriesData.map((d, i) => ({
-      ...d,
-      overall: d.overall || 0,
-      vocabulary: d.vocabulary || 0,
-      grammar: d.grammar || 0,
-      response: d.response || 0,
-      coherence: d.coherence || 0,
-      x: d.x !== undefined ? d.x : i + 1,
-    }));
-  }
+  // Only use real data — never show fake placeholder chart data
+  const hasRealData = rawSeriesData && rawSeriesData.length > 0;
+  const chartSeries = hasRealData
+    ? rawSeriesData.map((d, i) => ({
+        ...d,
+        overall: d.overall || 0,
+        vocabulary: d.vocabulary || 0,
+        grammar: d.grammar || 0,
+        response: d.response || 0,
+        coherence: d.coherence || 0,
+        x: d.x !== undefined ? d.x : i + 1,
+      }))
+    : [];
 
-  if (!hasData) {
+  if (!hasData || !hasRealData) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

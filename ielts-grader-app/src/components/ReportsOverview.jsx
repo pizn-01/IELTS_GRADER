@@ -16,6 +16,8 @@ const ReportsOverview = ({ onBack }) => {
   const [submissions, setSubmissions] = useState([]);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [loadingReport, setLoadingReport] = useState(null); // submission id being opened
+  const [loadingSubmissions, setLoadingSubmissions] = useState(true);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('All Time');
@@ -59,8 +61,23 @@ const ReportsOverview = ({ onBack }) => {
   });
 
   useEffect(() => {
-    api.getSubmissions({ taskType: activeTask }).then(res => setSubmissions(res.data || [])).catch(() => {});
-    api.getDashboardAnalytics({ taskType: activeTask }).then(d => setAnalyticsData(d)).catch(() => {});
+    // Clear stale data immediately when task changes to avoid flashing old content
+    setSubmissions([]);
+    setAnalyticsData(null);
+    setLoadingSubmissions(true);
+    setLoadingAnalytics(true);
+    // Reset sub-navigation tab when switching tasks
+    setActiveTab('Overview');
+
+    api.getSubmissions({ taskType: activeTask })
+      .then(res => setSubmissions(res.data || []))
+      .catch(() => setSubmissions([]))
+      .finally(() => setLoadingSubmissions(false));
+
+    api.getDashboardAnalytics({ taskType: activeTask })
+      .then(d => setAnalyticsData(d))
+      .catch(() => setAnalyticsData({ chartData: [], frequentErrors: [] }))
+      .finally(() => setLoadingAnalytics(false));
   }, [activeTask]);
 
   const handleOpenReport = async (submission) => {
@@ -208,7 +225,7 @@ const ReportsOverview = ({ onBack }) => {
               </div>
             </div>
             <button 
-              onClick={() => navigate('/performance')}
+              onClick={() => navigate(`/performance?task=${encodeURIComponent(activeTask)}`)}
               className="w-full md:w-auto px-10 h-[48px] bg-[#2C3E50] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
             >
               View Performance
@@ -268,7 +285,24 @@ const ReportsOverview = ({ onBack }) => {
 
             {/* List */}
             <div className="space-y-4">
-              {submissions.length === 0 ? (
+              {loadingSubmissions ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-white border border-gray-100 rounded-[16px] p-6 animate-pulse">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="w-12 h-12 bg-gray-100 rounded-[12px]" />
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-100 rounded w-36" />
+                            <div className="h-3 bg-gray-100 rounded w-24" />
+                          </div>
+                        </div>
+                        <div className="h-8 w-16 bg-gray-100 rounded-[10px]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : submissions.length === 0 ? (
                 <div className="text-center py-16 text-gray-400">
                   <FileText size={40} className="mx-auto mb-3 opacity-30" />
                   <p className="text-[14px] font-medium">No submissions yet. Complete an exam to see your reports here.</p>
@@ -387,7 +421,11 @@ const ReportsOverview = ({ onBack }) => {
             >
               {/* Latest Band */}
               <div className="flex-1 pl-12 flex flex-col justify-center">
-                <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>7.0</span>
+                {loadingAnalytics ? (
+                  <div className="h-10 w-16 bg-gray-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>{latestBand ?? '—'}</span>
+                )}
                 <span className="text-[14px] text-[#667085] mt-1.5 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Latest Band</span>
               </div>
 

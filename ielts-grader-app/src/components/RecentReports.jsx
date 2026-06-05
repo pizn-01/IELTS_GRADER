@@ -2,21 +2,36 @@ import { FileText, Frown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const defaultReports = [
-  { id: 1, type: 'Academic', task: 'Task 1', date: 'Mar 23, 2026', score: 7.0 },
-  { id: 2, type: 'Academic', task: 'Task 2', date: 'Mar 18, 2026', score: 7.5 },
-  { id: 3, type: 'General', task: 'Task 1', date: 'Mar 21, 2026', score: 6.5 },
-  { id: 4, type: 'General', task: 'Task 2', date: 'Mar 15, 2026', score: 6.0 },
-];
-
 const RecentReports = ({ hasData = true, dynamicReports = null }) => {
   const navigate = useNavigate();
-  // null  = still loading (show defaults as placeholder)
+  // null  = still loading (show skeleton)
   // []    = loaded, no graded submissions yet
   // [...] = real reports
   const isLoaded = dynamicReports !== null;
-  const displayReports = (isLoaded && dynamicReports.length > 0) ? dynamicReports
-    : (!isLoaded ? defaultReports : null); // null when loaded+empty
+  const displayReports = (isLoaded && dynamicReports.length > 0) ? dynamicReports : null;
+
+  // Loading skeleton
+  if (!isLoaded) {
+    return (
+      <div className="mt-10">
+        <h2 className="text-lg font-bold mb-6">Recent Reports</h2>
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white border border-gray-100 rounded-[12px] p-4 md:py-3 md:px-8 animate-pulse">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 bg-gray-100 rounded w-32" />
+                  <div className="h-3 bg-gray-100 rounded w-20" />
+                </div>
+                <div className="h-7 w-16 bg-gray-100 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!hasData || (isLoaded && dynamicReports.length === 0)) {
     return (

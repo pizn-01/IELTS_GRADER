@@ -31,41 +31,53 @@ function DashboardApp() {
   const [hasData, setHasData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch analytics + recent submissions on mount
+  // Fetch analytics + recent submissions
+  const fetchDashboardData = async () => {
+    try {
+      const [metrics, submissionsRes] = await Promise.all([
+        api.getDashboardAnalytics(),
+        api.getSubmissions({ limit: 4 }),
+      ]);
+      setAnalyticsSeries(metrics);
+
+      // Shape graded submissions for RecentReports
+      const formatted = (submissionsRes.data || [])
+        .filter(s => s.status === 'graded')
+        .slice(0, 4)
+        .map(s => ({
+          id: s.id,
+          type: s.exam_type,
+          task: s.task_type,
+          date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          score: s.overall_band != null ? parseFloat(s.overall_band) : null,
+        }));
+      setRecentSubmissions(formatted);
+
+      const hasGraded = formatted.length > 0 || (metrics?.chartData?.length || 0) > 0;
+      setHasData(hasGraded);
+    } catch (err) {
+      console.warn('Dashboard data fetch failed:', err);
+      setRecentSubmissions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch on mount
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [metrics, submissionsRes] = await Promise.all([
-          api.getDashboardAnalytics(),
-          api.getSubmissions({ limit: 4 }),
-        ]);
-        setAnalyticsSeries(metrics);
+    fetchDashboardData();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-        // Shape graded submissions for RecentReports (all graded, even if band not set yet)
-        const formatted = (submissionsRes.data || [])
-          .filter(s => s.status === 'graded')
-          .slice(0, 4)
-          .map(s => ({
-            id: s.id,
-            type: s.exam_type,
-            task: s.task_type,
-            date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            score: s.overall_band != null ? parseFloat(s.overall_band) : null,
-          }));
-        setRecentSubmissions(formatted); // always an array (never null after load)
-
-        // hasData: true if any graded submission exists (either source confirms it)
-        const hasGraded = formatted.length > 0 || (metrics?.chartData?.length || 0) > 0;
-        setHasData(hasGraded);
-      } catch (err) {
-        console.warn('Dashboard data fetch failed:', err);
-        setRecentSubmissions([]); // ensure not stuck on null
-      } finally {
-        setIsLoading(false);
+  // Re-fetch when user returns to this tab (e.g. after completing an exam)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchDashboardData();
       }
     };
-    fetchDashboardData();
-  }, []);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lenis smooth scroll
   useEffect(() => {
@@ -166,9 +178,22 @@ function DashboardApp() {
             setShowModal(false);
             setView('mock-exam');
           }}
-          onAnalysisComplete={() => {
+          onAnalysisComplete={async (submissionId, reportData) => {
             setShowModal(false);
-            navigate('/reports');
+            if (reportData) {
+              // Navigate directly to the real report
+              navigate('/report', { state: { reportData } });
+            } else if (submissionId) {
+              // Fetch report if not already provided
+              try {
+                const report = await api.getReport(submissionId);
+                navigate('/report', { state: { reportData: report } });
+              } catch {
+                navigate('/reports');
+              }
+            } else {
+              navigate('/reports');
+            }
           }}
         />
       </div>

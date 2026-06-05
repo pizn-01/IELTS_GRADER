@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -7,8 +7,13 @@ import { api } from '../services/api';
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Pre-select task from URL query param (?task=Academic+Task+2)
+  const VALID_TASKS = ['Academic Task 1', 'Academic Task 2', 'General Task 1', 'General Task 2'];
+  const taskFromUrl = searchParams.get('task') || '';
+  const initialTask = VALID_TASKS.includes(taskFromUrl) ? taskFromUrl : '';
   // '' = All Tasks (no filter); specific value = filtered by that task type
-  const [activeTask, setActiveTask] = useState('');
+  const [activeTask, setActiveTask] = useState(initialTask);
   const [activeTab, setActiveTab] = useState("Overview");
   const [chartData, setChartData] = useState([]);
   const [frequentErrors, setFrequentErrors] = useState([]);
