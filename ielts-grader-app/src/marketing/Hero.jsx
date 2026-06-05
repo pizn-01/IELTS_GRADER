@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, FileText, X } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
+import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { extractFileText } from '../utils/extractFileText';
 
 const Hero = () => {
   const navigate = useNavigate();
-  const { essayData, updateEssayData, setGradingStatus } = useGrade();
+  const { essayData, updateEssayData, setGradingStatus, setSubmissionId } = useGrade();
   const { user } = useAuth();
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -27,6 +28,7 @@ const Hero = () => {
   );
 
   const [fileReadError, setFileReadError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange = (type, file) => {
     setFiles(prev => ({ ...prev, [type]: file }));
@@ -331,24 +333,40 @@ const Hero = () => {
                 <button
                   onClick={async () => {
                     setFileReadError('');
+                    setFileReadError('');
+                    setIsSubmitting(true);
+                    let essayText;
                     try {
-                      const essayText = await extractFileText(files.essay);
+                      essayText = await extractFileText(files.essay);
                       const questionText = files.prompt ? await extractFileText(files.prompt).catch(() => '') : '';
                       updateEssayData({ essayContent: essayText, questionContent: questionText });
                     } catch (err) {
                       setFileReadError(err.message || 'Could not read file. Please upload a .txt, .pdf, or .docx file.');
+                      setIsSubmitting(false);
                       return;
                     }
                     if (user && user.credits_remaining > 0) {
-                      setGradingStatus('processing');
-                      navigate('/analysis-ready');
+                      try {
+                        const res = await api.submitAttempt({
+                          exam_type: essayData.examType,
+                          task_type: essayData.taskType,
+                          essay_content: essayText,
+                          time_spent_seconds: 0,
+                        });
+                        setSubmissionId(res.submission_id);
+                        setGradingStatus('processing');
+                        navigate('/analysis-ready');
+                      } catch (err) {
+                        setFileReadError(err.message || 'Submission failed. Please try again.');
+                        setIsSubmitting(false);
+                      }
                     } else if (user) {
                       navigate('/analysis-ready');
                     } else {
                       navigate('/selection');
                     }
                   }}
-                  disabled={!isUploadFormValid}
+                  disabled={!isUploadFormValid || isSubmitting}
                   className={`w-full h-[50px] rounded-[8px] font-bold text-[15px] mt-6 transition-all ${
                     isUploadFormValid 
                       ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46] shadow-lg' 

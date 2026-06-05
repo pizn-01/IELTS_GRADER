@@ -17,19 +17,22 @@ const AnalysisReadyPage = () => {
   const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData } = useGrade();
   const pollRef = useRef(null);
 
+  // Set grading status once on mount only (Hero already sets it before navigating;
+  // this is a safety net for direct URL access with credits)
   useEffect(() => {
-    if (user && user.credits_remaining > 0) {
+    if (user && user.credits_remaining > 0 && gradingStatus === 'idle') {
       setGradingStatus('processing');
     }
-  }, [user, setGradingStatus]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onGradingComplete = async () => {
     let currentSubId = submissionId;
 
-    // No submissionId means the user navigated here directly or from guest mock exam page
+    // submissionId is pre-set by Hero before navigation in the normal flow.
+    // Fallback: if somehow not set, submit now (e.g. direct URL access with essayContent).
     if (!currentSubId) {
       if (essayData?.essayContent) {
-        // Guest Mock Exam flow: submit the essay now that user is logged in
         try {
           const res = await api.submitAttempt({
             exam_type: essayData.examType || 'Academic',
@@ -40,24 +43,22 @@ const AnalysisReadyPage = () => {
           currentSubId = res.submission_id;
           setSubmissionId(currentSubId);
         } catch (err) {
-          console.error('Failed to submit guest attempt:', err.message);
+          console.error('Failed to submit attempt:', err.message);
           setGradingStatus('completed');
           navigate('/reports');
           return;
         }
       } else {
-        // Navigated directly without any draft or submission
         setGradingStatus('completed');
         navigate('/reports');
         return;
       }
     }
 
-    setGradingStatus('completed');
-
-    // Poll backend until the existing submission is graded
+    // Keep modal open (gradingStatus stays 'processing') while we poll the backend.
+    // The modal will disappear naturally when we navigate away on completion.
     let attempts = 0;
-    const maxAttempts = 40; // ~2 minutes at 3s intervals
+    const maxAttempts = 40; // ~2 min at 3s intervals
 
     pollRef.current = setInterval(async () => {
       attempts++;
@@ -65,20 +66,22 @@ const AnalysisReadyPage = () => {
         const { status } = await api.checkStatus(currentSubId);
         if (status === 'graded') {
           clearInterval(pollRef.current);
-          // Refresh credit count so dashboard and settings reflect the deduction
           try {
             const fresh = await api.getMe();
             updateUser({ credits_remaining: fresh.credits_remaining });
           } catch {}
           const report = await api.getReport(currentSubId);
+          setGradingStatus('completed');
           navigate('/report', { state: { reportData: report } });
         } else if (status === 'failed' || attempts >= maxAttempts) {
           clearInterval(pollRef.current);
+          setGradingStatus('completed');
           navigate('/reports');
         }
       } catch {
         if (attempts >= maxAttempts) {
           clearInterval(pollRef.current);
+          setGradingStatus('completed');
           navigate('/reports');
         }
       }
