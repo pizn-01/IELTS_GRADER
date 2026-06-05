@@ -34,27 +34,29 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
 
   const handleEssayFileSelect = async (file) => {
     if (!file) return;
-    setEssayFile(file);
     setFileReadError('');
     try {
       const text = await readFileAsText(file);
+      if (text.includes('\u0000')) {
+        setFileReadError('Unsupported file type. Please upload a plain text (.txt) file.');
+        return;
+      }
+      setEssayFile(file);
       setEssayText(text);
     } catch {
       setFileReadError('Could not read file. Please upload a plain text (.txt) file.');
-      setEssayFile(null);
-      setEssayText('');
     }
   };
 
   const handleQuestionFileSelect = async (file) => {
     if (!file) return;
-    setQuestionFile(file);
     try {
       const text = await readFileAsText(file);
+      if (text.includes('\u0000')) return; // silently ignore binary prompt files
+      setQuestionFile(file);
       setQuestionText(text);
     } catch {
-      setQuestionFile(null);
-      setQuestionText('');
+      // optional field — fail silently
     }
   };
 

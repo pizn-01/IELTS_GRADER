@@ -340,6 +340,10 @@ const Hero = () => {
                     setFileReadError('');
                     try {
                       const essayText = await readFileAsText(files.essay);
+                      if (essayText.includes('\u0000')) {
+                        setFileReadError('Unsupported file type. Please upload a plain text (.txt) file.');
+                        return;
+                      }
                       const questionText = files.prompt ? await readFileAsText(files.prompt) : '';
                       updateEssayData({ essayContent: essayText, questionContent: questionText });
                     } catch {
