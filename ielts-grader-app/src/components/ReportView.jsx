@@ -64,7 +64,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
   // Use provided data or fallback to defaults
   const essayContent = data?.essay || "Some people argue that imposing longer prison sentences is the most effective way to reduce crime, while others believe that alternative measures can achieve better results. Although stricter punishments may deter certain offenders, I believe that addressing the root causes of crime is a more sustainable and effective solution.";
-  const taskTitle = data ? `${data.examType} ${data.taskType}` : "Task 2- Academic";
+  const taskTitle = data ? `${data.exam_type || data.examType || ''} ${data.task_type || data.taskType || ''}`.trim() : "Task 2- Academic";
   const taskQuestion = data?.taskQuestion || "Task : Some people think that the best way to reduce crime is to give longer prison sentences. Others, however, believe there are better alternative ways of reducing crime.";
 
   return (

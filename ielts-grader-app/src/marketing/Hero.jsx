@@ -28,6 +28,18 @@ const Hero = () => {
 
   const [fileReadError, setFileReadError] = useState('');
 
+  const handleFileChange = (type, file) => {
+    setFiles(prev => ({ ...prev, [type]: file }));
+    updateEssayData({ [`${type}File`]: file });
+  };
+
+  const removeFile = (type) => {
+    setFiles(prev => ({ ...prev, [type]: null }));
+    updateEssayData({ [`${type}File`]: null });
+    if (type === 'essay') updateEssayData({ essayContent: '' });
+    if (type === 'prompt') updateEssayData({ questionContent: '' });
+  };
+
   const isUploadFormValid = essayData.examType && essayData.taskType && files.essay;
 
   return (
