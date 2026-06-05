@@ -14,7 +14,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function DashboardApp() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
@@ -80,7 +80,7 @@ function DashboardApp() {
 
   const handleNavigate = (target, label) => {
     if (target === 'reports') { navigate('/reports'); }
-    else if (target === 'dashboard') { setView('dashboard'); }
+    else if (target === 'dashboard') { navigate('/dashboard'); }
     else if (target === 'settings') { navigate('/settings', { state: { activeTab: label } }); }
     else if (target === 'logout') { logout(); }
   };
@@ -138,11 +138,18 @@ function DashboardApp() {
           }}
           onAnalysisComplete={async (submissionId, reportData) => {
             setShowModal(false);
+
+            // Refresh credit count and dashboard data after a submission is graded
+            try {
+              const fresh = await api.getMe();
+              updateUser({ credits_remaining: fresh.credits_remaining });
+            } catch {} // non-critical
+
+            fetchDashboardData();
+
             if (reportData) {
-              // Navigate directly to the real report
               navigate('/report', { state: { reportData } });
             } else if (submissionId) {
-              // Fetch report if not already provided
               try {
                 const report = await api.getReport(submissionId);
                 navigate('/report', { state: { reportData: report } });

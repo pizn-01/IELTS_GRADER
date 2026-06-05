@@ -422,16 +422,34 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 </div>
                 
                 <div className="space-y-4 pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-[#101828]">{isSimulationMode ? "20/20 test used" : "18/20 test used"}</span>
-                    <span className="text-[14px] font-bold text-[#101828]">{isSimulationMode ? "100%" : "20%"}</span>
-                  </div>
-                  <div className="h-[8px] bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-1000 ${isSimulationMode ? "bg-[#EA4335]" : "bg-[#10B981]"}`} 
-                      style={{ width: isSimulationMode ? '100%' : '20%' }}
-                    ></div>
-                  </div>
+                  {(() => {
+                    const remaining = isSimulationMode ? 0 : (user?.credits_remaining ?? 0);
+                    // Bar fills proportional to credits remaining (baseline 5 for free plan)
+                    const barPct = isSimulationMode ? 0 : Math.min(100, Math.max(0, Math.round((remaining / 5) * 100)));
+                    const barColor = remaining === 0
+                      ? 'bg-[#EA4335]'
+                      : remaining <= 2
+                      ? 'bg-[#F59E0B]'
+                      : 'bg-[#10B981]';
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[14px] font-bold text-[#101828]">
+                            {remaining} {remaining === 1 ? 'credit' : 'credits'} remaining
+                          </span>
+                          <span className={`text-[14px] font-bold ${remaining === 0 ? 'text-[#EA4335]' : remaining <= 2 ? 'text-[#F59E0B]' : 'text-[#10B981]'}`}>
+                            {remaining === 0 ? 'All used' : `${barPct}%`}
+                          </span>
+                        </div>
+                        <div className="h-[8px] bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ${isSimulationMode ? 'bg-[#EA4335]' : barColor}`}
+                            style={{ width: isSimulationMode ? '0%' : `${barPct}%` }}
+                          />
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 

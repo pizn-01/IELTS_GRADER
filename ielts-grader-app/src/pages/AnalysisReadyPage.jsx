@@ -10,7 +10,7 @@ import AIProcessingModal from '../marketing/AIProcessingModal';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [trainingType, setTrainingType] = useState('Academic'); 
   const [selectedPlan, setSelectedPlan] = useState('Monthly'); 
 
@@ -65,6 +65,11 @@ const AnalysisReadyPage = () => {
         const { status } = await api.checkStatus(currentSubId);
         if (status === 'graded') {
           clearInterval(pollRef.current);
+          // Refresh credit count so dashboard and settings reflect the deduction
+          try {
+            const fresh = await api.getMe();
+            updateUser({ credits_remaining: fresh.credits_remaining });
+          } catch {}
           const report = await api.getReport(currentSubId);
           navigate('/report', { state: { reportData: report } });
         } else if (status === 'failed' || attempts >= maxAttempts) {

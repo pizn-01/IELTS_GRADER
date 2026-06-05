@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Clock, Info, ChevronDown } from 'lucide-react';
+import { X, Upload, Clock, Info, ChevronDown, FileText } from 'lucide-react';
 import { api } from '../services/api';
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
@@ -10,6 +10,9 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const [selectedOption, setSelectedOption] = useState('upload'); // 'upload' or 'mock'
   const [questionText, setQuestionText] = useState('');
   const [essayText, setEssayText] = useState('');
+  const [questionFile, setQuestionFile] = useState(null);
+  const [essayFile, setEssayFile] = useState(null);
+  const [fileReadError, setFileReadError] = useState('');
 
   // Grading state
   const [gradingProgress, setGradingProgress] = useState(0);
@@ -20,6 +23,51 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const progressIntervalRef = useRef(null);
 
   const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+
+  const readFileAsText = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result || '');
+      reader.onerror = () => reject(new Error('Could not read file.'));
+      reader.readAsText(file, 'UTF-8');
+    });
+
+  const handleEssayFileSelect = async (file) => {
+    if (!file) return;
+    setEssayFile(file);
+    setFileReadError('');
+    try {
+      const text = await readFileAsText(file);
+      setEssayText(text);
+    } catch {
+      setFileReadError('Could not read file. Please upload a plain text (.txt) file.');
+      setEssayFile(null);
+      setEssayText('');
+    }
+  };
+
+  const handleQuestionFileSelect = async (file) => {
+    if (!file) return;
+    setQuestionFile(file);
+    try {
+      const text = await readFileAsText(file);
+      setQuestionText(text);
+    } catch {
+      setQuestionFile(null);
+      setQuestionText('');
+    }
+  };
+
+  const removeEssayFile = () => {
+    setEssayFile(null);
+    setEssayText('');
+    setFileReadError('');
+  };
+
+  const removeQuestionFile = () => {
+    setQuestionFile(null);
+    setQuestionText('');
+  };
 
   // Start the smooth visual progress animation (0 → 88%, then real status drives to 100%)
   const startProgressAnimation = () => {
@@ -113,6 +161,9 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
     setStep(1);
     setEssayText('');
     setQuestionText('');
+    setEssayFile(null);
+    setQuestionFile(null);
+    setFileReadError('');
     setExamType('');
     setTaskType('');
     setGradingProgress(0);
@@ -234,7 +285,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                 <div className="flex flex-col font-sans h-full">
                   <div className="mb-5">
                     <h2 className="text-[18px] font-bold text-[#111827]">
-                      {selectedOption === 'upload' ? 'Paste Your Essay' : 'Mock Exam'}
+                      {selectedOption === 'upload' ? 'Upload Your Essay' : 'Mock Exam'}
                     </h2>
                   </div>
 
@@ -278,28 +329,68 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                         {/* Question / Prompt (optional) */}
                         <div className="space-y-1">
                           <label className="text-[12px] font-bold text-[#111827]">
-                            Question / Prompt <span className="text-gray-400 font-normal">(optional)</span>
+                            Upload Prompt / Question <span className="text-gray-400 font-normal">(optional)</span>
                           </label>
-                          <textarea
-                            value={questionText}
-                            onChange={(e) => setQuestionText(e.target.value)}
-                            placeholder="Paste the exam question or prompt here..."
-                            rows={2}
-                            className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-[#111827] placeholder:text-gray-400 resize-none"
-                          />
+                          {!questionFile ? (
+                            <div className="relative h-[54px] border-[1.5px] border-dashed border-[#1A96F3]/30 bg-[#E3F2FD]/30 rounded-[10px] flex items-center px-4 hover:border-[#1A96F3] transition-colors cursor-pointer group">
+                              <input
+                                type="file"
+                                onChange={(e) => handleQuestionFileSelect(e.target.files[0])}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm group-hover:scale-105 transition-transform">
+                                <Upload size={13} className="text-[#1A96F3]" />
+                              </div>
+                              <span className="text-[12px] font-bold text-[#1A96F3]">Upload prompt file</span>
+                            </div>
+                          ) : (
+                            <div className="h-[54px] bg-[#E3F2FD]/50 border border-[#1A96F3]/20 rounded-[10px] flex items-center px-4">
+                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                                <FileText size={13} className="text-[#1A96F3]" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[12px] font-bold text-[#111827] truncate">{questionFile.name}</p>
+                                <p className="text-[10px] text-gray-400">{(questionFile.size / 1024).toFixed(0)} KB</p>
+                              </div>
+                              <button onClick={removeQuestionFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors">
+                                <X size={15} />
+                              </button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Essay Text */}
+                        {/* Essay File */}
                         <div className="space-y-1">
-                          <label className="text-[12px] font-bold text-[#111827]">Your Essay</label>
-                          <textarea
-                            value={essayText}
-                            onChange={(e) => setEssayText(e.target.value)}
-                            placeholder="Paste your essay here..."
-                            rows={6}
-                            className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-[#111827] placeholder:text-gray-400 resize-none"
-                          />
-                          <p className="text-[11px] text-gray-400 text-right">{wordCount} words</p>
+                          <label className="text-[12px] font-bold text-[#111827]">Upload Your Essay</label>
+                          {!essayFile ? (
+                            <div className="relative h-[54px] border-[1.5px] border-dashed border-[#1A96F3]/30 bg-[#E3F2FD]/30 rounded-[10px] flex items-center px-4 hover:border-[#1A96F3] transition-colors cursor-pointer group">
+                              <input
+                                type="file"
+                                onChange={(e) => handleEssayFileSelect(e.target.files[0])}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm group-hover:scale-105 transition-transform">
+                                <Upload size={13} className="text-[#1A96F3]" />
+                              </div>
+                              <span className="text-[12px] font-bold text-[#1A96F3]">Upload essay file</span>
+                            </div>
+                          ) : (
+                            <div className="h-[54px] bg-[#E3F2FD]/50 border border-[#1A96F3]/20 rounded-[10px] flex items-center px-4">
+                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                                <FileText size={13} className="text-[#1A96F3]" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[12px] font-bold text-[#111827] truncate">{essayFile.name}</p>
+                                <p className="text-[10px] text-gray-400">{wordCount} words · {(essayFile.size / 1024).toFixed(0)} KB</p>
+                              </div>
+                              <button onClick={removeEssayFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors">
+                                <X size={15} />
+                              </button>
+                            </div>
+                          )}
+                          {fileReadError && (
+                            <p className="text-[11px] text-red-500">{fileReadError}</p>
+                          )}
                         </div>
                       </>
                     )}
@@ -316,7 +407,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                       }}
                       disabled={
                         selectedOption === 'upload'
-                          ? (!examType || !taskType || wordCount < 10)
+                          ? (!examType || !taskType || !essayFile || wordCount < 10)
                           : (!examType || !taskType)
                       }
                       className="w-full bg-[#2C3E50] text-white h-[46px] rounded-[10px] text-[15px] font-bold flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#34495E]"
