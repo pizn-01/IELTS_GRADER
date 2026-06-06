@@ -7,6 +7,9 @@ import { api } from '../services/api';
 const Settings = ({ profileImage, setProfileImage }) => {
   const location = useLocation();
   const getInitialTab = () => {
+    // URL query param takes priority — used by Stripe cancel redirect
+    const queryTab = new URLSearchParams(location.search).get('tab');
+    if (queryTab) return queryTab;
     let tab = location.state?.activeTab || 'Profile';
     if (tab === 'Security') return 'Change Password';
     return tab;

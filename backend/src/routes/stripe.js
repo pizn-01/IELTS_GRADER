@@ -42,7 +42,7 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
         pack_name: pack.name,
       },
       success_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/checkout`,
+      cancel_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/settings?tab=Subscription`,
     });
 
     return res.json({ url: session.url, session_id: session.id });
