@@ -16,7 +16,7 @@ const SelectionPage = () => {
 
   const handleSignup = (e) => {
     e.preventDefault();
-    navigate('/report');
+    navigate('/signup');
   };
 
   const handlePremiumClick = () => {

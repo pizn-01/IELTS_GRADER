@@ -104,7 +104,7 @@ const AnalysisReadyPage = () => {
 
   const handleSignup = (e) => {
     e.preventDefault();
-    navigate('/report');
+    navigate('/signup');
   };
 
   return (

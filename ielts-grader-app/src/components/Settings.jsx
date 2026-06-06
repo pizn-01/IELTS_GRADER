@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Camera, Eye, EyeOff, CreditCard, ArrowRight, X, Target, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
-import PaymentPage from './PaymentPage';
+import { Camera, Eye, EyeOff, CreditCard, X, Target, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
@@ -106,9 +105,9 @@ const Settings = ({ profileImage, setProfileImage }) => {
   };
   const [showSupportSuccessModal, setShowSupportSuccessModal] = useState(false);
   const [selectedPack, setSelectedPack] = useState('Smart Top Up');
-  const [isSimulationMode, setIsSimulationMode] = useState(false);
-  const [showPaymentPage, setShowPaymentPage] = useState(false);
   const [successType, setSuccessType] = useState('subscription'); // 'subscription' or 'cancellation'
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
   
   // Password visibility states
   const [showCurrent, setShowCurrent] = useState(false);
@@ -149,10 +148,24 @@ const Settings = ({ profileImage, setProfileImage }) => {
   };
 
   const packs = [
-    { name: 'Starter Top Up', credits: '10', price: '$12', desc: 'Best for short practice sprints' },
-    { name: 'Smart Top Up', credits: '24', price: '$24', desc: 'Most chosen by active learners' },
-    { name: 'Intensive Top Up', credits: '50', price: '$44', desc: 'For speaking + writing every week' }
+    { name: 'Starter Top Up',   credits: '10', price: '$12', desc: 'Best for short practice sprints',    priceId: 'price_1TcqK9FDM9NsOfLRmmYyoSTh' },
+    { name: 'Smart Top Up',     credits: '24', price: '$24', desc: 'Most chosen by active learners',     priceId: 'price_1TcqPbFDM9NsOfLRquDNOJpA' },
+    { name: 'Intensive Top Up', credits: '50', price: '$44', desc: 'For speaking + writing every week',  priceId: 'price_1TcqRfFDM9NsOfLRbZgZMEKc' },
   ];
+
+  const handlePayForPack = async () => {
+    const pack = packs.find(p => p.name === selectedPack);
+    if (!pack) return;
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    try {
+      const { url } = await api.createCheckoutSession(pack.priceId);
+      window.location.href = url;
+    } catch (err) {
+      setCheckoutError(err.message || 'Failed to start checkout. Please try again.');
+      setCheckoutLoading(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-[1340px] mx-auto px-8 py-10 relative text-[#101828]">
@@ -423,9 +436,8 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 
                 <div className="space-y-4 pt-4">
                   {(() => {
-                    const remaining = isSimulationMode ? 0 : (user?.credits_remaining ?? 0);
-                    // Bar fills proportional to credits remaining (baseline 5 for free plan)
-                    const barPct = isSimulationMode ? 0 : Math.min(100, Math.max(0, Math.round((remaining / 5) * 100)));
+                    const remaining = user?.credits_remaining ?? 0;
+                    const barPct = Math.min(100, Math.max(0, Math.round((remaining / 5) * 100)));
                     const barColor = remaining === 0
                       ? 'bg-[#EA4335]'
                       : remaining <= 2
@@ -443,8 +455,8 @@ const Settings = ({ profileImage, setProfileImage }) => {
                         </div>
                         <div className="h-[8px] bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-1000 ${isSimulationMode ? 'bg-[#EA4335]' : barColor}`}
-                            style={{ width: isSimulationMode ? '0%' : `${barPct}%` }}
+                            className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
+                            style={{ width: `${barPct}%` }}
                           />
                         </div>
                       </>
@@ -460,21 +472,12 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 >
                     Cancel Subscription
                 </button>
-                <div className="relative group w-full sm:w-auto">
-                  <button 
-                    onClick={() => setShowTopUpModal(true)}
-                    className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
-                  >
-                      Upgrade Plan
-                  </button>
-                  {/* Simulation Button */}
-                  <button 
-                    onClick={() => setIsSimulationMode(!isSimulationMode)}
-                    className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#1A96F3] text-white text-[10px] font-bold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap flex items-center gap-2"
-                  >
-                    Simulate Upgrade <ArrowRight size={12} />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowTopUpModal(true)}
+                  className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
+                >
+                    Upgrade Plan
+                </button>
               </div>
             </div>
 
@@ -494,7 +497,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
           </div>
 
           {/* Low Credits Warning Banner */}
-          {isSimulationMode && (
+          {(user?.credits_remaining ?? 0) <= 2 && (
             <div className="bg-[#FFFBEB] border border-[#FEF3C7] rounded-[12px] p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm animate-in slide-in-from-bottom duration-500">
                <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#F59E0B] shrink-0">
@@ -505,7 +508,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                     <p className="text-[14px] text-gray-500 font-medium mt-0.5">Less than 3 tests left. Keep your streak going.</p>
                   </div>
                </div>
-               <button 
+               <button
                  onClick={() => setShowTopUpModal(true)}
                  className="w-full md:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
                >
@@ -609,28 +612,16 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 >
                   Keep Practicing
                 </button>
-                <div className="flex items-center gap-4">
-                  <button 
+                <button
                     onClick={() => {
                       setShowRetentionModal(false);
                       setSuccessType('cancellation');
                       setShowSuccessModal(true);
                     }}
-                    className="flex-1 h-[56px] bg-white border border-gray-200 rounded-[12px] text-[15px] font-bold text-[#101828] hover:bg-gray-50 transition-all"
+                    className="w-full h-[56px] bg-white border border-gray-200 rounded-[12px] text-[15px] font-bold text-[#101828] hover:bg-gray-50 transition-all"
                   >
                     Cancel Anyway
                   </button>
-                  {/* Simulation Button for error step */}
-                  <button 
-                    onClick={() => {
-                      setShowRetentionModal(false);
-                      setShowErrorModal(true);
-                    }}
-                    className="h-[56px] px-4 bg-[#F8FAFC] border border-dashed border-gray-200 rounded-[12px] text-[11px] font-bold text-gray-400 hover:bg-gray-50 hover:text-[#1A96F3] transition-all whitespace-nowrap"
-                  >
-                    Simulate Other
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -796,14 +787,15 @@ const Settings = ({ profileImage, setProfileImage }) => {
               ))}
 
               <div className="pt-4 md:pt-6 space-y-3">
-                <button 
-                  onClick={() => {
-                    setShowTopUpModal(false);
-                    setShowPaymentPage(true);
-                  }}
-                  className="w-full h-[52px] md:h-[56px] bg-[#344054] text-white rounded-[12px] text-[14px] md:text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
+                {checkoutError && (
+                  <p className="text-[13px] font-medium text-[#EA4335] text-center">{checkoutError}</p>
+                )}
+                <button
+                  onClick={handlePayForPack}
+                  disabled={checkoutLoading}
+                  className="w-full h-[52px] md:h-[56px] bg-[#344054] text-white rounded-[12px] text-[14px] md:text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
                 >
-                  Pay & Add Credits
+                  {checkoutLoading ? 'Redirecting to Stripe…' : 'Pay & Add Credits'}
                 </button>
                 <button 
                   onClick={() => setShowTopUpModal(false)}
@@ -817,18 +809,6 @@ const Settings = ({ profileImage, setProfileImage }) => {
         </div>
       )}
 
-      {/* Payment Page Overlay */}
-      {showPaymentPage && (
-        <PaymentPage 
-          pack={packs.find(p => p.name === selectedPack)}
-          onBack={() => setShowPaymentPage(false)}
-          onComplete={() => {
-            setShowPaymentPage(false);
-            setSuccessType('subscription');
-            setShowSuccessModal(true);
-          }}
-        />
-      )}
     </div>
   );
 };
