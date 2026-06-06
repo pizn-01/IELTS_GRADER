@@ -127,8 +127,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_SECRET) — must be BEFORE adminRoutes
 app.use('/api/admin', adminRoutes);
-app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_SECRET)
 app.use('/api/discounts', discountsRoutes);
 app.use('/api/stripe', stripeRoutes);
 
