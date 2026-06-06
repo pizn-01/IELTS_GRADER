@@ -33,7 +33,27 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const startSeconds = isTask1 ? 1199 : 2399;
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
   const bank = QUESTION_BANK[key] || QUESTION_BANK['Academic-Task 2'];
-  const question = bank[Math.floor(Date.now() / 86400000) % bank.length];
+
+  // Dynamic question fetched from DB — falls back to hardcoded bank if API fails
+  const [dynamicQuestion, setDynamicQuestion] = useState(null);
+  useEffect(() => {
+    api.getTasks({ exam_type: examType || 'Academic', task_type: taskType || 'Task 2' })
+      .then(({ data = [] }) => {
+        const active = data.filter(t => t.is_active !== false);
+        if (active.length === 0) return;
+        const pick = active[Math.floor(Date.now() / 86400000) % active.length];
+        setDynamicQuestion({
+          prompt: pick.question_text,
+          note: pick.time_limit_seconds <= 1200
+            ? 'Write at least 150 words. You have 20 minutes.'
+            : 'Write at least 250 words. You have 40 minutes.',
+        });
+      })
+      .catch(() => { /* silently use QUESTION_BANK fallback */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examType, taskType]);
+
+  const question = dynamicQuestion || bank[Math.floor(Date.now() / 86400000) % bank.length];
 
   // Derive display name and initials from auth user
   const displayName = user?.full_name || 'Candidate';

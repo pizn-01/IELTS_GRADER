@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye } from 'lucide-react';
 
-const TABS = ['Overview', 'Users', 'Submissions', 'Discounts', 'Support'];
+const TABS = ['Overview', 'Users', 'Submissions', 'Tasks', 'Discounts', 'Support'];
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 const Pill = ({ label, color }) => {
@@ -397,12 +397,242 @@ const SupportTab = () => {
   );
 };
 
+// ── Tasks Tab ─────────────────────────────────────────────────────────────────
+const EMPTY_TASK = { exam_type: 'Academic', task_type: 'Task 2', title: '', question_text: '', time_limit_seconds: '' };
+
+const TasksTab = () => {
+  const [tasks, setTasks]     = useState([]);
+  const [form, setForm]       = useState(null);   // null=hidden, EMPTY_TASK=new, task=editing
+  const [isNew, setIsNew]     = useState(false);
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState('');
+  const [history, setHistory] = useState(null);   // { task, entries }
+  const [filter, setFilter]   = useState('all');  // 'all' | 'active' | 'inactive'
+
+  const load = useCallback(() => {
+    api.admin.getTasks().then(r => setTasks(r.data || [])).catch(() => {});
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = tasks.filter(t => {
+    if (filter === 'active')   return t.is_active;
+    if (filter === 'inactive') return !t.is_active;
+    return true;
+  });
+
+  const openCreate = () => { setForm({ ...EMPTY_TASK }); setIsNew(true); setError(''); };
+  const openEdit   = (t) => { setForm({ ...t }); setIsNew(false); setError(''); };
+  const closeForm  = () => { setForm(null); setError(''); };
+
+  const save = async () => {
+    setSaving(true); setError('');
+    try {
+      const payload = {
+        exam_type: form.exam_type,
+        task_type: form.task_type,
+        title: form.title.trim(),
+        question_text: form.question_text.trim(),
+        time_limit_seconds: form.time_limit_seconds ? parseInt(form.time_limit_seconds) : undefined,
+      };
+      if (isNew) {
+        const res = await api.admin.createTask(payload);
+        if (res?.error) throw new Error(res.error);
+      } else {
+        const res = await api.admin.updateTask(form.id, payload);
+        if (res?.error) throw new Error(res.error);
+      }
+      closeForm();
+      load();
+    } catch (e) {
+      setError(e.message || 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleActive = async (t) => {
+    await api.admin.updateTask(t.id, { is_active: !t.is_active }).catch(() => {});
+    load();
+  };
+
+  const showHistory = async (t) => {
+    const res = await api.admin.getTaskHistory(t.id).catch(() => ({ data: [] }));
+    setHistory({ task: t, entries: res.data || [] });
+  };
+
+  const typeColor = (taskType) => taskType === 'Task 1' ? 'blue' : 'green';
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {['all', 'active', 'inactive'].map(f => (
+          <button key={f} onClick={() => setFilter(f)} className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all capitalize ${filter === f ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+            {f}
+          </button>
+        ))}
+        <button onClick={load} className="p-2 border border-gray-200 rounded-[8px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
+        <button onClick={openCreate} className="ml-auto flex items-center gap-2 px-4 h-[36px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939]">
+          <Plus size={15} /> New Task
+        </button>
+      </div>
+
+      {/* Analytics summary */}
+      {tasks.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {['Academic-Task 1', 'Academic-Task 2', 'General-Task 1', 'General-Task 2'].map(combo => {
+            const [exam, , num] = combo.split('-');
+            const taskType = `Task ${num}`;
+            const group = tasks.filter(t => t.exam_type === exam && t.task_type === taskType);
+            const usage = group.reduce((s, t) => s + (t.usage_count || 0), 0);
+            return (
+              <div key={combo} className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-4">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{combo.replace('-', ' · ')}</p>
+                <p className="text-[22px] font-black text-[#101828] leading-none">{group.filter(t => t.is_active).length}<span className="text-[12px] font-semibold text-gray-400 ml-1">active</span></p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{usage} total submissions</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-white rounded-[16px] border border-gray-100 overflow-hidden shadow-sm">
+        <table className="w-full text-[13px]">
+          <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
+            <tr>{['Type', 'Title', 'Question (preview)', 'Usage', 'Status', 'Actions'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {filtered.map(t => (
+              <tr key={t.id} className={`hover:bg-gray-50/50 ${!t.is_active ? 'opacity-50' : ''}`}>
+                <td className="px-5 py-3">
+                  <div className="flex flex-col gap-0.5">
+                    <Pill label={t.exam_type} color="blue" />
+                    <Pill label={t.task_type} color={typeColor(t.task_type)} />
+                  </div>
+                </td>
+                <td className="px-5 py-3 font-medium text-[#101828] max-w-[160px] truncate">{t.title}</td>
+                <td className="px-5 py-3 text-gray-400 max-w-[260px]">
+                  <span className="line-clamp-2 text-[12px]">{t.question_text?.slice(0, 100)}{t.question_text?.length > 100 ? '…' : ''}</span>
+                </td>
+                <td className="px-5 py-3 text-gray-500 font-bold">{t.usage_count ?? 0}</td>
+                <td className="px-5 py-3">
+                  <Pill label={t.is_active ? 'Active' : 'Disabled'} color={t.is_active ? 'green' : 'gray'} />
+                </td>
+                <td className="px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => openEdit(t)} className="text-[12px] font-bold text-blue-600 hover:underline">Edit</button>
+                    <button onClick={() => showHistory(t)} title="View history"><History size={14} className="text-gray-400 hover:text-gray-600" /></button>
+                    <button onClick={() => toggleActive(t)} title={t.is_active ? 'Deactivate' : 'Activate'}>
+                      {t.is_active
+                        ? <ToggleRight size={22} className="text-emerald-500" />
+                        : <ToggleLeft size={22} className="text-gray-300" />}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">No tasks found.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Create / Edit Modal */}
+      {form && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={closeForm} />
+          <div className="relative bg-white rounded-[20px] w-full max-w-[560px] p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-[16px] font-bold text-[#101828]">{isNew ? 'Create Task' : 'Edit Task'}</h3>
+            {error && <p className="text-[12px] text-red-500 bg-red-50 rounded-[8px] px-3 py-2">{error}</p>}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[12px] font-bold text-gray-500 block mb-1">Exam Type</label>
+                <select value={form.exam_type} onChange={e => setForm(x => ({ ...x, exam_type: e.target.value }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
+                  <option value="Academic">Academic</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[12px] font-bold text-gray-500 block mb-1">Task Type</label>
+                <select value={form.task_type} onChange={e => setForm(x => ({ ...x, task_type: e.target.value, time_limit_seconds: e.target.value === 'Task 1' ? 1200 : 2400 }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
+                  <option value="Task 1">Task 1</option>
+                  <option value="Task 2">Task 2</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[12px] font-bold text-gray-500 block mb-1">Title</label>
+              <input type="text" placeholder="e.g. Graph analysis — population growth" value={form.title} onChange={e => setForm(x => ({ ...x, title: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+            </div>
+
+            <div>
+              <label className="text-[12px] font-bold text-gray-500 block mb-1">Question / Prompt</label>
+              <textarea rows={6} placeholder="Write the full question or essay prompt here…" value={form.question_text} onChange={e => setForm(x => ({ ...x, question_text: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-blue-400 resize-none leading-relaxed" />
+            </div>
+
+            <div>
+              <label className="text-[12px] font-bold text-gray-500 block mb-1">Time Limit (seconds)</label>
+              <input type="number" placeholder={form.task_type === 'Task 1' ? '1200' : '2400'} value={form.time_limit_seconds} onChange={e => setForm(x => ({ ...x, time_limit_seconds: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+              <p className="text-[11px] text-gray-400 mt-1">Task 1 = 1200s (20 min) · Task 2 = 2400s (40 min)</p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={closeForm} className="flex-1 h-[40px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
+              <button onClick={save} disabled={saving || !form.title || !form.question_text} className="flex-1 h-[40px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-bold disabled:opacity-50">{saving ? 'Saving…' : isNew ? 'Create' : 'Save Changes'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* History Modal */}
+      {history && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setHistory(null)} />
+          <div className="relative bg-white rounded-[20px] w-full max-w-[560px] p-7 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <h3 className="text-[16px] font-bold text-[#101828] mb-1">Change History</h3>
+            <p className="text-[12px] text-gray-400 mb-4">{history.task.title}</p>
+            {history.entries.length === 0 ? (
+              <p className="text-[13px] text-gray-400 py-4 text-center">No changes recorded yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {history.entries.map((e, i) => (
+                  <div key={e.id} className="bg-gray-50 rounded-[12px] p-4 text-[12px]">
+                    <p className="text-gray-400 mb-2">{new Date(e.created_at).toLocaleString()}</p>
+                    {e.previous_title && (
+                      <div className="mb-2">
+                        <span className="font-bold text-gray-500">Previous title:</span>
+                        <p className="text-[#101828] mt-0.5">{e.previous_title}</p>
+                      </div>
+                    )}
+                    {e.previous_question_text && (
+                      <div>
+                        <span className="font-bold text-gray-500">Previous question:</span>
+                        <p className="text-[#101828] mt-0.5 leading-relaxed">{e.previous_question_text}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setHistory(null)} className="mt-4 w-full h-[38px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Main Admin Page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const navigate  = useNavigate();
   const [tab, setTab] = useState('Overview');
 
-  const tabIcon = { Overview: BarChart2, Users, Submissions: FileText, Discounts: Tag, Support: MessageSquare };
+  const tabIcon = { Overview: BarChart2, Users, Submissions: FileText, Tasks: BookOpen, Discounts: Tag, Support: MessageSquare };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans">
@@ -435,6 +665,7 @@ export default function AdminPage() {
         {tab === 'Overview'     && <OverviewTab />}
         {tab === 'Users'        && <UsersTab />}
         {tab === 'Submissions'  && <SubmissionsTab />}
+        {tab === 'Tasks'        && <TasksTab />}
         {tab === 'Discounts'    && <DiscountsTab />}
         {tab === 'Support'      && <SupportTab />}
       </div>

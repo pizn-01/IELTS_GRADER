@@ -13,6 +13,7 @@ const storageRoutes = require('./routes/storage');
 const adminRoutes = require('./routes/admin');
 const { bootstrapRouter } = require('./routes/admin');
 const discountsRoutes = require('./routes/discounts');
+const stripeRoutes = require('./routes/stripe');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,7 +25,18 @@ app.set('trust proxy', 1);
 
 // Allow all origins — security is enforced via JWT on protected routes
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+
+// ── Stripe webhook needs the raw request body for signature verification ───
+// We capture it in the verify hook so the normal JSON middleware still works
+// for all other routes.
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, _res, buf) => {
+    if (req.originalUrl.includes('/stripe/webhook')) {
+      req.rawBody = buf;
+    }
+  },
+}));
 
 // Disable caching for all API responses to prevent user data caching issues
 app.use((req, res, next) => {
@@ -118,6 +130,7 @@ app.use('/api/storage', storageRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_SECRET)
 app.use('/api/discounts', discountsRoutes);
+app.use('/api/stripe', stripeRoutes);
 
 // Global error handler
 app.use((err, _req, res, _next) => {

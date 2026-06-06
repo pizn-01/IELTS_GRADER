@@ -470,6 +470,189 @@ router.post('/users/:id/credits', async (req, res) => {
   }
 });
 
+// ─── GET /api/admin/tasks ──────────────────────────────────────────────────────
+// Returns all tasks (active + inactive) with submission usage counts
+router.get('/tasks', async (req, res) => {
+  try {
+    const { data: tasks, error } = await supabaseAdmin
+      .from('exam_tasks')
+      .select('id, exam_type, task_type, title, question_text, time_limit_seconds, is_active, created_at, updated_at')
+      .order('exam_type')
+      .order('task_type')
+      .order('created_at');
+
+    if (error) throw error;
+
+    // Submission counts grouped by exam_type + task_type for analytics
+    const { data: subs } = await supabaseAdmin
+      .from('submissions')
+      .select('exam_type, task_type');
+
+    const countMap = {};
+    (subs || []).forEach(s => {
+      const k = `${s.exam_type}|${s.task_type}`;
+      countMap[k] = (countMap[k] || 0) + 1;
+    });
+
+    return res.json({
+      data: (tasks || []).map(t => ({
+        ...t,
+        usage_count: countMap[`${t.exam_type}|${t.task_type}`] || 0,
+      })),
+    });
+  } catch (err) {
+    console.error('[admin/tasks GET]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch tasks.' });
+  }
+});
+
+// ─── POST /api/admin/tasks ─────────────────────────────────────────────────────
+router.post('/tasks', async (req, res) => {
+  const { exam_type, task_type, title, question_text, time_limit_seconds } = req.body;
+
+  if (!exam_type || !task_type || !title || !question_text) {
+    return res.status(400).json({ error: 'exam_type, task_type, title, and question_text are required.' });
+  }
+  if (!['Academic', 'General'].includes(exam_type)) {
+    return res.status(400).json({ error: 'exam_type must be "Academic" or "General".' });
+  }
+  if (!['Task 1', 'Task 2'].includes(task_type)) {
+    return res.status(400).json({ error: 'task_type must be "Task 1" or "Task 2".' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('exam_tasks')
+      .insert({
+        exam_type,
+        task_type,
+        title: title.trim(),
+        question_text: question_text.trim(),
+        time_limit_seconds: time_limit_seconds || (task_type === 'Task 1' ? 1200 : 2400),
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return res.status(201).json(data);
+  } catch (err) {
+    console.error('[admin/tasks POST]', err.message);
+    return res.status(500).json({ error: 'Failed to create task.' });
+  }
+});
+
+// ─── PATCH /api/admin/tasks/:id ───────────────────────────────────────────────
+// Saves previous version to task_history before updating
+router.patch('/tasks/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, question_text, time_limit_seconds, is_active } = req.body;
+
+  try {
+    const { data: current, error: fetchError } = await supabaseAdmin
+      .from('exam_tasks')
+      .select('title, question_text')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !current) return res.status(404).json({ error: 'Task not found.' });
+
+    const updates = { updated_at: new Date().toISOString() };
+    if (title !== undefined)              updates.title = title.trim();
+    if (question_text !== undefined)      updates.question_text = question_text.trim();
+    if (time_limit_seconds !== undefined) updates.time_limit_seconds = time_limit_seconds;
+    if (is_active !== undefined)          updates.is_active = Boolean(is_active);
+
+    const { data, error } = await supabaseAdmin
+      .from('exam_tasks')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Record history when question content changes
+    const contentChanged =
+      (title !== undefined && title.trim() !== current.title) ||
+      (question_text !== undefined && question_text.trim() !== current.question_text);
+
+    if (contentChanged) {
+      await supabaseAdmin
+        .from('task_history')
+        .insert({
+          task_id: id,
+          changed_by: req.user.userId,
+          previous_title: current.title,
+          previous_question_text: current.question_text,
+        })
+        .catch(e => console.warn('[admin/tasks] History write failed:', e.message));
+    }
+
+    return res.json(data);
+  } catch (err) {
+    console.error('[admin/tasks/:id PATCH]', err.message);
+    return res.status(500).json({ error: 'Failed to update task.' });
+  }
+});
+
+// ─── DELETE /api/admin/tasks/:id ─────────────────────────────────────────────
+// Soft-delete: sets is_active = false (preserves history)
+router.delete('/tasks/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabaseAdmin
+      .from('exam_tasks')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) throw error;
+    return res.json({ message: 'Task deactivated.' });
+  } catch (err) {
+    console.error('[admin/tasks/:id DELETE]', err.message);
+    return res.status(500).json({ error: 'Failed to deactivate task.' });
+  }
+});
+
+// ─── GET /api/admin/tasks/:id/history ─────────────────────────────────────────
+router.get('/tasks/:id/history', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('task_history')
+      .select('id, previous_title, previous_question_text, change_note, created_at, changed_by')
+      .eq('task_id', id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (error) throw error;
+    return res.json({ data: data || [] });
+  } catch (err) {
+    console.error('[admin/tasks/:id/history]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch task history.' });
+  }
+});
+
+// ─── GET /api/admin/payments ───────────────────────────────────────────────────
+router.get('/payments', async (req, res) => {
+  const { page = 1, per_page = 50 } = req.query;
+  const perPage = Math.min(parseInt(per_page), 100);
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('payments')
+      .select('id, user_id, pack_name, credits_granted, amount_cents, status, created_at, completed_at, stripe_session_id')
+      .order('created_at', { ascending: false })
+      .range((page - 1) * perPage, page * perPage - 1);
+
+    if (error) throw error;
+    return res.json({ data: data || [], page: parseInt(page), per_page: perPage });
+  } catch (err) {
+    console.error('[admin/payments]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch payments.' });
+  }
+});
+
 module.exports = router;
 
 // Bootstrap helper — mounted separately in index.js without admin middleware

@@ -304,6 +304,40 @@ export const api = {
     return res.json();
   },
 
+  // ─── GET /api/tasks ──────────────────────────────────────────────────────────
+  getTasks: async ({ exam_type, task_type } = {}) => {
+    try {
+      const q = new URLSearchParams();
+      if (exam_type) q.set('exam_type', exam_type);
+      if (task_type) q.set('task_type', task_type);
+      const res = await fetch(`${BASE_URL}/tasks?${q}`, { headers: getHeaders() });
+      if (!res.ok) throw new Error(`Tasks fetch failed (${res.status})`);
+      return await res.json();
+    } catch {
+      return { data: [] };
+    }
+  },
+
+  // ─── Stripe API ───────────────────────────────────────────────────────────────
+  createCheckoutSession: async (price_id) => {
+    const res = await fetch(`${BASE_URL}/stripe/create-checkout-session`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ price_id }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to create checkout session.');
+    }
+    return res.json();
+  },
+
+  verifyStripeSession: async (sessionId) => {
+    const res = await fetch(`${BASE_URL}/stripe/verify-session/${sessionId}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Session verification failed.');
+    return res.json();
+  },
+
   // ─── Admin API ───────────────────────────────────────────────────────────────
   admin: {
     getStats: () => fetch(`${BASE_URL}/admin/stats`, { headers: getHeaders() }).then(r => r.json()),
@@ -327,6 +361,17 @@ export const api = {
     createDiscount: (body) => fetch(`${BASE_URL}/admin/discounts`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
     updateDiscount: (id, body) => fetch(`${BASE_URL}/admin/discounts/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
     deleteDiscount: (id) => fetch(`${BASE_URL}/admin/discounts/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
+    // Task management
+    getTasks: () => fetch(`${BASE_URL}/admin/tasks`, { headers: getHeaders() }).then(r => r.json()),
+    createTask: (body) => fetch(`${BASE_URL}/admin/tasks`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    updateTask: (id, body) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    deleteTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
+    getTaskHistory: (id) => fetch(`${BASE_URL}/admin/tasks/${id}/history`, { headers: getHeaders() }).then(r => r.json()),
+    // Payment history
+    getPayments: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/payments?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
   },
 
   // ─── POST /api/support ───────────────────────────────────────────────────────

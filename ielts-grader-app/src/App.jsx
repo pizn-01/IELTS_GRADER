@@ -33,6 +33,7 @@ import OAuthCallbackPage from './auth/OAuthCallbackPage';
 // ── Public Functional Pages ───────────────────────────────────────────────────
 import PricingPage from './pages/PricingPage';
 import CheckoutPage from './pages/CheckoutPage';
+import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 
 // ── Protected Functional Pages ────────────────────────────────────────────────
 import SelectionPage from './pages/SelectionPage';
@@ -105,7 +106,7 @@ function App() {
   // Lenis smooth scroll for marketing pages
   useEffect(() => {
     // Only activate on landing page — dashboard/protected pages manage their own lenis instance
-    const isMarketingRoute = ['/', '/pricing', '/checkout'].includes(location.pathname);
+    const isMarketingRoute = ['/', '/pricing', '/checkout', '/checkout/success'].includes(location.pathname);
     if (!isMarketingRoute) return;
 
     const lenis = new Lenis({
@@ -128,6 +129,7 @@ function App() {
         {/* ── Public Pages ──────────────────────────────────── */}
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
 
         {/* ── Auth Pages (public) ───────────────────────────── */}
         <Route path="/login" element={<LoginPage />} />
