@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye } from 'lucide-react';
+import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon } from 'lucide-react';
 
 const TABS = ['Overview', 'Users', 'Submissions', 'Tasks', 'Discounts', 'Support'];
 
@@ -93,8 +93,8 @@ const UsersTab = () => {
         <button onClick={load} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
       </div>
 
-      <div className="bg-white rounded-[16px] border border-gray-100 overflow-hidden shadow-sm">
-        <table className="w-full text-[13px]">
+      <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
+        <table className="w-full text-[13px] min-w-[600px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>
               {['Name', 'Email', 'Credits', 'Target', 'Exams', 'Admin', 'Actions'].map(h => (
@@ -206,8 +206,8 @@ const SubmissionsTab = () => {
         ))}
         <button onClick={load} className="ml-auto p-2 border border-gray-200 rounded-[8px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
       </div>
-      <div className="bg-white rounded-[16px] border border-gray-100 overflow-hidden shadow-sm">
-        <table className="w-full text-[13px]">
+      <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
+        <table className="w-full text-[13px] min-w-[600px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>{['ID', 'User', 'Type', 'Words', 'Band', 'Status', 'Date'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
           </thead>
@@ -283,8 +283,8 @@ const DiscountsTab = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-[16px] border border-gray-100 overflow-hidden shadow-sm">
-        <table className="w-full text-[13px]">
+      <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
+        <table className="w-full text-[13px] min-w-[600px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>{['Code', 'Type', 'Value', 'Uses', 'Expires', 'Status', 'Actions'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
           </thead>
@@ -381,8 +381,8 @@ const SupportTab = () => {
         ))}
         <button onClick={load} className="ml-auto p-2 border border-gray-200 rounded-[8px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
       </div>
-      <div className="bg-white rounded-[16px] border border-gray-100 overflow-hidden shadow-sm">
-        <table className="w-full text-[13px]">
+      <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
+        <table className="w-full text-[13px] min-w-[600px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>{['Status', 'Topic', 'Email', 'Date', 'Actions'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
           </thead>
@@ -527,8 +527,8 @@ const TasksTab = () => {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-[16px] border border-gray-100 overflow-hidden shadow-sm">
-        <table className="w-full text-[13px]">
+      <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
+        <table className="w-full text-[13px] min-w-[600px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>{['Type', 'Title', 'Question (preview)', 'Usage', 'Status', 'Actions'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
           </thead>
@@ -658,29 +658,61 @@ const TasksTab = () => {
 
 // ── Main Admin Page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const [tab, setTab] = useState('Overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const tabIcon = { Overview: BarChart2, Users, Submissions: FileText, Tasks: BookOpen, Discounts: Tag, Support: MessageSquare };
 
+  const switchTab = (t) => { setTab(t); setSidebarOpen(false); };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans">
-      {/* Sidebar */}
-      <div className="fixed top-0 left-0 h-full w-[220px] bg-white border-r border-gray-100 flex flex-col z-10">
-        <div className="px-6 py-5 border-b border-gray-100">
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">IELTS Grader</p>
-          <p className="text-[18px] font-black text-[#101828] mt-0.5">Admin</p>
+
+      {/* ── Mobile top bar ─────────────────────────────────────────────────── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-[56px] bg-white border-b border-gray-100 z-20 flex items-center px-4 gap-3">
+        <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-[8px] hover:bg-gray-50 text-gray-600">
+          <Menu size={20} />
+        </button>
+        <span className="text-[16px] font-extrabold text-[#1a1f36] uppercase tracking-tight">IELTSGRADER</span>
+        <span className="ml-auto text-[12px] font-bold text-gray-400 uppercase tracking-wide">{tab}</span>
+      </div>
+
+      {/* ── Sidebar backdrop (mobile) ───────────────────────────────────────── */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
+      <div className={`fixed top-0 left-0 h-full w-[220px] bg-white border-r border-gray-100 flex flex-col z-40 transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+
+        {/* Logo */}
+        <div className="px-6 py-5 border-b border-gray-100 flex items-start justify-between">
+          <div>
+            <span className="text-[17px] font-extrabold text-[#1a1f36] uppercase tracking-tight leading-none">IELTSGRADER</span>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Admin Panel</p>
+          </div>
+          {/* Close button — mobile only */}
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 text-gray-400 hover:text-gray-600 mt-0.5">
+            <CloseIcon size={18} />
+          </button>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {TABS.map(t => {
             const Icon = tabIcon[t];
             return (
-              <button key={t} onClick={() => setTab(t)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-[10px] text-[13px] font-bold transition-all ${tab === t ? 'bg-[#101828] text-white' : 'text-gray-500 hover:bg-gray-50'}`}>
+              <button key={t} onClick={() => switchTab(t)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-[10px] text-[13px] font-bold transition-all ${tab === t ? 'bg-[#101828] text-white' : 'text-gray-500 hover:bg-gray-50'}`}>
                 <Icon size={16} /> {t}
               </button>
             );
           })}
         </nav>
+
         <div className="p-3 border-t border-gray-100">
           <button onClick={() => navigate('/dashboard')} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-[10px] text-[13px] font-bold text-gray-400 hover:bg-gray-50">
             <LogOut size={16} /> Back to App
@@ -688,15 +720,15 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="ml-[220px] p-8">
-        <h1 className="text-[22px] font-black text-[#101828] mb-6">{tab}</h1>
-        {tab === 'Overview'     && <OverviewTab />}
-        {tab === 'Users'        && <UsersTab />}
-        {tab === 'Submissions'  && <SubmissionsTab />}
-        {tab === 'Tasks'        && <TasksTab />}
-        {tab === 'Discounts'    && <DiscountsTab />}
-        {tab === 'Support'      && <SupportTab />}
+      {/* ── Main content ───────────────────────────────────────────────────── */}
+      <div className="md:ml-[220px] pt-[56px] md:pt-0 p-4 md:p-8 min-h-screen">
+        <h1 className="text-[20px] md:text-[22px] font-black text-[#101828] mb-5 md:mb-6">{tab}</h1>
+        {tab === 'Overview'    && <OverviewTab />}
+        {tab === 'Users'       && <UsersTab />}
+        {tab === 'Submissions' && <SubmissionsTab />}
+        {tab === 'Tasks'       && <TasksTab />}
+        {tab === 'Discounts'   && <DiscountsTab />}
+        {tab === 'Support'     && <SupportTab />}
       </div>
     </div>
   );
