@@ -347,6 +347,7 @@ export const api = {
     },
     getUser: (id) => fetch(`${BASE_URL}/admin/users/${id}`, { headers: getHeaders() }).then(r => r.json()),
     updateUser: (id, body) => fetch(`${BASE_URL}/admin/users/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    deleteUser: (id) => fetch(`${BASE_URL}/admin/users/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
     adjustCredits: (id, amount, reason) => fetch(`${BASE_URL}/admin/users/${id}/credits`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ amount, reason }) }).then(r => r.json()),
     getSubmissions: (params = {}) => {
       const q = new URLSearchParams(params).toString();

@@ -166,6 +166,25 @@ router.get('/users/:id', async (req, res) => {
   }
 });
 
+// ─── DELETE /api/admin/users/:id ─────────────────────────────────────────────
+// Permanently removes the user from Supabase Auth (profile cascades via FK)
+router.delete('/users/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (id === req.user.userId) {
+    return res.status(400).json({ error: 'You cannot delete your own account.' });
+  }
+
+  try {
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+    if (error) throw error;
+    return res.json({ message: 'User deleted.' });
+  } catch (err) {
+    console.error('[admin/users/:id DELETE]', err.message);
+    return res.status(500).json({ error: 'Failed to delete user.' });
+  }
+});
+
 // ─── PATCH /api/admin/users/:id ───────────────────────────────────────────────
 // Update credits_remaining, target_band, or is_admin
 router.patch('/users/:id', async (req, res) => {

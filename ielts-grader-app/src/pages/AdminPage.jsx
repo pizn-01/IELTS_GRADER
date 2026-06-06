@@ -53,14 +53,23 @@ const UsersTab = () => {
   const [users, setUsers]   = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage]     = useState(1);
-  const [editing, setEditing] = useState(null); // { id, credits_remaining, target_band, is_admin }
-  const [saving, setSaving]   = useState(false);
+  const [editing, setEditing]   = useState(null); // { id, credits_remaining, target_band, is_admin }
+  const [deleting, setDeleting] = useState(null); // user object pending confirmation
+  const [saving, setSaving]     = useState(false);
 
   const load = useCallback(() => {
     api.admin.getUsers({ page, per_page: 20, search }).then(r => setUsers(r.data || [])).catch(() => {});
   }, [page, search]);
 
   useEffect(() => { load(); }, [load]);
+
+  const confirmDelete = async () => {
+    setSaving(true);
+    await api.admin.deleteUser(deleting.id).catch(() => {});
+    setSaving(false);
+    setDeleting(null);
+    load();
+  };
 
   const save = async () => {
     setSaving(true);
@@ -103,7 +112,10 @@ const UsersTab = () => {
                 <td className="px-5 py-3 text-gray-500">{u.submission_count}</td>
                 <td className="px-5 py-3">{u.is_admin ? <Pill label="Admin" color="blue" /> : <Pill label="User" color="gray" />}</td>
                 <td className="px-5 py-3">
-                  <button onClick={() => setEditing({ ...u })} className="text-[12px] font-bold text-blue-600 hover:underline">Edit</button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setEditing({ ...u })} className="text-[12px] font-bold text-blue-600 hover:underline">Edit</button>
+                    <button onClick={() => setDeleting(u)} className="text-[12px] font-bold text-red-500 hover:text-red-700 hover:underline">Delete</button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -117,6 +129,23 @@ const UsersTab = () => {
         <span className="text-[13px] text-gray-500">Page {page}</span>
         <button onClick={() => setPage(p => p + 1)} disabled={users.length < 20} className="p-2 border border-gray-200 rounded-[8px] disabled:opacity-40"><ChevronRight size={16} /></button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleting && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleting(null)} />
+          <div className="relative bg-white rounded-[20px] w-[380px] p-7 shadow-2xl space-y-5">
+            <h3 className="text-[16px] font-bold text-[#101828]">Delete User</h3>
+            <p className="text-[13px] text-gray-500 leading-relaxed">
+              Are you sure you want to permanently delete <span className="font-bold text-[#101828]">{deleting.full_name || deleting.email}</span>? This cannot be undone — all their data will be removed.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setDeleting(null)} className="flex-1 h-[40px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
+              <button onClick={confirmDelete} disabled={saving} className="flex-1 h-[40px] bg-red-500 text-white rounded-[10px] text-[13px] font-bold hover:bg-red-600 disabled:opacity-50">{saving ? 'Deleting…' : 'Delete User'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editing && (
