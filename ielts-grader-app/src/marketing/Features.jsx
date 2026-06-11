@@ -3,8 +3,8 @@ import { ArrowUp, LineChart } from 'lucide-react';
 
 const Features = () => {
   return (
-    <section id="sample-report" className="bg-[#1A96F30D] py-24">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-[60px] grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-[60px] items-center">
+    <section id="sample-report" className="bg-[#1A96F30D] py-[50px]">
+      <div className="max-w-[1440px] mx-auto px-[100px] grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-[60px] items-center">
         {/* Left Column - Mockups Image */}
         <div className="relative z-10 w-full animate-fadeIn order-2 lg:order-1">
           <img src="/images/Group 1597890526.png" alt="IELTS Report Mockup" className="w-full h-auto drop-shadow-xl" />

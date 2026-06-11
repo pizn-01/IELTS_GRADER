@@ -3,7 +3,7 @@ import React from 'react';
 const Footer = () => {
   return (
     <footer id="contact" className="bg-[#EAECF080] border-t border-[#E5E7EB] py-5">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-[60px] flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="max-w-[1440px] mx-auto px-[50px] flex flex-col md:flex-row justify-between items-center gap-4">
         {/* Left - Copyright */}
         <p className="text-[13px] text-[#9CA3AF]">
           © 2026 IELTSGRADER. All rights reserved.

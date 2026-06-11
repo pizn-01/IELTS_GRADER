@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, HelpCircle, Upload, Trash2, CheckCircle2, ChevronDown, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useGrade } from '../context/GradeContext';
@@ -27,6 +28,7 @@ const QUESTION_BANK = {
 };
 
 const MockExam = ({ examType, taskType, onExit }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { setSubmissionId: setContextSubmissionId } = useGrade();
   const isTask1 = (taskType || '').includes('1');
@@ -129,12 +131,20 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
   const handleStartGrading = () => {
     setShowTimeUp(false);
+    if (!user) {
+      navigate('/selection', { state: { flow: 'mock' } });
+      return;
+    }
     setIsGrading(true);
     submitEssay();
   };
 
   const handleSubmit = () => {
-    if (wordCount < 10) return; // Minimum sanity check
+    if (wordCount < 10) return;
+    if (!user) {
+      navigate('/selection', { state: { flow: 'mock' } });
+      return;
+    }
     setIsGrading(true);
     submitEssay();
   };

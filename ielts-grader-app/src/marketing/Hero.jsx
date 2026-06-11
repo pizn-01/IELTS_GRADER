@@ -46,7 +46,7 @@ const Hero = () => {
 
   return (
     <header id="about" className="bg-[#1A96F30D] relative min-h-[700px] overflow-hidden flex items-center">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-12 py-12 lg:py-20 w-full flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+      <div className="max-w-[1440px] mx-auto px-[100px] py-12 lg:py-20 w-full flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
         
         {/* Left Column - Hero Content */}
         <div className="w-full lg:w-[55%] animate-fadeIn">
@@ -114,10 +114,8 @@ const Hero = () => {
                   }`}
                 >
                   <div className="flex justify-center mb-3">
-                    <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center transition-colors ${
-                      selectedOption === 'upload' ? 'bg-[#EFF6FF]' : 'bg-[#F9FAFB] group-hover:bg-[#EFF6FF]'
-                    }`}>
-                      <Upload className={`w-5 h-5 transition-colors ${selectedOption === 'upload' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} />
+                    <div className="w-10 h-10 rounded-[8px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                      <Upload className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-1">
@@ -143,10 +141,8 @@ const Hero = () => {
                   }`}
                 >
                   <div className="flex justify-center mb-3">
-                    <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center transition-colors ${
-                      selectedOption === 'mock' ? 'bg-[#EFF6FF]' : 'bg-[#F9FAFB] group-hover:bg-[#EFF6FF]'
-                    }`}>
-                      <Clock className={`w-5 h-5 transition-colors ${selectedOption === 'mock' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} />
+                    <div className="w-10 h-10 rounded-[8px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                      <Clock className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-1">
@@ -216,7 +212,7 @@ const Hero = () => {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => navigate('/mock-exam')}
                   disabled={!essayData.examType || !essayData.taskType}
                   className={`w-full h-[50px] rounded-[8px] font-bold text-[15px] mt-8 transition-all ${
@@ -363,7 +359,7 @@ const Hero = () => {
                     } else if (user) {
                       navigate('/analysis-ready');
                     } else {
-                      navigate('/selection');
+                      navigate('/selection', { state: { flow: 'essay' } });
                     }
                   }}
                   disabled={!isUploadFormValid || isSubmitting}

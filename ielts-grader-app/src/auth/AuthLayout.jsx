@@ -41,20 +41,30 @@ const AuthLayout = ({ children, noBox }) => {
       </nav>
 
       {/* Main Content */}
-      <main className={`flex-1 flex justify-center bg-white ${noBox ? 'items-start pt-10 sm:pt-20 px-4 sm:px-5 pb-10 sm:pb-16' : 'items-center py-10 sm:py-16 px-4 sm:px-5'}`}>
+      <main className={`flex justify-center bg-white ${noBox ? 'flex-col items-center py-10 sm:py-16 px-4 sm:px-5' : 'flex-1 items-center py-10 sm:py-16 px-4 sm:px-5'}`}>
         <div className={`w-full bg-white ${
-          noBox 
-            ? 'max-w-[520px]' 
+          noBox
+            ? 'max-w-[520px]'
             : 'max-w-[480px] p-6 sm:p-12 rounded-[16px] sm:rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03),0_10px_40px_rgba(0,0,0,0.04)] border border-[#E5E7EB]'
         }`}>
           {children}
         </div>
+
+        {/* Footer inline for noBox pages — appears naturally below content */}
+        {noBox && (
+          <p className="mt-8 text-[13px] text-[#374151] text-center">
+            Copyright @IELTSGRADER 2026 |{' '}
+            <a href="#" className="text-[#374151] no-underline hover:opacity-80">Privacy Policy</a>
+          </p>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="p-5 text-center text-[13px] text-[#9CA3AF]">
-        Copyright @IELTSGRADER 2025 | <a href="#" className="text-[#9CA3AF] no-underline">Privacy Policy</a>
-      </footer>
+      {/* Footer for card-mode pages */}
+      {!noBox && (
+        <footer className="p-5 text-center text-[13px] text-[#374151]">
+          Copyright @IELTSGRADER 2026 | <a href="#" className="text-[#374151] no-underline">Privacy Policy</a>
+        </footer>
+      )}
     </div>
   );
 };

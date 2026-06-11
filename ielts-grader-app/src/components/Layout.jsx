@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Menu, X, User, Shield, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3 } from 'lucide-react';
+import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,7 +38,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
     <div className="min-h-screen bg-white">
       {/* SECTION 1 — NAVBAR (NO gradient, pure white) */}
       <nav className="bg-white border-b border-[#E5E7EB] sticky top-0 z-[100] h-[56px] flex items-center">
-        <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 flex items-center justify-between">
+        <div className="w-full max-w-[1440px] mx-auto px-[50px] flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/" className="text-[18px] md:text-[20px] tracking-tight text-[#101828] no-underline hover:opacity-80 transition-opacity cursor-pointer" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>IELTSGRADER</Link>
             <div className="h-6 w-px bg-[#E5E7EB]"></div>
@@ -54,7 +54,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                   <span className={currentView === item.id ? 'text-[#101828] font-bold' : 'text-gray-400 hover:text-gray-600 transition-colors'}>
                     {item.label}
                   </span>
-                  {currentView === item.id && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#3B82F6] rounded-t-full"></div>}
+                  {currentView === item.id && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1A96F3] rounded-t-full"></div>}
                 </div>
               ))}
             </div>
@@ -139,7 +139,6 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                     <div className="px-3 space-y-1">
                       {[
                         { label: 'Profile', icon: <User size={18} />, id: 'settings' },
-                        { label: 'Security', icon: <Shield size={18} />, id: 'settings' },
                         { label: 'Subscription', icon: <CircleDollarSign size={18} />, id: 'settings' },
                         { label: 'Support', icon: <HelpCircle size={18} />, id: 'settings' },
                       ].map((item, idx) => (
@@ -210,7 +209,6 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                 { label: 'Dashboard', icon: <LayoutDashboard size={22} />, id: 'dashboard' },
                 { label: 'Reports', icon: <BarChart3 size={22} />, id: 'reports' },
                 { label: 'Profile', icon: <User size={22} />, id: 'settings' },
-                { label: 'Security', icon: <Shield size={22} />, id: 'settings' },
                 { label: 'Subscription', icon: <CircleDollarSign size={22} />, id: 'settings' },
                 { label: 'Support', icon: <HelpCircle size={22} />, id: 'settings' },
               ].map((item, idx) => (

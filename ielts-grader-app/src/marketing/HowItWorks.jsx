@@ -19,7 +19,7 @@ const HowItWorks = () => {
 
   return (
     <section id="how-it-works" className="bg-white py-20 overflow-hidden">
-      <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+      <div className="max-w-[1440px] mx-auto px-[242px]">
         {/* Header */}
         <div className="text-center mb-[60px]">
           <h2 className="text-[32px] font-bold text-[#1a1f36] mb-3">How It Works</h2>

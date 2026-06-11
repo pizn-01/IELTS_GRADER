@@ -24,8 +24,8 @@ const FAQ = () => {
   };
 
   return (
-    <section id="faqs" className="bg-white py-24 md:py-32">
-      <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+    <section id="faqs" className="bg-white pt-[80px] pb-24">
+      <div className="max-w-[1440px] mx-auto px-[242px]">
         <div className="text-center mb-16">
           <h2 className="text-[32px] md:text-[42px] font-extrabold text-[#1a1f36] mb-4 tracking-tight font-['Nunito',_sans-serif]">
             Frequently Asked Questions

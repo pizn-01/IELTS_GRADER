@@ -19,12 +19,9 @@ const Settings = ({ profileImage, setProfileImage }) => {
   const [activeTab, setActiveTab] = useState(getInitialTab());
 
   useEffect(() => {
-    if (location.state?.activeTab) {
-      let tab = location.state.activeTab;
-      if (tab === 'Security') tab = 'Change Password';
-      setActiveTab(tab);
-    }
-  }, [location.state?.activeTab]);
+    const tab = location.state?.activeTab;
+    if (tab) setActiveTab(tab === 'Security' ? 'Change Password' : tab);
+  }, [location.state]);
 
   const [showRetentionModal, setShowRetentionModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -171,18 +168,18 @@ const Settings = ({ profileImage, setProfileImage }) => {
   };
 
   return (
-    <div className="w-full max-w-[1340px] mx-auto px-8 py-10 relative text-[#101828]">
+    <div className="w-full max-w-[1440px] mx-auto px-[50px] py-10 relative text-[#101828]">
       <h1 className="text-[32px] font-bold text-[#101828] mb-8">Settings</h1>
       
       {/* Settings Navigation */}
-      <div className="flex items-center gap-6 md:gap-10 border-b border-gray-100 mb-8 overflow-x-auto no-scrollbar -mx-8 px-8">
+      <div className="flex items-center gap-6 md:gap-10 border-b border-[#D0D5DD] mb-8 overflow-x-auto no-scrollbar -mx-[50px] px-[50px]">
         {['Profile', 'Change Password', 'Subscription', 'Support'].map((tab) => (
           <div 
             key={tab} 
             className="relative py-4 cursor-pointer group whitespace-nowrap"
             onClick={() => setActiveTab(tab)}
           >
-            <span className={`text-[14px] md:text-[15px] font-medium transition-colors ${activeTab === tab ? "text-[#101828]" : "text-gray-400 group-hover:text-gray-600"}`}>
+            <span className={`text-[16px] transition-colors ${activeTab === tab ? "text-[#101828] font-bold" : "text-[#6B7280] font-semibold group-hover:text-[#101828]"}`}>
               {tab}
             </span>
             {activeTab === tab && (
@@ -194,7 +191,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
 
       {activeTab === 'Profile' ? (
         /* Profile Settings Card */
-        <div className="bg-white rounded-[20px] border border-gray-100 shadow-sm p-6 md:p-12">
+        <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12">
           <div className="flex flex-col md:flex-row gap-10 md:gap-16">
             {/* Avatar Section */}
             <div className="flex flex-col items-center gap-4 shrink-0">
@@ -249,7 +246,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                     type="text"
                     value={profileForm.firstName}
                     onChange={e => setProfileForm(p => ({ ...p, firstName: e.target.value }))}
-                    className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
+                    className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -258,7 +255,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                     type="text"
                     value={profileForm.lastName}
                     onChange={e => setProfileForm(p => ({ ...p, lastName: e.target.value }))}
-                    className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
+                    className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -267,7 +264,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                     type="email"
                     value={user?.email || ''}
                     readOnly
-                    className="w-full h-[52px] px-5 bg-gray-50 border border-gray-100 rounded-[12px] text-[14px] text-[#6B7280] focus:outline-none cursor-not-allowed"
+                    className="w-full h-[52px] px-5 bg-gray-50 border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#6B7280] focus:outline-none cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-2">
@@ -275,7 +272,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   <input 
                     type="tel" 
                     placeholder="Enter"
-                    className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
+                    className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
@@ -283,7 +280,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   <input 
                     type="text" 
                     placeholder="Enter"
-                    className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
+                    className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                   />
                 </div>
                 <div className="col-span-2 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -292,13 +289,13 @@ const Settings = ({ profileImage, setProfileImage }) => {
                     <input 
                       type="text" 
                       placeholder="Enter"
-                      className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
+                      className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[14px] font-bold text-[#101828]">Country</label>
                     <div className="relative">
-                      <select className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#9CA3AF] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none">
+                      <select className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#9CA3AF] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none">
                         <option>Select</option>
                       </select>
                       <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
@@ -311,7 +308,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                     <input 
                       type="text" 
                       placeholder="Enter"
-                      className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
+                      className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all"
                     />
                   </div>
                 </div>
@@ -344,8 +341,8 @@ const Settings = ({ profileImage, setProfileImage }) => {
         </div>
       ) : activeTab === 'Change Password' ? (
         /* Change Password Settings Card */
-        <div className="bg-white rounded-[20px] border border-gray-100 shadow-sm p-12">
-          <div className="max-w-[360px] space-y-8">
+        <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm px-[50px] py-12">
+          <div className="max-w-[540px] space-y-[30px]">
             <div className="space-y-2">
               <label className="text-[14px] font-bold text-[#101828]">Current Password</label>
               <div className="relative">
@@ -354,7 +351,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   placeholder="Enter"
                   value={passwordForm.currentPassword}
                   onChange={e => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))}
-                  className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
+                  className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
                 <button onClick={() => setShowCurrent(!showCurrent)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors">
                   {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -370,7 +367,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   placeholder="Enter"
                   value={passwordForm.newPassword}
                   onChange={e => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))}
-                  className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
+                  className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
                 <button onClick={() => setShowNew(!showNew)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors">
                   {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -386,7 +383,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   placeholder="Enter"
                   value={passwordForm.confirmPassword}
                   onChange={e => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))}
-                  className="w-full h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
+                  className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all pr-12"
                 />
                 <button onClick={() => setShowConfirm(!showConfirm)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#101828] transition-colors">
                   {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -401,10 +398,10 @@ const Settings = ({ profileImage, setProfileImage }) => {
             </p>
           )}
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-12 border-t border-gray-50 mt-12">
+          <div className="flex justify-end gap-4 pt-12 border-t border-[#D0D5DD] mt-12">
             <button
               onClick={() => { setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); setPasswordMsg(null); }}
-              className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
+              className="px-10 h-[44px] bg-white border border-[#D0D5DD] rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
             >
               Cancel
             </button>
@@ -422,8 +419,8 @@ const Settings = ({ profileImage, setProfileImage }) => {
         <div className="space-y-8 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1fr] gap-8">
             {/* Left Column: Current Plan */}
-            <div className="bg-white rounded-[20px] border border-gray-100 shadow-sm p-6 md:p-12 flex flex-col justify-between">
-              <div className="space-y-8">
+            <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col justify-between">
+              <div className="space-y-[30px]">
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] font-bold text-[#101828]">Current Plan</span>
                   <span className="text-[14px] font-medium text-gray-500">Weekly Sprint</span>
@@ -468,7 +465,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-12">
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-12 mt-12 border-t border-[#D0D5DD]">
                 <button 
                   onClick={() => setShowRetentionModal(true)}
                   className="w-full sm:w-auto px-8 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[13px] font-bold text-[#101828] hover:bg-gray-50 transition-all"
@@ -485,7 +482,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
             </div>
 
             {/* Right Column: Manage Billing */}
-            <div className="bg-white rounded-[20px] border border-gray-100 shadow-sm p-6 md:p-12 flex flex-col items-center justify-center text-center">
+            <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col items-center justify-center text-center">
               <div className="w-[52px] h-[52px] bg-[#E0F2FE] rounded-[12px] flex items-center justify-center text-[#1A96F3] mb-6">
                 <CreditCard size={24} />
               </div>
@@ -522,8 +519,8 @@ const Settings = ({ profileImage, setProfileImage }) => {
         </div>
       ) : activeTab === 'Support' ? (
         /* Support Settings View */
-        <div className="bg-white rounded-[20px] border border-gray-100 shadow-sm p-12">
-          <div className="max-w-[800px] space-y-10">
+        <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-12">
+          <div className="max-w-[540px] space-y-[30px]">
             {/* Select Topic */}
             <div className="space-y-3">
               <label className="text-[16px] font-bold text-[#101828]">Select Topic</label>
@@ -531,7 +528,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 <select
                   value={supportForm.topic}
                   onChange={e => setSupportForm(p => ({ ...p, topic: e.target.value }))}
-                  className="w-full max-w-[400px] h-[52px] px-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none"
+                  className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] font-normal focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none"
                 >
                   <option value="General">General</option>
                   <option value="Technical">Technical Issue</option>
@@ -540,7 +537,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   <option value="Grading">Grading</option>
                   <option value="Other">Other</option>
                 </select>
-                <div className="absolute right-[calc(100%-380px)] top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                   <ChevronDown size={20} />
                 </div>
               </div>
@@ -553,13 +550,13 @@ const Settings = ({ profileImage, setProfileImage }) => {
                 placeholder="Type here..."
                 value={supportForm.message}
                 onChange={e => setSupportForm(p => ({ ...p, message: e.target.value }))}
-                className="w-full min-h-[200px] p-5 bg-white border border-gray-100 rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all resize-none"
+                className="w-full min-h-[200px] p-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all resize-none"
               ></textarea>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-4 pt-6 border-t border-gray-50">
-              <button className="px-10 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
+            <div className="flex justify-end gap-4 pt-6 border-t border-[#D0D5DD]">
+              <button className="px-10 h-[44px] bg-white border border-[#D0D5DD] rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
                 Cancel
               </button>
               <button
@@ -574,7 +571,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
         </div>
       ) : (
         /* Fallback for other tabs */
-        <div className="bg-white rounded-[20px] border border-gray-100 shadow-sm p-20 flex items-center justify-center">
+        <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-20 flex items-center justify-center">
           <div className="text-center space-y-4">
              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
                 <div className="w-8 h-8 bg-gray-200 rounded-full" />
@@ -772,7 +769,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   className={`p-4 md:p-6 rounded-[16px] border-2 cursor-pointer transition-all ${
                     selectedPack === pack.name 
                       ? "border-[#1A96F3] bg-[#F0F9FF]" 
-                      : "border-gray-100 bg-white hover:border-gray-200"
+                      : "border-[#D0D5DD] bg-white hover:border-gray-200"
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">

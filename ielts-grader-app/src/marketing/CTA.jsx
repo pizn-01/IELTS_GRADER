@@ -2,8 +2,8 @@ import React from 'react';
 
 const CTA = () => {
   return (
-    <section className="bg-white py-24">
-      <div className="max-w-[1440px] mx-auto px-6">
+    <section className="bg-white pt-[80px] pb-24">
+      <div className="max-w-[1440px] mx-auto px-[242px]">
         <div className="bg-[#F8FAFC] rounded-[32px] p-10 md:p-16 flex flex-col md:flex-row justify-between items-center gap-12 shadow-[0_15px_50px_-15px_rgba(0,0,0,0.03)] border border-[#F1F5F9]">
           <div className="max-w-[550px]">
             <h2 className="text-[32px] lg:text-[38px] font-bold text-[#1a1f36] leading-[1.25] mb-8 font-['Nunito',_sans-serif]">
