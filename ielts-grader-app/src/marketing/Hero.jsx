@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, FileText, X } from 'lucide-react';
+import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, File, X } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -271,23 +271,22 @@ const Hero = () => {
                     <div>
                       <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Upload Prompt / Question</label>
                       {!files.prompt ? (
-                        <div className="relative h-[56px] border-[1.5px] border-dashed border-[#3B82F6]/30 bg-[#EFF6FF]/50 rounded-[8px] flex items-center px-4 hover:border-[#3B82F6] transition-colors cursor-pointer group">
-                          <input type="file" onChange={(e) => handleFileChange('prompt', e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
-                          <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm group-hover:scale-105 transition-transform">
-                            <Upload className="w-3.5 h-3.5 text-[#3B82F6]" />
+                        <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[10px] py-5 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3B82F6] transition-colors group">
+                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleFileChange('prompt', e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
+                          <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                            <Upload className="w-4.5 h-4.5 text-[#3B82F6]" strokeWidth={2.5} />
                           </div>
-                          <span className="text-[12px] font-bold text-[#3B82F6]">Upload prompt</span>
+                          <p className="text-[12px] font-medium text-[#111827]">Drag & Drop Or <span className="text-[#3B82F6] font-bold">Browse</span></p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">PDF, JPG, PNG</p>
                         </div>
                       ) : (
-                        <div className="h-[56px] bg-[#EFF6FF] border border-[#3B82F6]/20 rounded-[8px] flex items-center px-4">
-                          <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm">
-                            <FileText className="w-3.5 h-3.5 text-[#3B82F6]" />
-                          </div>
+                        <div className="border border-[#BFDBFE] bg-[#EFF6FF] rounded-[10px] py-3 px-4 flex items-center gap-3">
+                          <File className="w-5 h-5 text-[#3B82F6] shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-[12px] font-bold text-[#1a1f36] truncate">{files.prompt.name}</p>
-                            <p className="text-[10px] text-[#6B7280]">{(files.prompt.size / 1024).toFixed(0)} KB</p>
+                            <p className="text-[10px] text-[#6B7280] mt-0.5">{(files.prompt.size / 1024).toFixed(0)} KB</p>
                           </div>
-                          <button onClick={() => removeFile('prompt')} className="p-1.5 text-[#9CA3AF] hover:text-[#EF4444] transition-colors">
+                          <button onClick={() => removeFile('prompt')} className="p-1.5 text-[#1a1f36] hover:text-[#EF4444] transition-colors shrink-0">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -297,23 +296,22 @@ const Hero = () => {
                     <div>
                       <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Upload Your Essay</label>
                       {!files.essay ? (
-                        <div className="relative h-[56px] border-[1.5px] border-dashed border-[#3B82F6]/30 bg-[#EFF6FF]/50 rounded-[8px] flex items-center px-4 hover:border-[#3B82F6] transition-colors cursor-pointer group">
-                          <input type="file" onChange={(e) => handleFileChange('essay', e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
-                          <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm group-hover:scale-105 transition-transform">
-                            <Upload className="w-3.5 h-3.5 text-[#3B82F6]" />
+                        <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[10px] py-5 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3B82F6] transition-colors group">
+                          <input type="file" accept=".pdf,.docx,.jpg,.jpeg,.png" onChange={(e) => handleFileChange('essay', e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
+                          <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                            <Upload className="w-4.5 h-4.5 text-[#3B82F6]" strokeWidth={2.5} />
                           </div>
-                          <span className="text-[12px] font-bold text-[#3B82F6]">Upload essay</span>
+                          <p className="text-[12px] font-medium text-[#111827]">Drag & Drop Or <span className="text-[#3B82F6] font-bold">Browse</span></p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOCX, JPG, PNG</p>
                         </div>
                       ) : (
-                        <div className="h-[56px] bg-[#EFF6FF] border border-[#3B82F6]/20 rounded-[8px] flex items-center px-4">
-                          <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm">
-                            <FileText className="w-3.5 h-3.5 text-[#3B82F6]" />
-                          </div>
+                        <div className="border border-[#BFDBFE] bg-[#EFF6FF] rounded-[10px] py-3 px-4 flex items-center gap-3">
+                          <File className="w-5 h-5 text-[#3B82F6] shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-[12px] font-bold text-[#1a1f36] truncate">{files.essay.name}</p>
-                            <p className="text-[10px] text-[#6B7280]">{(files.essay.size / 1024).toFixed(0)} KB</p>
+                            <p className="text-[10px] text-[#6B7280] mt-0.5">{(files.essay.size / 1024).toFixed(0)} KB</p>
                           </div>
-                          <button onClick={() => removeFile('essay')} className="p-1.5 text-[#9CA3AF] hover:text-[#EF4444] transition-colors">
+                          <button onClick={() => removeFile('essay')} className="p-1.5 text-[#1a1f36] hover:text-[#EF4444] transition-colors shrink-0">
                             <X className="w-4 h-4" />
                           </button>
                         </div>

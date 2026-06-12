@@ -317,32 +317,36 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                     {selectedOption === 'upload' && (
                       <>
                         {/* Question / Prompt (optional) */}
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <label className="text-[12px] font-bold text-[#111827]">
                             Upload Prompt / Question <span className="text-gray-400 font-normal">(optional)</span>
                           </label>
                           {!questionFile ? (
-                            <div className="relative h-[54px] border-[1.5px] border-dashed border-[#1A96F3]/30 bg-[#E3F2FD]/30 rounded-[10px] flex items-center px-4 hover:border-[#1A96F3] transition-colors cursor-pointer group">
+                            <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[12px] py-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#1A96F3] transition-colors group">
                               <input
                                 type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
                                 onChange={(e) => handleQuestionFileSelect(e.target.files[0])}
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                               />
-                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm group-hover:scale-105 transition-transform">
-                                <Upload size={13} className="text-[#1A96F3]" />
+                              <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                                <Upload size={18} className="text-[#1A96F3]" strokeWidth={2.5} />
                               </div>
-                              <span className="text-[12px] font-bold text-[#1A96F3]">Upload prompt file</span>
+                              <p className="text-[12px] font-medium text-[#111827]">
+                                Drag & Drop Or <span className="text-[#1A96F3] font-bold">Browse</span>
+                              </p>
+                              <p className="text-[11px] text-gray-400 mt-1">PDF, JPG, PNG</p>
                             </div>
                           ) : (
-                            <div className="h-[54px] bg-[#E3F2FD]/50 border border-[#1A96F3]/20 rounded-[10px] flex items-center px-4">
-                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm">
-                                <FileText size={13} className="text-[#1A96F3]" />
+                            <div className="border border-[#1A96F3]/20 bg-[#E3F2FD]/40 rounded-[12px] py-4 px-4 flex items-center gap-3">
+                              <div className="w-9 h-9 bg-white rounded-[8px] flex items-center justify-center shadow-sm shrink-0">
+                                <FileText size={15} className="text-[#1A96F3]" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-[12px] font-bold text-[#111827] truncate">{questionFile.name}</p>
-                                <p className="text-[10px] text-gray-400">{(questionFile.size / 1024).toFixed(0)} KB</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{(questionFile.size / 1024).toFixed(0)} KB</p>
                               </div>
-                              <button onClick={removeQuestionFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors">
+                              <button onClick={removeQuestionFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors shrink-0">
                                 <X size={15} />
                               </button>
                             </div>
@@ -350,36 +354,40 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                         </div>
 
                         {/* Essay File */}
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <label className="text-[12px] font-bold text-[#111827]">Upload Your Essay</label>
                           {!essayFile ? (
-                            <div className="relative h-[54px] border-[1.5px] border-dashed border-[#1A96F3]/30 bg-[#E3F2FD]/30 rounded-[10px] flex items-center px-4 hover:border-[#1A96F3] transition-colors cursor-pointer group">
+                            <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[12px] py-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#1A96F3] transition-colors group">
                               <input
                                 type="file"
+                                accept=".pdf,.docx,.jpg,.jpeg,.png"
                                 onChange={(e) => handleEssayFileSelect(e.target.files[0])}
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                               />
-                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm group-hover:scale-105 transition-transform">
-                                <Upload size={13} className="text-[#1A96F3]" />
+                              <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                                <Upload size={18} className="text-[#1A96F3]" strokeWidth={2.5} />
                               </div>
-                              <span className="text-[12px] font-bold text-[#1A96F3]">Upload essay file</span>
+                              <p className="text-[12px] font-medium text-[#111827]">
+                                Drag & Drop Or <span className="text-[#1A96F3] font-bold">Browse</span>
+                              </p>
+                              <p className="text-[11px] text-gray-400 mt-1">PDF, DOCX, JPG, PNG</p>
                             </div>
                           ) : (
-                            <div className="h-[54px] bg-[#E3F2FD]/50 border border-[#1A96F3]/20 rounded-[10px] flex items-center px-4">
-                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm">
-                                <FileText size={13} className="text-[#1A96F3]" />
+                            <div className="border border-[#1A96F3]/20 bg-[#E3F2FD]/40 rounded-[12px] py-4 px-4 flex items-center gap-3">
+                              <div className="w-9 h-9 bg-white rounded-[8px] flex items-center justify-center shadow-sm shrink-0">
+                                <FileText size={15} className="text-[#1A96F3]" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-[12px] font-bold text-[#111827] truncate">{essayFile.name}</p>
-                                <p className="text-[10px] text-gray-400">{wordCount} words · {(essayFile.size / 1024).toFixed(0)} KB</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{wordCount} words · {(essayFile.size / 1024).toFixed(0)} KB</p>
                               </div>
-                              <button onClick={removeEssayFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors">
+                              <button onClick={removeEssayFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors shrink-0">
                                 <X size={15} />
                               </button>
                             </div>
                           )}
                           {fileReadError && (
-                            <p className="text-[11px] text-red-500">{fileReadError}</p>
+                            <p className="text-[11px] text-red-500 mt-1">{fileReadError}</p>
                           )}
                         </div>
                       </>
