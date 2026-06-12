@@ -21,6 +21,42 @@ const getStripe = () => {
   return _stripe;
 };
 
+// ── Subscription plans — allowed for public (unauthenticated) checkout ───────
+const SUBSCRIPTION_PLANS = {
+  'price_1TcqK9FDM9NsOfLRmmYyoSTh': { name: 'Weekly Sprint',    credits: 10 },
+  'price_1TcqPbFDM9NsOfLRquDNOJpA': { name: 'Monthly Mastery',  credits: 24 },
+};
+
+// ─── POST /api/stripe/create-public-checkout ──────────────────────────────
+// No auth — unauthenticated users go straight to Stripe.
+// Webhook will credit the account by matching customer email after payment.
+router.post('/create-public-checkout', async (req, res) => {
+  const { price_id } = req.body;
+
+  const plan = SUBSCRIPTION_PLANS[price_id];
+  if (!plan) return res.status(400).json({ error: 'Invalid plan.' });
+
+  try {
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{ price: price_id, quantity: 1 }],
+      customer_creation: 'always',
+      metadata: {
+        credits_granted: String(plan.credits),
+        pack_name: plan.name,
+      },
+      success_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/selection`,
+    });
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error('[stripe/create-public-checkout]', err.message);
+    return res.status(500).json({ error: 'Failed to create checkout session. ' + err.message });
+  }
+});
+
 // ─── POST /api/stripe/create-checkout-session ──────────────────────────────
 router.post('/create-checkout-session', authenticateToken, async (req, res) => {
   const { price_id } = req.body;
@@ -74,10 +110,24 @@ router.post('/webhook', async (req, res) => {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const userId = session.metadata?.user_id || session.client_reference_id;
+    let userId = session.metadata?.user_id || session.client_reference_id;
     const creditsGranted = parseInt(session.metadata?.credits_granted || '0');
     const packName = session.metadata?.pack_name || 'Credit Pack';
     const amountCents = session.amount_total || 0;
+
+    // Public checkout — no user_id in metadata. Look up account by customer email.
+    if (!userId) {
+      const customerEmail = session.customer_details?.email;
+      if (customerEmail) {
+        try {
+          const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+          const matched = usersData?.users?.find(u => u.email?.toLowerCase() === customerEmail.toLowerCase());
+          if (matched) userId = matched.id;
+        } catch (lookupErr) {
+          console.error('[stripe/webhook] Email lookup failed:', lookupErr.message);
+        }
+      }
+    }
 
     if (!userId || !creditsGranted) {
       console.error('[stripe/webhook] Missing user_id or credits_granted in session:', session.id);

@@ -95,14 +95,15 @@ const SelectionPage = () => {
 
   const handleConfirmPremium = async () => {
     setShowPremiumModal(false);
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+    const priceId = SUBSCRIPTION_PRICE_IDS[selectedPlan];
     try {
-      const priceId = SUBSCRIPTION_PRICE_IDS[selectedPlan];
-      const { url } = await api.createCheckoutSession(priceId);
-      window.location.href = url;
+      if (user) {
+        const { url } = await api.createCheckoutSession(priceId);
+        window.location.href = url;
+      } else {
+        const { url } = await api.createPublicCheckoutSession(priceId);
+        window.location.href = url;
+      }
     } catch (err) {
       setError(err.message || 'Failed to start checkout. Please try again.');
     }
