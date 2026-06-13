@@ -32,6 +32,7 @@ const SelectionPage = () => {
   const [trainingType, setTrainingType] = useState('Academic');
   const [selectedPlan, setSelectedPlan] = useState('Monthly');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumError, setPremiumError] = useState('');
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -99,18 +100,18 @@ const SelectionPage = () => {
   };
 
   const handlePremiumClick = () => {
+    setPremiumError('');
     if (!user) {
-      setError('');
       if (!firstName || !lastName || !email || !password || !confirmPassword) {
-        setError('Please fill in your account details on the left before subscribing.');
+        setPremiumError('Please fill in your account details on the left before subscribing.');
         return;
       }
       if (password !== confirmPassword) {
-        setError('Passwords do not match.');
+        setPremiumError('Passwords do not match.');
         return;
       }
       if (password.length < 6) {
-        setError('Password must be at least 6 characters.');
+        setPremiumError('Password must be at least 6 characters.');
         return;
       }
     }
@@ -343,6 +344,9 @@ const SelectionPage = () => {
               >
                 Subscribe & Unlock Unlimited Practice
               </button>
+              {premiumError && (
+                <p className="text-[13px] text-red-500 font-medium text-center mb-2">{premiumError}</p>
+              )}
               <p className="text-[10px] text-[#6B7280] font-medium text-center">
                 Cancel anytime. No long-term commitment
               </p>
