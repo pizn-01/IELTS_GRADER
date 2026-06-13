@@ -30,7 +30,7 @@ const QUESTION_BANK = {
 const MockExam = ({ examType, taskType, onExit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { setSubmissionId: setContextSubmissionId } = useGrade();
+  const { setSubmissionId: setContextSubmissionId, updateEssayData } = useGrade();
   const isTask1 = (taskType || '').includes('1');
   const startSeconds = isTask1 ? 1199 : 2399;
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
@@ -132,6 +132,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const handleStartGrading = () => {
     setShowTimeUp(false);
     if (!user) {
+      updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
       navigate('/selection', { state: { flow: 'mock' } });
       return;
     }
@@ -142,6 +143,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const handleSubmit = () => {
     if (wordCount < 10) return;
     if (!user) {
+      updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
       navigate('/selection', { state: { flow: 'mock' } });
       return;
     }

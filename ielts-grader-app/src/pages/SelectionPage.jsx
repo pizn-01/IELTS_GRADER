@@ -66,8 +66,20 @@ const SelectionPage = () => {
         } catch {
           navigate('/dashboard');
         }
-      } else if (flow === 'mock') {
-        navigate('/mock-exam');
+      } else if (flow === 'mock' && essayData?.essayContent) {
+        try {
+          const res = await api.submitAttempt({
+            exam_type: essayData.examType,
+            task_type: essayData.taskType,
+            essay_content: essayData.essayContent,
+            time_spent_seconds: 0,
+          });
+          setSubmissionId(res.submission_id);
+          setGradingStatus('processing');
+          navigate('/analysis-ready');
+        } catch {
+          navigate('/dashboard');
+        }
       } else {
         navigate('/dashboard');
       }
@@ -86,7 +98,24 @@ const SelectionPage = () => {
     }
   };
 
-  const handlePremiumClick = () => setShowPremiumModal(true);
+  const handlePremiumClick = () => {
+    if (!user) {
+      setError('');
+      if (!firstName || !lastName || !email || !password || !confirmPassword) {
+        setError('Please fill in your account details on the left before subscribing.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters.');
+        return;
+      }
+    }
+    setShowPremiumModal(true);
+  };
 
   const SUBSCRIPTION_PRICE_IDS = {
     Weekly: 'price_1TcqK9FDM9NsOfLRmmYyoSTh',   // Weekly Sprint
@@ -96,16 +125,16 @@ const SelectionPage = () => {
   const handleConfirmPremium = async () => {
     setShowPremiumModal(false);
     const priceId = SUBSCRIPTION_PRICE_IDS[selectedPlan];
+    setIsLoading(true);
     try {
-      if (user) {
-        const { url } = await api.createCheckoutSession(priceId);
-        window.location.href = url;
-      } else {
-        const { url } = await api.createPublicCheckoutSession(priceId);
-        window.location.href = url;
+      if (!user) {
+        await register({ first_name: firstName, last_name: lastName, email, password });
       }
+      const { url } = await api.createCheckoutSession(priceId);
+      window.location.href = url;
     } catch (err) {
       setError(err.message || 'Failed to start checkout. Please try again.');
+      setIsLoading(false);
     }
   };
 
