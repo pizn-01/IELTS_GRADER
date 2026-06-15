@@ -1,3 +1,14 @@
+// Polyfill: some browsers lack Uint8Array.prototype.toHex which newer
+// pdfjs-dist versions rely on. Adding it here prevents the
+// "a.toHex is not a function" crash on those browsers.
+if (typeof Uint8Array.prototype.toHex !== 'function') {
+  Uint8Array.prototype.toHex = function () {
+    return Array.from(this)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
+}
+
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Point pdf.js at its bundled worker so Vite can resolve it correctly
