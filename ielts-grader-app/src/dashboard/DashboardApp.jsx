@@ -33,14 +33,14 @@ function DashboardApp() {
     try {
       const [metrics, submissionsRes] = await Promise.all([
         api.getDashboardAnalytics(),
-        api.getSubmissions({ limit: 4 }),
+        api.getSubmissions({ limit: 10 }),
       ]);
       setAnalyticsSeries(metrics);
 
       // Shape graded submissions for RecentReports
       const formatted = (submissionsRes.data || [])
         .filter(s => s.status === 'graded')
-        .slice(0, 4)
+        .slice(0, 10)
         .map(s => ({
           id: s.id,
           type: s.exam_type,
@@ -78,9 +78,19 @@ function DashboardApp() {
     return () => lenis.destroy();
   }, []);
 
+  const handleOpenRecentReport = async (submissionId) => {
+    try {
+      const report = await api.getReport(submissionId);
+      navigate('/report', { state: { reportData: report } });
+    } catch {
+      navigate('/reports');
+    }
+  };
+
   const handleNavigate = (target, label) => {
     if (target === 'reports') { navigate('/reports'); }
     else if (target === 'dashboard') { navigate('/dashboard'); }
+    else if (target === 'subscription') { navigate('/subscription'); }
     else if (target === 'settings') { navigate('/settings', { state: { activeTab: label } }); }
     else if (target === 'logout') { logout(); }
   };
@@ -117,6 +127,14 @@ function DashboardApp() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/performance')}
+              className="bg-white text-[#2C3E50] border border-[#2C3E50] w-full sm:w-auto px-6 h-[50px] rounded-[16px] text-[16px] flex items-center justify-center hover:bg-gray-50 transition-all shadow-sm font-semibold"
+            >
+              View Overall Performance
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setShowModal(true)}
               className="bg-[#2C3E50] text-white w-full sm:w-[201px] h-[50px] rounded-[16px] text-[16px] flex items-center justify-center hover:bg-opacity-90 transition-all shadow-sm"
             >
@@ -126,7 +144,7 @@ function DashboardApp() {
         </div>
 
         <SkillGrowth hasData={hasData} rawSeriesData={analyticsSeries?.chartData} isLoading={isLoading} />
-        <RecentReports hasData={hasData} dynamicReports={recentSubmissions} />
+        <RecentReports hasData={hasData} dynamicReports={recentSubmissions} onOpenReport={handleOpenRecentReport} />
 
         <PracticeModal
           isOpen={showModal}

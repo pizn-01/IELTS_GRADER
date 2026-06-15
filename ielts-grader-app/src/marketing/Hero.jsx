@@ -351,8 +351,12 @@ const Hero = () => {
                         setGradingStatus('processing');
                         navigate('/analysis-ready');
                       } catch (err) {
-                        setFileReadError(err.message || 'Submission failed. Please try again.');
-                        setIsSubmitting(false);
+                        if (err.message && err.message.includes('Insufficient evaluation credits')) {
+                          navigate('/analysis-ready', { state: { outOfCredits: true } });
+                        } else {
+                          setFileReadError(err.message || 'Submission failed. Please try again.');
+                          setIsSubmitting(false);
+                        }
                       }
                     } else if (user) {
                       navigate('/analysis-ready');

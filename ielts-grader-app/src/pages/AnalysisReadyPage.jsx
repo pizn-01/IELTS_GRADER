@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGrade } from '../context/GradeContext';
 import { api } from '../services/api';
@@ -10,9 +10,17 @@ import AIProcessingModal from '../marketing/AIProcessingModal';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, updateUser } = useAuth();
-  const [trainingType, setTrainingType] = useState('Academic'); 
-  const [selectedPlan, setSelectedPlan] = useState('Monthly'); 
+  const [trainingType, setTrainingType] = useState('Academic');
+  const [selectedPlan, setSelectedPlan] = useState('Monthly');
+  const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [subscribeError, setSubscribeError] = useState('');
+
+  const PLAN_PRICE_IDS = {
+    Weekly: 'price_1TcqK9FDM9NsOfLRmmYyoSTh',
+    Monthly: 'price_1TcqPbFDM9NsOfLRquDNOJpA',
+  };
 
   const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData } = useGrade();
   const pollRef = useRef(null);
@@ -92,8 +100,9 @@ const AnalysisReadyPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
-  const isOutOfCredits = user && user.credits_remaining <= 0; 
-  const hasCredits = user && user.credits_remaining > 0;
+  const forceOutOfCredits = !!location.state?.outOfCredits;
+  const isOutOfCredits = forceOutOfCredits || (user && user.credits_remaining <= 0);
+  const hasCredits = !forceOutOfCredits && user && user.credits_remaining > 0;
 
   const features = [
     "Unlimited Essay Evaluations",
@@ -101,6 +110,18 @@ const AnalysisReadyPage = () => {
     "Detailed Fix Cards & Grammar Analysis",
     "Priority Support"
   ];
+
+  const handleSubscribe = async () => {
+    setSubscribeLoading(true);
+    setSubscribeError('');
+    try {
+      const { url } = await api.createCheckoutSession(PLAN_PRICE_IDS[selectedPlan]);
+      window.location.href = url;
+    } catch (err) {
+      setSubscribeError(err.message || 'Something went wrong. Please try again.');
+      setSubscribeLoading(false);
+    }
+  };
 
   const handleSignup = (e) => {
     e.preventDefault();
@@ -294,11 +315,15 @@ const AnalysisReadyPage = () => {
 
               {/* CTA Button */}
               <div>
-                <button 
-                  onClick={() => navigate('/checkout')}
-                  className="w-full bg-[#313E50] text-white py-[14px] rounded-[8px] font-semibold text-[13px] mb-3 hover:bg-[#252f3d] transition-all"
+                {subscribeError && (
+                  <p className="text-[12px] text-red-500 mb-2 text-center">{subscribeError}</p>
+                )}
+                <button
+                  onClick={handleSubscribe}
+                  disabled={subscribeLoading}
+                  className="w-full bg-[#313E50] text-white py-[14px] rounded-[8px] font-semibold text-[13px] mb-3 hover:bg-[#252f3d] transition-all disabled:opacity-60"
                 >
-                  Subscribe & Unlock Unlimited Practice
+                  {subscribeLoading ? 'Redirecting to Stripe…' : 'Subscribe & Unlock Unlimited Practice'}
                 </button>
                 <p className="text-[10px] text-[#6B7280] font-medium text-center">
                   Cancel anytime. No long-term commitment

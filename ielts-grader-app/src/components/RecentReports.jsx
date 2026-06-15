@@ -2,7 +2,7 @@ import { FileText, Frown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const RecentReports = ({ hasData = true, dynamicReports = null }) => {
+const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport }) => {
   const navigate = useNavigate();
   // null  = still loading (show skeleton)
   // []    = loaded, no graded submissions yet
@@ -73,12 +73,13 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
       
       <div className="space-y-3 relative z-10">
         {(displayReports || []).map((report, idx) => (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: idx * 0.05 }}
-            key={report.id} 
-            className="bg-white border border-gray-100 rounded-[12px] md:rounded-[10px] p-4 md:py-3 md:px-8 flex flex-col md:grid md:grid-cols-4 md:items-center gap-4 md:gap-0 transition-all hover:bg-gray-50 hover:shadow-md shadow-sm md:shadow-none"
+            key={report.id}
+            onClick={() => onOpenReport?.(report.id)}
+            className="bg-white border border-gray-100 rounded-[12px] md:rounded-[10px] p-4 md:py-3 md:px-8 flex flex-col md:grid md:grid-cols-4 md:items-center gap-4 md:gap-0 transition-all hover:bg-gray-50 hover:shadow-md shadow-sm md:shadow-none cursor-pointer"
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-blue-50 text-[#1A96F3] rounded-lg flex items-center justify-center shrink-0">
@@ -108,8 +109,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null }) => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-gray-50 md:justify-end">
-              <button onClick={() => navigate('/reports')} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Exam History</button>
-              <button onClick={() => navigate('/performance')} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Performance</button>
+              <button onClick={(e) => { e.stopPropagation(); navigate('/reports'); }} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Exam History</button>
             </div>
           </motion.div>
         ))}

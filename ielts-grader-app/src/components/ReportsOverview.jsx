@@ -87,7 +87,7 @@ const ReportsOverview = ({ onBack }) => {
       const report = await api.getReport(submission.id);
       navigate('/report', { state: { reportData: { ...report, examType: submission.exam_type, taskType: submission.task_type } } });
     } catch {
-      navigate('/report');
+      navigate('/reports');
     } finally {
       setLoadingReport(null);
     }

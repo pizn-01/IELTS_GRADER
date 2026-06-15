@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Clock, Info, ChevronDown, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { extractFileText } from '../utils/extractFileText';
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [examType, setExamType] = useState('');
   const [taskType, setTaskType] = useState('');
@@ -101,6 +103,10 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
       submissionId = res.submission_id;
     } catch (err) {
       stopProgressAnimation();
+      if (err.message && err.message.includes('Insufficient evaluation credits')) {
+        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        return;
+      }
       setGradingError(err.message || 'Submission failed. Please check your credits and try again.');
       return;
     }

@@ -118,6 +118,10 @@ const MockExam = ({ examType, taskType, onExit }) => {
       setSubmissionId(res.submission_id);
       setContextSubmissionId(res.submission_id); // persist for AnalysisReadyPage polling
     } catch (err) {
+      if (err.message && err.message.includes('Insufficient evaluation credits')) {
+        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        return;
+      }
       // If server is reachable and threw a real error (e.g. no credits), surface it
       if (err.message && !err.message.toLowerCase().includes('offline') && !err.message.toLowerCase().includes('demo')) {
         setGradingError(err.message);

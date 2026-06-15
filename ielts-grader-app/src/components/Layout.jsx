@@ -31,6 +31,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
   const navItems = [
     { label: 'Dashboard', id: 'dashboard' },
     { label: 'Reports', id: 'reports' },
+    { label: 'Your Subscription', id: 'subscription' },
     { label: 'Settings', id: 'settings' },
   ];
 
@@ -139,7 +140,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                     <div className="px-3 space-y-1">
                       {[
                         { label: 'Profile', icon: <User size={18} />, id: 'settings' },
-                        { label: 'Subscription', icon: <CircleDollarSign size={18} />, id: 'settings' },
+                        { label: 'Subscription', icon: <CircleDollarSign size={18} />, id: 'subscription' },
                         { label: 'Support', icon: <HelpCircle size={18} />, id: 'settings' },
                       ].map((item, idx) => (
                         <button
@@ -209,7 +210,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                 { label: 'Dashboard', icon: <LayoutDashboard size={22} />, id: 'dashboard' },
                 { label: 'Reports', icon: <BarChart3 size={22} />, id: 'reports' },
                 { label: 'Profile', icon: <User size={22} />, id: 'settings' },
-                { label: 'Subscription', icon: <CircleDollarSign size={22} />, id: 'settings' },
+                { label: 'Subscription', icon: <CircleDollarSign size={22} />, id: 'subscription' },
                 { label: 'Support', icon: <HelpCircle size={22} />, id: 'settings' },
               ].map((item, idx) => (
                 <button

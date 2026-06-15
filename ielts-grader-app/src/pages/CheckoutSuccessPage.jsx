@@ -32,7 +32,7 @@ const CheckoutSuccessPage = () => {
           // Refresh user credits in AuthContext so header updates
           try {
             const fresh = await api.getMe();
-            updateUser({ credits_remaining: fresh.credits_remaining });
+            updateUser({ credits_remaining: fresh.credits_remaining, has_paid: fresh.has_paid });
           } catch {}
 
           setTimeout(() => navigate('/dashboard'), 3000);

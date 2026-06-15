@@ -12,13 +12,20 @@ function signToken(userId, email) {
 }
 
 async function fetchProfile(userId) {
-  const { data, error } = await supabaseAdmin
-    .from('profiles')
-    .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
-    .eq('id', userId)
-    .single();
+  const [{ data, error }, { count: paymentCount }] = await Promise.all([
+    supabaseAdmin
+      .from('profiles')
+      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
+      .eq('id', userId)
+      .single(),
+    supabaseAdmin
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'completed'),
+  ]);
   if (error) throw new Error(`Profile fetch failed: ${error.message}`);
-  return data;
+  return { ...data, has_paid: (paymentCount ?? 0) > 0 };
 }
 
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────

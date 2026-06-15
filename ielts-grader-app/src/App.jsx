@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 
 // ── Context ──────────────────────────────────────────────────────────────────
@@ -37,6 +37,7 @@ import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 
 // ── Protected Functional Pages ────────────────────────────────────────────────
 import SelectionPage from './pages/SelectionPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 import MockExamPage from './pages/MockExamPage';
 import ReportPage from './pages/ReportPage';
 import AnalysisReadyPage from './pages/AnalysisReadyPage';
@@ -65,6 +66,18 @@ const LandingPage = () => (
   </>
 );
 
+// ── Home Route — redirects authenticated users to dashboard ───────────────────
+const HomeRoute = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-10 h-10 border-4 border-[#2C3E50] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+};
+
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -74,6 +87,7 @@ function App() {
   const handleProtectedNavigate = (target, label) => {
     if (target === 'dashboard') navigate('/dashboard');
     else if (target === 'reports') navigate('/reports');
+    else if (target === 'subscription') navigate('/subscription');
     else if (target === 'settings') navigate('/settings', { state: { activeTab: label } });
     else if (target === 'logout') {
       logout();
@@ -124,7 +138,7 @@ function App() {
     <GradeProvider>
       <Routes>
         {/* ── Landing Page ─────────────────────────────────── */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<HomeRoute />} />
 
         {/* ── Public Pages ──────────────────────────────────── */}
         <Route path="/pricing" element={<PricingPage />} />
@@ -187,17 +201,28 @@ function App() {
         <Route path="/admin" element={
           <AdminRoute><AdminPage /></AdminRoute>
         } />
-        <Route path="/settings" element={
+        <Route path="/subscription" element={
           <ProtectedRoute>
-            <Layout 
-              currentView="settings" 
-              onNavigate={handleProtectedNavigate} 
+            <Layout
+              currentView="subscription"
+              onNavigate={handleProtectedNavigate}
               profileImage={profileImage}
             >
-              <Settings 
-                profileImage={profileImage} 
-                setProfileImage={setProfileImage} 
-                currentUser={user} 
+              <SubscriptionPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Layout
+              currentView="settings"
+              onNavigate={handleProtectedNavigate}
+              profileImage={profileImage}
+            >
+              <Settings
+                profileImage={profileImage}
+                setProfileImage={setProfileImage}
+                currentUser={user}
               />
             </Layout>
           </ProtectedRoute>
