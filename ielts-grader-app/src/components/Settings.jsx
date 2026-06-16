@@ -426,19 +426,20 @@ const Settings = ({ profileImage, setProfileImage }) => {
               ></textarea>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-4 pt-6 border-t border-[#D0D5DD]">
-              <button className="px-10 h-[44px] bg-white border border-[#D0D5DD] rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
-                Cancel
-              </button>
-              <button
-                onClick={handleSupportSend}
-                disabled={supportSending || !supportForm.message.trim()}
-                className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
-              >
-                {supportSending ? 'Sending…' : 'Send Message'}
-              </button>
-            </div>
+          </div>
+
+          {/* Action Buttons — outside max-w container to align to full card width */}
+          <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-[#D0D5DD]">
+            <button className="px-10 h-[44px] bg-white border border-[#D0D5DD] rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all">
+              Cancel
+            </button>
+            <button
+              onClick={handleSupportSend}
+              disabled={supportSending || !supportForm.message.trim()}
+              className="px-10 h-[44px] bg-[#344054] text-white rounded-[10px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
+            >
+              {supportSending ? 'Sending…' : 'Send Message'}
+            </button>
           </div>
         </div>
       ) : (
