@@ -659,10 +659,12 @@ const PerformanceOverviewPage = ({ onBack }) => {
                </div>
             </div>
           </div>
-        : activeTab === "Strategy" ? 
-          <div className="bg-white rounded-[24px] p-10 shadow-sm border border-gray-100 space-y-12">
-            <h3 className="text-[18px] font-bold text-[#101828]">Strategic Roadmap</h3>
-            
+        : activeTab === "Strategy" ?
+          <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-10 py-6 border-b border-[#E5E7EB]">
+              <h3 className="text-[18px] font-bold text-[#101828]">Strategic Roadmap</h3>
+            </div>
+            <div className="p-10 space-y-12">
             {/* Strongest Area & Primary Bottleneck */}
             <div className="grid grid-cols-2 gap-6">
               <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[12px] p-6">
@@ -746,6 +748,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
                   </li>
                 </ul>
               </div>
+            </div>
             </div>
           </div>
         : activeTab === "14-Day sprint" ? 
@@ -858,9 +861,9 @@ const PerformanceOverviewPage = ({ onBack }) => {
           <div className="space-y-4">
             {/* Templates & Best Patterns */}
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-8 py-3 border-b border-[#F2F4F7]">
+               <div className="px-8 py-2 border-b border-[#F2F4F7]">
                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Templates & Best Patterns</h3>
-                 <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Leverage these carefully curated templates and your own highest-scoring patterns to draft faster and more accurately.</p>
+                 <p className="text-[14px] text-[#475467] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Leverage these carefully curated templates and your own highest-scoring patterns to draft faster and more accurately.</p>
                </div>
                
                <div className="p-5 space-y-3">
