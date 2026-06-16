@@ -102,12 +102,16 @@ router.post('/register', async (req, res) => {
     if (!profile) {
       const { data: inserted, error: insErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ id: data.user.id, full_name: name })
+        .insert({ id: data.user.id, full_name: name, credits_remaining: 1 })
         .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
         .single();
       if (insErr) console.error('[auth/register] Profile fallback insert error:', insErr.message);
-      profile = inserted || { full_name: name, target_band: 7.5, credits_remaining: 5, profile_image_url: null };
+      profile = inserted || { full_name: name, target_band: 7.5, credits_remaining: 1, profile_image_url: null };
     }
+
+    // New signups always start with 1 free trial credit regardless of DB column default
+    await supabaseAdmin.from('profiles').update({ credits_remaining: 1 }).eq('id', data.user.id);
+    profile = { ...profile, credits_remaining: 1 };
 
     const token = signToken(data.user.id, data.user.email);
 
@@ -323,16 +327,23 @@ router.post('/google', async (req, res) => {
 
       const { data: inserted } = await supabaseAdmin
         .from('profiles')
-        .upsert({ id: user.id, full_name: fullName, profile_image_url: avatarUrl })
+        .upsert({ id: user.id, full_name: fullName, profile_image_url: avatarUrl, credits_remaining: 1 })
         .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
         .single();
 
       profile = inserted || {
         full_name: fullName,
         target_band: 7.5,
-        credits_remaining: 5,
+        credits_remaining: 1,
         profile_image_url: avatarUrl,
       };
+    }
+
+    // If this is a brand-new Google user (created within the last 60s), enforce 1 free trial credit
+    const userCreatedAt = new Date(user.created_at || 0).getTime();
+    if (Date.now() - userCreatedAt < 60000) {
+      await supabaseAdmin.from('profiles').update({ credits_remaining: 1 }).eq('id', user.id);
+      profile = { ...profile, credits_remaining: 1 };
     }
 
     const token = signToken(user.id, user.email);

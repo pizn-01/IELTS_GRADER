@@ -76,7 +76,7 @@ const Navbar = ({ showCredits }) => {
           {showCredits && user && (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#EFF6FF] rounded-full border border-[#DBEAFE]">
               <Coins className="w-4 h-4 text-[#3B82F6]" />
-              <span className="text-[13px] font-bold text-[#1e40af]">{user?.credits_remaining ?? 0}/5 Remaining</span>
+              <span className="text-[13px] font-bold text-[#1e40af]">{user?.credits_remaining ?? 0}/1 Remaining</span>
             </div>
           )}
 
@@ -207,7 +207,7 @@ const Navbar = ({ showCredits }) => {
             {showCredits && (
               <div className="flex items-center gap-2 px-3 py-2.5 mt-2 bg-[#EFF6FF] rounded-[8px] border border-[#DBEAFE] justify-center">
                 <Coins className="w-4 h-4 text-[#3B82F6]" />
-                <span className="text-[14px] font-bold text-[#1e40af]">{userStatus.credits}/5 Remaining</span>
+                <span className="text-[14px] font-bold text-[#1e40af]">{userStatus.credits}/1 Remaining</span>
               </div>
             )}
 

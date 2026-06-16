@@ -83,7 +83,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                       stroke="#1A96F3"
                       strokeWidth="3"
                       strokeDasharray={2 * Math.PI * 11}
-                      strokeDashoffset={2 * Math.PI * 11 * (1 - (user?.credits_remaining ?? 0) / 5)}
+                      strokeDashoffset={2 * Math.PI * 11 * (1 - Math.min(user?.credits_remaining ?? 0, 1))}
                       strokeLinecap="round"
                       fill="transparent"
                       style={{ transition: 'stroke-dashoffset 0.5s ease' }}
@@ -91,8 +91,8 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                   </svg>
                 </div>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-[12px] font-semibold text-[#101828]">Weekly Sprint</span>
-                  <span className="text-[12px] font-bold text-[#101828]">Credits: {user?.credits_remaining ?? 0}/5 Remaining</span>
+                  <span className="text-[12px] font-semibold text-[#101828]">Free Trial</span>
+                  <span className="text-[12px] font-bold text-[#101828]">Credits: {user?.credits_remaining ?? 0}/1 Remaining</span>
                 </div>
               </div>
 

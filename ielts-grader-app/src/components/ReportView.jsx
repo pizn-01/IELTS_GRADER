@@ -40,8 +40,8 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
   const userName = user?.full_name || 'User';
   const userEmail = user?.email || '';
   const creditsRem = user?.credits_remaining ?? 0;
-  const creditsMax = 5;
-  const creditsOffset = creditsMax > 0 ? (75.4 * (1 - creditsRem / creditsMax)).toFixed(2) : 75.4;
+  const creditsMax = 1;
+  const creditsOffset = (75.4 * (1 - Math.min(creditsRem, creditsMax) / creditsMax)).toFixed(2);
   const reportDate = data?.created_at
     ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : '';
@@ -144,7 +144,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   </svg>
                 </div>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-[12px] font-semibold text-[#101828]">Weekly Sprint</span>
+                  <span className="text-[12px] font-semibold text-[#101828]">Free Trial</span>
                   <span className="text-[12px] font-bold text-[#101828]">Credits: {creditsRem}/{creditsMax} Remaining</span>
                 </div>
               </div>
