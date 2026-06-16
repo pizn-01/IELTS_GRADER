@@ -292,7 +292,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
             {/* Row 1: Profile, Summary, Strengths */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Activity Profile */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
                 <div className="px-8 py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]">Activity Profile</h3>
                 </div>
@@ -309,7 +309,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
               </div>
 
               {/* Executive Summary */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
                 <div className="px-8 py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]">Executive Summary</h3>
                 </div>
@@ -330,7 +330,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
               </div>
 
               {/* Strengths & Weaknesses */}
-              <div className="bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden h-auto md:h-[320px] hover:shadow-md transition-shadow">
+              <div className="bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
                 <div className="px-8 py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[17px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Strengths & Weaknesses</h3>
                 </div>
