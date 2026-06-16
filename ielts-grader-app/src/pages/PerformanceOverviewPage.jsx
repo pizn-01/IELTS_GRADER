@@ -330,7 +330,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
               </div>
 
               {/* Strengths & Weaknesses */}
-              <div className="bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-visible">
+              <div className="bg-white rounded-[24px] border border-[#E5E7EB] flex flex-col overflow-hidden h-auto md:h-[320px] hover:shadow-md transition-shadow">
                 <div className="px-8 py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[17px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Strengths & Weaknesses</h3>
                 </div>
@@ -562,72 +562,69 @@ const PerformanceOverviewPage = ({ onBack }) => {
               </div>
             </div>
           </div>
-        : activeTab === "Detailed Breakdown" ? 
-          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E5E7EB] space-y-10">
+        : activeTab === "Detailed Breakdown" ?
+          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E5E7EB] space-y-8">
             {/* Top Status Row */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="bg-[#F8FAFC] rounded-[12px] p-6 flex items-center justify-between border border-gray-50/50">
-                <div className="space-y-1">
-                  <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Total Growth</h4>
-                  <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Since First Attempt</p>
+            <div className="grid grid-cols-2 gap-5">
+              <div className="bg-[#F8FAFC] rounded-[12px] px-6 py-5 flex items-center justify-between border border-[#E5E7EB]">
+                <div>
+                  <h4 className="text-[14px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Total Growth</h4>
+                  <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Since First Attempt</p>
                 </div>
-                <span className="text-[20px] font-bold text-[#00C9B1]">{bandChange != null ? (parseFloat(bandChange) >= 0 ? `+${bandChange}` : bandChange) : '—'}</span>
+                <span className="text-[24px] font-bold text-[#00C9B1]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{bandChange != null ? (parseFloat(bandChange) >= 0 ? `+${bandChange}` : bandChange) : '—'}</span>
               </div>
-              <div className="bg-[#F8FAFC] rounded-[12px] p-6 flex items-center justify-between border border-gray-50/50">
-                <div className="space-y-1">
-                  <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Current Status</h4>
-                  <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Overall Band Score</p>
+              <div className="bg-[#F8FAFC] rounded-[12px] px-6 py-5 flex items-center justify-between border border-[#E5E7EB]">
+                <div>
+                  <h4 className="text-[14px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Current Status</h4>
+                  <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Overall Band Score</p>
                 </div>
-                <span className="text-[20px] font-bold text-[#00C9B1]">{latestBand ?? '—'}</span>
+                <span className="text-[24px] font-bold text-[#00C9B1]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{latestBand ?? '—'}</span>
               </div>
             </div>
 
             {/* Tutor's Verdict */}
-            <div className="space-y-6">
-              <div className="space-y-1">
+            <div className="space-y-4 pt-2">
+              <div>
                 <h3 className="text-[16px] font-bold text-[#101828]">Tutor's Verdict</h3>
-                <p className="text-[16px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Personalized assessment</p>
+                <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Personalized assessment</p>
               </div>
 
-              <div className="space-y-8">
-                <p className="text-[15px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
-                  {latestBand != null
-                    ? `You have reached an overall band of ${latestBand}${bandChange != null ? `, showing ${parseFloat(bandChange) >= 0 ? 'an improvement' : 'a change'} of ${parseFloat(bandChange) >= 0 ? '+' : ''}${bandChange} since your first attempt` : ''}. Keep applying the feedback to maintain this momentum.`
-                    : 'Complete your first exam to see your personalized verdict.'}
-                </p>
+              <p className="text-[15px] font-normal text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                {latestBand != null
+                  ? `You have reached an overall band of ${latestBand}${bandChange != null ? `, showing ${parseFloat(bandChange) >= 0 ? 'an improvement' : 'a change'} of ${parseFloat(bandChange) >= 0 ? '+' : ''}${bandChange} since your first attempt` : ''}. Keep applying the feedback to maintain this momentum.`
+                  : 'Complete your first exam to see your personalized verdict.'}
+              </p>
 
-                {bandChange != null && Math.abs(parseFloat(bandChange)) < 0.5 && overallScores.length >= 3 && (
-                  <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
-                     <p className="text-[16.5px] leading-relaxed text-[#101828] font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                       <span className="text-[#DC6803] font-bold">Tutor Notice (Plateau):</span> Your score has been relatively stable across recent attempts. Focus entirely on your highest priority Fix Cards to break through.
-                     </p>
-                  </div>
-                )}
-              </div>
+              {bandChange != null && Math.abs(parseFloat(bandChange)) < 0.5 && overallScores.length >= 3 && (
+                <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
+                  <p className="text-[14px] leading-relaxed text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                    <span className="text-[#DC6803] font-bold">Tutor Notice (Plateau):</span> You've been scoring exactly the same over the last 5 attempts (stagnant). This is a habit loop. Focus entirely on your highest priority Fix Cards to break it.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Pathway to Band 7.5 */}
-            <div className="space-y-4 pt-4">
-              <div className="space-y-4">
-                <h3 className="text-[18px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Pathway to Band 7.5</h3>
-                <p className="text-[16px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '140%' }}>
-                  If you raise one criterion by the shown delta (while others stay stable), Your mean should cross the IELTS rounding the <br />
-                  should and your overall band can round up.
+            <div className="space-y-4 pt-2 border-t border-[#F2F4F7]">
+              <div className="pt-4">
+                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Pathway to Band 7.5</h3>
+                <p className="text-[14px] text-[#475467] leading-relaxed mt-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                  If you raise one criterion by the shown delta (while others stay stable), your mean should cross the IELTS rounding threshold and your overall band can round up.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white border border-gray-100 rounded-[16px] p-8 shadow-sm flex flex-col justify-center space-y-2 h-[110px]">
-                   <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
-                   <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                     {latestBand != null ? (latestBand >= 7.5 ? 'Target Reached' : `+${(7.5 - latestBand).toFixed(1)}`) : '—'}
-                   </p>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">
+                  <p className="text-[11px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
+                  <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                    {latestBand != null ? (latestBand >= 7.5 ? 'Target Reached' : `+${(7.5 - latestBand).toFixed(1)}`) : '—'}
+                  </p>
                 </div>
-                <div className="bg-white border border-gray-100 rounded-[16px] p-8 shadow-sm flex flex-col justify-center space-y-2 h-[110px]">
-                   <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>Lowest Hanging Fruit</p>
-                   <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                     {bottleneckCrit.avg != null ? bottleneckCrit.name : '—'}
-                   </p>
+                <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">
+                  <p className="text-[11px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>Lowest Hanging Fruit</p>
+                  <p className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                    {bottleneckCrit.avg != null ? bottleneckCrit.name : '—'}
+                  </p>
                 </div>
               </div>
             </div>

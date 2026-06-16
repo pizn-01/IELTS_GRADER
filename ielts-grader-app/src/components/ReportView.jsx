@@ -14,7 +14,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
     introAnalysis: true,
     dataCoverageMap: true,
     flowParagraph: true,
-    logicalIssues: true
+    logicalIssues: true,
+    paragraphUnity: false,
+    sentenceFlow: false,
+    cohesiveDevices: false
   });
 
   const toggleSection = (section, index = null) => {
@@ -767,16 +770,20 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
                 </div>
                 {isOpen && (
-                  <div className="p-10 space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-8 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                     {(cat.words || []).map((item, idx) => (
                       <div key={idx} className="bg-white border border-[#D1D5DB] rounded-[12px] overflow-hidden">
-                        <div className="px-8 py-5 border-b border-[#E5E7EB]">
-                          <h4 className="text-[14px] font-bold text-[#101828]">{item.word}</h4>
+                        <div className="px-6 py-4 border-b border-[#E5E7EB]">
+                          <h4 className="text-[15px] font-bold text-[#101828]">{item.word}</h4>
                         </div>
-                        <div className="p-8 space-y-6">
-                          <p className="text-[16px] text-[#101828] leading-none font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.definition}</p>
-                          <div className="w-full h-[49px] bg-[#1018280D] rounded-[10px] px-6 text-[16px] text-[#101828] font-semibold border border-[#10182826] leading-none flex items-center" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                            {item.example}
+                        <div className="grid grid-cols-2 divide-x divide-[#E5E7EB]">
+                          <div className="px-6 py-5">
+                            <p className="text-[14px] text-[#475467] leading-relaxed font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.definition}</p>
+                          </div>
+                          <div className="px-6 py-5 flex items-center">
+                            <div className="w-full bg-[#1018280D] rounded-[10px] px-5 py-3 text-[14px] text-[#101828] font-semibold border border-[#10182826] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                              {item.example}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -803,13 +810,13 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           return (
           <div className="space-y-8">
             {/* Overview Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-6 h-[185px] flex flex-col justify-center">
-              <h3 className="text-[18px] font-bold text-[#101828] mb-3 leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
-              <div className="space-y-2">
-                <p className="text-[15px] text-[#101828] leading-[1.1] font-semibold line-clamp-2 overflow-hidden tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-8 py-6 flex flex-col gap-4">
+              <h3 className="text-[18px] font-bold text-[#101828] leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
+              <div className="space-y-3">
+                <p className="text-[15px] text-[#101828] leading-relaxed font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>
                   <span className="font-bold">Strengths:</span> {ga.overview_strengths || '—'}
                 </p>
-                <p className="text-[15px] text-[#101828] leading-[1.1] font-semibold line-clamp-2 overflow-hidden tracking-tight" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                <p className="text-[15px] text-[#101828] leading-relaxed font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>
                   <span className="font-bold">Weaknesses:</span> {ga.overview_weaknesses || '—'}
                 </p>
               </div>
@@ -1183,14 +1190,74 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             {/* Authenticity & natural language from data_structure_analysis */}
             {dsa?.authenticity_feedback && (
               <div className="bg-white rounded-[24px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-10 py-6 flex items-center justify-between">
+                <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
                   <h3 className="text-[16px] font-bold text-[#101828]">Authenticity & Natural Language</h3>
                 </div>
-                <div className="px-10 pb-8">
-                  <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.authenticity_feedback}</p>
+                <div className="px-8 pb-6 border-t border-[#E5E7EB]">
+                  <p className="text-[15px] text-[#475467] leading-relaxed pt-5" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.authenticity_feedback}</p>
                 </div>
               </div>
             )}
+
+            {/* Paragraph Unity */}
+            <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
+              <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('paragraphUnity')}>
+                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Paragraph Unity</h3>
+                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.paragraphUnity ? "rotate-180" : ""}`} />
+              </div>
+              {expandedSections.paragraphUnity && (
+                <div className="px-8 py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+                  {dsa?.body_analysis ? (
+                    <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.body_analysis}</p>
+                  ) : (
+                    <p className="text-[14px] text-gray-400">Paragraph unity analysis will appear here after grading.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sentence-Level Flow */}
+            <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
+              <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('sentenceFlow')}>
+                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Sentence-Level Flow</h3>
+                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.sentenceFlow ? "rotate-180" : ""}`} />
+              </div>
+              {expandedSections.sentenceFlow && (
+                <div className="px-8 py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+                  {dsa?.transition_analysis ? (
+                    <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.transition_analysis}</p>
+                  ) : (
+                    <p className="text-[14px] text-gray-400">Sentence-level flow analysis will appear here after grading.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Cohesive Devices */}
+            <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
+              <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('cohesiveDevices')}>
+                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Cohesive Devices</h3>
+                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.cohesiveDevices ? "rotate-180" : ""}`} />
+              </div>
+              {expandedSections.cohesiveDevices && (
+                <div className="px-8 py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+                  {coherenceErrors.filter(e => (e.sub_category || '').toLowerCase().includes('cohes')).length > 0 ? (
+                    <div className="space-y-4">
+                      {coherenceErrors.filter(e => (e.sub_category || '').toLowerCase().includes('cohes')).slice(0, 3).map((err, ei) => (
+                        <div key={ei} className="space-y-2">
+                          <p className="text-[13px] font-bold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                            {err.sub_category} — {err.location_text}
+                          </p>
+                          <p className="text-[14px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.explanation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[14px] text-gray-400">Cohesive device analysis will appear here. No specific issues detected.</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           );
         })()
