@@ -66,13 +66,51 @@ Return ONLY a valid JSON object. Use the full 1.0–9.0 band scale in 0.5 increm
       "correction_text": "<corrected version of that excerpt>",
       "explanation": "<clear explanation of why this is an error and how the correction improves the score>"
     }
-  ]
+  ],
+  "sub_category_scores": {
+    "Task Response": [
+      { "name": "<sub-category e.g. Data Coverage, Key Features, Overview, Comparison, Development, Data Accuracy for Task1; or Position, Arguments, Support, Counter-argument, Conclusion for Task2>", "band": <1.0–9.0 in 0.5 increments>, "strength": "<one specific observed strength>", "weakness": "<one specific observed weakness>" }
+    ],
+    "Coherence & Cohesion": [
+      { "name": "<sub-category e.g. Cohesive Devices, Structure, Referencing, Paragraphing, Progression>", "band": <1.0–9.0 in 0.5 increments>, "strength": "<strength>", "weakness": "<weakness>" }
+    ],
+    "Lexical Resource": [
+      { "name": "<sub-category e.g. Range, Word Choice, Collocations, Spelling/Form, Paraphrasing>", "band": <1.0–9.0 in 0.5 increments>, "strength": "<strength>", "weakness": "<weakness>" }
+    ],
+    "Grammatical Range & Accuracy": [
+      { "name": "<sub-category e.g. Structure Range, Sentence Variety, Accuracy, Tense Usage, Punctuation>", "band": <1.0–9.0 in 0.5 increments>, "strength": "<strength>", "weakness": "<weakness>" }
+    ]
+  }
 }
 
-Provide 6–14 errors covering a realistic range of severity. For "Major" errors, mark issues that alone can drop a band score. Be specific about location. Do not include errors that are not actually present in the essay.`;
+Provide 6–14 errors covering a realistic range of severity. For "Major" errors, mark issues that alone can drop a band score. Be specific about location. Do not include errors that are not actually present in the essay. For sub_category_scores, include 4–6 sub-categories per criterion, with band scores consistent with the criterion's overall band.`;
 }
 
-// ─── PROMPT 2: Deep analysis (model answer + vocabulary + grammar + structure) ─
+// ─── PROMPT 2: Secondary grade (dual assessment — second model opinion) ──────
+function buildSecondaryGradePrompt(examType, taskType, questionText, essayContent, wordCount) {
+  const isTask1 = taskType === 'Task 1';
+  const taskGuidance = isTask1
+    ? `This is IELTS ${examType} Writing Task 1.`
+    : `This is IELTS ${examType} Writing Task 2.`;
+  return `You are a certified IELTS examiner. Grade the essay below using official IELTS band descriptors. Be independent — do not replicate another examiner's grade, form your own assessment.
+
+${taskGuidance}
+
+${questionText ? `QUESTION:\n${questionText}\n\n` : ''}ESSAY (${wordCount} words):
+${essayContent}
+
+Return ONLY a valid JSON object. Use the full 1.0–9.0 band scale in 0.5 increments.
+
+{
+  "overall_band": <average of 4 criteria bands, rounded to nearest 0.5>,
+  "response_band": <Task Response / Task Achievement band>,
+  "coherence_band": <Coherence and Cohesion band>,
+  "vocabulary_band": <Lexical Resource band>,
+  "grammar_band": <Grammatical Range and Accuracy band>
+}`;
+}
+
+// ─── PROMPT 3: Deep analysis (model answer + vocabulary + grammar + structure) ─
 function buildDeepPrompt(examType, taskType, questionText, essayContent, primaryResult) {
   return `You are a certified IELTS examiner and writing coach. Based on this graded essay, produce a deep analysis.
 
@@ -187,27 +225,45 @@ async function gradeEssayAsync(submissionId, submissionData) {
     primary.high_impact_fixes = Array.isArray(primary.high_impact_fixes) ? primary.high_impact_fixes : [];
     primary.errors           = Array.isArray(primary.errors) ? primary.errors : [];
 
-    // ── Call 2: Deep analysis ────────────────────────────────────────────────
-    const deepCompletion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'user',
-          content: buildDeepPrompt(exam_type, task_type, questionText, essay_content, primary),
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.3,
-      max_tokens: 4096,
-    });
+    // ── Call 2 + 3 (parallel): Deep analysis & secondary grade ──────────────
+    const [deepCompletion, secondaryCompletion] = await Promise.all([
+      openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: buildDeepPrompt(exam_type, task_type, questionText, essay_content, primary) }],
+        response_format: { type: 'json_object' },
+        temperature: 0.3,
+        max_tokens: 4096,
+      }),
+      openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: buildSecondaryGradePrompt(exam_type, task_type, questionText, essay_content, word_count) }],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        max_tokens: 256,
+      }),
+    ]);
 
     let deep;
     try {
       deep = JSON.parse(deepCompletion.choices[0].message.content);
     } catch (parseErr) {
-      // Deep analysis failing is non-critical — store nulls, don't fail the whole grade
       console.error('[grader] Deep analysis JSON parse failed:', parseErr.message);
       deep = { model_answer: null, vocabulary_analysis: null, grammar_analysis: null, data_structure_analysis: null };
+    }
+
+    let secondaryBands = null;
+    try {
+      const sec = JSON.parse(secondaryCompletion.choices[0].message.content);
+      secondaryBands = {
+        model: 'gpt-4o',
+        overall_band:   clampBand(sec.overall_band),
+        response_band:  clampBand(sec.response_band),
+        coherence_band: clampBand(sec.coherence_band),
+        vocabulary_band: clampBand(sec.vocabulary_band),
+        grammar_band:   clampBand(sec.grammar_band),
+      };
+    } catch (parseErr) {
+      console.error('[grader] Secondary grade JSON parse failed:', parseErr.message);
     }
 
     // ── Insert report ────────────────────────────────────────────────────────
@@ -227,7 +283,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
         vocabulary_analysis:   deep.vocabulary_analysis || null,
         grammar_analysis:      deep.grammar_analysis || null,
         data_structure_analysis: deep.data_structure_analysis || null,
-        raw_grader_output:     { primary, deep },
+        raw_grader_output:     { primary: { ...primary, model: 'gpt-4o-mini' }, deep, secondary_bands: secondaryBands },
       })
       .select('id')
       .single();

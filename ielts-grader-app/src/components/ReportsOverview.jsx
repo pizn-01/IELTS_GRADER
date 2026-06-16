@@ -234,7 +234,7 @@ const ReportsOverview = ({ onBack }) => {
 
           {/* History List */}
           <div className="space-y-8">
-            <h3 className="text-[20px] font-bold text-[#101828]">History</h3>
+            <h3 className="text-[20px] font-bold text-[#101828]">View Exam History</h3>
             
             {/* Filter Bar */}
             <div className="flex flex-col md:flex-row gap-4">

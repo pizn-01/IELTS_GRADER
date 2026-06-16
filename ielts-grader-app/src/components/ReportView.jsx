@@ -523,67 +523,63 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   )}
                   {errors.map((rawError, _ei) => {
                     const error = { id: String(_ei + 1), title: rawError.title, severity: rawError.severity, criteria: rawError.criteria, sub: rawError.sub_category, loc: rawError.location_text, original: rawError.original_text, correction: rawError.correction_text, explanation: rawError.explanation };
+                    const sevColor = error.severity === "Major"
+                      ? "bg-[#FEE2E2] text-[#DC2626]"
+                      : error.severity === "High"
+                      ? "bg-[#FEF3C7] text-[#D97706]"
+                      : error.severity === "Medium"
+                      ? "bg-[#FFF7ED] text-[#EA580C]"
+                      : "bg-[#F0FDF4] text-[#16A34A]";
                     return (
-                    <div key={error.id} className="rounded-[12px] border border-[#E5E7EB] overflow-hidden bg-[#F9FAFB]/30">
+                    <div key={error.id} className="rounded-[12px] border border-[#E5E7EB] overflow-hidden">
                       {/* Error Header */}
                       <div className="px-6 py-4 flex items-center justify-between border-b border-[#E5E7EB] bg-white">
                         <div className="flex items-center gap-3">
-                          <span className="text-[16px] font-bold text-[#101828]">
-                            #{error.id}
-                          </span>
-                          <h4 className="text-[16px] font-bold text-[#101828]">{error.title}</h4>
+                          <span className="text-[15px] font-bold text-[#101828]">#{error.id}</span>
+                          <h4 className="text-[15px] font-bold text-[#101828]">{error.title}</h4>
                         </div>
-                        <span className={`px-4 py-1.5 rounded-full text-[12px] font-bold border ${
-                          error.severity === "Major" 
-                            ? "text-[#EF4444] border-[#FEE2E2] bg-[#FFF5F5]" 
-                            : "text-[#F59E0B] border-[#FEF3C7] bg-[#FFFBEB]"
-                        }`}>
+                        <span className={`px-3 py-0.5 rounded text-[11px] font-bold tracking-wide ${sevColor}`}>
                           {error.severity.toUpperCase()}
                         </span>
                       </div>
 
                       {/* Metadata Row */}
-                      <div className="px-6 py-3 flex flex-wrap items-center gap-x-10 gap-y-2 border-b border-[#E5E7EB] bg-white/50">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">Criteria</span>
-                          <span className="text-[13px] font-bold text-[#101828] bg-gray-100 px-2 py-0.5 rounded">{error.criteria}</span>
+                      <div className="px-6 py-3 flex flex-wrap items-center gap-x-8 gap-y-1.5 border-b border-[#E5E7EB] bg-[#FAFAFA]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-tight">Criteria</span>
+                          <span className="text-[13px] font-semibold text-[#374151]">{error.criteria}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">Sub-Category</span>
-                          <span className="text-[13px] font-bold text-[#101828] bg-gray-100 px-2 py-0.5 rounded">{error.sub}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-tight">Sub-Category</span>
+                          <span className="text-[13px] font-semibold text-[#374151]">{error.sub}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">Location</span>
-                          <span className="text-[13px] font-bold text-[#101828] bg-gray-100 px-2 py-0.5 rounded">{error.loc}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-tight">Location</span>
+                          <span className="text-[13px] font-semibold text-[#374151]">{error.loc}</span>
                         </div>
                       </div>
 
-                      <div className="p-6 space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                          <div className="bg-white rounded-[10px] p-5 border border-red-100 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-red-400"></div>
-                            <p className="text-[11px] font-bold text-red-500 mb-3 uppercase tracking-wider flex items-center gap-2">
-                              <XCircle size={14} /> Original
+                      <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Original box */}
+                          <div className="bg-[#FEF2F2] rounded-[10px] p-5">
+                            <p className="text-[11px] font-bold text-[#DC2626] mb-2.5 uppercase tracking-wider flex items-center gap-2">
+                              <XCircle size={13} /> ORIGINAL
                             </p>
-                            <p className="text-[14px] text-[#101828] font-bold leading-relaxed italic">"{error.original}"</p>
+                            <p className="text-[14px] text-[#7F1D1D] font-semibold leading-relaxed italic">"{error.original}"</p>
                           </div>
-                          <div className="bg-white rounded-[10px] p-5 border border-emerald-100 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400"></div>
-                            <p className="text-[11px] font-bold text-emerald-500 mb-3 uppercase tracking-wider flex items-center gap-2">
-                              <CheckCircle size={14} /> Correction
+                          {/* Correction box */}
+                          <div className="bg-[#F0FDF4] rounded-[10px] p-5">
+                            <p className="text-[11px] font-bold text-[#16A34A] mb-2.5 uppercase tracking-wider flex items-center gap-2">
+                              <CheckCircle size={13} /> CORRECTION
                             </p>
-                            <p className="text-[14px] text-[#101828] font-bold leading-relaxed">{error.correction}</p>
+                            <p className="text-[14px] text-[#14532D] font-semibold leading-relaxed">{error.correction}</p>
                           </div>
                         </div>
-
-                        <div className="bg-blue-50/50 rounded-[10px] p-5 border border-blue-100">
-                           <p className="text-[11px] font-bold text-blue-500 mb-2 uppercase tracking-wider flex items-center gap-2">
-                             <Info size={14} /> AI Explanation
-                           </p>
-                           <p className="text-[14px] text-[#475467] leading-relaxed font-medium">
-                            {error.explanation}
-                          </p>
-                        </div>
+                        {/* Explanation — inline, no box */}
+                        <p className="text-[14px] text-[#475467] leading-relaxed">
+                          {error.explanation}
+                        </p>
                       </div>
                     </div>
                   );
@@ -594,86 +590,95 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           </div>
           );
         })() : activeTab === "Dual Assessment" ? (() => {
-          const errors = data?.errors || [];
+          const rawOutput = data?.raw_grader_output || {};
+          const primaryData = rawOutput.primary || {};
+          const secondaryBands = rawOutput.secondary_bands || null;
+          const subCategoryScores = primaryData.sub_category_scores || {};
+
           const criteriaConfig = [
-            { title: "Task Response",                   band: data?.response_band,  key: "Task Response" },
-            { title: "Coherence & Cohesion",            band: data?.coherence_band, key: "Coherence & Cohesion" },
-            { title: "Lexical Resource",                band: data?.vocabulary_band,key: "Lexical Resource" },
-            { title: "Grammatical Range & Accuracy",    band: data?.grammar_band,   key: "Grammatical Range & Accuracy" },
+            { title: "Task Response",                key: "Task Response",                primaryBand: data?.response_band,  secBand: secondaryBands?.response_band },
+            { title: "Coherence & Cohesion",         key: "Coherence & Cohesion",         primaryBand: data?.coherence_band, secBand: secondaryBands?.coherence_band },
+            { title: "Lexical Resource",             key: "Lexical Resource",             primaryBand: data?.vocabulary_band,secBand: secondaryBands?.vocabulary_band },
+            { title: "Grammatical Range & Accuracy", key: "Grammatical Range & Accuracy", primaryBand: data?.grammar_band,   secBand: secondaryBands?.grammar_band },
           ];
+
+          const bandColor = (b) => b >= 7 ? "text-[#30C3A9]" : b >= 5.5 ? "text-[#F59E0B]" : "text-[#EF4444]";
+          const fmt = (v) => v != null ? parseFloat(v).toFixed(1) : '—';
+          const avg = (a, b) => (a != null && b != null) ? ((parseFloat(a) + parseFloat(b)) / 2).toFixed(1) : fmt(a ?? b);
+
           return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {criteriaConfig.map((crit, sIdx) => {
-              const band = crit.band ? parseFloat(crit.band) : null;
-              const bandStr = band ? band.toFixed(1) : '—';
-              const bandColor = band >= 7 ? "text-[#30C3A9]" : band >= 5.5 ? "text-[#F59E0B]" : "text-[#EF4444]";
-              // Errors for this criterion grouped by sub-category
-              const critErrors = errors.filter(e => e.criteria === crit.key);
-              const subCatMap = {};
-              critErrors.forEach(e => {
-                const k = e.sub_category || 'General';
-                if (!subCatMap[k]) subCatMap[k] = { errors: [] };
-                subCatMap[k].errors.push(e);
-              });
-              const subRows = Object.entries(subCatMap).map(([cat, v]) => ({
-                cat,
-                count: v.errors.length,
-                worstSeverity: v.errors.find(e => e.severity === 'Major') ? 'Major' : v.errors.find(e => e.severity === 'High') ? 'High' : 'Medium',
-                sample: v.errors[0],
-              }));
-              // Summary from strengths/weaknesses filtered by this criterion
-              const relStrength = (data?.strengths || []).find(s => s.toLowerCase().includes(crit.key.toLowerCase().split(' ')[0])) || (data?.strengths || [])[sIdx] || null;
-              const relWeakness = (data?.weaknesses || []).find(w => w.toLowerCase().includes(crit.key.toLowerCase().split(' ')[0])) || (data?.weaknesses || [])[sIdx] || null;
-              const summary = critErrors.length === 0
-                ? `No errors detected in ${crit.title}. Good performance in this area.`
-                : `${critErrors.length} issue${critErrors.length > 1 ? 's' : ''} detected in ${crit.title}. ${critErrors.filter(e => e.severity === 'Major').length > 0 ? 'Major issues require immediate attention.' : 'Focus on the identified patterns.'}`;
+              const pb = crit.primaryBand != null ? parseFloat(crit.primaryBand) : null;
+              const sb = crit.secBand != null ? parseFloat(crit.secBand) : null;
+              const overallBand = pb != null ? pb : sb;
+              const subRows = subCategoryScores[crit.key] || [];
               return (
               <div key={sIdx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-10 py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('dualAssessment', sIdx)}>
-                  <h3 className="text-[16px] font-bold text-[#101828]">{crit.title}</h3>
+                <div className="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('dualAssessment', sIdx)}>
+                  <div className="flex items-center gap-4">
+                    <span className={`text-[22px] font-black ${overallBand != null ? bandColor(overallBand) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif", minWidth: 44 }}>
+                      {fmt(overallBand)}
+                    </span>
+                    <h3 className="text-[15px] font-bold text-[#101828]">{crit.title}</h3>
+                  </div>
                   <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.dualAssessment.includes(sIdx) ? "rotate-180" : ""}`} />
                 </div>
+
                 {expandedSections.dualAssessment.includes(sIdx) && (
-                  <div className="px-10 pb-10 border-t border-[#E5E7EB] pt-10 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="flex items-center border border-[#E5E7EB] rounded-[12px] overflow-hidden mb-8">
-                      <div className="w-[100px] h-[100px] border-r border-[#E5E7EB] flex items-center justify-center bg-white">
-                        <span className={`text-[32px] font-bold ${bandColor}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{bandStr}</span>
+                  <div className="px-8 pb-6 pt-4 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-6">
+
+                    {/* Dual model score row */}
+                    <div className="flex items-center gap-6 bg-[#F9FAFB] rounded-[10px] px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">gpt-4o-mini</span>
+                        <span className={`text-[20px] font-black ${pb != null ? bandColor(pb) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{fmt(pb)}</span>
                       </div>
-                      <div className="flex-1 flex flex-col justify-center px-10 bg-white gap-1">
-                        {relStrength && <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}><span className="font-bold text-[#30C3A9]">✓</span> {relStrength}</p>}
-                        {relWeakness && <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}><span className="font-bold text-[#EF4444]">✗</span> {relWeakness}</p>}
+                      <div className="w-px h-8 bg-[#E5E7EB]"></div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">gpt-4o</span>
+                        <span className={`text-[20px] font-black ${sb != null ? bandColor(sb) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{fmt(sb)}</span>
                       </div>
+                      {sb != null && pb != null && (
+                        <>
+                          <div className="w-px h-8 bg-[#E5E7EB]"></div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Average</span>
+                            <span className={`text-[20px] font-black ${bandColor(parseFloat(avg(pb, sb)))}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{avg(pb, sb)}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <p className="text-[15px] text-[#475467] leading-relaxed mb-10" style={{ fontFamily: "'Nunito', sans-serif" }}>{summary}</p>
-                    {subRows.length > 0 && (
-                      <div className="space-y-5">
-                        <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Error Sub-Categories</h4>
-                        <div className="overflow-hidden border border-[#E5E7EB] rounded-[12px]">
-                          <table className="w-full text-left">
-                            <thead>
-                              <tr className="bg-[#F9FAFB] text-[14px] font-bold text-[#101828]">
-                                <th className="px-6 py-4">Sub Category</th>
-                                <th className="px-6 py-4">Count</th>
-                                <th className="px-6 py-4">Severity</th>
-                                <th className="px-6 py-4">Example</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#F2F4F7]">
-                              {subRows.map((row, rIdx) => {
-                                const sc = row.worstSeverity === 'Major' ? 'text-[#EF4444]' : row.worstSeverity === 'High' ? 'text-[#F59E0B]' : 'text-[#30C3A9]';
-                                return (
-                                  <tr key={rIdx} className="text-[14px] hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.cat}</td>
-                                    <td className={`px-6 py-4 font-bold ${sc}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{row.count}</td>
-                                    <td className={`px-6 py-4 font-bold ${sc}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{row.worstSeverity}</td>
-                                    <td className="px-6 py-4 text-[#475467] font-normal text-[13px]" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.sample?.original_text?.substring(0, 60)}…</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
+
+                    {/* Sub-category scores table */}
+                    {subRows.length > 0 ? (
+                      <div className="overflow-hidden border border-[#E5E7EB] rounded-[12px]">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Sub Category</th>
+                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Band</th>
+                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Strength</th>
+                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Weakness</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#F2F4F7]">
+                            {subRows.map((row, rIdx) => {
+                              const rb = row.band != null ? parseFloat(row.band) : null;
+                              return (
+                                <tr key={rIdx} className="hover:bg-gray-50/50 transition-colors">
+                                  <td className="px-5 py-4 text-[13px] font-semibold text-[#101828]">{row.name}</td>
+                                  <td className={`px-5 py-4 text-[14px] font-black ${rb != null ? bandColor(rb) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{fmt(rb)}</td>
+                                  <td className="px-5 py-4 text-[13px] text-[#374151] leading-snug">{row.strength}</td>
+                                  <td className="px-5 py-4 text-[13px] text-[#374151] leading-snug">{row.weakness}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
+                    ) : (
+                      <p className="text-[13px] text-gray-400 text-center py-4">Sub-category data will appear on your next graded submission.</p>
                     )}
                   </div>
                 )}
