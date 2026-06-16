@@ -68,7 +68,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport }) 
         <div className="text-[16px] font-semibold text-[#101828] font-sans leading-none pl-[56px]">Name</div>
         <div className="text-[16px] font-semibold text-[#101828] font-sans leading-none">Last Exam</div>
         <div className="text-[16px] font-semibold text-[#101828] font-sans leading-none">Score</div>
-        <div className="text-[16px] font-semibold text-[#101828] font-sans leading-none text-right pr-4">Actions</div>
+        <div className="text-[16px] font-semibold text-[#101828] font-sans leading-none">Actions</div>
       </div>
       
       <div className="space-y-3 relative z-10">
@@ -108,7 +108,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport }) 
               })()}
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-gray-50 md:justify-end">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3 md:pt-3 border-t md:border-t-0 border-gray-50 md:self-center">
               <button onClick={(e) => { e.stopPropagation(); onOpenReport?.(report.id); }} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Exam History</button>
               <button onClick={(e) => { e.stopPropagation(); navigate('/performance'); }} className="text-[16px] font-semibold leading-[20px] text-[#1A96F3] font-sans hover:underline text-left">View Performance</button>
             </div>
