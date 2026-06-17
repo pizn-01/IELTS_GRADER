@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Check } from 'lucide-react';
-import Navbar from '../marketing/Navbar';
 import { api } from '../services/api';
 
 // Plan keys map to UPGRADE_PLANS in backend/src/routes/stripe.js
@@ -38,10 +37,7 @@ const UpgradePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar showCredits={true} />
-
-      <main className="flex flex-col items-center px-4 py-12">
+    <div className="flex flex-col items-center px-4 py-12">
         <h1 className="text-[28px] md:text-[32px] font-bold text-[#101828] mb-10 text-center">
           Choose One of The Plan
         </h1>
@@ -127,7 +123,6 @@ const UpgradePage = () => {
             Cancel anytime. No long-term commitment
           </p>
         </div>
-      </main>
     </div>
   );
 };

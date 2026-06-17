@@ -146,7 +146,11 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
         <Route path="/upgrade" element={
-          <ProtectedRoute><UpgradePage /></ProtectedRoute>
+          <ProtectedRoute>
+            <Layout currentView="" onNavigate={handleProtectedNavigate} profileImage={profileImage}>
+              <UpgradePage />
+            </Layout>
+          </ProtectedRoute>
         } />
 
         {/* ── Auth Pages (public) ───────────────────────────── */}
