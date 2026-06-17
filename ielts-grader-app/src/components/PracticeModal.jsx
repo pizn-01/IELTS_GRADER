@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Clock, Info, ChevronDown, FileText } from 'lucide-react';
+import { X, Upload, Clock, Info, ChevronDown, Paperclip } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { extractFileText } from '../utils/extractFileText';
@@ -24,6 +24,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const pollRef = useRef(null);
   const progressRef = useRef(0);
   const progressIntervalRef = useRef(null);
+  const promptFileInputRef = useRef(null);
+  const essayFileInputRef = useRef(null);
 
   const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
 
@@ -281,7 +283,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                 <div className="flex flex-col font-sans h-full">
                   <div className="mb-5">
                     <h2 className="text-[18px] font-bold text-[#111827]">
-                      {selectedOption === 'upload' ? 'Upload Your Essay' : 'Mock Exam'}
+                      {selectedOption === 'upload' ? 'Upload Essay' : 'Mock Exam'}
                     </h2>
                   </div>
 
@@ -325,73 +327,65 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                         {/* Question / Prompt (optional) */}
                         <div className="space-y-1.5">
                           <label className="text-[12px] font-bold text-[#111827]">
-                            Upload Prompt / Question <span className="text-gray-400 font-normal">(optional)</span>
+                            Your Question / Essay <span className="text-gray-400 font-normal">(optional)</span>
                           </label>
-                          {!questionFile ? (
-                            <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[12px] py-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#1A96F3] transition-colors group">
-                              <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={(e) => handleQuestionFileSelect(e.target.files[0])}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                              />
-                              <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                                <Upload size={18} className="text-[#1A96F3]" strokeWidth={2.5} />
-                              </div>
-                              <p className="text-[12px] font-medium text-[#111827]">
-                                Drag & Drop Or <span className="text-[#1A96F3] font-bold">Browse</span>
-                              </p>
-                              <p className="text-[11px] text-gray-400 mt-1">PDF, JPG, PNG</p>
-                            </div>
-                          ) : (
-                            <div className="border border-[#1A96F3]/20 bg-[#E3F2FD]/40 rounded-[12px] py-4 px-4 flex items-center gap-3">
-                              <div className="w-9 h-9 bg-white rounded-[8px] flex items-center justify-center shadow-sm shrink-0">
-                                <FileText size={15} className="text-[#1A96F3]" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[12px] font-bold text-[#111827] truncate">{questionFile.name}</p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">{(questionFile.size / 1024).toFixed(0)} KB</p>
-                              </div>
-                              <button onClick={removeQuestionFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors shrink-0">
-                                <X size={15} />
-                              </button>
-                            </div>
-                          )}
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={questionText}
+                              onChange={(e) => setQuestionText(e.target.value)}
+                              placeholder="You can type, paste, or upload a file"
+                              className="w-full h-[44px] px-4 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => promptFileInputRef.current?.click()}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-[#6B7280] transition-colors p-0.5"
+                            >
+                              <Paperclip size={16} />
+                            </button>
+                            <input
+                              ref={promptFileInputRef}
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => {
+                                handleQuestionFileSelect(e.target.files[0]);
+                                e.target.value = '';
+                              }}
+                            />
+                          </div>
                         </div>
 
-                        {/* Essay File */}
+                        {/* Essay */}
                         <div className="space-y-1.5">
-                          <label className="text-[12px] font-bold text-[#111827]">Upload Your Essay</label>
-                          {!essayFile ? (
-                            <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[12px] py-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#1A96F3] transition-colors group">
-                              <input
-                                type="file"
-                                accept=".pdf,.docx,.jpg,.jpeg,.png"
-                                onChange={(e) => handleEssayFileSelect(e.target.files[0])}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                              />
-                              <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                                <Upload size={18} className="text-[#1A96F3]" strokeWidth={2.5} />
-                              </div>
-                              <p className="text-[12px] font-medium text-[#111827]">
-                                Drag & Drop Or <span className="text-[#1A96F3] font-bold">Browse</span>
-                              </p>
-                              <p className="text-[11px] text-gray-400 mt-1">PDF, DOCX, JPG, PNG</p>
-                            </div>
-                          ) : (
-                            <div className="border border-[#1A96F3]/20 bg-[#E3F2FD]/40 rounded-[12px] py-4 px-4 flex items-center gap-3">
-                              <div className="w-9 h-9 bg-white rounded-[8px] flex items-center justify-center shadow-sm shrink-0">
-                                <FileText size={15} className="text-[#1A96F3]" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[12px] font-bold text-[#111827] truncate">{essayFile.name}</p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">{wordCount} words · {(essayFile.size / 1024).toFixed(0)} KB</p>
-                              </div>
-                              <button onClick={removeEssayFile} className="p-1.5 text-gray-400 hover:text-red-400 transition-colors shrink-0">
-                                <X size={15} />
-                              </button>
-                            </div>
-                          )}
+                          <label className="text-[12px] font-bold text-[#111827]">Your Essay</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={essayText}
+                              onChange={(e) => setEssayText(e.target.value)}
+                              placeholder="You can type or upload, your essay here"
+                              className="w-full h-[44px] px-4 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => essayFileInputRef.current?.click()}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-[#6B7280] transition-colors p-0.5"
+                            >
+                              <Paperclip size={16} />
+                            </button>
+                            <input
+                              ref={essayFileInputRef}
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => {
+                                handleEssayFileSelect(e.target.files[0]);
+                                e.target.value = '';
+                              }}
+                            />
+                          </div>
                           {fileReadError && (
                             <p className="text-[11px] text-red-500 mt-1">{fileReadError}</p>
                           )}
@@ -411,7 +405,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                       }}
                       disabled={
                         selectedOption === 'upload'
-                          ? (!examType || !taskType || !essayFile || wordCount < 10)
+                          ? (!examType || !taskType || wordCount < 10)
                           : (!examType || !taskType)
                       }
                       className="w-full bg-[#2C3E50] text-white h-[46px] rounded-[10px] text-[15px] font-bold flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#34495E]"

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, File, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, Paperclip } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +29,10 @@ const Hero = () => {
 
   const [fileReadError, setFileReadError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [questionText, setQuestionText] = useState('');
+  const [essayText, setEssayText] = useState('');
+  const promptFileRef = useRef(null);
+  const essayFileRef = useRef(null);
 
   const handleFileChange = (type, file) => {
     setFiles(prev => ({ ...prev, [type]: file }));
@@ -42,7 +46,7 @@ const Hero = () => {
     if (type === 'prompt') updateEssayData({ questionContent: '' });
   };
 
-  const isUploadFormValid = essayData.examType && essayData.taskType && files.essay;
+  const isUploadFormValid = essayData.examType && essayData.taskType && essayText.trim().length > 0;
 
   return (
     <header id="about" className="bg-[#1A96F30D] relative min-h-[700px] overflow-hidden flex items-center">
@@ -233,14 +237,14 @@ const Hero = () => {
                   <h3 className="text-[18px] font-bold text-[#1a1f36]">Upload Essay</h3>
                 </div>
 
-                <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-1 pb-2">
+                <div className="space-y-4 flex-1">
                   <div>
                     <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Exam Type</label>
                     <div className="relative">
-                      <select 
+                      <select
                         value={essayData.examType}
                         onChange={(e) => updateEssayData({ examType: e.target.value })}
-                        className="w-full h-[44px] px-4 bg-white border border-[#E5E7EB] rounded-[8px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
+                        className="w-full h-[44px] px-4 bg-white border border-[#E5E7EB] rounded-[10px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
                       >
                         <option value="">Select</option>
                         <option value="Academic">Academic</option>
@@ -253,10 +257,10 @@ const Hero = () => {
                   <div>
                     <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Task Type</label>
                     <div className="relative">
-                      <select 
+                      <select
                         value={essayData.taskType}
                         onChange={(e) => updateEssayData({ taskType: e.target.value })}
-                        className="w-full h-[44px] px-4 bg-white border border-[#E5E7EB] rounded-[8px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
+                        className="w-full h-[44px] px-4 bg-white border border-[#E5E7EB] rounded-[10px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
                       >
                         <option value="">Select</option>
                         <option value="Task 1">Task 1</option>
@@ -266,79 +270,89 @@ const Hero = () => {
                     </div>
                   </div>
 
-                  {/* File Uploads */}
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Upload Prompt / Question</label>
-                      {!files.prompt ? (
-                        <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[10px] py-5 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3B82F6] transition-colors group">
-                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleFileChange('prompt', e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
-                          <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-                            <Upload className="w-4.5 h-4.5 text-[#3B82F6]" strokeWidth={2.5} />
-                          </div>
-                          <p className="text-[12px] font-medium text-[#111827]">Drag & Drop Or <span className="text-[#3B82F6] font-bold">Browse</span></p>
-                          <p className="text-[11px] text-gray-400 mt-0.5">PDF, JPG, PNG</p>
-                        </div>
-                      ) : (
-                        <div className="border border-[#BFDBFE] bg-[#EFF6FF] rounded-[10px] py-3 px-4 flex items-center gap-3">
-                          <File className="w-5 h-5 text-[#3B82F6] shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-bold text-[#1a1f36] truncate">{files.prompt.name}</p>
-                            <p className="text-[10px] text-[#6B7280] mt-0.5">{(files.prompt.size / 1024).toFixed(0)} KB</p>
-                          </div>
-                          <button onClick={() => removeFile('prompt')} className="p-1.5 text-[#1a1f36] hover:text-[#EF4444] transition-colors shrink-0">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Your Question / Essay</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={questionText}
+                        onChange={(e) => setQuestionText(e.target.value)}
+                        placeholder="You can type, paste, or upload a file"
+                        className="w-full h-[44px] px-4 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => promptFileRef.current?.click()}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#D0D5DD] hover:text-[#6B7280] transition-colors p-0.5"
+                      >
+                        <Paperclip size={16} />
+                      </button>
+                      <input
+                        ref={promptFileRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          e.target.value = '';
+                          if (!file) return;
+                          try {
+                            const text = await extractFileText(file);
+                            setQuestionText(text.trim());
+                          } catch { /* optional field */ }
+                        }}
+                      />
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Upload Your Essay</label>
-                      {!files.essay ? (
-                        <div className="relative border-[1.5px] border-dashed border-[#D0D5DD] bg-[#F8FBFF] rounded-[10px] py-5 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3B82F6] transition-colors group">
-                          <input type="file" accept=".pdf,.docx,.jpg,.jpeg,.png" onChange={(e) => handleFileChange('essay', e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
-                          <div className="w-10 h-10 bg-[#DBEAFE] rounded-[10px] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-                            <Upload className="w-4.5 h-4.5 text-[#3B82F6]" strokeWidth={2.5} />
-                          </div>
-                          <p className="text-[12px] font-medium text-[#111827]">Drag & Drop Or <span className="text-[#3B82F6] font-bold">Browse</span></p>
-                          <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOCX, JPG, PNG</p>
-                        </div>
-                      ) : (
-                        <div className="border border-[#BFDBFE] bg-[#EFF6FF] rounded-[10px] py-3 px-4 flex items-center gap-3">
-                          <File className="w-5 h-5 text-[#3B82F6] shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-bold text-[#1a1f36] truncate">{files.essay.name}</p>
-                            <p className="text-[10px] text-[#6B7280] mt-0.5">{(files.essay.size / 1024).toFixed(0)} KB</p>
-                          </div>
-                          <button onClick={() => removeFile('essay')} className="p-1.5 text-[#1a1f36] hover:text-[#EF4444] transition-colors shrink-0">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Your Essay</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={essayText}
+                        onChange={(e) => setEssayText(e.target.value)}
+                        placeholder="You can type or upload, your essay here"
+                        className="w-full h-[44px] px-4 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => essayFileRef.current?.click()}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#D0D5DD] hover:text-[#6B7280] transition-colors p-0.5"
+                      >
+                        <Paperclip size={16} />
+                      </button>
+                      <input
+                        ref={essayFileRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          e.target.value = '';
+                          if (!file) return;
+                          setFileReadError('');
+                          try {
+                            const text = await extractFileText(file);
+                            setEssayText(text.trim());
+                          } catch (err) {
+                            setFileReadError(err.message || 'Could not read file.');
+                          }
+                        }}
+                      />
                     </div>
+                    {fileReadError && (
+                      <p className="text-[11px] text-red-500 mt-1">{fileReadError}</p>
+                    )}
                   </div>
                 </div>
 
-                {fileReadError && (
-                  <p className="text-[12px] text-red-500 text-center mt-1">{fileReadError}</p>
-                )}
-
                 <button
                   onClick={async () => {
-                    setFileReadError('');
+                    if (!essayText.trim()) return;
                     setFileReadError('');
                     setIsSubmitting(true);
-                    let essayText;
-                    try {
-                      essayText = await extractFileText(files.essay);
-                      const questionText = files.prompt ? await extractFileText(files.prompt).catch(() => '') : '';
-                      updateEssayData({ essayContent: essayText, questionContent: questionText });
-                    } catch (err) {
-                      setFileReadError(err.message || 'Could not read file. Please upload a .txt, .pdf, or .docx file.');
-                      setIsSubmitting(false);
-                      return;
-                    }
+                    updateEssayData({ essayContent: essayText, questionContent: questionText });
                     if (user && user.credits_remaining > 0) {
                       try {
                         const res = await api.submitAttempt({
@@ -365,13 +379,13 @@ const Hero = () => {
                     }
                   }}
                   disabled={!isUploadFormValid || isSubmitting}
-                  className={`w-full h-[50px] rounded-[8px] font-bold text-[15px] mt-6 transition-all ${
-                    isUploadFormValid 
-                      ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46] shadow-lg' 
+                  className={`w-full h-[50px] rounded-[10px] font-bold text-[15px] mt-6 transition-all ${
+                    isUploadFormValid && !isSubmitting
+                      ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46] shadow-lg'
                       : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
                   }`}
                 >
-                  Analyze My Essay
+                  {isSubmitting ? 'Analyzing…' : 'Analyze My Essay'}
                 </button>
               </div>
             )}
