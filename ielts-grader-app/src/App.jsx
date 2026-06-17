@@ -34,6 +34,7 @@ import OAuthCallbackPage from './auth/OAuthCallbackPage';
 import PricingPage from './pages/PricingPage';
 import CheckoutPage from './pages/CheckoutPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
+import UpgradePage from './pages/UpgradePage';
 
 // ── Protected Functional Pages ────────────────────────────────────────────────
 import SelectionPage from './pages/SelectionPage';
@@ -144,6 +145,9 @@ function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+        <Route path="/upgrade" element={
+          <ProtectedRoute><UpgradePage /></ProtectedRoute>
+        } />
 
         {/* ── Auth Pages (public) ───────────────────────────── */}
         <Route path="/login" element={<LoginPage />} />

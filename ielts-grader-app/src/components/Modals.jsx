@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mail, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 export const VerifyEmailModal = ({ isOpen, onClose }) => {
   return (
@@ -53,6 +54,7 @@ export const VerifyEmailModal = ({ isOpen, onClose }) => {
 };
 
 export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
+  const navigate = useNavigate();
   // Only show when explicitly open and when credits are low or exhausted
   if (!isOpen) return null;
   if (credits !== null && credits > 2) return null; // hide when user has enough credits
@@ -76,7 +78,10 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
           {message}
         </p>
       </div>
-      <button className="bg-[#2C3E50] text-white w-full md:w-auto px-8 h-[36px] rounded-lg text-xs font-semibold hover:bg-[#1E293B] transition-all shadow-sm flex items-center justify-center whitespace-nowrap">
+      <button
+        onClick={() => navigate('/upgrade')}
+        className="bg-[#2C3E50] text-white w-full md:w-auto px-8 h-[36px] rounded-lg text-xs font-semibold hover:bg-[#1E293B] transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+      >
         Upgrade
       </button>
     </div>

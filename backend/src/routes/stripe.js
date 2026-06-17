@@ -27,6 +27,13 @@ const SUBSCRIPTION_PLANS = {
   'price_1TcqPbFDM9NsOfLRquDNOJpA': { name: 'Monthly Mastery',  credits: 24 },
 };
 
+// ── Upgrade plans — authenticated recurring subscription checkout ─────────────
+// TODO: Replace placeholder IDs with real Stripe recurring price IDs from your dashboard.
+const UPGRADE_PLANS = {
+  'price_weekly_sprint':   { name: 'Weekly Sprint',   label: '$9.99/week',   amount_cents: 999  },
+  'price_monthly_mastery': { name: 'Monthly Mastery', label: '$24.99/month', amount_cents: 2499 },
+};
+
 // ─── POST /api/stripe/create-public-checkout ──────────────────────────────
 // No auth — unauthenticated users go straight to Stripe.
 // Webhook will credit the account by matching customer email after payment.
@@ -53,6 +60,33 @@ router.post('/create-public-checkout', async (req, res) => {
     return res.json({ url: session.url });
   } catch (err) {
     console.error('[stripe/create-public-checkout]', err.message);
+    return res.status(500).json({ error: 'Failed to create checkout session. ' + err.message });
+  }
+});
+
+// ─── POST /api/stripe/create-upgrade-checkout ────────────────────────────────
+// Authenticated subscription checkout for Weekly Sprint / Monthly Mastery plans
+router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
+  const { price_id } = req.body;
+  const userId = req.user.userId;
+
+  const plan = UPGRADE_PLANS[price_id];
+  if (!plan) return res.status(400).json({ error: 'Invalid upgrade plan.' });
+
+  try {
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: price_id, quantity: 1 }],
+      client_reference_id: userId,
+      metadata: { user_id: userId, plan_name: plan.name },
+      success_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/upgrade`,
+    });
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error('[stripe/create-upgrade-checkout]', err.message);
     return res.status(500).json({ error: 'Failed to create checkout session. ' + err.message });
   }
 });

@@ -374,6 +374,20 @@ export const api = {
     return res.json();
   },
 
+  // ─── POST /api/stripe/create-upgrade-checkout ─────────────────────────────
+  createSubscriptionCheckout: async (price_id) => {
+    const res = await fetch(`${BASE_URL}/stripe/create-upgrade-checkout`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ price_id }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to create checkout session.');
+    }
+    return res.json();
+  },
+
   createPublicCheckoutSession: async (price_id) => {
     const res = await fetch(`${BASE_URL}/stripe/create-public-checkout`, {
       method: 'POST',
