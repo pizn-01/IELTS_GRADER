@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, HelpCircle, RotateCcw, Paperclip, ChevronDown, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useGrade } from '../context/GradeContext';
 import { extractFileText } from '../utils/extractFileText';
+import QuestionChart, { detectChartType } from './QuestionChart';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -15,8 +16,8 @@ const QUESTION_BANK = {
     { prompt: "Some people think that a sense of competition in children should be encouraged. Others believe that children who are taught to co-operate rather than compete become more useful adults. Discuss both views and give your own opinion.", note: "Write at least 250 words. You have 40 minutes." },
   ],
   'Academic-Task 1': [
-    { prompt: "The graph below shows the proportion of the population aged 65 and over between 1940 and 2040 in three different countries. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.", note: "Write at least 150 words. You have 20 minutes." },
-    { prompt: "The charts below show the percentage of water used for different purposes in six areas of the world. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.", note: "Write at least 150 words. You have 20 minutes." },
+    { prompt: "The graph below shows the proportion of the population aged 65 and over between 1940 and 2040 in three different countries. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.", note: "Write at least 150 words. You have 20 minutes.", chartType: 'line' },
+    { prompt: "The charts below show the percentage of water used for different purposes in six areas of the world. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.", note: "Write at least 150 words. You have 20 minutes.", chartType: 'pie' },
   ],
   'General-Task 2': [
     { prompt: "Some people think that parents should teach children how to be good members of society. Others believe that school is the place to learn this. Discuss both these views and give your own opinion.", note: "Write at least 250 words. You have 40 minutes." },
@@ -55,6 +56,11 @@ const MockExam = ({ examType, taskType, onExit }) => {
   }, [examType, taskType]);
 
   const question = dynamicQuestion || bank[Math.floor(Date.now() / 86400000) % bank.length];
+
+  const questionChartType = useMemo(() => {
+    if (examType !== 'Academic' || !isTask1) return null;
+    return question.chartType || detectChartType(question.prompt);
+  }, [question, examType, isTask1]);
 
   // Derive display name and initials from auth user
   const displayName = user?.full_name || 'Candidate';
@@ -296,6 +302,11 @@ const MockExam = ({ examType, taskType, onExit }) => {
           <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
             {question.prompt}
           </h2>
+          {questionChartType && (
+            <div className="mb-5">
+              <QuestionChart type={questionChartType} seed={question.prompt} />
+            </div>
+          )}
           <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90">
             <p>{question.note}</p>
           </div>
