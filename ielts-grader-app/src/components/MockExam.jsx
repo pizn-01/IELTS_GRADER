@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, HelpCircle, RotateCcw, Paperclip, ChevronDown, Clock } from 'lucide-react';
+import { X, HelpCircle, RotateCcw, Paperclip, ChevronDown, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useGrade } from '../context/GradeContext';
+import { extractFileText } from '../utils/extractFileText';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -73,6 +74,8 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const [submissionId, setSubmissionId] = useState(null);
   const [gradingError, setGradingError] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState('');
   const [showAttachmentTooltip, setShowAttachmentTooltip] = useState(false);
   const progressRef = useRef(0);
   const startTimeRef = useRef(null);
@@ -233,10 +236,21 @@ const MockExam = ({ examType, taskType, onExit }) => {
     if (window.confirm('Are you sure you want to clear your essay?')) setEssay('');
   };
 
-  const handleFileAttach = (e) => {
+  const handleFileAttach = async (e) => {
     const file = e.target.files[0];
-    if (file) setAttachedFile(file);
     e.target.value = '';
+    if (!file) return;
+    setAttachedFile(file);
+    setExtractError('');
+    setExtracting(true);
+    try {
+      const text = await extractFileText(file);
+      setEssay(text.trim());
+    } catch (err) {
+      setExtractError(err.message || 'Could not read file. Try a .pdf or .docx.');
+    } finally {
+      setExtracting(false);
+    }
   };
 
   return (
@@ -298,6 +312,16 @@ const MockExam = ({ examType, taskType, onExit }) => {
         </div>
       </div>
 
+      {/* Attachment status bar — filename or error, shown only when relevant */}
+      {(attachedFile || extractError) && (
+        <div className={`px-8 py-1.5 text-[12px] font-medium flex items-center gap-2 border-t ${extractError ? 'bg-red-50 border-red-100 text-red-500' : 'bg-[#F0F9FF] border-[#DBEAFE] text-[#1A96F3]'}`}>
+          {extractError
+            ? <><X size={13} className="shrink-0" />{extractError}</>
+            : <><Paperclip size={13} className="shrink-0" />{attachedFile.name} — imported</>
+          }
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="h-[64px] border-t border-gray-100 flex items-center justify-between px-8 bg-white shrink-0">
         {/* Left — Task buttons */}
@@ -320,14 +344,18 @@ const MockExam = ({ examType, taskType, onExit }) => {
           {/* Paperclip — file upload with hover tooltip */}
           <div className="relative">
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => !extracting && fileInputRef.current?.click()}
               onMouseEnter={() => setShowAttachmentTooltip(true)}
               onMouseLeave={() => setShowAttachmentTooltip(false)}
-              className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all"
+              className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all disabled:opacity-50"
+              disabled={extracting}
             >
-              <Paperclip size={18} />
+              {extracting
+                ? <Loader2 size={18} className="animate-spin text-[#1A96F3]" />
+                : <Paperclip size={18} />
+              }
             </button>
-            {showAttachmentTooltip && (
+            {showAttachmentTooltip && !extracting && (
               <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-[#101828] text-white text-[13px] font-semibold px-4 py-2 rounded-[8px] whitespace-nowrap pointer-events-none z-10">
                 Attachments
                 <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#101828]" />
