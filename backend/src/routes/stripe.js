@@ -27,11 +27,11 @@ const SUBSCRIPTION_PLANS = {
   'price_1TcqPbFDM9NsOfLRquDNOJpA': { name: 'Monthly Mastery',  credits: 24 },
 };
 
-// ── Upgrade plans — authenticated recurring subscription checkout ─────────────
-// TODO: Replace placeholder IDs with real Stripe recurring price IDs from your dashboard.
+// ── Upgrade plans — price IDs loaded from env vars set via fly secrets ────────
+// Set: STRIPE_PRICE_WEEKLY_SPRINT and STRIPE_PRICE_MONTHLY_MASTERY
 const UPGRADE_PLANS = {
-  'price_weekly_sprint':   { name: 'Weekly Sprint',   label: '$9.99/week',   amount_cents: 999  },
-  'price_monthly_mastery': { name: 'Monthly Mastery', label: '$24.99/month', amount_cents: 2499 },
+  weekly:  { name: 'Weekly Sprint',   label: '$9.99/week',   get priceId() { return process.env.STRIPE_PRICE_WEEKLY_SPRINT;  } },
+  monthly: { name: 'Monthly Mastery', label: '$24.99/month', get priceId() { return process.env.STRIPE_PRICE_MONTHLY_MASTERY; } },
 };
 
 // ─── POST /api/stripe/create-public-checkout ──────────────────────────────
@@ -67,18 +67,24 @@ router.post('/create-public-checkout', async (req, res) => {
 // ─── POST /api/stripe/create-upgrade-checkout ────────────────────────────────
 // Authenticated subscription checkout for Weekly Sprint / Monthly Mastery plans
 router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
-  const { price_id } = req.body;
+  const { plan: planKey } = req.body;
   const userId = req.user.userId;
 
-  const plan = UPGRADE_PLANS[price_id];
+  const plan = UPGRADE_PLANS[planKey];
   if (!plan) return res.status(400).json({ error: 'Invalid upgrade plan.' });
+
+  const priceId = plan.priceId;
+  if (!priceId) {
+    console.error(`[stripe/create-upgrade-checkout] Missing env var for plan: ${planKey}`);
+    return res.status(500).json({ error: 'Subscription plan not configured. Contact support.' });
+  }
 
   try {
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [{ price: price_id, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: userId,
       metadata: { user_id: userId, plan_name: plan.name },
       success_url: `${process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,

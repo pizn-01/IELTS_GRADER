@@ -375,11 +375,12 @@ export const api = {
   },
 
   // ─── POST /api/stripe/create-upgrade-checkout ─────────────────────────────
-  createSubscriptionCheckout: async (price_id) => {
+  // plan: 'weekly' | 'monthly'
+  createSubscriptionCheckout: async (plan) => {
     const res = await fetch(`${BASE_URL}/stripe/create-upgrade-checkout`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ price_id }),
+      body: JSON.stringify({ plan }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

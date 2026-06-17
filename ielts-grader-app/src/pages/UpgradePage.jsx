@@ -3,21 +3,11 @@ import { Check } from 'lucide-react';
 import Navbar from '../marketing/Navbar';
 import { api } from '../services/api';
 
-// TODO: Replace these with your actual Stripe recurring price IDs from the Stripe dashboard.
+// Plan keys map to UPGRADE_PLANS in backend/src/routes/stripe.js
+// Backend resolves keys → real Stripe price IDs via env vars
 const PLANS = [
-  {
-    priceId: 'price_weekly_sprint',
-    name: 'Weekly Sprint',
-    price: '$9.99',
-    period: '/Week',
-  },
-  {
-    priceId: 'price_monthly_mastery',
-    name: 'Monthly Mastery',
-    price: '$24.99',
-    period: '/Month',
-    recommended: true,
-  },
+  { key: 'weekly',  name: 'Weekly Sprint',   price: '$9.99',  period: '/Week'  },
+  { key: 'monthly', name: 'Monthly Mastery', price: '$24.99', period: '/Month', recommended: true },
 ];
 
 const FEATURES = [
@@ -29,17 +19,17 @@ const FEATURES = [
 
 const UpgradePage = () => {
   const [examType, setExamType] = useState('Academic');
-  const [selectedPriceId, setSelectedPriceId] = useState(PLANS[1].priceId);
+  const [selectedKey, setSelectedKey] = useState(PLANS[1].key);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const selectedPlan = PLANS.find(p => p.priceId === selectedPriceId) || PLANS[1];
+  const selectedPlan = PLANS.find(p => p.key === selectedKey) || PLANS[1];
 
   const handleSubscribe = async () => {
     setLoading(true);
     setError('');
     try {
-      const { url } = await api.createSubscriptionCheckout(selectedPriceId);
+      const { url } = await api.createSubscriptionCheckout(selectedKey);
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -86,10 +76,10 @@ const UpgradePage = () => {
           <div className="grid grid-cols-2 gap-3 mb-8">
             {PLANS.map(plan => (
               <button
-                key={plan.priceId}
-                onClick={() => setSelectedPriceId(plan.priceId)}
+                key={plan.key}
+                onClick={() => setSelectedKey(plan.key)}
                 className={`p-5 rounded-[16px] border-2 text-left transition-all ${
-                  selectedPriceId === plan.priceId
+                  selectedKey === plan.key
                     ? 'border-[#1A96F3] bg-[#EFF8FF]'
                     : 'border-[#E5E7EB] bg-white hover:border-[#D0D5DD]'
                 }`}
