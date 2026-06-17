@@ -340,7 +340,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                             <button
                               type="button"
                               onClick={() => promptFileInputRef.current?.click()}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-[#6B7280] transition-colors p-0.5"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5"
                             >
                               <Paperclip size={16} />
                             </button>
@@ -371,7 +371,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                             <button
                               type="button"
                               onClick={() => essayFileInputRef.current?.click()}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-[#6B7280] transition-colors p-0.5"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5"
                             >
                               <Paperclip size={16} />
                             </button>

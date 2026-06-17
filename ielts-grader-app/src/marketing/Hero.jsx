@@ -283,7 +283,7 @@ const Hero = () => {
                       <button
                         type="button"
                         onClick={() => promptFileRef.current?.click()}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#D0D5DD] hover:text-[#6B7280] transition-colors p-0.5"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
                       >
                         <Paperclip size={16} />
                       </button>
@@ -318,7 +318,7 @@ const Hero = () => {
                       <button
                         type="button"
                         onClick={() => essayFileRef.current?.click()}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#D0D5DD] hover:text-[#6B7280] transition-colors p-0.5"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
                       >
                         <Paperclip size={16} />
                       </button>
