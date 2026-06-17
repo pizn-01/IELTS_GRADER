@@ -50,7 +50,7 @@ const Hero = () => {
 
   return (
     <header id="about" className="bg-[#1A96F30D] relative min-h-[700px] overflow-hidden flex items-center">
-      <div className="max-w-[1440px] mx-auto px-[100px] py-12 lg:py-20 w-full flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] py-12 lg:py-20 w-full flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
         
         {/* Left Column - Hero Content */}
         <div className="w-full lg:w-[55%] animate-fadeIn">
@@ -58,7 +58,7 @@ const Hero = () => {
             Trusted by <span className="font-bold text-[#1a1f36] mx-1">1 million+</span> students and <span className="font-bold text-[#1a1f36] mx-1">20k+</span> schools
           </div>
 
-          <h1 className="text-[48px] lg:text-[62px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
+          <h1 className="text-[34px] sm:text-[42px] lg:text-[62px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
             Get Your IELTS Band<br />
             Score & Fix Cards in<br />
             <span className="text-[#3B82F6]">60 Seconds.</span>

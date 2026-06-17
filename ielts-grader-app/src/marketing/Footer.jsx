@@ -3,16 +3,16 @@ import React from 'react';
 const Footer = () => {
   return (
     <footer id="contact" className="bg-[#EAECF080] border-t border-[#E5E7EB] py-5">
-      <div className="max-w-[1440px] mx-auto px-[50px] flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-[50px] flex flex-col md:flex-row justify-between items-center gap-4">
         {/* Left - Copyright */}
         <p className="text-[13px] text-[#9CA3AF]">
           © 2026 IELTSGRADER. All rights reserved.
         </p>
 
         {/* Right - Links + Social */}
-        <div className="flex items-center gap-8">
+        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
           {/* Links */}
-          <div className="flex gap-5">
+          <div className="flex flex-wrap gap-4 md:gap-5 justify-center">
             {['FAQ', 'Terms', 'Privacy', 'Cookies'].map((link) => (
               <a key={link} href="#" className="text-[13px] text-[#6B7280] no-underline hover:text-[#1a1f36] transition-colors">
                 {link}

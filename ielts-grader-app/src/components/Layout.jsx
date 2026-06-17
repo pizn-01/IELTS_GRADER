@@ -39,10 +39,10 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
     <div className="min-h-screen bg-white">
       {/* SECTION 1 — NAVBAR (NO gradient, pure white) */}
       <nav className="bg-white border-b border-[#E5E7EB] sticky top-0 z-[100] h-[56px] flex items-center">
-        <div className="w-full max-w-[1440px] mx-auto px-[50px] flex items-center justify-between">
+        <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[50px] flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/" className="text-[18px] md:text-[20px] tracking-tight text-[#101828] no-underline hover:opacity-80 transition-opacity cursor-pointer" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>IELTSGRADER</Link>
-            <div className="h-6 w-px bg-[#E5E7EB]"></div>
+            <div className="hidden md:block h-6 w-px bg-[#E5E7EB]"></div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8 text-[14px] text-[#101828] font-sans h-[56px]">
@@ -62,7 +62,15 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Right Side Items */}
+            {/* Mobile hamburger — must be outside the hidden md:flex wrapper */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden text-gray-500 p-1 border-none bg-transparent"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+
+            {/* Right Side Items (desktop only) */}
             <div className="hidden md:flex items-center gap-6">
               {/* Credits Pill */}
               <div className="bg-[#DDF2FF] rounded-full px-4 py-1.5 flex items-center gap-3">
@@ -173,13 +181,6 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                 )}
               </div>
 
-              {/* Mobile Menu Toggle */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden text-gray-500 p-1"
-              >
-                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
             </div>
           </div>
         </div>

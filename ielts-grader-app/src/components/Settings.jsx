@@ -143,11 +143,11 @@ const Settings = ({ profileImage, setProfileImage }) => {
 
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-[50px] py-10 relative text-[#101828]">
+    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[50px] py-10 relative text-[#101828]">
       <h1 className="text-[32px] font-bold text-[#101828] mb-8">Settings</h1>
       
       {/* Settings Navigation */}
-      <div className="flex items-center gap-6 md:gap-10 border-b border-[#D0D5DD] mb-8 overflow-x-auto no-scrollbar -mx-[50px] px-[50px]">
+      <div className="flex items-center gap-6 md:gap-10 border-b border-[#D0D5DD] mb-8 overflow-x-auto no-scrollbar -mx-4 md:-mx-[50px] px-4 md:px-[50px]">
         {['Profile', 'Change Password', 'Support'].map((tab) => (
           <div 
             key={tab} 

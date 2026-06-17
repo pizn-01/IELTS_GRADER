@@ -45,7 +45,7 @@ const Navbar = ({ showCredits }) => {
 
   return (
     <nav className="h-[64px] md:h-[72px] sticky top-0 left-0 w-full bg-white z-[1000] border-b border-[#E5E7EB]">
-      <div className="max-w-[1440px] mx-auto px-[50px] h-full flex items-center justify-between">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-[50px] h-full flex items-center justify-between">
         {/* Left Side: Logo & Desktop Links */}
         <div className="flex items-center">
           <Link onClick={() => setIsMobileMenuOpen(false)} to="/" className="text-[17px] md:text-[19px] font-extrabold text-[#1a1f36] uppercase tracking-tight cursor-pointer shrink-0 no-underline">
@@ -207,7 +207,7 @@ const Navbar = ({ showCredits }) => {
             {showCredits && (
               <div className="flex items-center gap-2 px-3 py-2.5 mt-2 bg-[#EFF6FF] rounded-[8px] border border-[#DBEAFE] justify-center">
                 <Coins className="w-4 h-4 text-[#3B82F6]" />
-                <span className="text-[14px] font-bold text-[#1e40af]">{userStatus.credits}/1 Remaining</span>
+                <span className="text-[14px] font-bold text-[#1e40af]">{user?.credits_remaining ?? 0}/1 Remaining</span>
               </div>
             )}
 
