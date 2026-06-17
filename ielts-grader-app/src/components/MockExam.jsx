@@ -36,17 +36,15 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
   const bank = QUESTION_BANK[key] || QUESTION_BANK['Academic-Task 2'];
 
-  // Dynamic question fetched from DB — falls back to hardcoded bank if API fails
+  // Dynamic unique question fetched from DB — falls back to hardcoded bank if API fails
   const [dynamicQuestion, setDynamicQuestion] = useState(null);
   useEffect(() => {
-    api.getTasks({ exam_type: examType || 'Academic', task_type: taskType || 'Task 2' })
-      .then(({ data = [] }) => {
-        const active = data.filter(t => t.is_active !== false);
-        if (active.length === 0) return;
-        const pick = active[Math.floor(Date.now() / 86400000) % active.length];
+    api.getNextTask({ exam_type: examType || 'Academic', task_type: taskType || 'Task 2', session_type: 'mock' })
+      .then(({ data }) => {
+        if (!data) return;
         setDynamicQuestion({
-          prompt: pick.question_text,
-          note: pick.time_limit_seconds <= 1200
+          prompt: data.question_text,
+          note: data.time_limit_seconds <= 1200
             ? 'Write at least 150 words. You have 20 minutes.'
             : 'Write at least 250 words. You have 40 minutes.',
         });

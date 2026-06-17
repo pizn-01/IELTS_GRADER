@@ -318,6 +318,48 @@ export const api = {
     }
   },
 
+  // ─── GET /api/tasks/next ─────────────────────────────────────────────────────
+  // Returns one question not yet assigned to this user (unique per user)
+  getNextTask: async ({ exam_type, task_type, session_type = 'mock' } = {}) => {
+    try {
+      const q = new URLSearchParams();
+      if (exam_type) q.set('exam_type', exam_type);
+      if (task_type) q.set('task_type', task_type);
+      q.set('session_type', session_type);
+      const res = await fetch(`${BASE_URL}/tasks/next?${q}`, { headers: getHeaders() });
+      if (!res.ok) throw new Error(`Next task fetch failed (${res.status})`);
+      return await res.json();
+    } catch {
+      return { data: null };
+    }
+  },
+
+  // ─── POST /api/auth/verify-email ─────────────────────────────────────────────
+  verifyEmail: async (token) => {
+    try {
+      const res = await fetch(`${BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`, { headers: getHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Verification failed.');
+      return data;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // ─── POST /api/auth/resend-verification ──────────────────────────────────────
+  resendVerification: async (email) => {
+    try {
+      const res = await fetch(`${BASE_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      return await res.json().catch(() => ({}));
+    } catch {
+      return { message: 'Sent.' };
+    }
+  },
+
   // ─── Stripe API ───────────────────────────────────────────────────────────────
   createCheckoutSession: async (price_id) => {
     const res = await fetch(`${BASE_URL}/stripe/create-checkout-session`, {
@@ -381,6 +423,17 @@ export const api = {
     updateTask: (id, body) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
     deleteTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
     getTaskHistory: (id) => fetch(`${BASE_URL}/admin/tasks/${id}/history`, { headers: getHeaders() }).then(r => r.json()),
+    // Bulk import tasks from JSON or PDF
+    importTasks: (formData) => fetch(`${BASE_URL}/admin/tasks/import`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      body: formData,
+    }).then(r => r.json()),
+    // Question assignment log
+    getTaskAssignments: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/task-assignments?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
     // Payment history
     getPayments: (params = {}) => {
       const q = new URLSearchParams(params).toString();

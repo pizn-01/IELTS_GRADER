@@ -1,7 +1,9 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { supabaseAdmin, supabaseAuth } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/email');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -11,11 +13,15 @@ function signToken(userId, email) {
   return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '7d' });
 }
 
+function generateToken(bytes = 32) {
+  return crypto.randomBytes(bytes).toString('hex');
+}
+
 async function fetchProfile(userId) {
   const [{ data, error }, { count: paymentCount }] = await Promise.all([
     supabaseAdmin
       .from('profiles')
-      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
+      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
       .eq('id', userId)
       .single(),
     supabaseAdmin
@@ -86,32 +92,45 @@ router.post('/register', async (req, res) => {
       throw error;
     }
 
-    // Profile is created by DB trigger (on_auth_user_created); poll briefly
+    // Profile created by DB trigger; poll briefly
     let profile = null;
     for (let attempt = 0; attempt < 4; attempt++) {
       await new Promise(r => setTimeout(r, 400));
       const { data: p } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
         .eq('id', data.user.id)
         .single();
       if (p) { profile = p; break; }
     }
 
-    // Fallback: insert profile manually if trigger hasn't fired yet
     if (!profile) {
       const { data: inserted, error: insErr } = await supabaseAdmin
         .from('profiles')
         .insert({ id: data.user.id, full_name: name, credits_remaining: 1 })
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
         .single();
       if (insErr) console.error('[auth/register] Profile fallback insert error:', insErr.message);
-      profile = inserted || { full_name: name, target_band: 7.5, credits_remaining: 1, profile_image_url: null };
+      profile = inserted || { full_name: name, target_band: 7.5, credits_remaining: 1, profile_image_url: null, email_verified: false };
     }
 
-    // New signups always start with 1 free trial credit regardless of DB column default
-    await supabaseAdmin.from('profiles').update({ credits_remaining: 1 }).eq('id', data.user.id);
-    profile = { ...profile, credits_remaining: 1 };
+    // Enforce 1 free trial credit, set email_verified = false, generate verification token
+    const verificationToken = generateToken();
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
+
+    await supabaseAdmin.from('profiles').update({
+      credits_remaining: 1,
+      email_verified: false,
+      verification_token: verificationToken,
+      verification_token_expires_at: verificationExpiry,
+    }).eq('id', data.user.id);
+
+    profile = { ...profile, credits_remaining: 1, email_verified: false };
+
+    // Send verification email — fire-and-forget so it doesn't block registration
+    sendVerificationEmail(email, name, verificationToken).catch(err =>
+      console.error('[auth/register] Verification email failed:', err.message)
+    );
 
     const token = signToken(data.user.id, data.user.email);
 
@@ -144,6 +163,96 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// ─── GET /api/auth/verify-email ───────────────────────────────────────────────
+// Called when user clicks the link in the verification email
+// ?token=<hex-token>
+router.get('/verify-email', async (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Verification token is required.' });
+  }
+
+  try {
+    const { data: profile, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email_verified, verification_token_expires_at')
+      .eq('verification_token', token)
+      .single();
+
+    if (error || !profile) {
+      return res.status(400).json({ error: 'Invalid or expired verification link.' });
+    }
+
+    if (profile.email_verified) {
+      return res.json({ message: 'Email already verified.' });
+    }
+
+    if (new Date(profile.verification_token_expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Verification link has expired. Please request a new one.' });
+    }
+
+    await supabaseAdmin
+      .from('profiles')
+      .update({
+        email_verified: true,
+        verification_token: null,
+        verification_token_expires_at: null,
+      })
+      .eq('id', profile.id);
+
+    return res.json({ message: 'Email verified successfully.' });
+  } catch (err) {
+    console.error('[auth/verify-email]', err.message);
+    return res.status(500).json({ error: 'Verification failed. Please try again.' });
+  }
+});
+
+// ─── POST /api/auth/resend-verification ──────────────────────────────────────
+router.post('/resend-verification', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+
+  // Always return success to prevent email enumeration
+  try {
+    const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
+    const authUser = authData?.users?.find(u => u.email === email);
+
+    if (!authUser) {
+      return res.json({ message: 'If an account exists, a new verification email has been sent.' });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, email_verified')
+      .eq('id', authUser.id)
+      .single();
+
+    if (!profile || profile.email_verified) {
+      return res.json({ message: 'If an account exists, a new verification email has been sent.' });
+    }
+
+    const newToken = generateToken();
+    const newExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    await supabaseAdmin.from('profiles').update({
+      verification_token: newToken,
+      verification_token_expires_at: newExpiry,
+    }).eq('id', profile.id);
+
+    sendVerificationEmail(email, profile.full_name, newToken).catch(err =>
+      console.error('[auth/resend-verification] Email failed:', err.message)
+    );
+  } catch (err) {
+    console.error('[auth/resend-verification]', err.message);
+  }
+
+  return res.json({ message: 'If an account exists, a new verification email has been sent.' });
+});
+
 // ─── POST /api/auth/forgot-password ──────────────────────────────────────────
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
@@ -154,9 +263,30 @@ router.post('/forgot-password', async (req, res) => {
 
   // Always return success to prevent email enumeration
   try {
-    await supabaseAuth.auth.resetPasswordForEmail(email, {
-      redirectTo: `${FRONTEND_URL}/reset-password`,
-    });
+    const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
+    const authUser = authData?.users?.find(u => u.email === email);
+
+    if (authUser) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profile) {
+        const resetToken = generateToken();
+        const resetExpiry = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1h
+
+        await supabaseAdmin.from('profiles').update({
+          reset_token: resetToken,
+          reset_token_expires_at: resetExpiry,
+        }).eq('id', profile.id);
+
+        sendPasswordResetEmail(email, profile.full_name, resetToken).catch(err =>
+          console.error('[auth/forgot-password] Email failed:', err.message)
+        );
+      }
+    }
   } catch (err) {
     console.error('[auth/forgot-password]', err.message);
   }
@@ -165,8 +295,7 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // ─── POST /api/auth/reset-password ───────────────────────────────────────────
-// Frontend sends { token: token_hash, newPassword }
-// token_hash comes from the Supabase reset email URL (?token_hash=...)
+// Accepts our own token from the reset email link
 router.post('/reset-password', async (req, res) => {
   const { token, newPassword } = req.body;
 
@@ -179,23 +308,32 @@ router.post('/reset-password', async (req, res) => {
   }
 
   try {
-    // Verify the recovery OTP from the email link
-    const { data, error: verifyError } = await supabaseAuth.auth.verifyOtp({
-      token_hash: token,
-      type: 'recovery',
-    });
+    const { data: profile, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, reset_token_expires_at')
+      .eq('reset_token', token)
+      .single();
 
-    if (verifyError || !data.user) {
+    if (error || !profile) {
       return res.status(400).json({ error: 'Invalid or expired reset token.' });
     }
 
-    // Update password using admin client
+    if (new Date(profile.reset_token_expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Reset link has expired. Please request a new one.' });
+    }
+
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      data.user.id,
+      profile.id,
       { password: newPassword }
     );
 
     if (updateError) throw updateError;
+
+    // Clear reset token
+    await supabaseAdmin.from('profiles').update({
+      reset_token: null,
+      reset_token_expires_at: null,
+    }).eq('id', profile.id);
 
     return res.json({ message: 'Password reset successful.' });
   } catch (err) {
@@ -205,7 +343,6 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // ─── PATCH /api/auth/profile ──────────────────────────────────────────────────
-// Update full_name, target_band, and/or profile_image_url
 router.patch('/profile', authenticateToken, async (req, res) => {
   const { full_name, target_band, profile_image_url } = req.body;
   const userId = req.user.userId;
@@ -218,11 +355,11 @@ router.patch('/profile', authenticateToken, async (req, res) => {
     if (isNaN(band) || band < 1 || band > 9) {
       return res.status(400).json({ error: 'target_band must be between 1.0 and 9.0.' });
     }
-    updates.target_band = Math.round(band * 2) / 2; // clamp to 0.5 increments
+    updates.target_band = Math.round(band * 2) / 2;
   }
   updates.updated_at = new Date().toISOString();
 
-  if (Object.keys(updates).length === 1) { // only updated_at
+  if (Object.keys(updates).length === 1) {
     return res.status(400).json({ error: 'Nothing to update.' });
   }
 
@@ -231,7 +368,7 @@ router.patch('/profile', authenticateToken, async (req, res) => {
       .from('profiles')
       .update(updates)
       .eq('id', userId)
-      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
+      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
       .single();
 
     if (error) throw error;
@@ -248,7 +385,6 @@ router.patch('/profile', authenticateToken, async (req, res) => {
 });
 
 // ─── POST /api/auth/change-password ──────────────────────────────────────────
-// Authenticated password change (old password → new password)
 router.post('/change-password', authenticateToken, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.user.userId;
@@ -261,7 +397,6 @@ router.post('/change-password', authenticateToken, async (req, res) => {
   }
 
   try {
-    // Verify current password by attempting sign-in
     const { error: signInError } = await supabaseAuth.auth.signInWithPassword({
       email: req.user.email,
       password: currentPassword,
@@ -271,7 +406,6 @@ router.post('/change-password', authenticateToken, async (req, res) => {
       return res.status(401).json({ error: 'Current password is incorrect.' });
     }
 
-    // Update to new password
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       { password: newPassword }
@@ -287,8 +421,6 @@ router.post('/change-password', authenticateToken, async (req, res) => {
 });
 
 // ─── POST /api/auth/google ────────────────────────────────────────────────────
-// Called from the frontend OAuth callback page.
-// Accepts a Supabase access_token (from Google OAuth) and returns our JWT.
 router.post('/google', async (req, res) => {
   const { access_token } = req.body;
 
@@ -297,26 +429,23 @@ router.post('/google', async (req, res) => {
   }
 
   try {
-    // Verify the Supabase access token and get the authenticated user
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(access_token);
 
     if (authError || !user) {
       return res.status(401).json({ error: 'Invalid or expired Google token.' });
     }
 
-    // Profile is auto-created by DB trigger on first OAuth sign-in; poll briefly
     let profile = null;
     for (let attempt = 0; attempt < 4; attempt++) {
       const { data: p } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
         .eq('id', user.id)
         .single();
       if (p) { profile = p; break; }
       await new Promise(r => setTimeout(r, 400));
     }
 
-    // Fallback: create profile manually if trigger hasn't fired yet
     if (!profile) {
       const fullName =
         user.user_metadata?.full_name ||
@@ -327,8 +456,14 @@ router.post('/google', async (req, res) => {
 
       const { data: inserted } = await supabaseAdmin
         .from('profiles')
-        .upsert({ id: user.id, full_name: fullName, profile_image_url: avatarUrl, credits_remaining: 1 })
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin')
+        .upsert({
+          id: user.id,
+          full_name: fullName,
+          profile_image_url: avatarUrl,
+          credits_remaining: 1,
+          email_verified: true,  // Google accounts are already verified
+        })
+        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
         .single();
 
       profile = inserted || {
@@ -336,14 +471,21 @@ router.post('/google', async (req, res) => {
         target_band: 7.5,
         credits_remaining: 1,
         profile_image_url: avatarUrl,
+        email_verified: true,
       };
     }
 
-    // If this is a brand-new Google user (created within the last 60s), enforce 1 free trial credit
     const userCreatedAt = new Date(user.created_at || 0).getTime();
     if (Date.now() - userCreatedAt < 60000) {
-      await supabaseAdmin.from('profiles').update({ credits_remaining: 1 }).eq('id', user.id);
-      profile = { ...profile, credits_remaining: 1 };
+      await supabaseAdmin.from('profiles').update({
+        credits_remaining: 1,
+        email_verified: true,
+      }).eq('id', user.id);
+      profile = { ...profile, credits_remaining: 1, email_verified: true };
+    } else if (!profile.email_verified) {
+      // Existing Google user — mark verified (Google guarantees it)
+      await supabaseAdmin.from('profiles').update({ email_verified: true }).eq('id', user.id);
+      profile = { ...profile, email_verified: true };
     }
 
     const token = signToken(user.id, user.email);

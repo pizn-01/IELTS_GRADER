@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon } from 'lucide-react';
+import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson } from 'lucide-react';
 
-const TABS = ['Overview', 'Users', 'Submissions', 'Tasks', 'Discounts', 'Support'];
+const TABS = ['Overview', 'Users', 'Submissions', 'Tasks', 'Assignments', 'Discounts', 'Support'];
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 const Pill = ({ label, color }) => {
@@ -430,13 +430,20 @@ const SupportTab = () => {
 const EMPTY_TASK = { exam_type: 'Academic', task_type: 'Task 2', title: '', question_text: '', time_limit_seconds: '' };
 
 const TasksTab = () => {
-  const [tasks, setTasks]     = useState([]);
-  const [form, setForm]       = useState(null);   // null=hidden, EMPTY_TASK=new, task=editing
-  const [isNew, setIsNew]     = useState(false);
-  const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState('');
-  const [history, setHistory] = useState(null);   // { task, entries }
-  const [filter, setFilter]   = useState('all');  // 'all' | 'active' | 'inactive'
+  const [tasks, setTasks]       = useState([]);
+  const [form, setForm]         = useState(null);
+  const [isNew, setIsNew]       = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [error, setError]       = useState('');
+  const [history, setHistory]   = useState(null);
+  const [filter, setFilter]     = useState('all');
+  const [showImport, setShowImport] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importExamType, setImportExamType] = useState('Academic');
+  const [importTaskType, setImportTaskType] = useState('Task 2');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null); // { imported, skipped, errors, message }
+  const fileInputRef = useRef(null);
 
   const load = useCallback(() => {
     api.admin.getTasks().then(r => setTasks(r.data || [])).catch(() => {});
@@ -490,6 +497,24 @@ const TasksTab = () => {
     setHistory({ task: t, entries: res.data || [] });
   };
 
+  const handleImport = async () => {
+    if (!importFile) return;
+    setImporting(true);
+    setImportResult(null);
+    const fd = new FormData();
+    fd.append('file', importFile);
+    fd.append('exam_type', importExamType);
+    fd.append('task_type', importTaskType);
+    const result = await api.admin.importTasks(fd).catch(e => ({ error: e.message }));
+    setImporting(false);
+    setImportResult(result);
+    if (result?.imported > 0) {
+      setImportFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      load();
+    }
+  };
+
   const typeColor = (taskType) => taskType === 'Task 1' ? 'blue' : 'green';
 
   return (
@@ -502,10 +527,80 @@ const TasksTab = () => {
           </button>
         ))}
         <button onClick={load} className="p-2 border border-gray-200 rounded-[8px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
-        <button onClick={openCreate} className="ml-auto flex items-center gap-2 px-4 h-[36px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939]">
-          <Plus size={15} /> New Task
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button onClick={() => { setShowImport(i => !i); setImportResult(null); }} className={`flex items-center gap-2 px-4 h-[36px] rounded-[10px] text-[13px] font-bold border transition-all ${showImport ? 'bg-blue-600 text-white border-transparent' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+            <Upload size={15} /> Import
+          </button>
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 h-[36px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939]">
+            <Plus size={15} /> New Task
+          </button>
+        </div>
       </div>
+
+      {/* ── Import Panel ──────────────────────────────────────────────────────── */}
+      {showImport && (
+        <div className="bg-white rounded-[16px] border border-blue-100 shadow-sm p-5 space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <FileJson size={18} className="text-blue-600" />
+            <h3 className="text-[14px] font-bold text-[#101828]">Bulk Import Questions</h3>
+            <span className="text-[11px] text-gray-400 ml-1">Supports .json and .pdf files</span>
+          </div>
+          <p className="text-[12px] text-gray-400 leading-relaxed">
+            Upload a JSON array (GitHub question bank format or internal format) or a PDF. For GitHub-format JSON and PDFs, specify the exam type and task type below.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 block mb-1 uppercase tracking-wide">Exam Type</label>
+              <select value={importExamType} onChange={e => setImportExamType(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 h-[38px] text-[13px] outline-none focus:border-blue-400">
+                <option value="Academic">Academic</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 block mb-1 uppercase tracking-wide">Task Type</label>
+              <select value={importTaskType} onChange={e => setImportTaskType(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 h-[38px] text-[13px] outline-none focus:border-blue-400">
+                <option value="Task 1">Task 1</option>
+                <option value="Task 2">Task 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div
+            className="border-2 border-dashed border-gray-200 rounded-[12px] p-6 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-all"
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={e => e.preventDefault()}
+            onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setImportFile(f); }}
+          >
+            <Upload size={24} className="mx-auto mb-2 text-gray-400" />
+            {importFile ? (
+              <p className="text-[13px] font-bold text-blue-700">{importFile.name} <span className="text-gray-400 font-normal">({(importFile.size / 1024).toFixed(1)} KB)</span></p>
+            ) : (
+              <p className="text-[13px] text-gray-400">Click or drag a <strong>.json</strong> or <strong>.pdf</strong> file here</p>
+            )}
+            <input ref={fileInputRef} type="file" accept=".json,.pdf,application/json,application/pdf" className="hidden" onChange={e => setImportFile(e.target.files[0] || null)} />
+          </div>
+
+          {importResult && (
+            <div className={`rounded-[10px] px-4 py-3 text-[13px] ${importResult.error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'}`}>
+              {importResult.error || importResult.message}
+              {importResult.skipped > 0 && <span className="ml-2 text-[12px] text-gray-500">({importResult.skipped} skipped)</span>}
+              {importResult.errors?.length > 0 && (
+                <ul className="mt-1 text-[11px] text-gray-500 list-disc list-inside">
+                  {importResult.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button onClick={() => { setShowImport(false); setImportFile(null); setImportResult(null); }} className="flex-1 h-[38px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
+            <button onClick={handleImport} disabled={!importFile || importing} className="flex-1 h-[38px] bg-blue-600 text-white rounded-[10px] text-[13px] font-bold disabled:opacity-50 hover:bg-blue-700">
+              {importing ? 'Importing…' : 'Import Questions'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Analytics summary */}
       {tasks.length > 0 && (
@@ -656,13 +751,102 @@ const TasksTab = () => {
   );
 };
 
+// ── Assignments Tab ───────────────────────────────────────────────────────────
+const AssignmentsTab = () => {
+  const [assignments, setAssignments] = useState([]);
+  const [page, setPage]               = useState(1);
+  const [search, setSearch]           = useState('');
+  const [filtered, setFiltered]       = useState([]);
+
+  const load = useCallback(() => {
+    api.admin.getTaskAssignments({ page, per_page: 50 }).then(r => {
+      const data = r.data || [];
+      setAssignments(data);
+    }).catch(() => {});
+  }, [page]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (!search.trim()) { setFiltered(assignments); return; }
+    const q = search.toLowerCase();
+    setFiltered(assignments.filter(a =>
+      a.user_name?.toLowerCase().includes(q) ||
+      a.user_email?.toLowerCase().includes(q) ||
+      a.task_title?.toLowerCase().includes(q)
+    ));
+  }, [search, assignments]);
+
+  const typeColor = tt => tt === 'Task 1' ? 'blue' : 'green';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3 items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name, email or question…"
+            className="w-full pl-9 pr-4 h-[40px] border border-gray-200 rounded-[10px] text-[13px] outline-none focus:border-blue-400"
+          />
+        </div>
+        <button onClick={load} className="p-2 border border-gray-200 rounded-[8px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
+        <span className="text-[12px] text-gray-400 ml-auto">{assignments.length} assignments</span>
+      </div>
+
+      <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
+        <table className="w-full text-[13px] min-w-[700px]">
+          <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
+            <tr>
+              {['User', 'Email', 'Question Title', 'Type', 'Session', 'Assigned At'].map(h => (
+                <th key={h} className="px-5 py-3 text-left">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {filtered.map(a => (
+              <tr key={a.id} className="hover:bg-gray-50/50">
+                <td className="px-5 py-3 font-medium text-[#101828]">{a.user_name || '—'}</td>
+                <td className="px-5 py-3 text-gray-400 text-[12px]">{a.user_email || '—'}</td>
+                <td className="px-5 py-3 text-gray-600 max-w-[220px] truncate" title={a.task_title}>{a.task_title || '—'}</td>
+                <td className="px-5 py-3">
+                  {a.task_exam_type !== '—' && (
+                    <div className="flex flex-col gap-0.5">
+                      <Pill label={a.task_exam_type} color="blue" />
+                      <Pill label={a.task_task_type} color={typeColor(a.task_task_type)} />
+                    </div>
+                  )}
+                </td>
+                <td className="px-5 py-3">
+                  <Pill label={a.session_type} color={a.session_type === 'mock' ? 'yellow' : 'green'} />
+                </td>
+                <td className="px-5 py-3 text-gray-400 text-[12px]">{new Date(a.assigned_at).toLocaleString()}</td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">No question assignments yet.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2 border border-gray-200 rounded-[8px] disabled:opacity-40"><ChevronLeft size={16} /></button>
+        <span className="text-[13px] text-gray-500">Page {page}</span>
+        <button onClick={() => { setPage(p => p + 1); }} disabled={assignments.length < 50} className="p-2 border border-gray-200 rounded-[8px] disabled:opacity-40"><ChevronRight size={16} /></button>
+      </div>
+    </div>
+  );
+};
+
 // ── Main Admin Page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('Overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const tabIcon = { Overview: BarChart2, Users, Submissions: FileText, Tasks: BookOpen, Discounts: Tag, Support: MessageSquare };
+  const tabIcon = { Overview: BarChart2, Users, Submissions: FileText, Tasks: BookOpen, Assignments: ClipboardList, Discounts: Tag, Support: MessageSquare };
 
   const switchTab = (t) => { setTab(t); setSidebarOpen(false); };
 
@@ -723,12 +907,13 @@ export default function AdminPage() {
       {/* ── Main content ───────────────────────────────────────────────────── */}
       <div className="md:ml-[220px] pt-[56px] md:pt-0 p-4 md:p-8 min-h-screen">
         <h1 className="text-[20px] md:text-[22px] font-black text-[#101828] mb-5 md:mb-6">{tab}</h1>
-        {tab === 'Overview'    && <OverviewTab />}
-        {tab === 'Users'       && <UsersTab />}
-        {tab === 'Submissions' && <SubmissionsTab />}
-        {tab === 'Tasks'       && <TasksTab />}
-        {tab === 'Discounts'   && <DiscountsTab />}
-        {tab === 'Support'     && <SupportTab />}
+        {tab === 'Overview'     && <OverviewTab />}
+        {tab === 'Users'        && <UsersTab />}
+        {tab === 'Submissions'  && <SubmissionsTab />}
+        {tab === 'Tasks'        && <TasksTab />}
+        {tab === 'Assignments'  && <AssignmentsTab />}
+        {tab === 'Discounts'    && <DiscountsTab />}
+        {tab === 'Support'      && <SupportTab />}
       </div>
     </div>
   );

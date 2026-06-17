@@ -1,7 +1,11 @@
 const express = require('express');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 const router = express.Router();
 
@@ -649,6 +653,248 @@ router.get('/tasks/:id/history', async (req, res) => {
   } catch (err) {
     console.error('[admin/tasks/:id/history]', err.message);
     return res.status(500).json({ error: 'Failed to fetch task history.' });
+  }
+});
+
+// ─── POST /api/admin/tasks/import ─────────────────────────────────────────────
+// Bulk import questions from a JSON or PDF file.
+// Form fields: file (required), exam_type (required for non-internal format), task_type (required)
+// JSON formats supported:
+//   Internal: [{ exam_type, task_type, title, question_text, time_limit_seconds? }]
+//   GitHub task2: [{ id, topic, type, question }]
+//   GitHub task1 letter: [{ "exam-name", id, "letter-type", prompt, "bullet-points" }]
+//   GitHub task1 report: [{ "exam-name", "chart-type", prompt }]
+router.post('/tasks/import', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'A file is required.' });
+  }
+
+  const { exam_type, task_type } = req.body;
+  const mime = req.file.mimetype;
+  const ext = req.file.originalname.split('.').pop().toLowerCase();
+
+  let rawItems = [];
+
+  try {
+    // ── Parse file ────────────────────────────────────────────────────────────
+    if (ext === 'json' || mime === 'application/json') {
+      try {
+        rawItems = JSON.parse(req.file.buffer.toString('utf-8'));
+        if (!Array.isArray(rawItems)) rawItems = [rawItems];
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON file.' });
+      }
+    } else if (ext === 'pdf' || mime === 'application/pdf') {
+      let pdfText = '';
+      try {
+        const parsed = await pdfParse(req.file.buffer);
+        pdfText = parsed.text || '';
+      } catch (e) {
+        return res.status(400).json({ error: 'Could not parse PDF. Ensure the file is a text-based PDF.' });
+      }
+
+      if (!exam_type || !task_type) {
+        return res.status(400).json({ error: 'exam_type and task_type are required when importing from PDF.' });
+      }
+
+      // Split on lines that start a new numbered question
+      const parts = pdfText.split(/(?=\n\s*(?:Q(?:uestion)?\s*)?\d+[\.\)]\s)/);
+
+      rawItems = parts
+        .map(p => p.trim())
+        .filter(p => p.length > 40)
+        .map((p, i) => ({
+          exam_type,
+          task_type,
+          title: `Imported question ${i + 1}`,
+          question_text: p.replace(/^\d+[\.\)]\s*/, '').trim(),
+        }));
+    } else {
+      return res.status(400).json({ error: 'Unsupported file type. Upload a .json or .pdf file.' });
+    }
+
+    if (rawItems.length === 0) {
+      return res.status(400).json({ error: 'No questions found in the file.' });
+    }
+
+    // ── Normalise to internal schema ──────────────────────────────────────────
+    const toInsert = [];
+    const errors = [];
+
+    for (let i = 0; i < rawItems.length; i++) {
+      const item = rawItems[i];
+
+      // Already in internal format
+      if (item.exam_type && item.task_type && item.question_text) {
+        if (!['Academic', 'General'].includes(item.exam_type)) {
+          errors.push(`Row ${i + 1}: invalid exam_type "${item.exam_type}".`);
+          continue;
+        }
+        if (!['Task 1', 'Task 2'].includes(item.task_type)) {
+          errors.push(`Row ${i + 1}: invalid task_type "${item.task_type}".`);
+          continue;
+        }
+        toInsert.push({
+          exam_type: item.exam_type,
+          task_type: item.task_type,
+          title: (item.title || `Question ${i + 1}`).trim().slice(0, 255),
+          question_text: item.question_text.trim(),
+          time_limit_seconds: item.time_limit_seconds || (item.task_type === 'Task 1' ? 1200 : 2400),
+          is_active: true,
+        });
+        continue;
+      }
+
+      // GitHub task2 format: { id, topic, type, question }
+      if (item.question) {
+        const et = exam_type || 'Academic';
+        const tt = task_type || 'Task 2';
+        if (!['Academic', 'General'].includes(et) || !['Task 1', 'Task 2'].includes(tt)) {
+          errors.push(`Row ${i + 1}: provide valid exam_type and task_type in the form.`);
+          continue;
+        }
+        const topicStr = [item.topic, item.type].filter(Boolean).join(' — ');
+        toInsert.push({
+          exam_type: et,
+          task_type: tt,
+          title: topicStr || `Question ${i + 1}`,
+          question_text: item.question.trim(),
+          time_limit_seconds: tt === 'Task 1' ? 1200 : 2400,
+          is_active: true,
+        });
+        continue;
+      }
+
+      // GitHub task1 letter format: { "exam-name", "letter-type", opening-line, prompt, bullet-points }
+      if (item.prompt && (item['letter-type'] || item['bullet-points'])) {
+        const et = exam_type || 'General';
+        const tt = task_type || 'Task 1';
+        const bulletText = Array.isArray(item['bullet-points'])
+          ? '\n\nIn your letter, include:\n' + item['bullet-points'].map(b => `• ${b}`).join('\n')
+          : '';
+        const fullText = [
+          item['opening-line'] ? `Opening: ${item['opening-line']}` : '',
+          item.prompt,
+          bulletText,
+        ].filter(Boolean).join('\n\n');
+        toInsert.push({
+          exam_type: et,
+          task_type: tt,
+          title: item['letter-type'] ? `${item['letter-type']} Letter` : `Question ${i + 1}`,
+          question_text: fullText.trim(),
+          time_limit_seconds: 1200,
+          is_active: true,
+        });
+        continue;
+      }
+
+      // GitHub task1 report format: { "exam-name", "chart-type", prompt (may include SVG) }
+      if (item.prompt && item['chart-type']) {
+        const et = exam_type || 'Academic';
+        const tt = task_type || 'Task 1';
+        toInsert.push({
+          exam_type: et,
+          task_type: tt,
+          title: item['chart-type'] || `Question ${i + 1}`,
+          question_text: item.prompt.trim(),
+          time_limit_seconds: 1200,
+          is_active: true,
+        });
+        continue;
+      }
+
+      errors.push(`Row ${i + 1}: unrecognised format — skipped.`);
+    }
+
+    if (toInsert.length === 0) {
+      return res.status(400).json({
+        error: 'No valid questions could be parsed.',
+        details: errors.slice(0, 10),
+      });
+    }
+
+    // ── Batch insert (chunks of 100 to stay under Supabase limits) ────────────
+    let imported = 0;
+    const chunkSize = 100;
+    for (let i = 0; i < toInsert.length; i += chunkSize) {
+      const chunk = toInsert.slice(i, i + chunkSize);
+      const { error: insertErr } = await supabaseAdmin.from('exam_tasks').insert(chunk);
+      if (insertErr) {
+        console.error('[admin/tasks/import] Insert error:', insertErr.message);
+        return res.status(500).json({ error: 'Database insert failed.', detail: insertErr.message });
+      }
+      imported += chunk.length;
+    }
+
+    return res.status(201).json({
+      imported,
+      skipped: errors.length,
+      errors: errors.slice(0, 20),
+      message: `Successfully imported ${imported} question${imported !== 1 ? 's' : ''}.`,
+    });
+  } catch (err) {
+    console.error('[admin/tasks/import]', err.message);
+    return res.status(500).json({ error: 'Import failed. Please try again.' });
+  }
+});
+
+// ─── GET /api/admin/task-assignments ──────────────────────────────────────────
+// Shows which question was assigned to which user (for the admin log)
+router.get('/task-assignments', async (req, res) => {
+  const { page = 1, per_page = 50, user_id, task_id } = req.query;
+  const perPage = Math.min(parseInt(per_page), 100);
+
+  try {
+    let query = supabaseAdmin
+      .from('user_question_assignments')
+      .select('id, user_id, task_id, session_type, assigned_at')
+      .order('assigned_at', { ascending: false })
+      .range((page - 1) * perPage, page * perPage - 1);
+
+    if (user_id) query = query.eq('user_id', user_id);
+    if (task_id) query = query.eq('task_id', task_id);
+
+    const { data: assignments, error } = await query;
+    if (error) throw error;
+
+    if (!assignments || assignments.length === 0) {
+      return res.json({ data: [], page: parseInt(page), per_page: perPage });
+    }
+
+    // Enrich with task titles and user emails in parallel
+    const uniqueTaskIds = [...new Set(assignments.map(a => a.task_id).filter(Boolean))];
+    const uniqueUserIds = [...new Set(assignments.map(a => a.user_id))];
+
+    const [{ data: tasks }, { data: profiles }, authData] = await Promise.all([
+      uniqueTaskIds.length
+        ? supabaseAdmin.from('exam_tasks').select('id, title, exam_type, task_type').in('id', uniqueTaskIds)
+        : Promise.resolve({ data: [] }),
+      supabaseAdmin.from('profiles').select('id, full_name').in('id', uniqueUserIds),
+      supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }),
+    ]);
+
+    const taskMap = {};
+    (tasks || []).forEach(t => { taskMap[t.id] = t; });
+
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p.full_name; });
+
+    const emailMap = {};
+    (authData?.data?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+
+    const enriched = assignments.map(a => ({
+      ...a,
+      user_name: profileMap[a.user_id] || '—',
+      user_email: emailMap[a.user_id] || '—',
+      task_title: taskMap[a.task_id]?.title || '—',
+      task_exam_type: taskMap[a.task_id]?.exam_type || '—',
+      task_task_type: taskMap[a.task_id]?.task_type || '—',
+    }));
+
+    return res.json({ data: enriched, page: parseInt(page), per_page: perPage });
+  } catch (err) {
+    console.error('[admin/task-assignments]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch task assignments.' });
   }
 });
 
