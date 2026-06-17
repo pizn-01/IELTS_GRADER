@@ -72,8 +72,11 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const [gradingProgress, setGradingProgress] = useState(0);
   const [submissionId, setSubmissionId] = useState(null);
   const [gradingError, setGradingError] = useState('');
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [showAttachmentTooltip, setShowAttachmentTooltip] = useState(false);
   const progressRef = useRef(0);
   const startTimeRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Derive completed criteria from real progress — no closure issues
   const completedCriteria = [15, 42, 68, 100]
@@ -230,6 +233,12 @@ const MockExam = ({ examType, taskType, onExit }) => {
     if (window.confirm('Are you sure you want to clear your essay?')) setEssay('');
   };
 
+  const handleFileAttach = (e) => {
+    const file = e.target.files[0];
+    if (file) setAttachedFile(file);
+    e.target.value = '';
+  };
+
   return (
     <div className="fixed inset-0 bg-white z-[200] flex flex-col font-sans overflow-hidden">
       {/* Header */}
@@ -304,12 +313,35 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
         {/* Right — Icon actions + Cancel + Submit */}
         <div className="flex items-center gap-3">
-          <button onClick={handleClear} title="Reset essay" className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-gray-400 hover:bg-gray-50 transition-all">
+          <button onClick={handleClear} title="Reset essay" className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all">
             <RotateCcw size={18} />
           </button>
-          <button disabled title="File upload coming soon" className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-gray-300 cursor-not-allowed">
-            <Paperclip size={18} />
-          </button>
+
+          {/* Paperclip — file upload with hover tooltip */}
+          <div className="relative">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              onMouseEnter={() => setShowAttachmentTooltip(true)}
+              onMouseLeave={() => setShowAttachmentTooltip(false)}
+              className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all"
+            >
+              <Paperclip size={18} />
+            </button>
+            {showAttachmentTooltip && (
+              <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-[#101828] text-white text-[13px] font-semibold px-4 py-2 rounded-[8px] whitespace-nowrap pointer-events-none z-10">
+                Attachments
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#101828]" />
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="hidden"
+              onChange={handleFileAttach}
+            />
+          </div>
+
           <button
             onClick={() => onExit && onExit('cancel')}
             className="px-5 h-[36px] border border-gray-200 rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all"
