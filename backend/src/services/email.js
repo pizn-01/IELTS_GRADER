@@ -1,6 +1,13 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend = null;
+function getResend() {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY is not set');
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
 const FROM = process.env.EMAIL_FROM || 'IELTS Grader <noreply@ieltsgrader.com>';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -26,7 +33,7 @@ const wrap = (title, body, ctaText, ctaHref, note) => `
 
 async function sendVerificationEmail(email, fullName, token) {
   const link = `${FRONTEND_URL}/account-verified?token=${encodeURIComponent(token)}`;
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: email,
     subject: 'Verify your IELTS Grader account',
@@ -46,7 +53,7 @@ async function sendVerificationEmail(email, fullName, token) {
 
 async function sendPasswordResetEmail(email, fullName, token) {
   const link = `${FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: email,
     subject: 'Reset your IELTS Grader password',
