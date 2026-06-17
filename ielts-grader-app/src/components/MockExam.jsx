@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, HelpCircle, Upload, Trash2, CheckCircle2, ChevronDown, Clock } from 'lucide-react';
+import { X, HelpCircle, RotateCcw, Paperclip, ChevronDown, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -290,31 +290,39 @@ const MockExam = ({ examType, taskType, onExit }) => {
       </div>
 
       {/* Footer */}
-      <footer className="h-[72px] border-t border-gray-100 flex items-center justify-between px-8 bg-white shrink-0">
+      <footer className="h-[64px] border-t border-gray-100 flex items-center justify-between px-8 bg-white shrink-0">
+        {/* Left — Task buttons */}
         <div className="flex gap-2">
-          <button className="px-6 h-[40px] border border-gray-200 rounded-[8px] text-[14px] font-bold text-gray-400 hover:bg-gray-50 transition-all">Task 1</button>
-          <button className="px-6 h-[40px] bg-[#2C3E50] text-white rounded-[8px] text-[14px] font-bold transition-all">Task 2</button>
+          <button className="px-5 h-[36px] border border-gray-200 rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all">Task 1</button>
+          <button className="px-5 h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[14px] font-semibold transition-all">Task 2</button>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="text-[14px] font-medium text-gray-500">
-            <span className="text-[#101828] font-bold mr-1">{wordCount}</span> words
-          </div>
-          <div className="flex gap-2.5">
-            <button disabled title="File upload coming soon" className="px-5 h-[40px] border border-gray-200 rounded-[8px] text-[14px] font-bold text-gray-300 flex items-center gap-2 cursor-not-allowed">
-              <Upload size={16} />
-              Upload File
-            </button>
-            <button onClick={handleClear} className="px-5 h-[40px] border border-gray-200 rounded-[8px] text-[14px] font-bold text-[#344054] hover:bg-gray-50 transition-all">
-              Clear
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={wordCount < 10}
-              className="px-6 h-[40px] bg-[#2C3E50] text-white rounded-[8px] text-[14px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Submit Exam
-            </button>
-          </div>
+
+        {/* Center — Word count */}
+        <div className="text-[14px] font-medium text-gray-500">
+          {wordCount} words
+        </div>
+
+        {/* Right — Icon actions + Cancel + Submit */}
+        <div className="flex items-center gap-3">
+          <button onClick={handleClear} title="Reset essay" className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-gray-400 hover:bg-gray-50 transition-all">
+            <RotateCcw size={18} />
+          </button>
+          <button disabled title="File upload coming soon" className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-gray-300 cursor-not-allowed">
+            <Paperclip size={18} />
+          </button>
+          <button
+            onClick={() => onExit && onExit('cancel')}
+            className="px-5 h-[36px] border border-gray-200 rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={wordCount < 10}
+            className="px-5 h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[14px] font-semibold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Submit Exam
+          </button>
         </div>
       </footer>
 
