@@ -10,6 +10,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const [step, setStep] = useState(1);
   const [examType, setExamType] = useState('');
   const [taskType, setTaskType] = useState('');
+  const [showExamDropdown, setShowExamDropdown] = useState(false);
+  const [showTaskDropdown, setShowTaskDropdown] = useState(false);
   const [selectedOption, setSelectedOption] = useState('upload'); // 'upload' or 'mock'
   const [questionText, setQuestionText] = useState('');
   const [essayText, setEssayText] = useState('');
@@ -26,6 +28,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const progressIntervalRef = useRef(null);
   const promptFileInputRef = useRef(null);
   const essayFileInputRef = useRef(null);
+  const examDropdownRef = useRef(null);
+  const taskDropdownRef = useRef(null);
 
   const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
 
@@ -167,6 +171,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
     setGradingProgress(0);
     setCompletedItems([]);
     setGradingError('');
+    setShowExamDropdown(false);
+    setShowTaskDropdown(false);
     onClose();
   };
 
@@ -187,6 +193,16 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
       if (pollRef.current) clearInterval(pollRef.current);
       stopProgressAnimation();
     };
+  }, []);
+
+  // Close dropdowns when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (examDropdownRef.current && !examDropdownRef.current.contains(e.target)) setShowExamDropdown(false);
+      if (taskDropdownRef.current && !taskDropdownRef.current.contains(e.target)) setShowTaskDropdown(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (!isOpen) return null;
@@ -291,34 +307,58 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                     {/* Exam Type */}
                     <div className="space-y-1">
                       <label className="text-[12px] font-bold text-[#111827]">Exam Type</label>
-                      <div className="relative">
-                        <select 
-                          value={examType}
-                          onChange={(e) => setExamType(e.target.value)}
-                          className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] appearance-none text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-gray-500 font-medium"
+                      <div ref={examDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={() => { setShowExamDropdown(v => !v); setShowTaskDropdown(false); }}
+                          className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] flex items-center justify-between text-[13px] focus:border-[#1A96F3] transition-colors font-medium"
                         >
-                          <option value="" disabled>Select</option>
-                          <option value="Academic">Academic</option>
-                          <option value="General">General</option>
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                          <span className={examType ? 'text-[#111827]' : 'text-gray-400'}>{examType || 'Select'}</span>
+                          <ChevronDown className={`text-gray-400 transition-transform duration-200 ${showExamDropdown ? 'rotate-180' : ''}`} size={16} />
+                        </button>
+                        {showExamDropdown && (
+                          <div className="mt-1 bg-white border border-gray-200 rounded-[10px] overflow-hidden shadow-md">
+                            {['Academic', 'General'].map(opt => (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => { setExamType(opt); setShowExamDropdown(false); }}
+                                className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors hover:bg-gray-50 ${examType === opt ? 'text-[#1A96F3] font-bold bg-blue-50/40' : 'text-[#111827] font-medium'}`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Task Type */}
                     <div className="space-y-1">
                       <label className="text-[12px] font-bold text-[#111827]">Task Type</label>
-                      <div className="relative">
-                        <select 
-                          value={taskType}
-                          onChange={(e) => setTaskType(e.target.value)}
-                          className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] appearance-none text-[13px] outline-none focus:border-[#1A96F3] transition-colors text-gray-500 font-medium"
+                      <div ref={taskDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={() => { setShowTaskDropdown(v => !v); setShowExamDropdown(false); }}
+                          className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] flex items-center justify-between text-[13px] focus:border-[#1A96F3] transition-colors font-medium"
                         >
-                          <option value="" disabled>Select</option>
-                          <option value="Task 1">Task 1</option>
-                          <option value="Task 2">Task 2</option>
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                          <span className={taskType ? 'text-[#111827]' : 'text-gray-400'}>{taskType || 'Select'}</span>
+                          <ChevronDown className={`text-gray-400 transition-transform duration-200 ${showTaskDropdown ? 'rotate-180' : ''}`} size={16} />
+                        </button>
+                        {showTaskDropdown && (
+                          <div className="mt-1 bg-white border border-gray-200 rounded-[10px] overflow-hidden shadow-md">
+                            {['Task 1', 'Task 2'].map(opt => (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => { setTaskType(opt); setShowTaskDropdown(false); }}
+                                className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors hover:bg-gray-50 ${taskType === opt ? 'text-[#1A96F3] font-bold bg-blue-50/40' : 'text-[#111827] font-medium'}`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 

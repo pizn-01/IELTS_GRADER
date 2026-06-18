@@ -811,7 +811,7 @@ const ReportsOverview = ({ onBack }) => {
                    const colors = isHigh ? "text-[#EA4335] bg-[#EA43351A] text-[14px]" : isMed ? "text-[#F59E0B] bg-[#F59E0B1A] text-[13px]" : "text-[#101828] bg-[#1018280D] text-[14px]";
                    const impact = isHigh ? 'High Impact' : isMed ? 'Medium Impact' : 'Low Impact';
                    return (
-                     <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-4 md:p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
+                     <div key={idx} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4 p-4 md:p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
                        <h4 className="text-[14px] md:text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{e.label}</h4>
                        <div className="flex items-center gap-2 md:gap-4 shrink-0">
                          <div className={`px-3 py-1.5 rounded-full font-bold ${colors} text-center whitespace-nowrap`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>{impact}</div>
