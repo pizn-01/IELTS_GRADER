@@ -632,11 +632,11 @@ const PerformanceOverviewPage = ({ onBack }) => {
         : activeTab === "Fix Cards" ?
           <div className="space-y-8">
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-8 py-5 border-b border-[#F2F4F7]">
+               <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Fix Cards — Priority Errors</h3>
                  <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Your most frequent error patterns across all submissions.</p>
                </div>
-               <div className="p-8 space-y-4">
+               <div className="p-4 md:p-8 space-y-3 md:space-y-4">
                  {frequentErrors.length === 0 ? (
                    <p className="text-[14px] text-gray-400 text-center py-8">Complete more exams to generate your Fix Cards.</p>
                  ) : frequentErrors.map((e, idx) => {
@@ -645,13 +645,11 @@ const PerformanceOverviewPage = ({ onBack }) => {
                    const colors = isHigh ? "text-[#EA4335] bg-[#EA43351A] text-[14px]" : isMed ? "text-[#F59E0B] bg-[#F59E0B1A] text-[13px]" : "text-[#101828] bg-[#1018280D] text-[14px]";
                    const impact = isHigh ? 'High Impact' : isMed ? 'Medium Impact' : 'Low Impact';
                    return (
-                     <div key={idx} className="flex items-center justify-between p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
-                       <div className="flex-1">
-                         <h4 className="text-[16px] font-bold text-[#101828] mb-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{e.label}</h4>
-                       </div>
-                       <div className="flex items-center gap-6">
-                         <div className={`w-[130px] px-4 py-1.5 rounded-full font-bold ${colors} text-center`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>{impact}</div>
-                         <div className="w-[100px] px-4 py-1.5 bg-[#1018280D] rounded-full text-[14px] font-bold text-[#101828] text-center" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Count: {e.count}</div>
+                     <div key={idx} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4 p-4 md:p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
+                       <h4 className="text-[14px] md:text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{e.label}</h4>
+                       <div className="flex items-center gap-3 md:gap-6 shrink-0">
+                         <div className={`px-3 md:px-4 py-1.5 rounded-full font-bold ${colors} whitespace-nowrap text-center`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>{impact}</div>
+                         <div className="px-3 md:px-4 py-1.5 bg-[#1018280D] rounded-full text-[13px] md:text-[14px] font-bold text-[#101828] whitespace-nowrap text-center" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Count: {e.count}</div>
                        </div>
                      </div>
                    );
