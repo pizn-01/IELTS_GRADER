@@ -202,16 +202,16 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
             onClick={step === 3 ? undefined : resetAndClose}
             className="absolute inset-0 bg-[#00000066] backdrop-blur-sm"
           />
-          
+
           <motion.div
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative bg-white w-full max-w-[480px] h-auto max-h-[95vh] rounded-[24px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="relative bg-white w-full max-w-[480px] max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
           >
             {/* Close Button — hidden during grading */}
             {step !== 3 && (
-              <button 
+              <button
                 onClick={resetAndClose}
                 className="absolute top-5 right-6 text-gray-400 hover:text-[#111827] transition-colors z-10"
               >
@@ -219,7 +219,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
               </button>
             )}
 
-            <div className="p-6 md:p-8 font-sans overflow-y-auto">
+            <div className="flex-1 min-h-0 p-6 sm:p-8 font-sans overflow-y-auto">
               {step === 1 ? (
                 <div className="flex flex-col">
                   <div className="mb-5">

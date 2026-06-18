@@ -116,11 +116,11 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
       </div>
       {/* SECTION 1 — NAVBAR (NO gradient, pure white) */}
       {showHeader && (
-        <nav className="bg-white border-b border-[#E5E7EB] sticky top-0 z-[100] h-[56px] flex items-center px-[40px]">
+        <nav className="bg-white border-b border-[#E5E7EB] sticky top-0 z-[100] h-[56px] flex items-center px-4 md:px-[40px]">
           <div className="w-full max-w-[1340px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-6">
               <div className="text-[18px] md:text-[20px] tracking-tight text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>IELTSGRADER</div>
-              <div className="h-6 w-px bg-[#E5E7EB]"></div>
+              <div className="hidden md:block h-6 w-px bg-[#E5E7EB]"></div>
 
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center gap-8 text-[14px] text-[#101828] font-sans h-[56px]">
@@ -138,8 +138,8 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Credits Pill */}
-              <div className="bg-[#DDF2FF] rounded-full px-4 py-1.5 flex items-center gap-3 text-left">
+              {/* Credits Pill — desktop only */}
+              <div className="hidden md:flex bg-[#DDF2FF] rounded-full px-4 py-1.5 items-center gap-3 text-left">
                 <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90">
                     <circle cx="14" cy="14" r="12" stroke="#C7E3F9" strokeWidth="2.5" fill="transparent" />
@@ -152,7 +152,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </div>
               </div>
 
-              <button className="text-[#94A3B8] hover:text-[#64748B] transition-colors">
+              <button className="hidden md:block text-[#94A3B8] hover:text-[#64748B] transition-colors">
                 <Bell size={22} fill="currentColor" />
               </button>
 
@@ -225,35 +225,35 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
         background: 'linear-gradient(135deg, #E0F2FE 20%, #FBCFE8 50%, #E0F2FE 80%)'
       }}>
         <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-12 relative z-20">
-          <div className="flex items-center justify-between mb-[6px]">
+          <div className="flex items-center justify-between mb-[6px] gap-3">
             {/* Title Row */}
-            <div className="flex items-center gap-[10px]">
+            <div className="flex items-center gap-[10px] min-w-0">
               <button
                 onClick={onBack}
                 className="w-[24px] h-[24px] border-[2px] border-[#101828] rounded-full flex items-center justify-center shrink-0 hover:bg-[#10182810] transition-all"
               >
                 <ArrowLeft size={12} strokeWidth={3} className="text-[#101828]" />
               </button>
-              <div className="flex items-center">
-                <h1 className="text-[20px] font-bold text-[#101828] leading-none">{taskTitle}</h1>
-                <span className="text-[#101828] opacity-30 font-normal mx-2 text-[20px] leading-none">.</span>
-                <h1 className="text-[20px] font-bold text-[#101828] leading-none">{reportDate}</h1>
+              <div className="flex items-center flex-wrap gap-x-1 min-w-0">
+                <h1 className="text-[15px] md:text-[20px] font-bold text-[#101828] leading-none truncate">{taskTitle}</h1>
+                <span className="text-[#101828] opacity-30 font-normal mx-1 text-[15px] md:text-[20px] leading-none hidden sm:inline">·</span>
+                <h1 className="text-[13px] md:text-[20px] font-semibold md:font-bold text-[#101828] opacity-70 md:opacity-100 leading-none hidden sm:block">{reportDate}</h1>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-[12px]">
+            <div className="flex items-center gap-[8px] md:gap-[12px] shrink-0">
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="bg-transparent border border-[#1018281A] rounded-[8px] px-[18px] py-[8px] text-[14px] font-medium text-[#101828] hover:bg-white/10 transition-all"
+                className="bg-transparent border border-[#1018281A] rounded-[8px] px-[10px] md:px-[18px] py-[6px] md:py-[8px] text-[12px] md:text-[14px] font-medium text-[#101828] hover:bg-white/10 transition-all whitespace-nowrap"
               >
                 View Exam
               </button>
               <button
                 onClick={() => window.print()}
-                className="bg-[#1a1f36] text-white rounded-[8px] px-[18px] py-[8px] text-[14px] font-semibold hover:bg-[#2d3a4a] transition-all border-none"
+                className="bg-[#1a1f36] text-white rounded-[8px] px-[10px] md:px-[18px] py-[6px] md:py-[8px] text-[12px] md:text-[14px] font-semibold hover:bg-[#2d3a4a] transition-all border-none whitespace-nowrap"
               >
-                Export Report
+                Export
               </button>
             </div>
           </div>
@@ -265,14 +265,14 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           </div>
 
           {/* Tab Bar Navigation */}
-          <div className="flex items-center gap-[28px] border-b border-[#D1D5DB66]">
+          <div className="flex items-center gap-[20px] md:gap-[28px] border-b border-[#D1D5DB66] overflow-x-auto no-scrollbar">
             {["Overview", "Error Analysis", "Dual Assessment", "Model Answer", "Vocabulary", "Grammar", "Data Structure", "Flow & Logic"].map((tab) => (
               <div
                 key={tab}
-                className="relative pb-[12px] cursor-pointer group"
+                className="relative pb-[12px] cursor-pointer group whitespace-nowrap shrink-0"
                 onClick={() => setActiveTab(tab)}
               >
-                <span className={`text-[14px] transition-all ${activeTab === tab ? "text-[#101828] font-bold" : "text-[#101828] font-semibold hover:text-[#000000]"}`}>
+                <span className={`text-[13px] md:text-[14px] transition-all ${activeTab === tab ? "text-[#101828] font-bold" : "text-[#101828] font-semibold hover:text-[#000000]"}`}>
                   {tab}
                 </span>
                 {activeTab === tab && (
@@ -290,23 +290,23 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           <div className="space-y-6">
               <div className="space-y-6">
                 <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden shadow-sm">
-                  <div className="px-10 py-6 border-b border-gray-100">
+                  <div className="px-4 md:px-10 py-5 md:py-6 border-b border-gray-100">
                     <h3 className="text-[16px] font-bold text-[#101828]">Criteria Breakdown</h3>
                   </div>
-                  <div className="py-14 px-12 flex items-center gap-[216px]">
-                    <div className="flex-shrink-0 pl-4">
+                  <div className="py-8 md:py-14 px-4 md:px-12 flex flex-col md:flex-row items-center gap-8 md:gap-[216px]">
+                    <div className="shrink-0 md:pl-4">
                       <div className="flex flex-col items-center">
-                        <div className="relative w-[130px] h-[130px] flex items-center justify-center">
-                          <svg className="w-full h-full transform -rotate-90">
+                        <div className="relative w-[120px] h-[120px] md:w-[140px] md:h-[140px] flex items-center justify-center">
+                          <svg viewBox="0 0 130 130" className="w-full h-full transform -rotate-90">
                             <circle cx="65" cy="65" r="58" stroke="#F0F7FF" strokeWidth="10" fill="transparent" />
                             <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset={data?.overall_band != null ? 364.42 * (1 - (parseFloat(data.overall_band) / 9)) : 364.42} strokeLinecap="round" />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[42px] font-bold text-[#1A96F3] tracking-tight">{data?.overall_band ?? '—'}</span></div>
+                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[38px] md:text-[44px] font-bold text-[#1A96F3] tracking-tight">{data?.overall_band ?? '—'}</span></div>
                         </div>
-                        <span className="text-[14px] font-bold text-[#101828] whitespace-nowrap mt-4">Overall Band Score</span>
+                        <span className="text-[13px] md:text-[14px] font-bold text-[#101828] mt-3 md:mt-4">Overall Band Score</span>
                       </div>
                     </div>
-                    <div className="flex-1 space-y-6 pl-8 pr-12">
+                    <div className="w-full md:flex-1 space-y-4 md:space-y-6 md:pl-8 md:pr-12">
                       {[
                         { label: "Task Response", score: data?.response_band },
                         { label: "Coherence & Cohesion", score: data?.coherence_band },
@@ -316,11 +316,11 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         const val = item.score != null ? parseFloat(item.score) : null;
                         const color = val == null ? "#D1D5DB" : val >= 7 ? "#00C9B1" : val >= 5.5 ? "#FF9F00" : "#EF4444";
                         return (
-                        <div key={idx} className="flex items-center justify-between w-full">
-                          <span className="text-[14px] text-[#101828] font-bold">{item.label}</span>
-                          <div className="flex items-center gap-4">
-                            <span className="text-[14px] text-[#101828] font-normal w-8 text-right">{val ?? '—'}</span>
-                            <div className="h-[10px] w-[280px] bg-[#F3F4F6] rounded-full overflow-hidden">
+                        <div key={idx} className="flex items-center gap-3 w-full">
+                          <span className="text-[12px] md:text-[14px] text-[#101828] font-bold shrink-0 w-[110px] md:w-auto">{item.label}</span>
+                          <div className="flex items-center gap-2 md:gap-4 flex-1">
+                            <span className="text-[13px] md:text-[14px] text-[#101828] font-normal w-7 md:w-8 text-right shrink-0">{val ?? '—'}</span>
+                            <div className="h-[8px] md:h-[10px] flex-1 bg-[#F3F4F6] rounded-full overflow-hidden">
                               <div className="h-full rounded-full transition-all duration-1000" style={{ width: val != null ? `${((val - 1) / 8) * 100}%` : '0%', backgroundColor: color }}></div>
                             </div>
                           </div>
@@ -332,12 +332,13 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </div>
 
                 <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-10 py-6 border-b border-gray-100">
+                  <div className="px-4 md:px-10 py-5 md:py-6 border-b border-gray-100">
                     <h3 className="text-[16px] font-bold text-[#101828]">Scoring Details</h3>
-                    <p className="text-[13px] text-[#101828] opacity-60 mt-1">Base, seiling, and penalty breakdown</p>
+                    <p className="text-[13px] text-[#101828] opacity-60 mt-1">Base, ceiling, and penalty breakdown</p>
                   </div>
-                  <div className="p-10 space-y-6">
-                    <div className="bg-[#F3F4F6] rounded-[14px] px-8 py-5 grid grid-cols-[2fr,repeat(7,1fr)] text-[13px] font-medium">
+                  <div className="overflow-x-auto">
+                  <div className="p-4 md:p-10 space-y-4 md:space-y-6 min-w-[600px]">
+                    <div className="bg-[#F3F4F6] rounded-[14px] px-4 md:px-8 py-5 grid grid-cols-[2fr,repeat(7,1fr)] text-[13px] font-medium">
                       <div className="text-left text-[#101828]">Criterion</div>
                       <div className="text-center text-[#101828]">Base</div>
                       <div className="text-center text-[#101828]">Ceiling</div>
@@ -381,22 +382,23 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                       })()}
                     </div>
                   </div>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-8 py-6 border-b border-gray-100">
+                    <div className="px-4 md:px-8 py-4 md:py-6 border-b border-gray-100">
                       <h3 className="text-[16px] font-bold text-[#101828] mb-1">Strengths</h3>
                       <p className="text-[14px] text-gray-500">What you did well</p>
                     </div>
-                    <div className="p-8"><ul className="space-y-5">{(data?.strengths || ["Clear introduction identifying chart type and subject", "Logical body structure organized by age group", "Effective use of cohesive devices and linking words", "Good paragraphing with unified topic focus"]).map((text, i) => (<li key={i} className="flex items-start gap-4"><div className="mt-1 text-[#00C9B1]"><TrendingUp size={20} /></div><span className="text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-4 md:p-8"><ul className="space-y-4 md:space-y-5">{(data?.strengths || ["Clear introduction identifying chart type and subject", "Logical body structure organized by age group", "Effective use of cohesive devices and linking words", "Good paragraphing with unified topic focus"]).map((text, i) => (<li key={i} className="flex items-start gap-3 md:gap-4"><div className="mt-1 text-[#00C9B1] shrink-0"><TrendingUp size={18} /></div><span className="text-[13px] md:text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
                   <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-8 py-6 border-b border-gray-100">
+                    <div className="px-4 md:px-8 py-4 md:py-6 border-b border-gray-100">
                       <h3 className="text-[16px] font-bold text-[#101828] mb-1">Weaknesses</h3>
                       <p className="text-[14px] text-gray-500">Areas for improvement</p>
                     </div>
-                    <div className="p-8"><ul className="space-y-5">{(data?.weaknesses || ["Data accuracy issues — numerical values don't match reference", "Coverage gaps — misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-4"><div className="mt-1 text-[#FF4D4D]"><TrendingDown size={20} /></div><span className="text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-4 md:p-8"><ul className="space-y-4 md:space-y-5">{(data?.weaknesses || ["Data accuracy issues — numerical values don't match reference", "Coverage gaps — misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-3 md:gap-4"><div className="mt-1 text-[#FF4D4D] shrink-0"><TrendingDown size={18} /></div><span className="text-[13px] md:text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
                 </div>
 
@@ -417,19 +419,19 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                       return (
                         <div key={idx} className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
                           <div
-                            className="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                            className="px-4 md:px-8 py-4 md:py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
                             onClick={() => toggleSection(section.id)}
                           >
-                            <div className="flex items-center gap-4">
-                              <span className="text-[16px] font-bold text-[#101828]">{section.title}</span>
-                              <span className="inline-flex items-center justify-center bg-[#E6FFFA] text-[#00C9B1] border border-[#B2F5EA] text-[12px] font-bold px-4 py-1.5 rounded-full uppercase leading-none">Band {bandStr}</span>
+                            <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                              <span className="text-[14px] md:text-[16px] font-bold text-[#101828]">{section.title}</span>
+                              <span className="inline-flex items-center justify-center bg-[#E6FFFA] text-[#00C9B1] border border-[#B2F5EA] text-[11px] md:text-[12px] font-bold px-3 md:px-4 py-1 md:py-1.5 rounded-full uppercase leading-none shrink-0">Band {bandStr}</span>
                             </div>
-                            <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                            <ChevronDown size={18} className={`text-gray-400 transition-transform duration-300 shrink-0 ${isExpanded ? "rotate-180" : ""}`} />
                           </div>
                           {isExpanded && (
                             <div className="border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
                               {critErrors.length === 0 ? (
-                                <div className="px-8 py-5 text-[13px] text-gray-400">No errors detected in this category.</div>
+                                <div className="px-4 md:px-8 py-4 md:py-5 text-[13px] text-gray-400">No errors detected in this category.</div>
                               ) : critErrors.map((err, i) => {
                                 const sevStyle = err.severity === 'Major'
                                   ? "bg-[#FFF5F5] text-[#EA4335] border-[#EA4335]"
@@ -437,12 +439,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                                   ? "bg-[#FFF7ED] text-[#F59E0B] border-[#F59E0B]"
                                   : "bg-[#E6FFFA] text-[#00C9B1] border-[#00C9B1]";
                                 return (
-                                  <div key={i} className="px-8 py-5 border-b border-gray-100 last:border-0">
-                                    <div className="flex items-center gap-3 mb-2">
-                                      <span className="text-[14px] font-normal text-[#101828]">{err.sub_category || err.title}</span>
-                                      <span className={`${sevStyle} inline-flex items-center justify-center border-[1px] text-[12px] font-medium px-2.5 py-0.5 rounded-full uppercase leading-none`}>{err.severity}</span>
+                                  <div key={i} className="px-4 md:px-8 py-4 md:py-5 border-b border-gray-100 last:border-0">
+                                    <div className="flex items-center flex-wrap gap-2 md:gap-3 mb-2">
+                                      <span className="text-[13px] md:text-[14px] font-normal text-[#101828]">{err.sub_category || err.title}</span>
+                                      <span className={`${sevStyle} inline-flex items-center justify-center border-[1px] text-[11px] md:text-[12px] font-medium px-2 md:px-2.5 py-0.5 rounded-full uppercase leading-none`}>{err.severity}</span>
                                     </div>
-                                    <p className="text-[13px] text-[#101828] leading-relaxed font-normal">{err.explanation}</p>
+                                    <p className="text-[12px] md:text-[13px] text-[#101828] leading-relaxed font-normal">{err.explanation}</p>
                                   </div>
                                 );
                               })}
@@ -468,7 +470,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           return (
           <div className="space-y-8">
             {/* Header Info Cards */}
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
               {[
                 { label: "Total Errors", count: String(errors.length), color: "text-[#00C9B1]" },
                 { label: "Major", count: String(majorCount), color: "text-[#EA4335]" },
@@ -488,16 +490,16 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             </div>
 
             {/* Errors by Sub-Category */}
-            <div className="bg-white rounded-[8px] p-8 border border-[#E5E7EB] shadow-sm">
-              <h3 className="text-[15px] font-bold text-[#101828] mb-8">Errors by Sub-Category</h3>
+            <div className="bg-white rounded-[8px] p-4 md:p-8 border border-[#E5E7EB] shadow-sm">
+              <h3 className="text-[15px] font-bold text-[#101828] mb-5 md:mb-8">Errors by Sub-Category</h3>
               {subCats.length === 0 ? (
                 <p className="text-[14px] text-gray-400">No errors detected.</p>
               ) : (
               <div className="space-y-5">
                 {subCats.map(([label, count], idx) => (
                   <div key={idx} className="flex items-center">
-                    <span className="text-[13px] font-medium text-[#475467] w-[240px] shrink-0">{label}</span>
-                    <div className="flex-1 flex items-center gap-8">
+                    <span className="text-[12px] md:text-[13px] font-medium text-[#475467] w-[120px] md:w-[240px] shrink-0">{label}</span>
+                    <div className="flex-1 flex items-center gap-3 md:gap-8">
                       <span className="text-[13px] font-bold text-[#101828] w-6">{count}</span>
                       <div className="h-[10px] flex-1 bg-[#F2F4F7] rounded-full overflow-hidden">
                         <div className="h-full bg-[#1A96F3] rounded-full" style={{ width: `${(count / maxSubCat) * 100}%` }}></div>
@@ -511,8 +513,8 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {/* Detailed Error Breakdown — Unified Box */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <div 
-                className="px-8 py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+              <div
+                className="px-4 md:px-8 py-4 md:py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => toggleSection('errorAnalysis')}
               >
                 <h3 className="text-[16px] font-bold text-[#101828]">Detailed Error Breakdown</h3>
@@ -520,7 +522,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
 
               {expandedSections.errorAnalysis && (
-                <div className="p-8 space-y-8 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-top-2 duration-200">
                   {errors.length === 0 && (
                     <p className="text-[14px] text-gray-400 text-center py-8">No errors detected in this submission.</p>
                   )}
@@ -562,8 +564,8 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         </div>
                       </div>
 
-                      <div className="p-6 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 md:p-6 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                           {/* Original box */}
                           <div className="bg-[#FEF2F2] rounded-[10px] p-5">
                             <p className="text-[11px] font-bold text-[#DC2626] mb-2.5 uppercase tracking-wider flex items-center gap-2">
@@ -618,7 +620,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               const subRows = subCategoryScores[crit.key] || [];
               return (
               <div key={sIdx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('dualAssessment', sIdx)}>
+                <div className="px-4 md:px-8 py-4 md:py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('dualAssessment', sIdx)}>
                   <div className="flex items-center gap-4">
                     <span className={`text-[22px] font-black ${overallBand != null ? bandColor(overallBand) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif", minWidth: 44 }}>
                       {fmt(overallBand)}
@@ -629,10 +631,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </div>
 
                 {expandedSections.dualAssessment.includes(sIdx) && (
-                  <div className="px-8 pb-6 pt-4 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-6">
+                  <div className="px-4 md:px-8 pb-4 md:pb-6 pt-4 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-6">
 
                     {/* Dual model score row */}
-                    <div className="flex items-center gap-6 bg-[#F9FAFB] rounded-[10px] px-6 py-4">
+                    <div className="flex flex-wrap items-center gap-4 md:gap-6 bg-[#F9FAFB] rounded-[10px] px-4 md:px-6 py-4">
                       <div className="flex items-center gap-3">
                         <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">gpt-4o-mini</span>
                         <span className={`text-[20px] font-black ${pb != null ? bandColor(pb) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{fmt(pb)}</span>
@@ -655,7 +657,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
                     {/* Sub-category scores table */}
                     {subRows.length > 0 ? (
-                      <div className="overflow-hidden border border-[#E5E7EB] rounded-[12px]">
+                      <div className="overflow-x-auto border border-[#E5E7EB] rounded-[12px]">
                         <table className="w-full text-left">
                           <thead>
                             <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
@@ -706,7 +708,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           return (
           <div className="space-y-8">
             <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-10 py-6 border-b border-gray-100 flex items-center justify-between">
+              <div className="px-4 md:px-10 py-4 md:py-6 border-b border-gray-100 flex items-center justify-between">
                 <div>
                   <h3 className="text-[16px] font-bold text-[#101828]">Improved Report</h3>
                   <p className="text-[13px] text-gray-400 mt-0.5">Word count: {wordCount}</p>
@@ -715,8 +717,8 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   BAND {ma.estimated_band ?? 8.0}
                 </div>
               </div>
-              <div className="p-10">
-                <div className="bg-[#F0FDF4] rounded-[16px] p-10 border border-[#DCFCE7]">
+              <div className="p-4 md:p-10">
+                <div className="bg-[#F0FDF4] rounded-[16px] p-4 md:p-10 border border-[#DCFCE7]">
                   <h4 className="text-[14px] font-bold text-[#101828] mb-6 uppercase tracking-wider">Revised Report</h4>
                   <p className="text-[15px] text-[#101828] leading-[1.8] font-semibold whitespace-pre-wrap">{ma.text}</p>
                 </div>
@@ -725,11 +727,11 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {ma.key_changes && ma.key_changes.length > 0 && (
             <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-10 py-6 border-b border-gray-100">
+              <div className="px-4 md:px-10 py-4 md:py-6 border-b border-gray-100">
                 <h3 className="text-[16px] font-bold text-[#101828]">Key Improvements Made</h3>
                 <p className="text-[13px] text-gray-400 mt-0.5">Changes from the original to the improved version</p>
               </div>
-              <div className="p-10">
+              <div className="p-4 md:p-10">
                 <ul className="space-y-6">
                   {ma.key_changes.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-4">
@@ -762,7 +764,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               const isOpen = expandedSections.vocabulary?.includes(catIdx) ?? catIdx === 0;
               return (
               <div key={catIdx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-10 py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('vocabulary', catIdx)}>
+                <div className="px-4 md:px-10 py-4 md:py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('vocabulary', catIdx)}>
                   <div>
                     <h3 className="text-[16px] font-bold text-[#101828]">{cat.name}</h3>
                     {cat.description && <p className="text-[14px] text-[#101828] mt-1 font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{cat.description}</p>}
@@ -770,13 +772,13 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
                 </div>
                 {isOpen && (
-                  <div className="p-8 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-4 md:p-8 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                     {(cat.words || []).map((item, idx) => (
                       <div key={idx} className="bg-white border border-[#D1D5DB] rounded-[12px] overflow-hidden">
-                        <div className="px-6 py-4 border-b border-[#E5E7EB]">
+                        <div className="px-4 md:px-6 py-4 border-b border-[#E5E7EB]">
                           <h4 className="text-[15px] font-bold text-[#101828]">{item.word}</h4>
                         </div>
-                        <div className="grid grid-cols-2 divide-x divide-[#E5E7EB]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#E5E7EB]">
                           <div className="px-6 py-5">
                             <p className="text-[14px] text-[#475467] leading-relaxed font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.definition}</p>
                           </div>
@@ -810,7 +812,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           return (
           <div className="space-y-8">
             {/* Overview Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-8 py-6 flex flex-col gap-4">
+            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-8 py-4 md:py-6 flex flex-col gap-4">
               <h3 className="text-[18px] font-bold text-[#101828] leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
               <div className="space-y-3">
                 <p className="text-[15px] text-[#101828] leading-relaxed font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>
@@ -824,11 +826,11 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {/* Grammatical Structures Used */}
             <div className="bg-white rounded-[24px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-10 py-6 border-b border-[#E5E7EB]">
+              <div className="px-4 md:px-10 py-4 md:py-6 border-b border-[#E5E7EB]">
                 <h3 className="text-[16px] font-bold text-[#101828]">Grammatical Structures Used</h3>
                 <p className="text-[13px] text-gray-400 mt-0.5">Structures identified in the report</p>
               </div>
-              <div className="p-10">
+              <div className="p-4 md:p-10">
                 <ul className="space-y-6">
                   {/* List of structures */}
                   {(ga.structures_used || []).map((item, idx) => (
@@ -843,12 +845,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {/* Suggested Grammatical Enrichments */}
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-8 py-5 border-b border-[#E5E7EB]">
+              <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#E5E7EB]">
                 <h3 className="text-[18px] font-bold text-[#101828] leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Suggested Grammatical Enrichments</h3>
                 <p className="text-[16px] text-[#475467] mt-2 leading-none font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>Techniques to boost your grammar score</p>
               </div>
 
-              <div className="p-8 space-y-10">
+              <div className="p-4 md:p-8 space-y-8 md:space-y-10">
                 {(ga.enrichment_suggestions || []).map((item, idx) => (
                   <div key={idx} className="space-y-3">
                     <h4 className="text-[18px] font-semibold text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.original}</h4>
@@ -863,10 +865,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {ga.expert_tips && ga.expert_tips.length > 0 && (
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-8 py-5 border-b border-[#E5E7EB]">
+              <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#E5E7EB]">
                 <h3 className="text-[18px] font-bold text-[#101828] leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Expert Tips</h3>
               </div>
-              <div className="p-8">
+              <div className="p-4 md:p-8">
                 <ul className="space-y-6">
                   {ga.expert_tips.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-4">
@@ -895,7 +897,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           return (
           <div className="space-y-8">
             {/* Overview Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden pl-[32px] pr-[48px] py-6 flex flex-col justify-center">
+            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-8 py-4 md:py-6 flex flex-col justify-center">
               <h3 className="text-[18px] font-bold text-[#101828] mb-3 leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
               <p className="text-[16px] text-[#101828] leading-snug font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
                 {dsa.overview}
@@ -905,7 +907,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             {/* Introduction Analysis */}
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
               <div 
-                className="px-[32px] py-5 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
+                className="px-4 md:px-8 py-4 md:py-5 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
                 onClick={() => toggleSection('introAnalysis')}
               >
                 <h3 className="text-[16px] font-bold text-[#101828]">Introduction Analysis</h3>
@@ -913,9 +915,9 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
 
               {expandedSections.introAnalysis && (
-                <div className="px-[32px] py-[24px] space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-4 md:px-8 py-4 md:py-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* Status Tags */}
-                <div className="flex items-center gap-10">
+                <div className="flex flex-wrap items-center gap-3 md:gap-10">
                   <div className="text-[13px]">
                     <span className="text-[#475467] font-medium">Paraphrase:</span> <span className="font-bold text-[#101828] ml-1">Partial</span>
                   </div>
@@ -934,15 +936,15 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 </div>
 
                 {/* Text Box */}
-                <div 
-                  className="w-full max-w-[1280px] h-[49px] bg-[#1018280D] border border-[#10182833] rounded-[10px] px-6 flex items-center text-[16px] text-[#101828] font-semibold leading-none whitespace-nowrap overflow-hidden"
+                <div
+                  className="w-full bg-[#1018280D] border border-[#10182833] rounded-[10px] px-4 md:px-6 py-3 flex items-center text-[14px] md:text-[16px] text-[#101828] font-semibold leading-relaxed"
                   style={{ fontFamily: "'Nunito', sans-serif" }}
                 >
                   The bar chart illustrates the average calorie intake for males and females in three age groups: children, adolescents and adults, measured in kilocalories.
                 </div>
 
                 {/* Strengths and Weaknesses */}
-                <div className="grid grid-cols-2 gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                   <div className="space-y-6">
                     <h4 className="text-[16px] font-bold text-[#00C9B1]">Strengths</h4>
                     <ul className="space-y-4">
@@ -978,7 +980,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             {/* Data Coverage Map */}
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
               <div 
-                className="px-[32px] py-6 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
+                className="px-4 md:px-8 py-4 md:py-6 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
                 onClick={() => toggleSection('dataCoverageMap')}
               >
                 <h3 className="text-[16px] font-bold text-[#101828]">Data Coverage Map</h3>
@@ -986,9 +988,9 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
 
               {expandedSections.dataCoverageMap && (
-                <div className="px-[32px] py-[24px] space-y-8 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-4 md:px-8 py-4 md:py-6 space-y-8 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* Table Section */}
-                <div className="overflow-hidden">
+                <div className="overflow-x-auto">
                   <table className="w-full text-left border-b border-[#D1D5DB]">
                     <thead>
                       <tr className="bg-[#F2F4F7] rounded-[8px]">
@@ -1073,7 +1075,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               "Authenticity & Natural Language"
             ].map((title, idx) => (
               <div key={idx} className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-10 py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
+                <div className="px-4 md:px-10 py-4 md:py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
                   <h3 className="text-[16px] font-bold text-[#101828]">{title}</h3>
                   <ChevronDown size={20} className="text-gray-400" />
                 </div>
@@ -1091,8 +1093,8 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           return (
           <div className="space-y-6">
             {/* Overall Flow Score Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-10 py-8 flex items-center justify-between">
-              <div className="space-y-1 max-w-[1000px]">
+            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-10 py-5 md:py-8 flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1 flex-1 min-w-0">
                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overall Flow Score</h3>
                 <p className="text-[14px] text-[#101828] font-normal leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>
                   {dsa?.transition_analysis || dsa?.overview || 'Flow analysis based on Coherence & Cohesion assessment.'}
@@ -1106,7 +1108,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             {/* Paragraph-to-Paragraph Flow */}
             <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
               <div 
-                className="px-8 py-4 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
+                className="px-4 md:px-8 py-4 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
                 onClick={() => toggleSection('flowParagraph')}
               >
                 <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Paragraph-to-Paragraph Flow</h3>
@@ -1114,9 +1116,9 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
 
               {expandedSections.flowParagraph && (
-                <div className="px-8 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="overflow-hidden">
-                  <table className="w-full text-left">
+                <div className="px-4 md:px-8 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left min-w-[560px]">
                     <thead>
                       <tr className="bg-[#F2F4F7] rounded-[8px]">
                         <th className="px-6 py-2 text-[14px] font-bold text-[#101828] rounded-l-[8px] w-[260px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Transition</th>
@@ -1149,7 +1151,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             {/* Logical Issues Detected */}
             <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
               <div 
-                className="px-8 py-3 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
+                className="px-4 md:px-8 py-3 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
                 onClick={() => toggleSection('logicalIssues')}
               >
                 <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Logical Issues Detected</h3>
@@ -1157,7 +1159,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
 
               {expandedSections.logicalIssues && (
-                <div className="px-8 py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-4 md:px-8 py-4 md:py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
                   {coherenceErrors.length > 0 ? coherenceErrors.slice(0, 4).map((err, ei) => (
                     <div key={ei} className="space-y-5">
                       <h4 className="text-[15px] font-bold text-[#EA4335]" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.title} — {err.location_text}</h4>
@@ -1190,10 +1192,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
             {/* Authenticity & natural language from data_structure_analysis */}
             {dsa?.authenticity_feedback && (
               <div className="bg-white rounded-[24px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
+                <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
                   <h3 className="text-[16px] font-bold text-[#101828]">Authenticity & Natural Language</h3>
                 </div>
-                <div className="px-8 pb-6 border-t border-[#E5E7EB]">
+                <div className="px-4 md:px-8 pb-6 border-t border-[#E5E7EB]">
                   <p className="text-[15px] text-[#475467] leading-relaxed pt-5" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.authenticity_feedback}</p>
                 </div>
               </div>
@@ -1201,12 +1203,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {/* Paragraph Unity */}
             <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('paragraphUnity')}>
+              <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('paragraphUnity')}>
                 <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Paragraph Unity</h3>
                 <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.paragraphUnity ? "rotate-180" : ""}`} />
               </div>
               {expandedSections.paragraphUnity && (
-                <div className="px-8 py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+                <div className="px-4 md:px-8 py-4 md:py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
                   {dsa?.body_analysis ? (
                     <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.body_analysis}</p>
                   ) : (
@@ -1218,12 +1220,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {/* Sentence-Level Flow */}
             <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('sentenceFlow')}>
+              <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('sentenceFlow')}>
                 <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Sentence-Level Flow</h3>
                 <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.sentenceFlow ? "rotate-180" : ""}`} />
               </div>
               {expandedSections.sentenceFlow && (
-                <div className="px-8 py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+                <div className="px-4 md:px-8 py-4 md:py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
                   {dsa?.transition_analysis ? (
                     <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.transition_analysis}</p>
                   ) : (
@@ -1235,12 +1237,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
             {/* Cohesive Devices */}
             <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('cohesiveDevices')}>
+              <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('cohesiveDevices')}>
                 <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Cohesive Devices</h3>
                 <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.cohesiveDevices ? "rotate-180" : ""}`} />
               </div>
               {expandedSections.cohesiveDevices && (
-                <div className="px-8 py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+                <div className="px-4 md:px-8 py-4 md:py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
                   {coherenceErrors.filter(e => (e.sub_category || '').toLowerCase().includes('cohes')).length > 0 ? (
                     <div className="space-y-4">
                       {coherenceErrors.filter(e => (e.sub_category || '').toLowerCase().includes('cohes')).slice(0, 3).map((err, ei) => (

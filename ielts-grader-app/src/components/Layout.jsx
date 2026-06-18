@@ -79,12 +79,25 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
             {/* Right side */}
             <div className="flex items-center gap-3">
 
-              {/* ── MOBILE: compact credits pill ── */}
-              <div className="md:hidden flex items-center gap-1.5 bg-[#EFF6FF] border border-[#DBEAFE] rounded-full px-2.5 py-1">
-                <div className="w-2 h-2 rounded-full bg-[#1A96F3] shrink-0" />
-                <span className="text-[10px] font-bold text-[#1A96F3] whitespace-nowrap leading-none">
-                  {creditsRemaining}/1 Credits
-                </span>
+              {/* ── MOBILE: credits pill matching desktop design ── */}
+              <div className="md:hidden bg-[#DDF2FF] rounded-full px-2.5 py-1.5 flex items-center gap-2">
+                <div className="relative w-5 h-5 shrink-0 flex items-center justify-center">
+                  <svg viewBox="0 0 20 20" className="w-full h-full transform -rotate-90">
+                    <circle cx="10" cy="10" r="7" stroke="#C7E3F9" strokeWidth="2" fill="transparent" />
+                    <circle
+                      cx="10" cy="10" r="7"
+                      stroke="#1A96F3" strokeWidth="2"
+                      strokeDasharray={2 * Math.PI * 7}
+                      strokeDashoffset={2 * Math.PI * 7 * (1 - Math.min(creditsRemaining, 1))}
+                      strokeLinecap="round" fill="transparent"
+                      style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                    />
+                  </svg>
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-[9px] font-semibold text-[#101828] whitespace-nowrap">Free Trial</span>
+                  <span className="text-[9px] font-bold text-[#101828] whitespace-nowrap">Credits: {creditsRemaining}/1</span>
+                </div>
               </div>
 
               {/* ── MOBILE: hamburger ── */}

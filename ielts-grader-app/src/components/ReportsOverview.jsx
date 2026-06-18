@@ -322,26 +322,26 @@ const ReportsOverview = ({ onBack }) => {
                   <div
                     key={sub.id}
                     onClick={() => handleOpenReport(sub)}
-                    className={`bg-white border border-gray-100 rounded-[16px] p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all group ${sub.status === 'graded' ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
+                    className={`bg-white border border-gray-100 rounded-[16px] p-4 md:p-6 flex items-center justify-between hover:border-blue-100 hover:bg-blue-50/20 transition-all group ${sub.status === 'graded' ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
                   >
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all">
-                        <TrendingUp size={22} />
+                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-[12px] bg-blue-50 flex items-center justify-center text-[#1A96F3] group-hover:bg-[#1A96F3] group-hover:text-white transition-all shrink-0">
+                        <TrendingUp size={20} />
                       </div>
-                      <div>
-                        <h4 className="text-[16px] font-bold text-[#101828] mb-1">{label}</h4>
-                        <p className="text-[14px] text-gray-400 font-medium">{dateStr}</p>
+                      <div className="min-w-0">
+                        <h4 className="text-[14px] md:text-[16px] font-bold text-[#101828] mb-0.5 truncate">{label}</h4>
+                        <p className="text-[12px] md:text-[14px] text-gray-400 font-medium">{dateStr}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-8">
-                      <span className="px-5 py-1.5 bg-gray-50 text-gray-400 rounded-full text-[12px] font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 md:gap-8 shrink-0 ml-2">
+                      <span className="hidden md:inline-flex px-5 py-1.5 bg-gray-50 text-gray-400 rounded-full text-[12px] font-bold uppercase tracking-wider">
                         {sub.status === 'grading' ? 'Grading…' : sub.status === 'failed' ? 'Failed' : sub.word_count ? `${sub.word_count}w` : sub.task_type}
                       </span>
-                      <div className="w-[60px] h-[34px] border rounded-[10px] flex items-center justify-center text-[14px] font-black" style={{ color, borderColor: color + '33', backgroundColor: color + '0D' }}>
+                      <div className="w-[52px] md:w-[60px] h-[30px] md:h-[34px] border rounded-[10px] flex items-center justify-center text-[13px] md:text-[14px] font-black" style={{ color, borderColor: color + '33', backgroundColor: color + '0D' }}>
                         {isLoading ? '…' : score ? score.toFixed(1) : '—'}
                       </div>
-                      <button className="p-2 text-gray-300 hover:text-[#1A96F3] transition-colors">
-                        <ChevronRight size={20} />
+                      <button className="p-1.5 md:p-2 text-gray-300 hover:text-[#1A96F3] transition-colors">
+                        <ChevronRight size={18} />
                       </button>
                     </div>
                   </div>
@@ -413,14 +413,15 @@ const ReportsOverview = ({ onBack }) => {
         {activeTab === "Overview" ? 
           <div className="space-y-8">
             {/* Main Stats Bar */}
-            <motion.div 
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm flex items-center h-[120px]"
+              className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm flex items-center h-[120px] min-w-[520px]"
             >
               {/* Latest Band */}
-              <div className="flex-1 pl-12 flex flex-col justify-center">
+              <div className="flex-1 pl-8 flex flex-col justify-center">
                 {loadingAnalytics ? (
                   <div className="h-10 w-16 bg-gray-100 rounded animate-pulse mb-1" />
                 ) : (
@@ -463,15 +464,16 @@ const ReportsOverview = ({ onBack }) => {
                 </span>
               </div>
             </motion.div>
+            </div>
 
             {/* Row 1: Profile, Summary, Strengths */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Activity Profile */}
               <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                <div className="px-8 py-6 border-b border-[#F2F4F7]">
+                <div className="px-4 md:px-8 py-4 md:py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]">Activity Profile</h3>
                 </div>
-                <div className="p-8 space-y-10 flex-1">
+                <div className="p-4 md:p-8 space-y-6 md:space-y-10 flex-1">
                   <div>
                     <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Exams Completed</p>
                     <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{examCount}</p>
@@ -485,10 +487,10 @@ const ReportsOverview = ({ onBack }) => {
 
               {/* Executive Summary */}
               <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                <div className="px-8 py-6 border-b border-[#F2F4F7]">
+                <div className="px-4 md:px-8 py-4 md:py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]">Executive Summary</h3>
                 </div>
-                <div className="p-8 space-y-10 flex-1">
+                <div className="p-4 md:p-8 space-y-6 md:space-y-10 flex-1">
                   <div className="space-y-2">
                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{trendLabel}</p>
                     <p className="text-[16px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
@@ -506,10 +508,10 @@ const ReportsOverview = ({ onBack }) => {
 
               {/* Core Strengths */}
               <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                <div className="px-8 py-6 border-b border-[#F2F4F7]">
+                <div className="px-4 md:px-8 py-4 md:py-6 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '20px' }}>Core Strengths</h3>
                 </div>
-                <div className="p-8 space-y-5 flex-1">
+                <div className="p-4 md:p-8 space-y-4 md:space-y-5 flex-1">
                   {criteriaScores.length > 0 ? criteriaScores.map((c, i) => (
                     <div key={i} className="p-5 bg-[#F0FDF9] rounded-[20px] border border-[#CCFBEF] flex items-center">
                       <p className="text-[16px] leading-[1.5] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
@@ -527,8 +529,8 @@ const ReportsOverview = ({ onBack }) => {
             {/* Row 2: Skill Growth (2/3) & Mistake Frequency (1/3) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Skill Growth Chart */}
-              <div className="lg:col-span-2 bg-white rounded-[24px] p-8 shadow-sm border border-[#E5E7EB]">
-                <h3 className="text-[18px] font-bold text-[#101828] mb-10">Skill Growth</h3>
+              <div className="lg:col-span-2 bg-white rounded-[24px] p-4 md:p-8 shadow-sm border border-[#E5E7EB]">
+                <h3 className="text-[18px] font-bold text-[#101828] mb-6 md:mb-10">Skill Growth</h3>
                 
                 <div className="h-[320px] w-full mb-8">
                   <ResponsiveContainer width="100%" height="100%">
@@ -581,11 +583,11 @@ const ReportsOverview = ({ onBack }) => {
 
               {/* Mistake Frequency */}
               <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-                <div className="px-6 py-4 border-b border-[#F2F4F7]">
+                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Mistake Frequency</h3>
                 </div>
                 
-                <div className="p-6 flex-1 flex flex-col">
+                <div className="p-4 md:p-6 flex-1 flex flex-col">
                   {/* Stats Bar */}
                   <div className="bg-[#F9FAFB] rounded-[12px] p-3 flex items-center justify-between mb-4">
                     <span className="text-[14px] font-semibold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
@@ -608,11 +610,11 @@ const ReportsOverview = ({ onBack }) => {
                         gray:   "text-[#344054] bg-[#F2F4F7] border-[#D0D5DD]"
                       };
                       return (
-                        <div key={index} className={`flex items-center justify-between py-3 ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
-                          <span className={`px-4 py-1.5 rounded-full border text-[13px] font-bold ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        <div key={index} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 py-3 ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
+                          <span className={`px-3 py-1 rounded-full border text-[12px] font-bold self-start ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
                             {item.label}
                           </span>
-                          <span className="px-4 py-1.5 bg-[#1018280D] rounded-full text-[13px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          <span className="px-3 py-1 bg-[#1018280D] rounded-full text-[12px] font-bold text-[#101828] self-start sm:self-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>
                             Count: {item.count}
                           </span>
                         </div>
@@ -633,10 +635,10 @@ const ReportsOverview = ({ onBack }) => {
               <div className="space-y-8">
                 {criterionCards.slice(0, 2).map(item => (
                   <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                    <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                    <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
                       <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
                     </div>
-                    <div className="p-8 space-y-3 flex-1">
+                    <div className="p-4 md:p-8 space-y-3 flex-1">
                       <div className="flex items-center justify-between py-1">
                         <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>First</span>
                         <span className="text-[16px] font-bold text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.first}</span>
@@ -660,10 +662,10 @@ const ReportsOverview = ({ onBack }) => {
               <div className="space-y-8">
                 {criterionCards.slice(2, 4).map(item => (
                   <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                    <div className="px-8 py-5 border-b border-[#F2F4F7]">
+                    <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
                       <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
                     </div>
-                    <div className="p-8 space-y-3 flex-1">
+                    <div className="p-4 md:p-8 space-y-3 flex-1">
                       <div className="flex items-center justify-between py-1">
                         <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>First</span>
                         <span className="text-[16px] font-bold text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.first}</span>
@@ -685,11 +687,11 @@ const ReportsOverview = ({ onBack }) => {
 
               {/* Col 3: High-Impact Areas to Fix */}
               <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-                <div className="px-6 py-4 border-b border-[#F2F4F7]">
+                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7]">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>High-Impact Areas to Fix</h3>
                 </div>
 
-                <div className="px-6 pt-0 pb-5 flex-1 flex flex-col">
+                <div className="px-4 md:px-6 pt-0 pb-4 md:pb-5 flex-1 flex flex-col">
                   <div className="space-y-0 flex-1">
                     {sortedErrors.length === 0 ? (
                       <p className="text-[14px] text-gray-400 py-4">No data yet.</p>
@@ -700,11 +702,11 @@ const ReportsOverview = ({ onBack }) => {
                         yellow: "text-[#DC6803] bg-[#FFFAEB] border-[#FEC84B]"
                       };
                       return (
-                        <div key={index} className={`flex items-center justify-between ${index === arr.length - 1 ? 'pt-3 pb-1' : 'py-3'} ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
-                          <span className="text-[16px] font-bold text-[#344054]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        <div key={index} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 ${index === arr.length - 1 ? 'pt-3 pb-1' : 'py-3'} ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
+                          <span className="text-[14px] md:text-[16px] font-bold text-[#344054]" style={{ fontFamily: "'Nunito', sans-serif" }}>
                             {item.label}
                           </span>
-                          <span className={`px-4 py-1.5 rounded-full border text-[14px] font-bold ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          <span className={`px-3 py-1 rounded-full border text-[12px] md:text-[14px] font-bold self-start sm:self-auto shrink-0 ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
                             {item.impact}
                           </span>
                         </div>
@@ -720,9 +722,9 @@ const ReportsOverview = ({ onBack }) => {
             </div>
           </div>
         : activeTab === "Detailed Breakdown" ? 
-          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E5E7EB] space-y-10">
+          <div className="bg-white rounded-[24px] p-6 md:p-8 shadow-sm border border-[#E5E7EB] space-y-10">
             {/* Top Status Row */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div className="bg-[#F8FAFC] rounded-[12px] p-6 flex items-center justify-between border border-gray-50/50">
                 <div className="space-y-1">
                   <h4 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Total Growth</h4>
@@ -751,7 +753,7 @@ const ReportsOverview = ({ onBack }) => {
               </div>
               
               <div className="space-y-8">
-                <p className="text-[15px] font-normal text-[#101828] whitespace-nowrap" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
+                <p className="text-[15px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '140%' }}>
                   {latestBand != null
                     ? `You have reached an overall band of ${latestBand}${
                         rawChange != null && parseFloat(rawChange) !== 0
@@ -776,19 +778,18 @@ const ReportsOverview = ({ onBack }) => {
               <div className="space-y-4">
                 <h3 className="text-[18px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Pathway to Band 7.5</h3>
                 <p className="text-[16px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '140%' }}>
-                  If you raise one criterion by the shown delta (while others stay stable), Your mean should cross the IELTS rounding the <br />
-                  should and your overall band can round up.
+                  If you raise one criterion by the shown delta (while others stay stable), your mean should cross the IELTS rounding threshold and your overall band can round up.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white border border-gray-100 rounded-[16px] p-8 shadow-sm flex flex-col justify-center space-y-2 h-[110px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                <div className="bg-white border border-gray-100 rounded-[16px] p-6 md:p-8 shadow-sm flex flex-col justify-center space-y-2">
                    <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
                    <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>+0.4</p>
                 </div>
-                <div className="bg-white border border-gray-100 rounded-[16px] p-8 shadow-sm flex flex-col justify-center space-y-2 h-[110px]">
+                <div className="bg-white border border-gray-100 rounded-[16px] p-6 md:p-8 shadow-sm flex flex-col justify-center space-y-2">
                    <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>Lowest Hanging Fruit</p>
-                   <p className="text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grammatical Range & Accuracy</p>
+                   <p className="text-[18px] md:text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grammatical Range & Accuracy</p>
                 </div>
               </div>
             </div>
@@ -797,11 +798,11 @@ const ReportsOverview = ({ onBack }) => {
           <div className="space-y-8">
             {/* Fix Cards-Priority Errors — from real API data */}
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-8 py-5 border-b border-[#F2F4F7]">
+               <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Fix Cards — Priority Errors</h3>
                  <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Your most frequent error patterns across all submissions.</p>
                </div>
-               <div className="p-8 space-y-4">
+               <div className="p-4 md:p-8 space-y-3 md:space-y-4">
                  {sortedErrors.length === 0 ? (
                    <p className="text-[14px] text-gray-400 text-center py-8">Complete more exams to generate your Fix Cards.</p>
                  ) : sortedErrors.map((e, idx) => {
@@ -810,13 +811,11 @@ const ReportsOverview = ({ onBack }) => {
                    const colors = isHigh ? "text-[#EA4335] bg-[#EA43351A] text-[14px]" : isMed ? "text-[#F59E0B] bg-[#F59E0B1A] text-[13px]" : "text-[#101828] bg-[#1018280D] text-[14px]";
                    const impact = isHigh ? 'High Impact' : isMed ? 'Medium Impact' : 'Low Impact';
                    return (
-                     <div key={idx} className="flex items-center justify-between p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
-                       <div className="flex-1">
-                         <h4 className="text-[16px] font-bold text-[#101828] mb-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{e.label}</h4>
-                       </div>
-                       <div className="flex items-center gap-6">
-                         <div className={`w-[130px] px-4 py-1.5 rounded-full font-bold ${colors} text-center`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>{impact}</div>
-                         <div className="w-[100px] px-4 py-1.5 bg-[#1018280D] rounded-full text-[14px] font-bold text-[#101828] text-center" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Count: {e.count}</div>
+                     <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-4 md:p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
+                       <h4 className="text-[14px] md:text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{e.label}</h4>
+                       <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                         <div className={`px-3 py-1.5 rounded-full font-bold ${colors} text-center whitespace-nowrap`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>{impact}</div>
+                         <div className="px-3 py-1.5 bg-[#1018280D] rounded-full text-[13px] font-bold text-[#101828] text-center whitespace-nowrap" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Count: {e.count}</div>
                        </div>
                      </div>
                    );
@@ -825,11 +824,11 @@ const ReportsOverview = ({ onBack }) => {
             </div>
           </div>
         : activeTab === "Strategy" ? 
-          <div className="bg-white rounded-[24px] p-10 shadow-sm border border-gray-100 space-y-12">
+          <div className="bg-white rounded-[24px] p-6 md:p-10 shadow-sm border border-gray-100 space-y-10 md:space-y-12">
             <h3 className="text-[18px] font-bold text-[#101828]">Strategic Roadmap</h3>
-            
+
             {/* Strongest Area & Primary Bottleneck */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[12px] p-6">
                 <span className="text-[14px] font-bold text-[#00C9B1] block mb-2">Strongest Area</span>
                 <p className="text-[16px] font-medium text-[#101828]">Coherence & cohesion</p>
@@ -890,7 +889,7 @@ const ReportsOverview = ({ onBack }) => {
               </div>
 
               {/* Immediate Action Items */}
-              <div className="bg-[#F0F9FF] border border-[#B9E6FE] rounded-[12px] p-10 mt-12">
+              <div className="bg-[#F0F9FF] border border-[#B9E6FE] rounded-[12px] p-5 md:p-10 mt-8 md:mt-12">
                 <h4 className="text-[15px] font-bold text-[#101828] mb-6">Immediate Action Items</h4>
                 <ul className="space-y-5 font-sans">
                   <li className="flex items-start gap-3">
@@ -909,8 +908,8 @@ const ReportsOverview = ({ onBack }) => {
               </div>
             </div>
           </div>
-        : activeTab === "14-Day sprint" ? 
-          <div className="bg-white rounded-[24px] p-10 shadow-sm border border-gray-100 space-y-10">
+        : activeTab === "14-Day sprint" ?
+          <div className="bg-white rounded-[24px] p-4 md:p-10 shadow-sm border border-gray-100 space-y-8 md:space-y-10">
             <div>
                <h3 className="text-[18px] font-bold text-[#101828] mb-4">Two-Week Hyper-Growth Sprint</h3>
                <div className="space-y-1.5">
@@ -995,8 +994,8 @@ const ReportsOverview = ({ onBack }) => {
                  }
                ].map((card, idx) => (
                  <div key={idx} className="w-full bg-white border border-[#E5E7EB] rounded-[16px] flex flex-col overflow-hidden hover:shadow-md transition-all">
-                    <div className="p-8 pb-0 flex flex-col">
-                       <h4 className="text-[15px] font-bold text-[#101828] mb-5">{card.day}</h4>
+                    <div className="p-4 md:p-8 pb-0 flex flex-col">
+                       <h4 className="text-[14px] md:text-[15px] font-bold text-[#101828] mb-4 md:mb-5">{card.day}</h4>
                        <ul className="space-y-4 flex-1">
                           {card.tasks.map((task, tidx) => (
                             <li key={tidx} className="flex items-start gap-4">
@@ -1006,7 +1005,7 @@ const ReportsOverview = ({ onBack }) => {
                           ))}
                        </ul>
                     </div>
-                    <div className="px-8 pt-1 pb-8 bg-white">
+                    <div className="px-4 md:px-8 pt-1 pb-4 md:pb-8 bg-white">
                        <p className="text-[13px] font-semibold text-[#00C9B1] leading-relaxed">
                          {card.outcome}
                        </p>
@@ -1019,7 +1018,7 @@ const ReportsOverview = ({ onBack }) => {
           <div className="space-y-4">
             {/* Templates & Best Patterns */}
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-8 py-3 border-b border-[#F2F4F7]">
+               <div className="px-4 md:px-8 py-3 md:py-4 border-b border-[#F2F4F7]">
                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Templates & Best Patterns</h3>
                  <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Leverage these carefully curated templates and your own highest-scoring patterns to draft faster and more accurately.</p>
                </div>
@@ -1027,17 +1026,14 @@ const ReportsOverview = ({ onBack }) => {
                <div className="p-5 space-y-3">
                   <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
                     <p className="text-[16px] font-bold text-[#1A96F3] mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>Balanced Discussion + Clear Position</p>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '115%' }}>
-                      In contemporary society, will, artificial, believe, cause has become a widely debated issue. While some people<br />
-                      argue that it brings clear benefits, others contend that it causes significant drawbacks. This essay will examine<br />
-                      both perspectives and explain why I believe the advantages outweigh the disadvantages
+                    <p className="text-[16px] font-semibold text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      In contemporary society, will, artificial, believe, cause has become a widely debated issue. While some people argue that it brings clear benefits, others contend that it causes significant drawbacks. This essay will examine both perspectives and explain why I believe the advantages outweigh the disadvantages
                     </p>
                   </div>
                   <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
                     <p className="text-[16px] font-bold text-[#1A96F3] mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>Direct Thesis First (Band 7 + Style)</p>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '115%' }}>
-                      I largely agree that will, artificial, believe, cause brings more benefits than harms, although some negative<br />
-                      consequences remain. This essay will discuss both sides before presenting my position.
+                    <p className="text-[16px] font-semibold text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      I largely agree that will, artificial, believe, cause brings more benefits than harms, although some negative consequences remain. This essay will discuss both sides before presenting my position.
                     </p>
                   </div>
                </div>
@@ -1045,7 +1041,7 @@ const ReportsOverview = ({ onBack }) => {
 
             {/* Topic Sentence Templates */}
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-8 py-3 border-b border-[#F2F4F7]">
+               <div className="px-4 md:px-8 py-3 md:py-4 border-b border-[#F2F4F7]">
                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Topic Sentence Templates</h3>
                  <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Versatile, high-scoring structures to elevate your writing.</p>
                </div>
@@ -1068,7 +1064,7 @@ const ReportsOverview = ({ onBack }) => {
 
             {/* Conclusion + Condition */}
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-8 py-3 border-b border-[#F2F4F7]">
+               <div className="px-4 md:px-8 py-3 md:py-4 border-b border-[#F2F4F7]">
                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Conclusion + Condition</h3>
                  <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Summarize effectively to leave a confident, lasting impression.</p>
                </div>
@@ -1076,9 +1072,8 @@ const ReportsOverview = ({ onBack }) => {
                <div className="p-5">
                   <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
                     <p className="text-[16px] font-bold text-[#1A96F3] mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>Weighing + Condition</p>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '115%' }}>
-                      In conclusion, although will, artificial, believe, cause can create certain problems, its overall impact is positive.<br />
-                      These benefits are strongest when policymakers apply sensible regulation to limit
+                    <p className="text-[16px] font-semibold text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      In conclusion, although will, artificial, believe, cause can create certain problems, its overall impact is positive. These benefits are strongest when policymakers apply sensible regulation to limit
                     </p>
                   </div>
                </div>

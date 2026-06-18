@@ -293,7 +293,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div className="w-full md:w-[400px] lg:w-[480px] border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-6 md:p-10 bg-[#F8FAFC]">
+        <div className="w-full md:w-[400px] lg:w-[480px] border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC]">
           <div className="mb-4 md:mb-6">
             <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
               {examType} {taskType || 'Task 2'}
@@ -314,7 +314,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
         <div className="flex-1 flex flex-col bg-white">
           <textarea
-            className="flex-1 p-10 outline-none text-[16px] text-[#475467] leading-[1.8] font-normal resize-none placeholder:text-gray-300 custom-scrollbar"
+            className="flex-1 p-4 md:p-10 outline-none text-[15px] md:text-[16px] text-[#475467] leading-[1.8] font-normal resize-none placeholder:text-gray-300 custom-scrollbar"
             placeholder="Start writing your essay here..."
             value={essay}
             onChange={(e) => setEssay(e.target.value)}
@@ -334,36 +334,36 @@ const MockExam = ({ examType, taskType, onExit }) => {
       )}
 
       {/* Footer */}
-      <footer className="h-[64px] border-t border-gray-100 flex items-center justify-between px-8 bg-white shrink-0">
+      <footer className="border-t border-gray-100 flex items-center justify-between px-2 md:px-8 h-[52px] md:h-[64px] bg-white shrink-0">
         {/* Left — Task buttons */}
-        <div className="flex gap-2">
-          <button className="px-5 h-[36px] border border-gray-200 rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all">Task 1</button>
-          <button className="px-5 h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[14px] font-semibold transition-all">Task 2</button>
+        <div className="flex gap-1.5">
+          <button className="px-2.5 md:px-5 h-[30px] md:h-[36px] border border-gray-200 rounded-[8px] text-[11px] md:text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all">Task 1</button>
+          <button className="px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold transition-all">Task 2</button>
         </div>
 
-        {/* Center — Word count */}
-        <div className="text-[14px] font-medium text-gray-500">
+        {/* Word count */}
+        <div className="text-[12px] md:text-[14px] font-medium text-gray-500">
           {wordCount} words
         </div>
 
         {/* Right — Icon actions + Cancel + Submit */}
-        <div className="flex items-center gap-3">
-          <button onClick={handleClear} title="Reset essay" className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all">
-            <RotateCcw size={18} />
+        <div className="flex items-center gap-1 md:gap-3">
+          <button onClick={handleClear} title="Reset essay" className="w-[30px] h-[30px] md:w-[34px] md:h-[34px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all">
+            <RotateCcw size={17} />
           </button>
 
-          {/* Paperclip — file upload with hover tooltip */}
+          {/* Paperclip — file upload */}
           <div className="relative">
             <button
               onClick={() => !extracting && fileInputRef.current?.click()}
               onMouseEnter={() => setShowAttachmentTooltip(true)}
               onMouseLeave={() => setShowAttachmentTooltip(false)}
-              className="w-[36px] h-[36px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all disabled:opacity-50"
+              className="w-[30px] h-[30px] md:w-[34px] md:h-[34px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all disabled:opacity-50"
               disabled={extracting}
             >
               {extracting
-                ? <Loader2 size={18} className="animate-spin text-[#1A96F3]" />
-                : <Paperclip size={18} />
+                ? <Loader2 size={17} className="animate-spin text-[#1A96F3]" />
+                : <Paperclip size={17} />
               }
             </button>
             {showAttachmentTooltip && !extracting && (
@@ -383,16 +383,17 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
           <button
             onClick={() => onExit && onExit('cancel')}
-            className="px-5 h-[36px] border border-gray-200 rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all"
+            className="flex items-center px-2.5 md:px-4 h-[30px] md:h-[34px] border border-gray-200 rounded-[8px] text-[11px] md:text-[13px] font-semibold text-[#344054] hover:bg-gray-50 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={wordCount < 10}
-            className="px-5 h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[14px] font-semibold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            Submit Exam
+            <span className="hidden sm:inline">Submit Exam</span>
+            <span className="sm:hidden">Submit</span>
           </button>
         </div>
       </footer>
