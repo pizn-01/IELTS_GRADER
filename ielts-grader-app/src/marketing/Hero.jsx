@@ -55,7 +55,7 @@ const Hero = () => {
         {/* Left Column - Hero Content */}
         <div className="w-full lg:w-[55%] animate-fadeIn">
           <div className="inline-flex items-center px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-6">
-            Trusted by <span className="font-bold text-[#1a1f36] mx-1">1 million+</span> students and <span className="font-bold text-[#1a1f36] mx-1">20k+</span> schools
+            Built for students. Trusted by schools
           </div>
 
           <h1 className="text-[34px] sm:text-[42px] lg:text-[62px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
