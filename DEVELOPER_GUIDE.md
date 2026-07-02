@@ -11,7 +11,7 @@ Install these before you start:
 - **Node.js v20+** — https://nodejs.org (download the LTS version)
 - **npm** — comes with Node.js automatically
 - **Git** — https://git-scm.com
-- **flyctl** (only needed for backend deploys) — https://fly.io/docs/hands-on/install-flyctl/
+- **flyctl** (only needed for backend deploys) — https://fly.io/docs/hands-on/install-flyctl/. After installing, see "Connecting flyctl to the Fly.io account" under Deploying Changes below — you need to log in and be added to the project before you can deploy.
 
 Verify you have everything:
 ```bash
@@ -249,6 +249,25 @@ needed, no rebuild, just restart.
 ---
 
 ## Deploying Changes
+
+### Connecting flyctl to the Fly.io account (one-time setup)
+
+Before you can deploy the backend, the `fly` CLI needs to be authenticated and you need access to the `ielts-grader-backend` app.
+
+1. **Get invited to the Fly.io organization.** Ask the project owner to add your email as a collaborator on the Fly.io org (Fly.io dashboard → Organization → Invite Member). You can't deploy without this.
+2. **Log in from your terminal:**
+   ```bash
+   fly auth login
+   ```
+   This opens a browser window to sign in / accept the invite. Once done, your terminal session is authenticated.
+3. **Confirm you have access to the app:**
+   ```bash
+   cd IELTS_GRADER/backend
+   fly status
+   ```
+   This should show the `ielts-grader-backend` app's status (machines, region, etc.) without any errors. If you get a "not found" or permission error, you haven't been added to the org yet — go back to step 1.
+
+You only need to do this once per machine you deploy from. After that, `fly deploy` and `fly secrets set` (below) will work directly — the app name is already baked into `backend/fly.toml`, so you don't need to specify it manually.
 
 ### Frontend → Vercel (automatic)
 
