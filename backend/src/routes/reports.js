@@ -71,6 +71,7 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
     vocabulary_analysis: report.vocabulary_analysis || null,
     grammar_analysis: report.grammar_analysis || null,
     data_structure_analysis: report.data_structure_analysis || null,
+    raw_grader_output: report.raw_grader_output || null,
     errors: sortedErrors,
     // Submission context
     exam_type: submission.exam_type,

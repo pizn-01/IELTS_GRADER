@@ -1,0 +1,403 @@
+# IELTS Grader — Developer Guide
+
+This guide covers everything you need to run the project locally, understand where things live, and deploy changes to production.
+
+---
+
+## Prerequisites
+
+Install these before you start:
+
+- **Node.js v20+** — https://nodejs.org (download the LTS version)
+- **npm** — comes with Node.js automatically
+- **Git** — https://git-scm.com
+- **flyctl** (only needed for backend deploys) — https://fly.io/docs/hands-on/install-flyctl/
+
+Verify you have everything:
+```bash
+node -v     # should show v20.x or higher
+npm -v      # should show 10.x or higher
+git -v      # any version
+fly version # any version
+```
+
+---
+
+## Getting the Code
+
+```bash
+git clone https://github.com/pizn-01/IELTS_GRADER.git
+cd IELTS_GRADER
+```
+
+---
+
+## Project Structure
+
+```
+IELTS_GRADER/
+├── backend/                  ← Node.js API server (deployed on Fly.io)
+│   ├── src/
+│   │   ├── index.js          ← Server entry point
+│   │   ├── routes/           ← API route handlers
+│   │   │   ├── auth.js       ← Login, register, password reset, email verify
+│   │   │   ├── submissions.js← Essay submission + credit deduction
+│   │   │   ├── tasks.js      ← Exam question catalogue
+│   │   │   ├── admin.js      ← Admin panel endpoints
+│   │   │   ├── stripe.js     ← Payments and webhooks
+│   │   │   ├── reports.js    ← Graded report retrieval
+│   │   │   ├── analytics.js  ← Dashboard charts
+│   │   │   ├── discounts.js  ← Discount codes
+│   │   │   ├── support.js    ← Support tickets
+│   │   │   └── storage.js    ← Profile image uploads
+│   │   └── services/
+│   │       ├── grader.js     ← AI grading logic (OpenAI prompts) ← GRADING CRITERIA LIVE HERE
+│   │       ├── email.js      ← Transactional email (Resend)
+│   │       └── supabase.js   ← Database client
+│   ├── .env                  ← Local environment variables (never commit this)
+│   ├── .env.example          ← Template showing what variables are needed
+│   └── fly.toml              ← Fly.io deployment config
+│
+└── ielts-grader-app/         ← React frontend (deployed on Vercel)
+    └── src/
+        ├── App.jsx           ← All routes defined here
+        ├── services/api.js   ← Every backend API call (single file)
+        ├── context/
+        │   └── AuthContext.jsx ← Global auth state (user, token, login, logout)
+        ├── pages/            ← Page-level components
+        ├── components/       ← Shared UI components
+        ├── marketing/        ← Landing page sections (Hero, FAQ, etc.)
+        └── auth/             ← Login, signup, password reset pages
+```
+
+---
+
+## Running Locally
+
+You need to run **two terminals** — one for the backend, one for the frontend.
+
+### Terminal 1 — Backend
+
+```bash
+cd IELTS_GRADER/backend
+```
+
+Create your local environment file:
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in the values (get these from the project owner):
+```
+PORT=5000
+NODE_ENV=development
+
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+JWT_SECRET=any-long-random-string-for-local-dev
+
+OPENAI_API_KEY=sk-proj-...
+
+GRADING_SECRET=any-random-string-for-local-dev
+
+FRONTEND_URL=http://localhost:5173
+
+# Optional — only needed if testing email flows locally
+RESEND_API_KEY=re_...
+EMAIL_FROM=IELTS Grader <noreply@yourdomain.com>
+```
+
+Install dependencies and start:
+```bash
+npm install
+node src/index.js
+```
+
+You should see:
+```
+IELTS Grader Backend running on port 5000 [development]
+```
+
+The backend is now available at `http://localhost:5000`. You can test it:
+```bash
+curl http://localhost:5000/health
+# → {"status":"ok","timestamp":"..."}
+```
+
+### Terminal 2 — Frontend
+
+```bash
+cd IELTS_GRADER/ielts-grader-app
+```
+
+Create your local environment file:
+```bash
+cp .env.local.example .env.local
+```
+
+Open `.env.local` and fill in the values (get these from the project owner):
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Install dependencies and start:
+```bash
+npm install
+npm run dev
+```
+
+You should see:
+```
+  VITE v6.x.x  ready in xxx ms
+  ➜  Local:   http://localhost:5173/
+```
+
+Open `http://localhost:5173` in your browser. The frontend talks to the local backend automatically (Vite proxies `/api` → `http://localhost:5000`).
+
+---
+
+## How to Make Changes
+
+### Changing Frontend UI or Text
+
+All frontend code lives in `ielts-grader-app/src/`.
+
+| What you want to change | File to edit |
+|---|---|
+| Landing page headline/text | `src/marketing/Hero.jsx` |
+| FAQ content | `src/marketing/FAQ.jsx` |
+| Features section | `src/marketing/Features.jsx` |
+| How It Works section | `src/marketing/HowItWorks.jsx` |
+| Dashboard layout | `src/dashboard/DashboardApp.jsx` |
+| Report page | `src/pages/ReportPage.jsx` |
+| Pricing page | `src/pages/PricingPage.jsx` |
+| Login / Signup pages | `src/auth/LoginPage1.jsx`, `src/auth/SignupPage5.jsx` |
+| All API calls to backend | `src/services/api.js` |
+| App routes | `src/App.jsx` |
+
+Make your changes, the browser will **hot-reload automatically** — no restart needed.
+
+### Changing Backend Logic
+
+All backend code lives in `backend/src/`.
+
+| What you want to change | File to edit |
+|---|---|
+| Grading criteria / AI prompts (**Python engine — primary**) | `backend/python/v0_common.py` |
+| Grading criteria / AI prompts (JS engine — fallback) | `src/services/grader.js` |
+| Email templates | `src/services/email.js` |
+| Auth flow (login, register, etc.) | `src/routes/auth.js` |
+| Submission / credit logic | `src/routes/submissions.js` |
+| Payment / Stripe logic | `src/routes/stripe.js` |
+| Admin panel data | `src/routes/admin.js` |
+| Exam questions | `src/routes/tasks.js` |
+
+After editing a backend file, **restart the backend process** (Ctrl+C → `node src/index.js` again) for changes to take effect.
+
+### Changing the Grading Criteria (Python engine)
+
+The grading engine used in production is Python, originally sourced from
+the client's own repository and adapted to work with this system — see
+`backend/python/README.md` for the full history of what was changed and
+why. The grading logic and prompts live in `backend/python/v0_common.py`:
+
+- **`_build_primary_prompt`** — Main grading. Controls what criteria GPT grades on, the JSON output shape, and how errors are identified.
+- **`_build_secondary_prompt`** — Independent second-opinion grade from a separate model, for cross-checking accuracy.
+- **`_build_deep_prompt`** — Deep analysis: model answer, vocabulary breakdown, grammar analysis, structure analysis.
+
+To change what gets graded or how, edit the prompt text inside these
+functions. The prompts are plain English — no special syntax needed.
+
+**Testing your changes locally:**
+
+```bash
+cd backend/python
+python -m venv .venv          # first time only
+.venv\Scripts\activate         # Windows — macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env           # fill in OPENAI_API_KEY
+
+python AnswerGrader.py --exam-name "Test" --prompt "Some question..." --user-answer "Some essay..."
+```
+
+This prints the full JSON grading report to your terminal — the exact
+output the live system produces for a real user submission.
+
+**Switching the backend to use your changes:** set `GRADING_ENGINE=python`
+in `backend/.env`, then restart the backend (`node src/index.js`). Set it
+back to `GRADING_ENGINE=js` (or remove the line) to instantly roll back to
+the previous grading engine if something goes wrong — no code changes
+needed, no rebuild, just restart.
+
+> There is also a JS grading engine (`backend/src/services/grader.js`)
+> kept in the codebase as an emergency fallback. It is not the one you
+> should edit for day-to-day grading criteria changes — it exists purely
+> so `GRADING_ENGINE=js` is always available as an instant rollback path.
+
+### Adding a New API Route
+
+1. Add your handler to the appropriate file in `backend/src/routes/` (or create a new file)
+2. If you created a new file, register it in `backend/src/index.js`:
+   ```js
+   const myRoutes = require('./routes/myroute');
+   app.use('/api/myroute', myRoutes);
+   ```
+3. Add the matching API call in `ielts-grader-app/src/services/api.js`
+
+---
+
+## Deploying Changes
+
+### Frontend → Vercel (automatic)
+
+Vercel watches the `main` branch. All you need to do is push:
+
+```bash
+git add .
+git commit -m "describe what you changed"
+git push
+```
+
+Vercel picks it up automatically and deploys within ~2 minutes. You can watch the build at https://vercel.com/dashboard.
+
+### Backend → Fly.io (manual)
+
+```bash
+cd IELTS_GRADER/backend
+fly deploy
+```
+
+This builds a Docker image and rolls it out to production. Takes ~2–3 minutes. You'll see a success message with the deployed URL. The image includes Python 3 and installs `backend/python/requirements.txt` automatically — no manual setup needed for the grading engine.
+
+To watch live logs after deploying:
+```bash
+fly logs
+```
+
+**Switching production to the Python grading engine:** once you've tested
+your Python changes locally and are ready to go live with them:
+```bash
+fly secrets set GRADING_ENGINE=python
+```
+This triggers an automatic redeploy. To roll back instantly if anything
+goes wrong:
+```bash
+fly secrets set GRADING_ENGINE=js
+```
+
+### Updating Backend Environment Variables
+
+Backend environment variables (API keys, secrets) are stored as Fly.io secrets, not in code. To add or change one:
+
+```bash
+fly secrets set VARIABLE_NAME=new_value
+```
+
+This triggers an automatic redeploy. Examples:
+
+```bash
+fly secrets set OPENAI_API_KEY=sk-proj-new-key
+fly secrets set RESEND_API_KEY=re_xxxxxxxxxxxx
+fly secrets set STRIPE_PRICE_WEEKLY_SPRINT=price_xxxxxxxxxxxx
+```
+
+To see all currently set secrets (values are hidden, only names shown):
+```bash
+fly secrets list
+```
+
+---
+
+## Database — Supabase
+
+The database is hosted on Supabase. To make direct data changes or run SQL:
+
+1. Go to https://supabase.com → sign in → open the IELTS Grader project
+2. Click **SQL Editor** in the left sidebar → **New Query**
+3. Write and run your SQL
+
+Key tables:
+
+| Table | What it stores |
+|---|---|
+| `profiles` | One row per user — name, email, credits, admin flag |
+| `submissions` | Every essay submitted with status (pending / graded / failed) |
+| `reports` | Graded results — band scores, feedback, errors, model answer |
+| `exam_tasks` | The question bank — questions shown during mock exams |
+| `user_question_assignments` | Tracks which question was assigned to which user |
+| `payments` | Stripe payment records |
+| `discount_codes` | Discount/promo codes |
+
+Common tasks:
+
+```sql
+-- Give a user more credits
+UPDATE profiles SET credits_remaining = 10 WHERE email = 'user@example.com';
+
+-- Make a user an admin
+UPDATE profiles SET is_admin = true WHERE email = 'admin@example.com';
+
+-- Add a question to the question bank
+INSERT INTO exam_tasks (exam_type, task_type, title, question_text, time_limit_seconds, is_active)
+VALUES ('Academic', 'Task 2', 'Technology and Society', 'Some people believe...', 2400, true);
+
+-- Check how many credits a user has
+SELECT email, credits_remaining FROM profiles WHERE email = 'user@example.com';
+```
+
+---
+
+## Useful Commands Reference
+
+```bash
+# ── Frontend ─────────────────────────────────────────────────────
+cd ielts-grader-app
+npm run dev          # start local dev server
+npm run build        # build for production (checks for errors)
+
+# ── Backend ──────────────────────────────────────────────────────
+cd backend
+node src/index.js    # start local dev server
+npm install          # install/update dependencies
+
+# ── Git ──────────────────────────────────────────────────────────
+git status           # see what files changed
+git add .            # stage all changes
+git commit -m "msg"  # commit with a message
+git push             # push to GitHub (triggers Vercel deploy)
+git pull             # get latest changes from GitHub
+
+# ── Fly.io ───────────────────────────────────────────────────────
+cd backend
+fly deploy           # deploy backend to production
+fly logs             # view live production logs
+fly logs -i <id>     # logs for a specific machine
+fly secrets list     # list all environment variable names
+fly secrets set K=V  # set/update an environment variable
+```
+
+---
+
+## Troubleshooting
+
+**Frontend shows "Network Error" or white screen**
+- Make sure the backend is running (`node src/index.js` in the `backend/` folder)
+- Check the browser console (F12 → Console tab) for errors
+
+**Backend fails to start**
+- Check your `.env` file — all required variables must be filled in
+- Run `node --check src/index.js` to check for syntax errors
+
+**Changes not showing after deploy**
+- Frontend: wait 2 minutes for Vercel, then hard refresh (Ctrl+Shift+R)
+- Backend: run `fly logs` to see if the new version started correctly
+
+**"Invalid token" or login loops**
+- Clear localStorage: in browser DevTools (F12) → Application → Local Storage → clear all
+
+**Need to see what's happening in production backend**
+```bash
+fly logs
+```

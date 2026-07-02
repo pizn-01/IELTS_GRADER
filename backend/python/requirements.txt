@@ -1,0 +1,4 @@
+# Load OPENAI_API_KEY from .env (optional if you always export env vars)
+python-dotenv>=1.0.0
+openai>=1.0.0
+tiktoken>=0.5.0

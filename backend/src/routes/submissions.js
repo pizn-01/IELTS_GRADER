@@ -1,7 +1,7 @@
 const express = require('express');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
-const { gradeEssayAsync } = require('../services/grader');
+const { gradeEssayAsync } = require('../services/graderEngine');
 
 const router = express.Router();
 
