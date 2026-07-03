@@ -8,6 +8,7 @@ import { useGrade } from '../context/GradeContext';
 import { extractFileText } from '../utils/extractFileText';
 import QuestionChart, { detectChartType } from './QuestionChart';
 import { isGeneralTask1Letter, parseLetterQuestion } from '../utils/parseLetterQuestion';
+import { isAcademicTask1Report, parseReportQuestion } from '../utils/parseReportQuestion';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -17,8 +18,16 @@ const QUESTION_BANK = {
     { prompt: "Some people think that a sense of competition in children should be encouraged. Others believe that children who are taught to co-operate rather than compete become more useful adults. Discuss both views and give your own opinion.", note: "Write at least 250 words. You have 40 minutes." },
   ],
   'Academic-Task 1': [
-    { prompt: "The graph below shows the proportion of the population aged 65 and over between 1940 and 2040 in three different countries. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.", note: "Write at least 150 words. You have 20 minutes.", chartType: 'line' },
-    { prompt: "The charts below show the percentage of water used for different purposes in six areas of the world. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.", note: "Write at least 150 words. You have 20 minutes.", chartType: 'pie' },
+    {
+      prompt: 'The graph below shows the proportion of the population aged 65 and over between 1940 and 2040 in three different countries.',
+      note: 'You should spend about 20 minutes on this task.\n\nWrite at least 150 words.',
+      chartType: 'line',
+    },
+    {
+      prompt: 'The charts below show the percentage of water used for different purposes in six areas of the world.',
+      note: 'You should spend about 20 minutes on this task.\n\nWrite at least 150 words.',
+      chartType: 'pie',
+    },
   ],
   'General-Task 2': [
     { prompt: "Some people think that parents should teach children how to be good members of society. Others believe that school is the place to learn this. Discuss both these views and give your own opinion.", note: "Write at least 250 words. You have 40 minutes." },
@@ -55,7 +64,7 @@ function currentTaskStorageKey(examType, taskType) {
 }
 
 function noteForTimeLimit(seconds, examType, taskType) {
-  if (isGeneralTask1Letter(examType, taskType)) {
+  if (isGeneralTask1Letter(examType, taskType) || isAcademicTask1Report(examType, taskType)) {
     return 'You should spend about 20 minutes on this task.\n\nWrite at least 150 words.';
   }
   return seconds <= 1200
@@ -102,12 +111,32 @@ function LetterQuestionDisplay({ text }) {
   );
 }
 
+function ReportQuestionDisplay({ text, chartType }) {
+  const { scenario, instruction } = parseReportQuestion(text);
+  return (
+    <>
+      <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-4">
+        {scenario}
+      </h2>
+      {chartType && (
+        <div className="mb-4">
+          <QuestionChart type={chartType} seed={text} />
+        </div>
+      )}
+      <p className="text-[12px] md:text-[13px] text-[#475467] leading-[1.6] font-medium">
+        {instruction}
+      </p>
+    </>
+  );
+}
+
 const MockExam = ({ examType, taskType, onExit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { setSubmissionId: setContextSubmissionId, updateEssayData } = useGrade();
   const isAcademicTask1 = examType === 'Academic' && (taskType || '').includes('1');
   const isLetterTask = isGeneralTask1Letter(examType, taskType);
+  const isReportTask = isAcademicTask1Report(examType, taskType);
   const isTask1 = (taskType || '').includes('1');
   const startSeconds = isTask1 ? 1199 : 2399;
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
@@ -444,15 +473,19 @@ const MockExam = ({ examType, taskType, onExit }) => {
             <>
               {isLetterTask ? (
                 <LetterQuestionDisplay text={question.prompt} />
+              ) : isReportTask ? (
+                <ReportQuestionDisplay text={question.prompt} chartType={questionChartType} />
               ) : (
-                <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
-                  {question.prompt}
-                </h2>
-              )}
-              {questionChartType && (
-                <div className="mb-5">
-                  <QuestionChart type={questionChartType} seed={question.prompt} />
-                </div>
+                <>
+                  <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
+                    {question.prompt}
+                  </h2>
+                  {questionChartType && (
+                    <div className="mb-5">
+                      <QuestionChart type={questionChartType} seed={question.prompt} />
+                    </div>
+                  )}
+                </>
               )}
               <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90 mt-5">
                 <p className="whitespace-pre-line">{question.note}</p>
