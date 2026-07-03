@@ -156,28 +156,34 @@ const MockExam = ({ examType, taskType, onExit }) => {
     const excludeId = examTaskIdRef.current || sessionStorage.getItem(currentKey) || undefined;
 
     setQuestionLoading(true);
-    try {
-      const { data } = await api.getNextTask({
-        exam_type: resolvedExam,
-        task_type: resolvedTask,
-        session_type: 'mock',
-        exclude_task_id: excludeId || undefined,
-      });
 
-      if (data?.question_text) {
-        const q = {
-          prompt: data.question_text,
-          note: noteForTimeLimit(data.time_limit_seconds, resolvedExam, resolvedTask),
-        };
-        setCurrentQuestion(q);
-        setExamTaskId(data.id);
-        examTaskIdRef.current = data.id;
-        sessionStorage.setItem(currentKey, data.id);
-        if (clearEssay) setEssay('');
-        return;
+    // Try the API twice before falling back to the tiny offline bank —
+    // a transient failure would otherwise silently repeat hardcoded questions.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data } = await api.getNextTask({
+          exam_type: resolvedExam,
+          task_type: resolvedTask,
+          session_type: 'mock',
+          exclude_task_id: excludeId || undefined,
+        });
+
+        if (data?.question_text) {
+          const q = {
+            prompt: data.question_text,
+            note: noteForTimeLimit(data.time_limit_seconds, resolvedExam, resolvedTask),
+          };
+          setCurrentQuestion(q);
+          setExamTaskId(data.id);
+          examTaskIdRef.current = data.id;
+          sessionStorage.setItem(currentKey, data.id);
+          if (clearEssay) setEssay('');
+          return;
+        }
+      } catch {
+        // retry once, then fall through to offline bank
       }
-    } catch {
-      // fall through to offline bank
+      if (attempt === 0) await new Promise(r => setTimeout(r, 800));
     }
 
     const excludeIndex = excludeId?.startsWith('fallback-')

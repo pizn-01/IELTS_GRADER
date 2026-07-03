@@ -19,61 +19,102 @@ function seededInt(h, salt, min, max) {
   return min + (v % (max - min + 1));
 }
 
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
 // ── Text-derived chart parameters ─────────────────────────────────────────────
-// Charts are synthetic (no real dataset is attached to imported questions), but
-// we pull whatever hints exist in the prompt so the legend/labels feel grounded
-// instead of generic "Jan–Jun" placeholders on every single chart.
+// Charts are synthetic (imported questions carry no dataset), but every label —
+// series names, x-axis ticks, table headers — is pulled from the question text
+// so the visual matches what the prompt describes.
+
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 function extractEntities(seed, fallback) {
   const stop = '(?:between|from|since|during|among|across|over|within|as|where|which|that)';
-  const entityWord = `[A-Z][A-Za-z.&'-]*(?:\\s(?!${stop}\\b)[A-Za-z.&'-]+){0,2}`;
+  const entityWord = `(?:the\\s+)?[A-Z][A-Za-z.&'-]*(?:\\s(?!${stop}\\b)[A-Za-z.&'-]+){0,2}`;
   const re = new RegExp(`(?:in|for|among|across)\\s+(${entityWord}(?:,\\s*${entityWord})*(?:,?\\s+and\\s+${entityWord})?)`);
   const match = seed.match(re);
   if (!match) return fallback;
   const parts = match[1]
     .split(/,\s*|\s+and\s+/)
-    .map((s) => s.trim())
+    .map((s) => s.replace(/^the\s+/i, '').trim())
     .filter((s) => s && s.length <= 24 && !/\d/.test(s) && s.split(' ').length <= 3);
   return parts.length >= 2 ? parts.slice(0, 4) : fallback;
 }
 
-function extractYears(seed, fallback) {
-  const matches = seed.match(/\b(19|20)\d{2}\b/g) || [];
-  const unique = [...new Set(matches)];
-  return unique.length >= 2 ? unique.slice(0, 2) : fallback;
+// "between 1990 and 2015" / "from 2001 to 2018" → evenly spaced year ticks
+function extractYearTicks(seed, count) {
+  const years = (seed.match(/\b(?:19|20)\d{2}\b/g) || []).map(Number);
+  if (years.length < 2) return null;
+  const min = Math.min(...years);
+  const max = Math.max(...years);
+  if (max - min < count - 1) return null;
+  const step = (max - min) / (count - 1);
+  return Array.from({ length: count }, (_, i) => String(Math.round(min + step * i)));
+}
+
+// "shows literacy rates and primary school completion percentages in ..." →
+// ['Literacy rates', 'Primary school completion percentages']
+function extractMeasures(seed, fallback) {
+  const m = seed.match(
+    /(?:shows|illustrates|highlights|compares|depicts|provides information about)\s+(?:the\s+)?(.+?)\s+(?:in|for|across|among|between|by|using)\s/i
+  );
+  if (!m) return fallback;
+  const parts = m[1]
+    .split(/\s+and\s+(?:the\s+)?/i)
+    .map((s) => s.trim())
+    .filter((s) => s && s.length <= 48);
+  if (parts.length >= 2) return [capitalize(parts[0]), capitalize(parts[1])];
+  if (parts.length === 1) return [capitalize(parts[0]), fallback[1]];
+  return fallback;
 }
 
 const COUNT_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
 function extractRowCount(seed, fallback = 4) {
   const match = seed
     .toLowerCase()
-    .match(/\b(one|two|three|four|five|six|seven|eight|nine|ten)\b\s+(?:world\s+)?(?:countries|cities|regions|categories|groups|areas|classes|sectors|stages)\b/);
+    .match(/\b(one|two|three|four|five|six|seven|eight|nine|ten)\b\s+(?:world\s+)?(?:countries|cities|regions|categories|groups|areas|classes|sectors|stages|nations)\b/);
   if (!match) return fallback;
   return COUNT_WORDS[match[1]] || fallback;
 }
 
-// ── Data generators ───────────────────────────────────────────────────────────
-function makeLineData(seed) {
-  const h = hashStr(seed);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-  return months.map((month, i) => ({
-    month,
-    Coherence: Math.min(94, Math.max(22,
-      seededInt(h, i + 1, 28, 68) + Math.round(Math.sin(i * 0.9 + (h % 6)) * 16),
-    )),
-    Vocabulary: Math.min(96, Math.max(30,
-      seededInt(h + 1, i + 1, 44, 88) + Math.round(Math.cos(i * 0.7 + (h % 4)) * 20),
-    )),
-  }));
+// Domain-specific group labels for prompts that name their series implicitly
+function extractGroupLabels(seed, fallback) {
+  const t = seed.toLowerCase();
+  if (t.includes('by mode') || t.includes('different modes') || t.includes('travel modes')) {
+    return ['Car', 'Bus', 'Train', 'Bicycle'];
+  }
+  if (t.includes('by gender')) return ['Male', 'Female'];
+  if (t.includes('age group') || t.includes('age groups')) return ['18–30', '31–50', '51+'];
+  return extractEntities(seed, fallback);
 }
 
-function makeBarData(seed) {
+const SERIES_COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B'];
+
+// ── Data generators ───────────────────────────────────────────────────────────
+// Each entity gets a base level + trend slope so lines/bars look like real
+// time-series data rather than random noise.
+function makeTrendSeries(seed, entities, ticks) {
   const h = hashStr(seed);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  const colors = ['#8B5CF6', '#EF4444', '#3B82F6', '#F59E0B', '#14B8A6', '#22C55E'];
-  return months.map((month, i) => ({
-    month,
-    value: seededInt(h, (i + 1) * 7, 10, 98),
-    color: colors[i],
+  return ticks.map((tick, i) => {
+    const row = { tick };
+    entities.forEach((label, j) => {
+      const base = seededInt(h, j * 17 + 3, 25, 60);
+      const slope = seededInt(h, j * 29 + 7, -5, 8);
+      const noise = seededInt(h, i * 7 + j * 13, -5, 5);
+      row[label] = clamp(base + slope * i + noise, 5, 95);
+    });
+    return row;
+  });
+}
+
+function makeSingleSeries(seed, ticks) {
+  const h = hashStr(seed);
+  const slope = seededInt(h, 5, -4, 9);
+  return ticks.map((tick, i) => ({
+    tick,
+    value: clamp(seededInt(h, 11, 25, 55) + slope * i + seededInt(h, (i + 1) * 7, -6, 6), 8, 96),
   }));
 }
 
@@ -84,15 +125,12 @@ function makePieData(seed) {
   const c = 12 + seededInt(h, 11, 0, 7);
   const d = Math.max(5, 100 - a - b - c);
   const colors = ['#94A3B8', '#BFDBFE', '#60A5FA', '#3B82F6'];
-  return {
-    segments: [a, b, c, d].map((value, i) => ({ value, color: colors[i] })),
-    center: String(4 + (h % 6)),
-  };
+  const labels = ['Category A', 'Category B', 'Category C', 'Category D'];
+  return [a, b, c, d].map((value, i) => ({ name: labels[i], value, color: colors[i] }));
 }
 
-function makeGroupedBarData(seed, entities) {
+function makeGroupedBarData(seed, entities, categories) {
   const h = hashStr(seed);
-  const categories = ['Group 1', 'Group 2', 'Group 3', 'Group 4'];
   return categories.map((category, ci) => {
     const row = { category };
     let sum = 0;
@@ -101,19 +139,9 @@ function makeGroupedBarData(seed, entities) {
       row[label] = value;
       sum += value;
     });
-    row.__avg = Math.round(sum / entities.length);
+    row.Average = Math.round(sum / entities.length);
     return row;
   });
-}
-
-function makeMixedData(seed) {
-  const h = hashStr(seed);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  return months.map((month, i) => ({
-    month,
-    volume: seededInt(h, (i + 1) * 4, 20, 90),
-    rate: seededInt(h + 2, (i + 1) * 6, 15, 80),
-  }));
 }
 
 // ── Chart type detection from question text ───────────────────────────────────
@@ -150,9 +178,9 @@ const DarkTooltip = ({ active, payload }) => {
     <div style={{
       background: '#101828',
       color: '#fff',
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: 700,
-      padding: '5px 12px',
+      padding: '6px 12px',
       borderRadius: 8,
       boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
     }}>
@@ -163,111 +191,94 @@ const DarkTooltip = ({ active, payload }) => {
   );
 };
 
-// ── Line chart ────────────────────────────────────────────────────────────────
-function LineChartView({ data }) {
+const axisTickStyle = { fontSize: 11, fill: '#9CA3AF' };
+const legendStyle = { fontSize: 11, paddingTop: 6 };
+
+// ── Multi-line chart (entities over years) ────────────────────────────────────
+function LineChartView({ seed }) {
+  const entities = extractEntities(seed, ['Series A', 'Series B', 'Series C']);
+  const ticks = extractYearTicks(seed, 6) || ['2000', '2004', '2008', '2012', '2016', '2020'];
+  const data = makeTrendSeries(seed, entities, ticks);
   return (
-    <ResponsiveContainer width="100%" height={230}>
+    <ResponsiveContainer width="100%" height={240}>
       <LineChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }}>
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
-        <XAxis
-          dataKey="month"
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
-          axisLine={false}
-          tickLine={false}
-        />
+        <XAxis dataKey="tick" tick={axisTickStyle} axisLine={false} tickLine={false} />
         <YAxis
           domain={[0, 100]}
           ticks={[0, 20, 40, 60, 80, 100]}
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+          tick={axisTickStyle}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip content={<DarkTooltip />} cursor={false} />
-        <Legend
-          iconType="circle"
-          iconSize={10}
-          wrapperStyle={{ fontSize: 12, paddingTop: 6 }}
-        />
-        <Line
-          type="monotone"
-          dataKey="Coherence"
-          stroke="#4ECDC4"
-          strokeWidth={2.5}
-          dot={false}
-          activeDot={{ r: 7, fill: '#F59E0B', stroke: '#fff', strokeWidth: 2 }}
-        />
-        <Line
-          type="monotone"
-          dataKey="Vocabulary"
-          stroke="#818CF8"
-          strokeWidth={2.5}
-          dot={false}
-          activeDot={{ r: 7, fill: '#F59E0B', stroke: '#fff', strokeWidth: 2 }}
-        />
+        <Legend iconType="circle" iconSize={10} wrapperStyle={legendStyle} />
+        {entities.map((label, i) => (
+          <Line
+            key={label}
+            type="monotone"
+            dataKey={label}
+            stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+            strokeWidth={2.5}
+            dot={false}
+            activeDot={{ r: 6, strokeWidth: 0 }}
+          />
+        ))}
       </LineChart>
     </ResponsiveContainer>
   );
 }
 
-// ── Bar chart ─────────────────────────────────────────────────────────────────
-function BarChartView({ data }) {
+// ── Single-series bar chart (values over years) ───────────────────────────────
+function BarChartView({ seed }) {
+  const [measure] = extractMeasures(seed, ['Value', 'Value']);
+  const ticks = extractYearTicks(seed, 6) || ['2000', '2004', '2008', '2012', '2016', '2020'];
+  const data = makeSingleSeries(seed, ticks);
   return (
-    <ResponsiveContainer width="100%" height={230}>
+    <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }} barCategoryGap="28%">
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
-        <XAxis
-          dataKey="month"
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
-          axisLine={false}
-          tickLine={false}
-        />
+        <XAxis dataKey="tick" tick={axisTickStyle} axisLine={false} tickLine={false} />
         <YAxis
           domain={[0, 100]}
           ticks={[0, 20, 40, 60, 80, 100]}
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+          tick={axisTickStyle}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip content={<DarkTooltip />} cursor={false} />
-        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-          {data.map((entry, i) => (
-            <Cell key={`bar-${i}`} fill={entry.color} />
-          ))}
-        </Bar>
+        <Legend iconType="circle" iconSize={10} wrapperStyle={legendStyle} />
+        <Bar dataKey="value" name={measure} fill="#3B82F6" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
 // ── Grouped bar chart with an overlaid average line ───────────────────────────
-function GroupedBarChartView({ data, entities }) {
-  const colors = ['#8B5CF6', '#3B82F6', '#F59E0B', '#22C55E'];
+function GroupedBarChartView({ seed }) {
+  const entities = extractGroupLabels(seed, ['Group A', 'Group B', 'Group C']);
+  const categories = extractYearTicks(seed, 4) || ['Category 1', 'Category 2', 'Category 3', 'Category 4'];
+  const data = makeGroupedBarData(seed, entities, categories);
   return (
     <ResponsiveContainer width="100%" height={250}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }} barCategoryGap="24%">
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
-        <XAxis
-          dataKey="category"
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
-          axisLine={false}
-          tickLine={false}
-        />
+        <XAxis dataKey="category" tick={axisTickStyle} axisLine={false} tickLine={false} />
         <YAxis
           domain={[0, 100]}
           ticks={[0, 20, 40, 60, 80, 100]}
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+          tick={axisTickStyle}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip content={<DarkTooltip />} cursor={false} />
-        <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
+        <Legend iconType="circle" iconSize={10} wrapperStyle={legendStyle} />
         {entities.map((label, i) => (
-          <Bar key={label} dataKey={label} fill={colors[i % colors.length]} radius={[4, 4, 0, 0]} barSize={16} />
+          <Bar key={label} dataKey={label} fill={SERIES_COLORS[i % SERIES_COLORS.length]} radius={[4, 4, 0, 0]} barSize={16} />
         ))}
         <Line
           type="monotone"
-          dataKey="__avg"
-          name="Average"
+          dataKey="Average"
           stroke="#101828"
           strokeWidth={2}
           strokeDasharray="5 4"
@@ -279,35 +290,43 @@ function GroupedBarChartView({ data, entities }) {
 }
 
 // ── Mixed bar + line combo chart ──────────────────────────────────────────────
-function MixedChartView({ data }) {
+function MixedChartView({ seed }) {
+  const [barName, lineName] = extractMeasures(seed, ['Total volume', 'Rate (%)']);
+  const ticks = extractYearTicks(seed, 6) || ['2000', '2004', '2008', '2012', '2016', '2020'];
+  const h = hashStr(seed);
+  const data = ticks.map((tick, i) => ({
+    tick,
+    [barName]: clamp(seededInt(h, 11, 30, 60) + seededInt(h, 5, -3, 7) * i + seededInt(h, (i + 1) * 4, -5, 5), 10, 95),
+    [lineName]: clamp(seededInt(h + 2, 13, 20, 50) + seededInt(h + 2, 5, -3, 7) * i + seededInt(h + 2, (i + 1) * 6, -5, 5), 5, 90),
+  }));
   return (
-    <ResponsiveContainer width="100%" height={230}>
+    <ResponsiveContainer width="100%" height={240}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }}>
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
-        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="tick" tick={axisTickStyle} axisLine={false} tickLine={false} />
         <YAxis
           domain={[0, 100]}
           ticks={[0, 20, 40, 60, 80, 100]}
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+          tick={axisTickStyle}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip content={<DarkTooltip />} cursor={false} />
-        <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
-        <Bar dataKey="volume" name="Total" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={22} />
-        <Line type="monotone" dataKey="rate" name="Rate (%)" stroke="#EF4444" strokeWidth={2.5} dot={{ r: 3 }} />
+        <Legend iconType="circle" iconSize={10} wrapperStyle={legendStyle} />
+        <Bar dataKey={barName} fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={22} />
+        <Line type="monotone" dataKey={lineName} stroke="#EF4444" strokeWidth={2.5} dot={{ r: 3 }} />
       </ComposedChart>
     </ResponsiveContainer>
   );
 }
 
-// ── Pie / donut chart ─────────────────────────────────────────────────────────
-function PieChartView({ data }) {
-  const { segments, center } = data;
+// ── Pie / donut chart with legend ─────────────────────────────────────────────
+function PieChartView({ seed, title = null }) {
+  const segments = makePieData(seed);
   const RADIAN = Math.PI / 180;
 
   const renderLabel = ({ cx, cy, midAngle, outerRadius, value }) => {
-    const r = outerRadius + 24;
+    const r = outerRadius + 18;
     const x = cx + r * Math.cos(-midAngle * RADIAN);
     const y = cy + r * Math.sin(-midAngle * RADIAN);
     return (
@@ -326,16 +345,17 @@ function PieChartView({ data }) {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 250 }}>
-      <ResponsiveContainer width="100%" height={250}>
+    <div>
+      <ResponsiveContainer width="100%" height={210}>
         <PieChart>
           <Pie
             data={segments}
             cx="50%"
             cy="50%"
-            innerRadius={65}
-            outerRadius={90}
+            innerRadius={48}
+            outerRadius={72}
             dataKey="value"
+            nameKey="name"
             labelLine={false}
             label={renderLabel}
             paddingAngle={2}
@@ -344,17 +364,17 @@ function PieChartView({ data }) {
               <Cell key={`seg-${i}`} fill={seg.color} />
             ))}
           </Pie>
+          <Tooltip content={<DarkTooltip />} />
         </PieChart>
       </ResponsiveContainer>
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'none',
-      }}>
-        <span style={{ fontSize: 36, fontWeight: 700, color: '#1F2937' }}>{center}</span>
+      {title && <div className="text-center text-[12px] font-bold text-gray-600">{title}</div>}
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+        {segments.map((seg) => (
+          <span key={seg.name} className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600">
+            <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: seg.color }} />
+            {seg.name}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -362,27 +382,23 @@ function PieChartView({ data }) {
 
 // ── Two comparative pie charts (e.g. "spending in 2005 and 2015") ─────────────
 function PieComparativeView({ seed }) {
-  const [yearA, yearB] = extractYears(seed, ['Period A', 'Period B']);
-  const dataA = makePieData(`${seed}-a`);
-  const dataB = makePieData(`${seed}-b`);
+  const years = extractYearTicks(seed, 2) || ['Period A', 'Period B'];
   return (
     <div className="grid grid-cols-2 gap-3">
-      <div className="text-center">
-        <PieChartView data={dataA} />
-        <div className="text-[12px] font-bold text-gray-600 mt-1">{yearA}</div>
-      </div>
-      <div className="text-center">
-        <PieChartView data={dataB} />
-        <div className="text-[12px] font-bold text-gray-600 mt-1">{yearB}</div>
-      </div>
+      <PieChartView seed={`${seed}-a`} title={years[0]} />
+      <PieChartView seed={`${seed}-b`} title={years[1]} />
     </div>
   );
 }
 
-// ── Data table (e.g. "the table below highlights...") ────────────────────────
+// ── Data table with headers derived from the prompt ───────────────────────────
 function TableView({ seed }) {
   const h = hashStr(seed);
   const rowCount = extractRowCount(seed, 4);
+  const measures = extractMeasures(seed, ['Value A', 'Value B']);
+  const entities = extractEntities(seed, []);
+  const rowLabels = Array.from({ length: rowCount }, (_, i) => entities[i] || `Category ${i + 1}`);
+
   const cellStyle = { padding: '8px 10px', border: '1px solid #E5E7EB', textAlign: 'left' };
   const headStyle = { ...cellStyle, background: '#F3F4F6', fontWeight: 700, color: '#374151' };
   return (
@@ -391,14 +407,13 @@ function TableView({ seed }) {
         <thead>
           <tr>
             <th style={headStyle}>Category</th>
-            <th style={headStyle}>Value A</th>
-            <th style={headStyle}>Value B</th>
+            {measures.map((m) => <th key={m} style={headStyle}>{m}</th>)}
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: rowCount }, (_, i) => (
-            <tr key={i} style={{ background: i % 2 ? '#F9FAFB' : '#fff' }}>
-              <td style={cellStyle}>{`Category ${i + 1}`}</td>
+          {rowLabels.map((label, i) => (
+            <tr key={label} style={{ background: i % 2 ? '#F9FAFB' : '#fff' }}>
+              <td style={{ ...cellStyle, fontWeight: 600 }}>{label}</td>
               <td style={cellStyle}>{seededInt(h, (i + 1) * 3, 10, 95)}</td>
               <td style={cellStyle}>{seededInt(h, (i + 1) * 7, 10, 95)}</td>
             </tr>
@@ -413,14 +428,11 @@ function TableView({ seed }) {
 const QuestionChart = ({ type, seed = '' }) => {
   const wrapper = 'bg-[#F3F4F6] rounded-[12px] p-3';
 
-  if (type === 'line') return <div className={wrapper}><LineChartView data={makeLineData(seed)} /></div>;
-  if (type === 'bar') return <div className={wrapper}><BarChartView data={makeBarData(seed)} /></div>;
-  if (type === 'pie') return <div className={wrapper}><PieChartView data={makePieData(seed)} /></div>;
-  if (type === 'groupedBar') {
-    const entities = extractEntities(seed, ['Group A', 'Group B', 'Group C']);
-    return <div className={wrapper}><GroupedBarChartView data={makeGroupedBarData(seed, entities)} entities={entities} /></div>;
-  }
-  if (type === 'mixed') return <div className={wrapper}><MixedChartView data={makeMixedData(seed)} /></div>;
+  if (type === 'line') return <div className={wrapper}><LineChartView seed={seed} /></div>;
+  if (type === 'bar') return <div className={wrapper}><BarChartView seed={seed} /></div>;
+  if (type === 'pie') return <div className={wrapper}><PieChartView seed={seed} /></div>;
+  if (type === 'groupedBar') return <div className={wrapper}><GroupedBarChartView seed={seed} /></div>;
+  if (type === 'mixed') return <div className={wrapper}><MixedChartView seed={seed} /></div>;
   if (type === 'pieComparative') return <div className={wrapper}><PieComparativeView seed={seed} /></div>;
   if (type === 'table') return <div className={wrapper}><TableView seed={seed} /></div>;
   return null;
