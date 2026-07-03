@@ -61,14 +61,7 @@ function runPythonScript(scriptName, args) {
   });
 }
 
-// Task 1 (General) = letter, Task 1 (Academic) = report, Task 2 = essay
-// (Task 2 has no Academic/General distinction in IELTS grading criteria).
-function resolveTaskVariant(exam_type, task_type) {
-  if (task_type === 'Task 1') {
-    return exam_type === 'General' ? 'task1-letter' : 'task1-report';
-  }
-  return 'task2';
-}
+const { resolveTaskVariant } = require('../utils/taskVariant');
 
 async function getTaskRow(exam_task_id) {
   if (!exam_task_id) return null;
@@ -245,21 +238,23 @@ function mapPythonResult(raw) {
     };
   }
 
-  // data_structure_analysis: built from summary + flow + argumentation
-  const flow = raw.flow_logic_analysis || {};
-  const argumentation = raw.argumentation_analysis || {};
-  const breakdown = raw.breakdown || {};
-  const trFeedback =
-    (breakdown['Task Response'] || breakdown['Task Achievement'] || {}).feedback || '';
-  let data_structure_analysis = null;
-  if (raw.summary || flow.flow_summary || argumentation.authenticity) {
-    data_structure_analysis = {
-      overview: raw.summary || '',
-      body_analysis: trFeedback,
-      transition_analysis: flow.flow_summary || '',
-      authenticity_feedback: (argumentation.authenticity || {}).authenticity_note || '',
-    };
-  }
+  // Pass through native per-task analysis blocks from graders unchanged.
+  const argumentation_analysis =
+    raw.argumentation_analysis && Object.keys(raw.argumentation_analysis).length > 0
+      ? raw.argumentation_analysis
+      : null;
+  const data_structure_analysis =
+    raw.data_structure_analysis && Object.keys(raw.data_structure_analysis).length > 0
+      ? raw.data_structure_analysis
+      : null;
+  const letter_structure_analysis =
+    raw.letter_structure_analysis && Object.keys(raw.letter_structure_analysis).length > 0
+      ? raw.letter_structure_analysis
+      : null;
+  const flow_logic_analysis =
+    raw.flow_logic_analysis && Object.keys(raw.flow_logic_analysis).length > 0
+      ? raw.flow_logic_analysis
+      : null;
 
   // secondary_bands from the independent Model B scoring round
   const roundB = raw.scoring_round_b || {};
@@ -299,6 +294,9 @@ function mapPythonResult(raw) {
     vocabulary_analysis,
     grammar_analysis,
     data_structure_analysis,
+    argumentation_analysis,
+    letter_structure_analysis,
+    flow_logic_analysis,
     secondary_bands,
   };
 }
@@ -400,6 +398,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
         // "Dual Assessment" tab reads raw_grader_output.primary.sub_category_scores
         // and raw_grader_output.secondary_bands directly.
         raw_grader_output: {
+          task_variant: taskVariant,
           primary: {
             overall_band,
             response_band,
@@ -418,6 +417,9 @@ async function gradeEssayAsync(submissionId, submissionData) {
             vocabulary_analysis: result.vocabulary_analysis || null,
             grammar_analysis: result.grammar_analysis || null,
             data_structure_analysis: result.data_structure_analysis || null,
+            argumentation_analysis: result.argumentation_analysis || null,
+            letter_structure_analysis: result.letter_structure_analysis || null,
+            flow_logic_analysis: result.flow_logic_analysis || null,
           },
           secondary_bands: result.secondary_bands || null,
         },
@@ -473,4 +475,4 @@ async function gradeEssayAsync(submissionId, submissionData) {
   }
 }
 
-module.exports = { gradeEssayAsync };
+module.exports = { gradeEssayAsync, resolveTaskVariant };

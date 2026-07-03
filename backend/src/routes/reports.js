@@ -1,6 +1,7 @@
 const express = require('express');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
+const { resolveTaskVariant } = require('../utils/taskVariant');
 
 const router = express.Router();
 
@@ -57,6 +58,18 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
     (a, b) => (severityOrder[a.severity] || 5) - (severityOrder[b.severity] || 5)
   );
 
+  const rawOutput = report.raw_grader_output || {};
+  const deep = rawOutput.deep || {};
+  const task_variant =
+    rawOutput.task_variant || resolveTaskVariant(submission.exam_type, submission.task_type);
+
+  // Prefer native blocks in deep; fall back to top-level column for older reports
+  const data_structure_analysis =
+    deep.data_structure_analysis || report.data_structure_analysis || null;
+  const argumentation_analysis = deep.argumentation_analysis || null;
+  const letter_structure_analysis = deep.letter_structure_analysis || null;
+  const flow_logic_analysis = deep.flow_logic_analysis || null;
+
   return res.json({
     id: submissionId,
     overall_band: parseFloat(report.overall_band),
@@ -70,7 +83,11 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
     model_answer: report.model_answer || null,
     vocabulary_analysis: report.vocabulary_analysis || null,
     grammar_analysis: report.grammar_analysis || null,
-    data_structure_analysis: report.data_structure_analysis || null,
+    data_structure_analysis,
+    argumentation_analysis,
+    letter_structure_analysis,
+    flow_logic_analysis,
+    task_variant,
     raw_grader_output: report.raw_grader_output || null,
     errors: sortedErrors,
     // Submission context

@@ -1,6 +1,94 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+function resolveTaskVariant(examType, taskType) {
+  if (taskType === 'Task 1') {
+    return examType === 'General' ? 'task1-letter' : 'task1-report';
+  }
+  return 'task2';
+}
+
+function getTabsForVariant(variant) {
+  const base = ['Overview', 'Error Analysis', 'Dual Assessment', 'Model Answer', 'Vocabulary', 'Grammar'];
+  if (variant === 'task2') return [...base, 'Argumentation', 'Flow & Logic'];
+  if (variant === 'task1-report') return [...base, 'Data Structure', 'Flow & Logic'];
+  if (variant === 'task1-letter') return [...base, 'Structure', 'Flow & Logic'];
+  return [...base, 'Flow & Logic'];
+}
+
+const StarRating = ({ count = 0 }) => (
+  <span className="text-[#F59E0B] text-[14px] tracking-tight">
+    {'★'.repeat(Math.min(5, Math.max(0, count)))}
+    <span className="text-gray-200">{'★'.repeat(Math.max(0, 5 - count))}</span>
+  </span>
+);
+
+const BulletList = ({ items, colorClass = 'text-[#101828]' }) => {
+  if (!items?.length) return null;
+  return (
+    <ul className="space-y-4">
+      {items.map((text, i) => (
+        <li key={i} className="flex items-start gap-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-[7px] shrink-0" />
+          <span className={`text-[14px] font-semibold leading-relaxed ${colorClass}`}>{text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+const EmptyTabState = ({ title, message }) => (
+  <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+    <div className="text-center space-y-4">
+      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+        <FileText className="text-gray-300" />
+      </div>
+      <h3 className="text-[18px] font-bold text-[#101828]">{title}</h3>
+      <p className="text-gray-400 text-[14px]">{message}</p>
+    </div>
+  </div>
+);
+
+const AuthenticityList = ({ title, list, textKey, fixKey }) => {
+  if (!list?.length) return null;
+  return (
+    <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden p-4 md:p-6">
+      <h4 className="text-[15px] font-bold text-[#101828] mb-4">{title}</h4>
+      <ul className="space-y-4">
+        {list.map((item, i) => (
+          <li key={i} className="text-[14px] leading-relaxed">
+            <span className="line-through text-[#EA4335] font-semibold">{item[textKey]}</span>
+            <div className="mt-1">
+              <span className="text-[#00C9B1] font-bold text-[12px] uppercase">Try: </span>
+              <span className="text-[#101828] font-medium">{item[fixKey]}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+const CollapsibleCard = ({ title, sectionKey, expanded, onToggle, children, defaultOpen = true }) => {
+  const isOpen = expanded === undefined ? defaultOpen : expanded;
+  return (
+    <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
+      <div
+        className="px-4 md:px-8 py-4 md:py-5 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
+        onClick={() => onToggle(sectionKey)}
+      >
+        <h3 className="text-[16px] font-bold text-[#101828]">{title}</h3>
+        <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      {isOpen && (
+        <div className="px-4 md:px-8 py-4 md:py-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ReportView = ({ onBack, data, showHeader = false }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -69,6 +157,18 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
   const essayContent = data?.essay || "Some people argue that imposing longer prison sentences is the most effective way to reduce crime, while others believe that alternative measures can achieve better results. Although stricter punishments may deter certain offenders, I believe that addressing the root causes of crime is a more sustainable and effective solution.";
   const taskTitle = data ? `${data.exam_type || data.examType || ''} ${data.task_type || data.taskType || ''}`.trim() : "Task 2- Academic";
   const taskQuestion = data?.taskQuestion || "Task : Some people think that the best way to reduce crime is to give longer prison sentences. Others, however, believe there are better alternative ways of reducing crime.";
+
+  const taskVariant = useMemo(
+    () => data?.task_variant || resolveTaskVariant(data?.exam_type || data?.examType, data?.task_type || data?.taskType),
+    [data]
+  );
+  const reportTabs = useMemo(() => getTabsForVariant(taskVariant), [taskVariant]);
+
+  useEffect(() => {
+    if (!reportTabs.includes(activeTab)) {
+      setActiveTab('Overview');
+    }
+  }, [reportTabs, activeTab]);
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
@@ -266,7 +366,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
 
           {/* Tab Bar Navigation */}
           <div className="flex items-center gap-[20px] md:gap-[28px] border-b border-[#D1D5DB66] overflow-x-auto no-scrollbar">
-            {["Overview", "Error Analysis", "Dual Assessment", "Model Answer", "Vocabulary", "Grammar", "Data Structure", "Flow & Logic"].map((tab) => (
+            {reportTabs.map((tab) => (
               <div
                 key={tab}
                 className="relative pb-[12px] cursor-pointer group whitespace-nowrap shrink-0"
@@ -883,383 +983,584 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           </div>
           );
         })()
-        : activeTab === "Data Structure" ? (() => {
-          const dsa = data?.data_structure_analysis;
-          if (!dsa) return (
-            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
-                <h3 className="text-[18px] font-bold text-[#101828]">Data Structure Analysis</h3>
-                <p className="text-gray-400 text-[14px]">Data structure analysis is being generated. Please check back shortly.</p>
-              </div>
-            </div>
-          );
+        : activeTab === "Argumentation" ? (() => {
+          const arg = data?.argumentation_analysis;
+          if (!arg || Object.keys(arg).length === 0) {
+            return <EmptyTabState title="Argumentation Analysis" message="Argumentation analysis is being generated. Please check back shortly." />;
+          }
+          const alignment = arg.task_alignment || {};
+          const intro = arg.introduction_analysis || {};
+          const concl = arg.conclusion_analysis || {};
+          const auth = arg.authenticity || {};
+          const argMap = arg.argument_map || [];
           return (
-          <div className="space-y-8">
-            {/* Overview Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-8 py-4 md:py-6 flex flex-col justify-center">
-              <h3 className="text-[18px] font-bold text-[#101828] mb-3 leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
-              <p className="text-[16px] text-[#101828] leading-snug font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                {dsa.overview}
-              </p>
-            </div>
-
-            {/* Introduction Analysis */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div 
-                className="px-4 md:px-8 py-4 md:py-5 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
-                onClick={() => toggleSection('introAnalysis')}
-              >
-                <h3 className="text-[16px] font-bold text-[#101828]">Introduction Analysis</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.introAnalysis ? "rotate-180" : ""}`} />
-              </div>
-
-              {expandedSections.introAnalysis && (
-                <div className="px-4 md:px-8 py-4 md:py-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
-                {/* Status Tags */}
-                <div className="flex flex-wrap items-center gap-3 md:gap-10">
-                  <div className="text-[13px]">
-                    <span className="text-[#475467] font-medium">Paraphrase:</span> <span className="font-bold text-[#101828] ml-1">Partial</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[13px] text-[#101828] font-semibold">
-                    <CheckCircle size={18} strokeWidth={2.5} className="text-[#26C1A1]" />
-                    <span>Chart Type</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[13px] text-[#101828] font-semibold">
-                    <XCircle size={18} strokeWidth={2.5} className="text-[#FF5E4D]" />
-                    <span>Time Period</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[13px] text-[#101828] font-semibold">
-                    <CheckCircle size={18} strokeWidth={2.5} className="text-[#26C1A1]" />
-                    <span>Units</span>
-                  </div>
+            <div className="space-y-8">
+              {arg.overall_summary && (
+                <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-8 py-4 md:py-6">
+                  <h3 className="text-[18px] font-bold text-[#101828] mb-3">Argumentation Summary</h3>
+                  <p className="text-[16px] text-[#101828] leading-relaxed">{arg.overall_summary}</p>
                 </div>
-
-                {/* Text Box */}
-                <div
-                  className="w-full bg-[#1018280D] border border-[#10182833] rounded-[10px] px-4 md:px-6 py-3 flex items-center text-[14px] md:text-[16px] text-[#101828] font-semibold leading-relaxed"
-                  style={{ fontFamily: "'Nunito', sans-serif" }}
-                >
-                  The bar chart illustrates the average calorie intake for males and females in three age groups: children, adolescents and adults, measured in kilocalories.
-                </div>
-
-                {/* Strengths and Weaknesses */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                  <div className="space-y-6">
-                    <h4 className="text-[16px] font-bold text-[#00C9B1]">Strengths</h4>
-                    <ul className="space-y-4">
-                      {["Clearly identifies it is a bar chart", "States the measurement unit (kilocalories)", "Introduces the compared groups (males vs females; three age groups)"].map((s, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-[7px] shrink-0" />
-                          <span className="text-[14px] text-[#101828] font-semibold leading-relaxed">{s}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="space-y-6">
-                    <h4 className="text-[16px] font-bold text-[#FF4D4D]">Weakness</h4>
-                    <ul className="space-y-4">
-                      {["Does not reflect the prompt's framing (age and gender across categories/timeframes)", "No time period is identified (reference data is year-based: 2000/2010/2020)", "Adds specific category labels that do not match the given series-based dataset"].map((w, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-[7px] shrink-0" />
-                          <span className="text-[14px] text-[#101828] font-semibold leading-relaxed">{w}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Recommendation Box */}
-                <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-5 text-[14px] leading-relaxed">
-                  <span className="font-bold text-[#00C9B1]">Recommendation:</span> <span className="text-[#101828] font-semibold ml-1">Paraphrase the prompt in a chart-faithful way by naming the series and timeframe shown, plus the unit exactly as given.</span>
-                </div>
-              </div>
               )}
-            </div>
 
-            {/* Data Coverage Map */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div 
-                className="px-4 md:px-8 py-4 md:py-6 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
-                onClick={() => toggleSection('dataCoverageMap')}
-              >
-                <h3 className="text-[16px] font-bold text-[#101828]">Data Coverage Map</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.dataCoverageMap ? "rotate-180" : ""}`} />
-              </div>
-
-              {expandedSections.dataCoverageMap && (
-                <div className="px-4 md:px-8 py-4 md:py-6 space-y-8 animate-in fade-in slide-in-from-top-2 duration-200">
-                {/* Table Section */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-b border-[#D1D5DB]">
-                    <thead>
-                      <tr className="bg-[#F2F4F7] rounded-[8px]">
-                        <th className="px-6 py-4 text-[14px] font-bold text-[#101828] rounded-l-[8px]">Data Series</th>
-                        <th className="px-6 py-4 text-[14px] font-bold text-[#101828] text-center">Status</th>
-                        <th className="px-6 py-4 text-[14px] font-bold text-[#101828]">Evidence Quality</th>
-                        <th className="px-6 py-4 text-[14px] font-bold text-[#101828] text-center rounded-r-[8px]">Score</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#D1D5DB]">
-                      {[
-                        { series: "Series A (2000, 2010, 2020)", status: "Missing", quality: "No chart-based figures or year references are given for Series A", score: "2" },
-                        { series: "Series B (2000, 2010, 2020)", status: "Missing", quality: "No chart-based figures or year references are given for Series B", score: "2" }
-                      ].map((row, i) => (
-                        <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-5 text-[14px] font-medium text-[#101828]">{row.series}</td>
-                          <td className="px-6 py-5">
-                            <div className="flex items-center justify-center gap-2 text-[14px] text-[#FF5E4D] font-semibold">
-                              <XCircle size={23} strokeWidth={2} />
-                              <span>{row.status}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5 text-[14px] text-[#475467] font-normal leading-relaxed">{row.quality}</td>
-                          <td className="px-6 py-5 text-center text-[14px] font-bold text-[#FF5E4D]">{row.score}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Detailed Analysis */}
-                <div className="space-y-10">
-                  {/* Series A Details */}
-                  <div className="space-y-5">
-                    <h4 className="text-[16px] font-bold text-[#101828]">Series A (2000, 2010, 2020)</h4>
-                    <ul className="space-y-4">
-                      {[
-                        "Values for Series A in 2000, 2010 and 2020 (213, 253, 303 units)",
-                        "Trend description across the three years (steady increase)",
-                        "Direct comparisons with Series B in each year (e.g., which series is higher)"
-                      ].map((bullet, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#EA4335] mt-[7px] shrink-0" />
-                          <span className="text-[16px] text-[#EA4335] font-semibold leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="bg-[#30C3A926] border border-[#30C3A926] rounded-[10px] p-5 text-[15.5px] leading-relaxed">
-                      <span className="font-bold text-[#00C9B1]">Recommendation:</span> <span className="text-[#101828] font-bold ml-1">Add a paragraph tracking Series A over time with approximate values and trend direction, then compare against Series B for at least two points (start/end).</span>
+              {Object.keys(alignment).length > 0 && (
+                <CollapsibleCard title="Task Alignment & Coverage" sectionKey="argAlignment" expanded={expandedSections.argAlignment} onToggle={toggleSection}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <p className="text-[13px] text-[#475467]"><span className="font-bold text-[#101828]">Prompt Type:</span> {alignment.prompt_type_identified || 'Unknown'}</p>
+                      <p className="text-[13px] text-[#475467]">
+                        <span className="font-bold text-[#101828]">Your Interpretation:</span> {alignment.prompt_type_student_treated_as || 'Unknown'}
+                        {alignment.correctly_interpreted
+                          ? <span className="ml-2 text-[#00C9B1] font-bold">Correct</span>
+                          : <span className="ml-2 text-[#EA4335] font-bold">Incorrect</span>}
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Series B Details */}
-                  <div className="space-y-5">
-                    <h4 className="text-[16px] font-bold text-[#101828]">Series B (2000, 2010, 2020)</h4>
-                    <ul className="space-y-4">
-                      {[
-                        "Values for Series B in 2000, 2010 and 2020 (243, 223, 333 units)",
-                        "Non-linear pattern (dip in 2010 then sharp rise to 2020)",
-                        "Comparison with Series A (B higher in 2000 and 2020; lower in 2010)"
-                      ].map((bullet, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#EA4335] mt-[7px] shrink-0" />
-                          <span className="text-[16px] text-[#EA4335] font-semibold leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="bg-[#30C3A926] border border-[#30C3A926] rounded-[10px] p-5 text-[15.5px] leading-relaxed">
-                      <span className="font-bold text-[#00C9B1]">Recommendation:</span> <span className="text-[#101828] font-bold ml-1">Describe Series B's change across 2000–2020, highlighting the 2010 low and the sharp rise by 2020, and explicitly compare its level to Series A in each year.</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              )}
-            </div>
-
-            {/* Collapsed Sections */}
-            {[
-              "Overview Analysis",
-              "Data Selection Quality",
-              "Task Alignment",
-              "Authenticity & Natural Language"
-            ].map((title, idx) => (
-              <div key={idx} className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-4 md:px-10 py-4 md:py-6 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
-                  <h3 className="text-[16px] font-bold text-[#101828]">{title}</h3>
-                  <ChevronDown size={20} className="text-gray-400" />
-                </div>
-              </div>
-            ))}
-          </div>
-          );
-        })()
-        : activeTab === "Flow & Logic" ? (() => {
-          const dsa = data?.data_structure_analysis;
-          const coherenceErrors = (data?.errors || []).filter(e => e.criteria === 'Coherence & Cohesion');
-          const coherenceBand = data?.coherence_band ? parseFloat(data.coherence_band) : null;
-          // Estimate a 0-100 flow score from coherence band: (band-1)/8 * 100
-          const flowScore = coherenceBand ? Math.round(((coherenceBand - 1) / 8) * 100) : null;
-          return (
-          <div className="space-y-6">
-            {/* Overall Flow Score Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-10 py-5 md:py-8 flex flex-wrap items-center justify-between gap-4">
-              <div className="space-y-1 flex-1 min-w-0">
-                <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Overall Flow Score</h3>
-                <p className="text-[14px] text-[#101828] font-normal leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                  {dsa?.transition_analysis || dsa?.overview || 'Flow analysis based on Coherence & Cohesion assessment.'}
-                </p>
-              </div>
-              <div className="text-[32px] font-bold shrink-0" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                <span className="text-[#3B82F6]">{flowScore ?? '—'}</span><span className="text-[#101828]">{flowScore != null ? '/100' : ''}</span>
-              </div>
-            </div>
-
-            {/* Paragraph-to-Paragraph Flow */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div 
-                className="px-4 md:px-8 py-4 border-b border-[#D1D5DB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
-                onClick={() => toggleSection('flowParagraph')}
-              >
-                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Paragraph-to-Paragraph Flow</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.flowParagraph ? "rotate-180" : ""}`} />
-              </div>
-
-              {expandedSections.flowParagraph && (
-                <div className="px-4 md:px-8 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left min-w-[560px]">
-                    <thead>
-                      <tr className="bg-[#F2F4F7] rounded-[8px]">
-                        <th className="px-6 py-2 text-[14px] font-bold text-[#101828] rounded-l-[8px] w-[260px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Transition</th>
-                        <th className="px-6 py-2 text-[14px] font-bold text-[#101828] w-[140px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Strength</th>
-                        <th className="px-6 py-2 text-[14px] font-bold text-[#101828] w-[160px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Quality</th>
-                        <th className="px-6 py-2 text-[14px] font-bold text-[#101828] rounded-r-[8px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#D1D5DB]">
-                      {[
-                        { trans: "Cohesive Devices", score: "90", quality: "Smooth", color: "text-[#30C3A9]", qColor: "text-[#30C3A9]", note: "The introduction identifies the chart subject (calorie intake by gender and age group), so moving to an overview of main patterns is a natural next step." },
-                        { trans: "Structure", score: "85", quality: "Smooth", color: "text-[#30C3A9]", qColor: "text-[#30C3A9]", note: "The overview establishes broad comparisons (males higher; children lowest), and Body 1 logically begins detailing the first age group (child)" },
-                        { trans: "Referencing", score: "82", quality: "Smooth", color: "text-[#30C3A9]", qColor: "text-[#30C3A9]", note: "After quantifying the lowest group (children), the report progresses to the next age group (adolescents) and signals it as the highest intake group." },
-                        { trans: "Paragraphing", score: "75", quality: "Adequate", color: "text-[#30C3A9]", qColor: "text-[#F59E0B]", note: "Add a brief wrap-up clause before the summary, e.g., 'Having compared all three age brackets, ...' or ensure the final sentence explicitly references all groups." }
-                      ].map((row, i) => (
-                        <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-1.5 text-[16px] font-normal text-[#101828] whitespace-nowrap leading-none tracking-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.trans}</td>
-                          <td className={`px-6 py-1.5 text-[14px] font-bold ${row.color}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{row.score}</td>
-                          <td className={`px-6 py-1.5 text-[14px] font-bold ${row.qColor}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{row.quality}</td>
-                          <td className="px-6 py-1.5 text-[14px] text-[#101828] font-normal leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{row.note}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              )}
-            </div>
-
-            {/* Logical Issues Detected */}
-            <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div 
-                className="px-4 md:px-8 py-3 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors"
-                onClick={() => toggleSection('logicalIssues')}
-              >
-                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Logical Issues Detected</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.logicalIssues ? "rotate-180" : ""}`} />
-              </div>
-
-              {expandedSections.logicalIssues && (
-                <div className="px-4 md:px-8 py-4 md:py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {coherenceErrors.length > 0 ? coherenceErrors.slice(0, 4).map((err, ei) => (
-                    <div key={ei} className="space-y-5">
-                      <h4 className="text-[15px] font-bold text-[#EA4335]" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.title} — {err.location_text}</h4>
-                      <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[16px] text-[#101828] font-semibold leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        "{err.original_text}"
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[14px] text-[#475467] leading-snug font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                          {err.explanation}
-                        </p>
-                        <p className="text-[14px] text-[#475467] leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                          <span className="font-bold text-[#101828]">Severity:</span> {err.severity} | <span className="font-bold text-[#101828]">Sub-category:</span> {err.sub_category}
-                        </p>
-                      </div>
-                      <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4">
-                        <p className="text-[16px] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                          <span className="font-bold text-[#00C9B1]">Correction:</span> <span className="text-[#101828] font-normal ml-1">{err.correction_text}</span>
-                        </p>
-                      </div>
-                    </div>
-                  )) : (
-                    <p className="text-[14px] text-gray-400">
-                      {dsa?.authenticity_feedback || 'No significant coherence or flow issues detected in this essay.'}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Authenticity & natural language from data_structure_analysis */}
-            {dsa?.authenticity_feedback && (
-              <div className="bg-white rounded-[24px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors">
-                  <h3 className="text-[16px] font-bold text-[#101828]">Authenticity & Natural Language</h3>
-                </div>
-                <div className="px-4 md:px-8 pb-6 border-t border-[#E5E7EB]">
-                  <p className="text-[15px] text-[#475467] leading-relaxed pt-5" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.authenticity_feedback}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Paragraph Unity */}
-            <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('paragraphUnity')}>
-                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Paragraph Unity</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.paragraphUnity ? "rotate-180" : ""}`} />
-              </div>
-              {expandedSections.paragraphUnity && (
-                <div className="px-4 md:px-8 py-4 md:py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
-                  {dsa?.body_analysis ? (
-                    <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.body_analysis}</p>
-                  ) : (
-                    <p className="text-[14px] text-gray-400">Paragraph unity analysis will appear here after grading.</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Sentence-Level Flow */}
-            <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('sentenceFlow')}>
-                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Sentence-Level Flow</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.sentenceFlow ? "rotate-180" : ""}`} />
-              </div>
-              {expandedSections.sentenceFlow && (
-                <div className="px-4 md:px-8 py-4 md:py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
-                  {dsa?.transition_analysis ? (
-                    <p className="text-[15px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{dsa.transition_analysis}</p>
-                  ) : (
-                    <p className="text-[14px] text-gray-400">Sentence-level flow analysis will appear here after grading.</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Cohesive Devices */}
-            <div className="bg-white rounded-[12px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-4 md:px-8 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('cohesiveDevices')}>
-                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Cohesive Devices</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.cohesiveDevices ? "rotate-180" : ""}`} />
-              </div>
-              {expandedSections.cohesiveDevices && (
-                <div className="px-4 md:px-8 py-4 md:py-5 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
-                  {coherenceErrors.filter(e => (e.sub_category || '').toLowerCase().includes('cohes')).length > 0 ? (
                     <div className="space-y-4">
-                      {coherenceErrors.filter(e => (e.sub_category || '').toLowerCase().includes('cohes')).slice(0, 3).map((err, ei) => (
-                        <div key={ei} className="space-y-2">
-                          <p className="text-[13px] font-bold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                            {err.sub_category} — {err.location_text}
-                          </p>
-                          <p className="text-[14px] text-[#475467] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>{err.explanation}</p>
+                      {(alignment.required_elements || []).map((el, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between text-[13px] font-bold text-[#101828] mb-1">
+                            <span>{el.element}</span>
+                            <span>{el.coverage_percentage}%</span>
+                          </div>
+                          <div className="h-[8px] bg-[#F3F4F6] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-[#3B82F6]" style={{ width: `${el.coverage_percentage || 0}%` }} />
+                          </div>
+                          {el.note && <p className="text-[12px] text-[#475467] mt-1">{el.note}</p>}
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-[14px] text-gray-400">Cohesive device analysis will appear here. No specific issues detected.</p>
+                  </div>
+                  {alignment.misinterpretation_warning && (
+                    <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[14px] text-[#B91C1C]">
+                      <span className="font-bold">Warning:</span> {alignment.misinterpretation_warning}
+                    </div>
                   )}
+                </CollapsibleCard>
+              )}
+
+              {(Object.keys(intro).length > 0 || Object.keys(concl).length > 0) && (
+                <CollapsibleCard title="Structural Components" sectionKey="argStructure" expanded={expandedSections.argStructure} onToggle={toggleSection}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {Object.keys(intro).length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[15px] font-bold text-[#101828]">Introduction</h4>
+                          <StarRating count={intro.overall_quality_stars || 0} />
+                        </div>
+                        <p className="text-[14px] text-[#475467]"><span className="font-bold">Position:</span> {intro.position_statement_clarity || 'N/A'}</p>
+                        <p className="text-[14px] text-[#475467]"><span className="font-bold">Thesis:</span> {intro.thesis_present || 'N/A'}</p>
+                        {intro.recommendation && (
+                          <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px]">{intro.recommendation}</div>
+                        )}
+                      </div>
+                    )}
+                    {Object.keys(concl).length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[15px] font-bold text-[#101828]">Conclusion</h4>
+                          <StarRating count={concl.overall_quality_stars || 0} />
+                        </div>
+                        <p className="text-[14px] text-[#475467]"><span className="font-bold">Summarizes Points:</span> {concl.summarizes_main_points || 'N/A'}</p>
+                        <p className="text-[14px] text-[#475467]">
+                          <span className="font-bold">New Ideas Introduced:</span>{' '}
+                          {concl.introduces_new_ideas ? <span className="text-[#EA4335] font-bold">Yes (avoid)</span> : <span className="text-[#00C9B1] font-bold">No</span>}
+                        </p>
+                        {concl.recommendation && (
+                          <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px]">{concl.recommendation}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleCard>
+              )}
+
+              {argMap.length > 0 && (
+                <CollapsibleCard title="Body Paragraph Mapping" sectionKey="argMap" expanded={expandedSections.argMap} onToggle={toggleSection}>
+                  <div className="space-y-6">
+                    {argMap.map((item, i) => (
+                      <div key={i} className="border border-[#E5E7EB] rounded-[12px] p-4 md:p-6 space-y-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[12px] font-bold text-[#475467] uppercase">{item.paragraph}</p>
+                            <p className="text-[15px] font-bold text-[#101828]">{item.main_claim}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[12px] text-[#475467]">Evidence Quality</p>
+                            <StarRating count={item.evidence_quality_stars || 0} />
+                          </div>
+                        </div>
+                        <p className="text-[14px] text-[#475467]">
+                          <span className="font-bold text-[#101828]">Explanation:</span> {item.explanation_depth}
+                          {item.explanation_note && <em className="ml-1">— {item.explanation_note}</em>}
+                        </p>
+                        {(item.missing_elements || []).length > 0 && (
+                          <div className="bg-[#FEF2F2] rounded-[10px] p-4">
+                            <p className="text-[13px] font-bold text-[#B91C1C] mb-2">Missing Elements</p>
+                            <BulletList items={item.missing_elements} colorClass="text-[#B91C1C]" />
+                          </div>
+                        )}
+                        {item.recommendation && (
+                          <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px]">{item.recommendation}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleCard>
+              )}
+
+              {Object.keys(auth).length > 0 && (
+                <CollapsibleCard title="Authenticity & Pitfalls" sectionKey="argAuth" expanded={expandedSections.argAuth} onToggle={toggleSection}>
+                  <div className="flex flex-wrap items-center gap-4 mb-6">
+                    <span className="text-[14px] font-bold text-[#101828]">Natural Expression Ratio</span>
+                    <div className="flex-1 min-w-[120px] h-[10px] bg-[#F3F4F6] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#00C9B1] rounded-full" style={{ width: `${auth.formulaic_vs_natural_percentage || 0}%` }} />
+                    </div>
+                    <span className="text-[18px] font-bold text-[#101828]">{auth.formulaic_vs_natural_percentage || 0}%</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AuthenticityList title="Memorized Phrases" list={auth.memorized_phrases} textKey="phrase" fixKey="suggestion" />
+                    <AuthenticityList title="Over-generalizations" list={auth.overgeneralizations} textKey="text" fixKey="suggested_fix" />
+                    <AuthenticityList title="Mother Tongue Interference" list={auth.mother_tongue_interference} textKey="text" fixKey="suggested_fix" />
+                    <AuthenticityList title="Cliches" list={auth.cliches_detected} textKey="phrase" fixKey="suggestion" />
+                  </div>
+                </CollapsibleCard>
+              )}
+            </div>
+          );
+        })()
+        : activeTab === "Data Structure" ? (() => {
+          const dsa = data?.data_structure_analysis;
+          if (!dsa || Object.keys(dsa).length === 0) {
+            return <EmptyTabState title="Data Structure Analysis" message="Data structure analysis is being generated. Please check back shortly." />;
+          }
+          const intro = dsa.introduction_analysis || {};
+          const overview = dsa.overview_analysis || {};
+          const selection = dsa.data_selection_quality || {};
+          const alignment = dsa.task_alignment || {};
+          const auth = dsa.authenticity || {};
+          const coverageMap = dsa.data_coverage_map || [];
+          return (
+          <div className="space-y-8">
+            {(dsa.overall_summary || dsa.overview) && (
+              <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-8 py-4 md:py-6">
+                <h3 className="text-[18px] font-bold text-[#101828] mb-3">Data Structure Summary</h3>
+                <p className="text-[16px] text-[#101828] leading-snug">{dsa.overall_summary || dsa.overview}</p>
+              </div>
+            )}
+
+            {Object.keys(intro).length > 0 && (
+            <CollapsibleCard title="Introduction Analysis" sectionKey="introAnalysis" expanded={expandedSections.introAnalysis} onToggle={toggleSection}>
+              <div className="flex flex-wrap items-center gap-3 md:gap-6 mb-4">
+                <div className="text-[13px]">
+                  <span className="text-[#475467] font-medium">Paraphrase:</span>{' '}
+                  <span className="font-bold text-[#101828]">{intro.paraphrase_quality || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-[#101828]">
+                  {intro.identifies_chart_type ? <CheckCircle size={18} className="text-[#26C1A1]" /> : <XCircle size={18} className="text-[#FF5E4D]" />}
+                  <span>Chart Type</span>
+                </div>
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-[#101828]">
+                  {intro.identifies_time_period ? <CheckCircle size={18} className="text-[#26C1A1]" /> : <XCircle size={18} className="text-[#FF5E4D]" />}
+                  <span>Time Period</span>
+                </div>
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-[#101828]">
+                  {intro.identifies_units ? <CheckCircle size={18} className="text-[#26C1A1]" /> : <XCircle size={18} className="text-[#FF5E4D]" />}
+                  <span>Units</span>
+                </div>
+                <StarRating count={intro.overall_quality_stars || 0} />
+              </div>
+              {intro.introduction_quote && (
+                <div className="w-full bg-[#1018280D] border border-[#10182833] rounded-[10px] px-4 md:px-6 py-3 text-[14px] md:text-[16px] text-[#101828] font-semibold leading-relaxed mb-6">
+                  {intro.introduction_quote}
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                <div className="space-y-4">
+                  <h4 className="text-[16px] font-bold text-[#00C9B1]">Strengths</h4>
+                  <BulletList items={intro.strengths} />
+                </div>
+                <div className="space-y-4">
+                  <h4 className="text-[16px] font-bold text-[#FF4D4D]">Weaknesses</h4>
+                  <BulletList items={intro.weaknesses} colorClass="text-[#101828]" />
+                </div>
+              </div>
+              {intro.recommendation && (
+                <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-5 text-[14px] leading-relaxed mt-6">
+                  <span className="font-bold text-[#00C9B1]">Recommendation:</span>{' '}
+                  <span className="text-[#101828] font-semibold ml-1">{intro.recommendation}</span>
+                </div>
+              )}
+            </CollapsibleCard>
+            )}
+
+            {coverageMap.length > 0 && (
+            <CollapsibleCard title="Data Coverage Map" sectionKey="dataCoverageMap" expanded={expandedSections.dataCoverageMap} onToggle={toggleSection}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-b border-[#D1D5DB]">
+                  <thead>
+                    <tr className="bg-[#F2F4F7]">
+                      <th className="px-6 py-4 text-[14px] font-bold text-[#101828]">Data Series</th>
+                      <th className="px-6 py-4 text-[14px] font-bold text-[#101828] text-center">Status</th>
+                      <th className="px-6 py-4 text-[14px] font-bold text-[#101828]">Evidence Quality</th>
+                      <th className="px-6 py-4 text-[14px] font-bold text-[#101828] text-center">Score</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#D1D5DB]">
+                    {coverageMap.map((row, i) => {
+                      const isMissing = (row.coverage_status || '').toLowerCase().includes('miss');
+                      return (
+                        <tr key={i} className="hover:bg-gray-50/50">
+                          <td className="px-6 py-5 text-[14px] font-medium text-[#101828]">{row.data_series}</td>
+                          <td className="px-6 py-5 text-center">
+                            <div className={`flex items-center justify-center gap-2 text-[14px] font-semibold ${isMissing ? 'text-[#FF5E4D]' : 'text-[#00C9B1]'}`}>
+                              {isMissing ? <XCircle size={20} /> : <CheckCircle size={20} />}
+                              <span>{row.coverage_status}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 text-[14px] text-[#475467]">{row.evidence_quality_text || row.evidence_quality || '—'}</td>
+                          <td className="px-6 py-5 text-center text-[14px] font-bold text-[#101828]">{row.coverage_score ?? '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="space-y-8 mt-8">
+                {coverageMap.map((row, i) => (
+                  <div key={i} className="space-y-4">
+                    <h4 className="text-[16px] font-bold text-[#101828]">{row.data_series}</h4>
+                    {(row.missing_elements || []).length > 0 && (
+                      <BulletList items={row.missing_elements} colorClass="text-[#EA4335]" />
+                    )}
+                    {row.recommendation && (
+                      <div className="bg-[#30C3A926] border border-[#30C3A926] rounded-[10px] p-5 text-[14px]">
+                        <span className="font-bold text-[#00C9B1]">Recommendation:</span>{' '}
+                        <span className="text-[#101828] font-bold ml-1">{row.recommendation}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleCard>
+            )}
+
+            {Object.keys(overview).length > 0 && (
+            <CollapsibleCard title="Overview Analysis" sectionKey="dsOverview" expanded={expandedSections.dsOverview} onToggle={toggleSection}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <p className="text-[14px] text-[#475467]"><span className="font-bold text-[#101828]">Overview Present:</span> {overview.overview_present || 'N/A'}</p>
+                <p className="text-[14px] text-[#475467]"><span className="font-bold text-[#101828]">Main Trends Captured:</span> {overview.main_trends_captured || 'N/A'}</p>
+                <p className="text-[14px] text-[#475467]">
+                  <span className="font-bold text-[#101828]">Specific Data in Overview:</span>{' '}
+                  {overview.specific_data_in_overview ? <span className="text-[#EA4335] font-bold">Yes — remove data</span> : <span className="text-[#00C9B1] font-bold">No — correct</span>}
+                </p>
+                <p className="text-[14px] text-[#475467]">
+                  <span className="font-bold text-[#101828]">Consistent with Body:</span>{' '}
+                  {overview.consistent_with_body ? <span className="text-[#00C9B1] font-bold">Yes</span> : <span className="text-[#EA4335] font-bold">No</span>}
+                </p>
+              </div>
+              {overview.recommendation && (
+                <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-5 text-[14px] mt-4">{overview.recommendation}</div>
+              )}
+            </CollapsibleCard>
+            )}
+
+            {Object.keys(selection).length > 0 && (
+            <CollapsibleCard title="Data Selection Quality" sectionKey="dsSelection" expanded={expandedSections.dsSelection} onToggle={toggleSection}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <p className="text-[14px] text-[#475467]"><span className="font-bold text-[#101828]">Selectivity:</span> {selection.selectivity_level || 'N/A'}</p>
+                  <p className="text-[14px] text-[#475467]"><span className="font-bold text-[#101828]">Precision:</span> {selection.data_precision_quality || 'N/A'}</p>
+                  {selection.selectivity_band && <p className="text-[14px] font-bold text-[#00C9B1]">Band {selection.selectivity_band}</p>}
+                </div>
+                <div className="flex gap-8">
+                  <div><p className="text-[28px] font-black text-[#EA4335]">{selection.unsupported_trend_claims_count || 0}</p><p className="text-[12px] text-[#475467]">Unsupported Claims</p></div>
+                  <div><p className="text-[28px] font-black text-[#00C9B1]">{selection.meaningful_comparisons_count || 0}</p><p className="text-[12px] text-[#475467]">Comparisons Made</p></div>
+                </div>
+              </div>
+            </CollapsibleCard>
+            )}
+
+            {Object.keys(alignment).length > 0 && (
+            <CollapsibleCard title="Task Alignment" sectionKey="dsAlignment" expanded={expandedSections.dsAlignment} onToggle={toggleSection}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <p className="text-[14px]"><span className="font-bold">Chart Type:</span> {alignment.chart_type_identified || 'N/A'}</p>
+                  <p className="text-[14px]"><span className="font-bold">Treated As:</span> {alignment.chart_type_student_treated_as || 'N/A'}</p>
+                </div>
+                <div className="space-y-3">
+                  {(alignment.required_elements || []).map((el, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between text-[13px] font-bold"><span>{el.element}</span><span>{el.coverage_percentage}%</span></div>
+                      <div className="h-[8px] bg-[#F3F4F6] rounded-full overflow-hidden mt-1">
+                        <div className="h-full bg-[#3B82F6] rounded-full" style={{ width: `${el.coverage_percentage || 0}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {alignment.misinterpretation_warning && (
+                <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[14px] text-[#B91C1C] mt-4">{alignment.misinterpretation_warning}</div>
+              )}
+            </CollapsibleCard>
+            )}
+
+            {Object.keys(auth).length > 0 && (
+            <CollapsibleCard title="Authenticity & Natural Language" sectionKey="dsAuth" expanded={expandedSections.dsAuth} onToggle={toggleSection}>
+              <div className="flex flex-wrap items-center gap-4 mb-6">
+                <span className="text-[14px] font-bold">Natural Expression Ratio</span>
+                <div className="flex-1 min-w-[120px] h-[10px] bg-[#F3F4F6] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#00C9B1] rounded-full" style={{ width: `${auth.formulaic_vs_natural_percentage || 0}%` }} />
+                </div>
+                <span className="font-bold">{auth.formulaic_vs_natural_percentage || 0}%</span>
+              </div>
+              {auth.authenticity_note && <p className="text-[14px] text-[#475467] mb-4">{auth.authenticity_note}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AuthenticityList title="Memorized Phrases" list={auth.memorized_phrases} textKey="phrase" fixKey="suggestion" />
+                <AuthenticityList title="Over-generalizations" list={auth.over_generalizations} textKey="phrase" fixKey="suggestion" />
+                <AuthenticityList title="Mother Tongue Interference" list={auth.mother_tongue_interference} textKey="phrase" fixKey="suggestion" />
+                <AuthenticityList title="Cliches" list={auth.cliches_detected} textKey="phrase" fixKey="suggestion" />
+              </div>
+            </CollapsibleCard>
+            )}
+          </div>
+          );
+        })()
+        : activeTab === "Structure" ? (() => {
+          const ls = data?.letter_structure_analysis;
+          if (!ls || Object.keys(ls).length === 0) {
+            return <EmptyTabState title="Letter Structure Analysis" message="Structure analysis is being generated. Please check back shortly." />;
+          }
+          const opening = ls.opening_analysis || {};
+          const closing = ls.closing_analysis || {};
+          const bulletMap = ls.bullet_development_map || [];
+          const auth = ls.authenticity || {};
+          return (
+            <div className="space-y-8">
+              {ls.overall_summary && (
+                <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm px-4 md:px-8 py-4 md:py-6">
+                  <h3 className="text-[18px] font-bold text-[#101828] mb-3">Structure Summary</h3>
+                  <p className="text-[16px] text-[#101828] leading-relaxed">{ls.overall_summary}</p>
+                </div>
+              )}
+
+              {Object.keys(opening).length > 0 && (
+                <CollapsibleCard title="Opening & Salutation Analysis" sectionKey="lsOpening" expanded={expandedSections.lsOpening} onToggle={toggleSection}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-[15px] font-bold text-[#101828]">Opening Quality</h4>
+                    <StarRating count={opening.overall_quality_stars || 0} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <p className="text-[12px] font-bold text-[#475467] uppercase mb-1">Salutation</p>
+                      <p className="text-[14px] font-semibold text-[#101828]">{opening.salutation_used || 'Not found'}</p>
+                      <p className="text-[13px] text-[#475467] mt-1">{opening.salutation_correct}</p>
+                      {opening.salutation_should_be && <p className="text-[13px] text-[#00C9B1] mt-1">Should be: {opening.salutation_should_be}</p>}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-[#475467] uppercase mb-1">Purpose</p>
+                      <p className="text-[14px] font-semibold text-[#101828]">{opening.purpose_clarity || 'N/A'}</p>
+                      {opening.purpose_quote && <p className="text-[13px] italic text-[#475467] mt-2">"{opening.purpose_quote}"</p>}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-[#475467] uppercase mb-1">Register</p>
+                      <p className="text-[14px] font-semibold text-[#101828]">{opening.register_established || 'N/A'}</p>
+                      {opening.register_issues && <p className="text-[13px] text-[#EA4335] mt-1">{opening.register_issues}</p>}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div><h4 className="text-[15px] font-bold text-[#00C9B1] mb-2">Strengths</h4><BulletList items={opening.strengths} /></div>
+                    <div><h4 className="text-[15px] font-bold text-[#FF4D4D] mb-2">Weaknesses</h4><BulletList items={opening.weaknesses} /></div>
+                  </div>
+                  {opening.recommendation && (
+                    <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px] mt-4">{opening.recommendation}</div>
+                  )}
+                </CollapsibleCard>
+              )}
+
+              {bulletMap.length > 0 && (
+                <CollapsibleCard title="Bullet Point Development Map" sectionKey="lsBullets" expanded={expandedSections.lsBullets} onToggle={toggleSection}>
+                  <div className="space-y-6">
+                    {bulletMap.map((bullet, i) => (
+                      <div key={i} className="border border-[#E5E7EB] rounded-[12px] p-4 md:p-6 space-y-3">
+                        <div className="flex flex-wrap justify-between gap-3">
+                          <div>
+                            <p className="text-[12px] font-bold text-[#475467]">Bullet {bullet.bullet_number || i + 1}</p>
+                            <p className="text-[15px] font-bold text-[#101828]">{bullet.bullet_text}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[18px] font-black text-[#101828]">Band {bullet.strength_score || '—'}</p>
+                            <p className="text-[13px] text-[#475467]">Addressed: {bullet.addressed}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <StarRating count={bullet.development_stars || 0} />
+                          <span className="text-[14px] text-[#475467]">{bullet.development_text}</span>
+                        </div>
+                        <p className="text-[14px] text-[#475467]">
+                          <span className="font-bold">Specificity:</span> {bullet.specificity_level}
+                          {bullet.specificity_note && <span className="ml-1">— {bullet.specificity_note}</span>}
+                        </p>
+                        {(bullet.missing_elements || []).length > 0 && <BulletList items={bullet.missing_elements} colorClass="text-[#EA4335]" />}
+                        {bullet.recommendation && (
+                          <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px]">{bullet.recommendation}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleCard>
+              )}
+
+              {Object.keys(closing).length > 0 && (
+                <CollapsibleCard title="Closing & Sign-off Analysis" sectionKey="lsClosing" expanded={expandedSections.lsClosing} onToggle={toggleSection}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-[15px] font-bold text-[#101828]">Closing Quality</h4>
+                    <StarRating count={closing.overall_quality_stars || 0} />
+                  </div>
+                  <p className="text-[14px] text-[#475467]"><span className="font-bold">Sign-off:</span> {closing.signoff_used || 'N/A'} — {closing.signoff_appropriate}</p>
+                  {closing.recommendation && (
+                    <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px] mt-4">{closing.recommendation}</div>
+                  )}
+                </CollapsibleCard>
+              )}
+
+              {Object.keys(auth).length > 0 && (
+                <CollapsibleCard title="Authenticity & Pitfalls" sectionKey="lsAuth" expanded={expandedSections.lsAuth} onToggle={toggleSection}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AuthenticityList title="Memorized Phrases" list={auth.memorized_phrases} textKey="phrase" fixKey="suggestion" />
+                    <AuthenticityList title="Register Issues" list={auth.register_issues} textKey="text" fixKey="suggested_fix" />
+                  </div>
+                </CollapsibleCard>
+              )}
+            </div>
+          );
+        })()
+        : activeTab === "Flow & Logic" ? (() => {
+          const flow = data?.flow_logic_analysis;
+          if (!flow || Object.keys(flow).length === 0) {
+            return <EmptyTabState title="Flow & Logic Analysis" message="Flow and logic analysis is being generated. Please check back shortly." />;
+          }
+          const fallacies = flow.logical_fallacies || [];
+          const paragraphFlow = flow.paragraph_flow_analysis || flow.paragraph_transitions || [];
+          const cohesion = flow.cohesion_quality || flow.cohesive_devices || {};
+          const registerTone = flow.register_tone || flow.register_tone_consistency || null;
+          const flowScore = flow.overall_flow_score ?? null;
+          return (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-10 py-5 md:py-8 flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1 flex-1 min-w-0">
+                <h3 className="text-[18px] font-bold text-[#101828]">Overall Flow Score</h3>
+                <p className="text-[14px] text-[#101828] leading-snug">
+                  {flow.flow_summary || 'Flow and coherence analysis from your submission.'}
+                </p>
+              </div>
+              {flowScore != null && (
+                <div className="text-[32px] font-bold shrink-0">
+                  <span className="text-[#3B82F6]">{flowScore}</span><span className="text-[#101828]">/100</span>
                 </div>
               )}
             </div>
+
+            {fallacies.length > 0 && (
+            <CollapsibleCard title="Logical Issues Detected" sectionKey="logicalIssues" expanded={expandedSections.logicalIssues} onToggle={toggleSection}>
+              <div className="space-y-6">
+                {fallacies.map((f, i) => (
+                  <div key={i} className="space-y-3 border-b border-[#E5E7EB] last:border-0 pb-6 last:pb-0">
+                    <h4 className="text-[15px] font-bold text-[#EA4335]">{f.type}{f.location ? ` — ${f.location}` : ''}</h4>
+                    {f.problematic_text && (
+                      <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[15px] font-semibold">"{f.problematic_text}"</div>
+                    )}
+                    {f.explanation && <p className="text-[14px] text-[#475467]">{f.explanation}</p>}
+                    {f.impact && <p className="text-[14px] text-[#475467]"><span className="font-bold">Impact:</span> {f.impact}</p>}
+                    {f.suggested_revision && (
+                      <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px]">
+                        <span className="font-bold text-[#00C9B1]">Fix:</span> {f.suggested_revision}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleCard>
+            )}
+
+            {paragraphFlow.length > 0 && (
+            <CollapsibleCard title="Paragraph-to-Paragraph Flow" sectionKey="flowParagraph" expanded={expandedSections.flowParagraph} onToggle={toggleSection}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[560px]">
+                  <thead>
+                    <tr className="bg-[#F2F4F7]">
+                      <th className="px-6 py-2 text-[14px] font-bold text-[#101828]">Transition</th>
+                      <th className="px-6 py-2 text-[14px] font-bold text-[#101828]">Strength</th>
+                      <th className="px-6 py-2 text-[14px] font-bold text-[#101828]">Quality</th>
+                      <th className="px-6 py-2 text-[14px] font-bold text-[#101828]">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#D1D5DB]">
+                    {paragraphFlow.map((row, i) => {
+                      const from = row.from || row.from_paragraph || '';
+                      const to = row.to || row.to_paragraph || '';
+                      const strength = row.flow_strength ?? row.strength ?? '—';
+                      const quality = row.quality || '—';
+                      const note = row.reason || row.notes || row.suggestion || row.logical_gap || '';
+                      const qColor = (row.quality || '').toLowerCase().includes('smooth') || (row.flow_strength || 0) >= 70 ? 'text-[#30C3A9]' : 'text-[#F59E0B]';
+                      return (
+                        <tr key={i} className="hover:bg-gray-50/50">
+                          <td className="px-6 py-3 text-[14px] text-[#101828]">{from && to ? `${from} → ${to}` : (row.transition || row.trans || '—')}</td>
+                          <td className="px-6 py-3 text-[14px] font-bold text-[#30C3A9]">{strength}{typeof strength === 'number' ? '%' : ''}</td>
+                          <td className={`px-6 py-3 text-[14px] font-bold ${qColor}`}>{quality}</td>
+                          <td className="px-6 py-3 text-[14px] text-[#475467]">{note}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleCard>
+            )}
+
+            {registerTone && (
+            <CollapsibleCard title="Register & Tone Consistency" sectionKey="flowRegister" expanded={expandedSections.flowRegister} onToggle={toggleSection}>
+              {typeof registerTone === 'string' ? (
+                <p className="text-[15px] text-[#475467] leading-relaxed">{registerTone}</p>
+              ) : (
+                <div className="space-y-3">
+                  {registerTone.summary && <p className="text-[15px] text-[#475467]">{registerTone.summary}</p>}
+                  {registerTone.consistency_rating && <p className="text-[14px] font-bold text-[#101828]">Rating: {registerTone.consistency_rating}</p>}
+                  {(registerTone.issues || []).map((issue, i) => (
+                    <p key={i} className="text-[14px] text-[#475467]">{typeof issue === 'string' ? issue : issue.description || issue.text}</p>
+                  ))}
+                </div>
+              )}
+            </CollapsibleCard>
+            )}
+
+            {cohesion && Object.keys(cohesion).length > 0 && (
+            <CollapsibleCard title="Cohesive Devices" sectionKey="cohesiveDevices" expanded={expandedSections.cohesiveDevices} onToggle={toggleSection}>
+              <div className="space-y-4">
+                {cohesion.cohesive_device_variety != null && (
+                  <p className="text-[14px] font-bold text-[#101828]">Device Variety Score: {cohesion.cohesive_device_variety}%</p>
+                )}
+                {cohesion.variety_rating && <p className="text-[14px] text-[#475467]">{cohesion.variety_rating}</p>}
+                {cohesion.variety_improvement_tip && <p className="text-[14px] text-[#475467]">{cohesion.variety_improvement_tip}</p>}
+                {(cohesion.devices_used || []).length > 0 && (
+                  <p className="text-[14px] text-[#475467]"><span className="font-bold text-[#101828]">Devices Used:</span> {cohesion.devices_used.join(', ')}</p>
+                )}
+                {(cohesion.devices_overused || []).map((d, i) => (
+                  <p key={i} className="text-[14px] text-[#EA4335]"><span className="font-bold">{d.device || d}</span>{d.count ? ` (${d.count}×)` : ''}{d.suggestion ? ` — ${d.suggestion}` : ''}</p>
+                ))}
+                {(cohesion.devices_underused || []).length > 0 && (
+                  <div>
+                    <p className="text-[13px] font-bold text-[#475467] mb-2">Underused Categories</p>
+                    <BulletList items={cohesion.devices_underused} />
+                  </div>
+                )}
+                {(cohesion.pronoun_reference_analysis || []).map((p, i) => (
+                  <div key={i} className="border border-[#E5E7EB] rounded-[10px] p-4">
+                    <p className="text-[14px] font-bold text-[#101828]">"{p.pronoun}" — {p.clarity}</p>
+                    {p.context && <p className="text-[13px] text-[#475467] mt-1">{p.context}</p>}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleCard>
+            )}
           </div>
           );
         })()
