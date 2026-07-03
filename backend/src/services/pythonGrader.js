@@ -101,6 +101,208 @@ function clampBand(raw) {
   return Math.round(Math.min(9.0, Math.max(1.0, num)) * 2) / 2;
 }
 
+// ─── Schema adapter ──────────────────────────────────────────────────────────
+// The client's standalone graders (AnswerGrader.py v7.x, Task1LetterGrader.py,
+// Task1ReportGrader.py) return their own rich schema: criteria_scores,
+// averaged_scoring, all_errors, revision_data, vocabulary, grammar, etc.
+// This maps that schema onto the flat contract the `reports` table and
+// ReportView.jsx consume (response_band, strengths, errors, model_answer, ...).
+
+// The letter grader names the first criterion "Task Achievement"; the DB and
+// UI use "Task Response" everywhere.
+function normalizeCriterion(name) {
+  return name === 'Task Achievement' ? 'Task Response' : name;
+}
+
+const CRITERIA_ORDER = [
+  'Task Response',
+  'Coherence & Cohesion',
+  'Lexical Resource',
+  'Grammatical Range & Accuracy',
+];
+
+const SEVERITY_MAP = { major: 'Major', high: 'High', medium: 'Medium', low: 'Low' };
+
+function mapPythonResult(raw) {
+  // Already in the flat contract (defensive: allows older/other scripts).
+  if (raw.response_band != null) return raw;
+
+  const criteriaScores = {};
+  for (const [name, score] of Object.entries(raw.criteria_scores || {})) {
+    criteriaScores[normalizeCriterion(name)] = score;
+  }
+
+  const averaged = {};
+  for (const [name, data] of Object.entries(raw.averaged_scoring || {})) {
+    averaged[normalizeCriterion(name)] = data;
+  }
+
+  // strengths / weaknesses: pull the per-sub-category observations from the
+  // dual-model averaged scoring, in criteria order.
+  const strengths = [];
+  const weaknesses = [];
+  for (const criterion of CRITERIA_ORDER) {
+    const subcats = (averaged[criterion] || {}).sub_categories || {};
+    for (const sc of Object.values(subcats)) {
+      const s = (sc.strengths || '').trim();
+      const w = (sc.weaknesses || '').trim();
+      if (s && strengths.length < 6 && !strengths.includes(s)) strengths.push(s);
+      if (w && weaknesses.length < 6 && !weaknesses.includes(w)) weaknesses.push(w);
+    }
+  }
+
+  const allErrors = Array.isArray(raw.all_errors) ? raw.all_errors : [];
+
+  const errors = allErrors.map((e) => ({
+    title: e.error_label || e.error_id || 'Error',
+    severity: SEVERITY_MAP[e.severity] || 'Medium',
+    criteria: normalizeCriterion(e.official_criteria || ''),
+    sub_category: e.sub_category || 'General',
+    location_text: e.location || 'Essay',
+    original_text: e.original_text,
+    correction_text: e.corrected_text,
+    explanation: e.explanation,
+  }));
+
+  const high_impact_fixes = allErrors
+    .filter((e) => e.severity === 'major' || e.severity === 'high')
+    .slice(0, 6)
+    .map((e) => ({
+      issue: e.error_label || e.sub_category || 'Issue',
+      suggestion: e.explanation || e.corrected_text || '',
+      impact: e.severity === 'major' ? 'High' : 'Medium',
+    }));
+
+  // sub_category_scores for the Dual Assessment tab:
+  // { criterion: [{ name, band, strength, weakness }] }
+  const sub_category_scores = {};
+  for (const criterion of CRITERIA_ORDER) {
+    const subcats = (averaged[criterion] || {}).sub_categories || {};
+    const rows = Object.entries(subcats).map(([name, sc]) => ({
+      name,
+      band: sc.score,
+      strength: sc.strengths || '',
+      weakness: sc.weaknesses || '',
+    }));
+    if (rows.length > 0) sub_category_scores[criterion] = rows;
+  }
+
+  // model_answer from the revision pass
+  const revision = raw.revision_data || {};
+  let model_answer = null;
+  if (revision.revision) {
+    const bandMatch = (revision.revised_score_line || '').match(/(\d+(?:\.\d+)?)/);
+    model_answer = {
+      text: revision.revision,
+      estimated_band: bandMatch ? parseFloat(bandMatch[1]) : null,
+      key_changes: Array.isArray(revision.key_improvements) ? revision.key_improvements : [],
+    };
+  }
+
+  // vocabulary_analysis: group flat vocabulary items by category
+  let vocabulary_analysis = null;
+  const vocabItems = Array.isArray(raw.vocabulary) ? raw.vocabulary : [];
+  if (vocabItems.length > 0) {
+    const byCategory = new Map();
+    for (const item of vocabItems) {
+      const cat = item.category || 'Suggested Vocabulary';
+      if (!byCategory.has(cat)) byCategory.set(cat, []);
+      byCategory.get(cat).push({
+        word: item.word,
+        definition: item.definition || '',
+        example: item.example || '',
+      });
+    }
+    vocabulary_analysis = {
+      categories: [...byCategory.entries()].map(([name, words]) => ({
+        name,
+        description: `Band 8–9 ${name.toLowerCase()} not yet used in your writing.`,
+        words,
+      })),
+    };
+  }
+
+  // grammar_analysis
+  const g = (raw.grammar && raw.grammar.grammar_analysis) || raw.grammar || {};
+  const graSubcats = (averaged['Grammatical Range & Accuracy'] || {}).sub_categories || {};
+  const graWeaknesses = Object.values(graSubcats)
+    .map((sc) => (sc.weaknesses || '').trim())
+    .filter(Boolean)
+    .join(' ');
+  let grammar_analysis = null;
+  if (g.used_structures || g.suggested_enrichments) {
+    grammar_analysis = {
+      overview_strengths: g.strengths_weaknesses_summary || '',
+      overview_weaknesses: graWeaknesses,
+      structures_used: g.used_structures || [],
+      // UI shape: { original, improved, explanation }
+      enrichment_suggestions: (g.suggested_enrichments || []).map((s) => ({
+        original: s.structure || '',
+        improved: s.example_context || '',
+        explanation: s.benefit || '',
+      })),
+      expert_tips: g.expert_tips || [],
+    };
+  }
+
+  // data_structure_analysis: built from summary + flow + argumentation
+  const flow = raw.flow_logic_analysis || {};
+  const argumentation = raw.argumentation_analysis || {};
+  const breakdown = raw.breakdown || {};
+  const trFeedback =
+    (breakdown['Task Response'] || breakdown['Task Achievement'] || {}).feedback || '';
+  let data_structure_analysis = null;
+  if (raw.summary || flow.flow_summary || argumentation.authenticity) {
+    data_structure_analysis = {
+      overview: raw.summary || '',
+      body_analysis: trFeedback,
+      transition_analysis: flow.flow_summary || '',
+      authenticity_feedback: (argumentation.authenticity || {}).authenticity_note || '',
+    };
+  }
+
+  // secondary_bands from the independent Model B scoring round
+  const roundB = raw.scoring_round_b || {};
+  const bBands = {};
+  for (const criterion of CRITERIA_ORDER) {
+    for (const [name, data] of Object.entries(roundB)) {
+      if (normalizeCriterion(name) === criterion && data && data.overall_score != null) {
+        bBands[criterion] = parseFloat(data.overall_score);
+      }
+    }
+  }
+  let secondary_bands = null;
+  if (Object.keys(bBands).length === 4) {
+    const avgB = Object.values(bBands).reduce((a, b) => a + b, 0) / 4;
+    secondary_bands = {
+      model: 'model-b',
+      overall_band: Math.round(avgB * 2) / 2,
+      response_band: bBands['Task Response'],
+      coherence_band: bBands['Coherence & Cohesion'],
+      vocabulary_band: bBands['Lexical Resource'],
+      grammar_band: bBands['Grammatical Range & Accuracy'],
+    };
+  }
+
+  return {
+    overall_band: raw.overall_band,
+    response_band: criteriaScores['Task Response'],
+    coherence_band: criteriaScores['Coherence & Cohesion'],
+    vocabulary_band: criteriaScores['Lexical Resource'],
+    grammar_band: criteriaScores['Grammatical Range & Accuracy'],
+    strengths,
+    weaknesses,
+    high_impact_fixes,
+    errors,
+    sub_category_scores,
+    model_answer,
+    vocabulary_analysis,
+    grammar_analysis,
+    data_structure_analysis,
+    secondary_bands,
+  };
+}
+
 // ─── Main grading orchestrator (called async after submission is saved) ───
 // Same call signature as grader.js's gradeEssayAsync so submissions.js can
 // call either engine interchangeably via graderEngine.js.
@@ -162,7 +364,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
       ];
     }
 
-    const result = await runPythonScript(scriptName, args);
+    const result = mapPythonResult(await runPythonScript(scriptName, args));
 
     // ── Validate and sanitize all band scores (safety net — same
     //    validation grader.js applies before insert) ──────────────────────

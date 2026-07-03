@@ -185,7 +185,7 @@ All backend code lives in `backend/src/`.
 
 | What you want to change | File to edit |
 |---|---|
-| Grading criteria / AI prompts (**Python engine — primary**) | `backend/python/v0_common.py` |
+| Grading criteria / AI prompts (**Python engine — primary**) | `backend/python/AnswerGrader.py` (Task 2), `Task1LetterGrader.py`, `Task1ReportGrader.py` |
 | Grading criteria / AI prompts (JS engine — fallback) | `src/services/grader.js` |
 | Email templates | `src/services/email.js` |
 | Auth flow (login, register, etc.) | `src/routes/auth.js` |
@@ -198,17 +198,21 @@ After editing a backend file, **restart the backend process** (Ctrl+C → `node 
 
 ### Changing the Grading Criteria (Python engine)
 
-The grading engine used in production is Python, originally sourced from
-the client's own repository and adapted to work with this system — see
-`backend/python/README.md` for the full history of what was changed and
-why. The grading logic and prompts live in `backend/python/v0_common.py`:
+The grading engine used in production is Python, sourced from the client's
+own repository — see `backend/python/README.md` for details. Each task type
+has its own standalone grader with its prompts embedded in the file:
 
-- **`_build_primary_prompt`** — Main grading. Controls what criteria GPT grades on, the JSON output shape, and how errors are identified.
-- **`_build_secondary_prompt`** — Independent second-opinion grade from a separate model, for cross-checking accuracy.
-- **`_build_deep_prompt`** — Deep analysis: model answer, vocabulary breakdown, grammar analysis, structure analysis.
+- **`AnswerGrader.py`** — Task 2 essays. Dual-model scoring (Model A + Model B), per-criterion error detection, revision (model answer), vocabulary, grammar, argumentation, and flow analysis.
+- **`Task1LetterGrader.py`** — Task 1 General Training letters.
+- **`Task1ReportGrader.py`** — Task 1 Academic reports/charts.
 
-To change what gets graded or how, edit the prompt text inside these
-functions. The prompts are plain English — no special syntax needed.
+To change what gets graded or how, edit the prompt text inside these files.
+The prompts are plain English — no special syntax needed.
+
+> The graders output their own JSON schema; the Node bridge
+> (`backend/src/services/pythonGrader.js`, `mapPythonResult()`) converts it
+> to what the database and report UI expect. If you add/rename output
+> fields, update that mapping too.
 
 **Testing your changes locally:**
 
