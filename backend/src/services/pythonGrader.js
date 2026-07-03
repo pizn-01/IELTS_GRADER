@@ -77,11 +77,17 @@ async function getTaskRow(exam_task_id) {
 }
 
 // Task1ReportGrader.py's data-accuracy checking is only as good as the
-// reference data it's given: without a real chart, it fabricates generic
-// "Series A/B" numbers that have nothing to do with what the candidate was
-// actually shown, producing bogus "Data Accuracy" errors. Rasterize the
-// question bank's real chart_svg to PNG so the grader's GPT-4o vision
-// extraction path reads the exact chart the candidate saw.
+// reference data it's given. The question bank stores exact chart geometry as
+// SVG markup — parse that deterministically (see chart_svg_parser.py) instead
+// of rasterizing to PNG and re-reading numbers with a vision model, which
+// misreads small axis labels (e.g. "103.2" → "1032") and corrupts the scale.
+async function writeChartSvgToTempFile(svg) {
+  const filePath = path.join(os.tmpdir(), `chart-${crypto.randomUUID()}.svg`);
+  await fs.promises.writeFile(filePath, svg, 'utf8');
+  return filePath;
+}
+
+// Legacy vision fallback — only used when SVG parsing fails at runtime.
 async function renderChartSvgToTempFile(svg) {
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
   const filePath = path.join(os.tmpdir(), `chart-${crypto.randomUUID()}.png`);
@@ -354,6 +360,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
 
     let scriptName;
     let args;
+    let chartSvgPath = null;
     let chartImagePath = null;
     if (taskVariant === 'task1-letter') {
       scriptName = 'Task1LetterGrader.py';
@@ -375,10 +382,17 @@ async function gradeEssayAsync(submissionId, submissionData) {
       ];
       if (taskRow?.chart_svg) {
         try {
+          chartSvgPath = await writeChartSvgToTempFile(taskRow.chart_svg);
+          args.push('--chart-svg-file', chartSvgPath);
+        } catch (err) {
+          console.warn('[pythonGrader] Failed to write chart SVG temp file:', err.message);
+        }
+        // Vision PNG only as fallback when SVG parsing fails inside the grader
+        try {
           chartImagePath = await renderChartSvgToTempFile(taskRow.chart_svg);
           args.push('--chart-image-file', chartImagePath);
         } catch (err) {
-          console.warn('[pythonGrader] Chart SVG rasterization failed, grading without real chart data:', err.message);
+          console.warn('[pythonGrader] Chart SVG rasterization failed (vision fallback unavailable):', err.message);
         }
       }
     } else {
@@ -394,6 +408,9 @@ async function gradeEssayAsync(submissionId, submissionData) {
     try {
       result = mapPythonResult(await runPythonScript(scriptName, args));
     } finally {
+      if (chartSvgPath) {
+        fs.promises.unlink(chartSvgPath).catch(() => {});
+      }
       if (chartImagePath) {
         fs.promises.unlink(chartImagePath).catch(() => {});
       }

@@ -70,6 +70,9 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
   const letter_structure_analysis = deep.letter_structure_analysis || null;
   const flow_logic_analysis = deep.flow_logic_analysis || null;
 
+  const primary = rawOutput.primary || {};
+  const subCategoryScores = primary.sub_category_scores || {};
+
   return res.json({
     id: submissionId,
     overall_band: parseFloat(report.overall_band),
@@ -88,6 +91,7 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
     letter_structure_analysis,
     flow_logic_analysis,
     task_variant,
+    sub_category_scores: subCategoryScores,
     raw_grader_output: report.raw_grader_output || null,
     errors: sortedErrors,
     // Submission context

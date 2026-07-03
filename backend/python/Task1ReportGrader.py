@@ -3249,6 +3249,37 @@ IMPORTANT: suggested_enrichments MUST contain EXACTLY 3 items."""
     # MAIN GRADING ENTRY POINT (v6.0 — FULL TASK2 ARCHITECTURE)
     # ------------------------------------------------------------------
 
+    def _resolve_chart_reference(
+        self,
+        report_prompt: str,
+        chart_type: str,
+        chart_svg: Optional[str] = None,
+        chart_image: Optional[str] = None,
+    ) -> str:
+        """Build the reference-data block used for data-accuracy checking.
+
+        Priority (most reliable first):
+          1. Deterministic parse of the question bank's chart_svg markup
+          2. Vision extraction from a rasterized PNG (legacy fallback)
+          3. Synthetic / prompt-embedded SVG hint (last resort)
+        """
+        if chart_svg:
+            try:
+                from chart_svg_parser import parse_chart_svg_reference
+                parsed = parse_chart_svg_reference(chart_svg)
+                if parsed:
+                    logger.info("[SVG] Reference data computed exactly from chart SVG (%d chars)", len(parsed))
+                    return parsed
+                logger.warning("[SVG] Could not parse chart SVG — will try vision fallback if available")
+            except Exception as e:
+                logger.warning("[SVG] Chart SVG parsing failed (%s) — will try vision fallback if available", e)
+
+        if chart_image:
+            return None  # caller runs async vision extraction
+
+        gen = self._generate_chart_reference(report_prompt, chart_type)
+        return gen["text"]
+
     async def grade_report(
         self,
         user_answer: str,
@@ -3256,6 +3287,7 @@ IMPORTANT: suggested_enrichments MUST contain EXACTLY 3 items."""
         chart_type: str,
         exam_name: str = "IELTS Writing Task 1",
         chart_image: Optional[str] = None,
+        chart_svg: Optional[str] = None,
     ) -> dict:
         """
         v6.0 – FULL TASK 2 ARCHITECTURE FOR TASK 1 ACADEMIC REPORT
@@ -3289,25 +3321,20 @@ IMPORTANT: suggested_enrichments MUST contain EXACTLY 3 items."""
             logger.info("  Flow & Logic    : 3 parallel calls (macro + sentence + register)")
             logger.info("=" * 80)
 
-            # Generate chart reference data context
-            # If a screenshot image was supplied, extract data via GPT-4o vision;
-            # otherwise fall back to the existing SVG/synthetic path.
-            if chart_image:
-                logger.info("[IMAGE] Screenshot provided — extracting chart data via vision...")
+            # Generate chart reference data for data-accuracy checking.
+            # Prefer exact SVG parsing (deterministic); fall back to vision OCR on
+            # a rasterized PNG only when SVG parsing is unavailable.
+            chart_data_context = self._resolve_chart_reference(
+                report_prompt, chart_type, chart_svg=chart_svg, chart_image=chart_image
+            )
+            if chart_data_context is None and chart_image:
+                logger.info("[IMAGE] SVG parse unavailable — extracting chart data via vision (fallback)...")
                 gen = await self._extract_chart_data_from_image(chart_image, report_prompt, chart_type)
                 chart_data_context = gen["text"]
                 _extracted_prompt = (gen.get("extracted_prompt") or "").strip()
-                # The chart screenshot itself rarely contains the question text (it's
-                # stored separately), so vision extraction usually returns "N/A" here.
-                # Only use it as a fallback when the caller didn't already supply a
-                # real prompt — never let a placeholder/garbage value clobber the
-                # genuine question text passed in from the database.
                 if _extracted_prompt and not _extracted_prompt.upper().startswith("N/A") and not report_prompt.strip():
                     report_prompt = _extracted_prompt
                     logger.info("[IMAGE] report_prompt updated from vision extraction")
-            else:
-                gen = self._generate_chart_reference(report_prompt, chart_type)
-                chart_data_context = gen["text"]
 
             # Grammar AI prefetch prompt (exactly 3 enrichments)
             grammar_system = (
@@ -3567,9 +3594,15 @@ if __name__ == "__main__":
     parser.add_argument("--chart-image", type=str, default=None,
                         help="Base64-encoded chart screenshot (optional).")
     parser.add_argument("--chart-image-file", type=str, default=None,
-                        help="Path to a file containing the base64-encoded chart screenshot. "
-                             "Preferred over --chart-image to avoid OS argument size limits.")
+                        help="Path to a PNG/JPEG chart screenshot (vision fallback only).")
+    parser.add_argument("--chart-svg-file", type=str, default=None,
+                        help="Path to the chart's SVG markup (preferred — exact reference data).")
     args = parser.parse_args()
+
+    chart_svg_value = None
+    if args.chart_svg_file:
+        with open(args.chart_svg_file, "r", encoding="utf-8") as _f:
+            chart_svg_value = _f.read()
 
     # Resolve chart image: file path takes priority over inline base64
     chart_image_value = args.chart_image
@@ -3602,5 +3635,6 @@ if __name__ == "__main__":
         chart_type=args.chart_type,
         exam_name=args.exam_name,
         chart_image=chart_image_value,
+        chart_svg=chart_svg_value,
     ))
     print(json.dumps(result))

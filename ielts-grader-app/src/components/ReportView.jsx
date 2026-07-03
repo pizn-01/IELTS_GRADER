@@ -515,7 +515,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                     // raw_grader_output.primary.sub_category_scores; this is the
                     // authoritative list of categories to show here, not individual
                     // error instances (which are just occurrences, not categories).
-                    const subCategoryScores = data?.raw_grader_output?.primary?.sub_category_scores || {};
+                    const subCategoryScores =
+                      data?.raw_grader_output?.primary?.sub_category_scores
+                      || data?.sub_category_scores
+                      || {};
                     const sections = [
                       { id: "taskResponse",    title: "Task Response",                  band: data?.response_band,  key: "Task Response" },
                       { id: "coherenceCohesion", title: "Coherence & Cohesion",         band: data?.coherence_band, key: "Coherence & Cohesion" },
