@@ -1059,13 +1059,16 @@ Your task:
 
 DO NOT FLAG: different unit representations of the same value, minor rounding within ±15%, formatting differences.
 
-FEEDBACK STYLE: When writing the 'explanation' for a data_accuracy_error, state the student's value and the reference value and describe the discrepancy in plain language (e.g. "the student wrote X bn$, but the chart shows Y bn$, which is more than 15% higher/lower"). You MAY mention the 15% threshold when relevant (e.g. "this exceeds the 15% tolerance" or "this is within the 15% tolerance"). Do NOT include raw mathematical formula notation such as |X-Y|/Z = N% in any explanation or feedback field.
+FEEDBACK STYLE: When writing the 'explanation' for a data_accuracy_error, state the student's value and the reference value and describe the discrepancy in plain language (e.g. "the student wrote X bn$, but the chart shows Y bn$, which is more than 15% higher/lower, exceeding the 15% tolerance"). Do NOT include raw mathematical formula notation such as |X-Y|/Z = N% in any explanation or feedback field.
 
 ABSOLUTE RULE — NO COMPOUNDING LOGIC:
 Each numerical value MUST be evaluated INDEPENDENTLY. NEVER flag a value that is within ±15% of the reference just because other values in the same report are also inaccurate. 'Systematic misreporting' is NOT a valid reason to penalise a within-tolerance value. If the percentage difference is ≤15%, it MUST be accepted — full stop.
 
 ABSOLUTE RULE — NO FABRICATED PERCENTAGES:
 You MUST compute the actual percentage difference before stating any claim about tolerance. A small absolute difference (e.g. 2 years out of 70) is approximately 2.9%, NOT more than 15%. Never claim a value "exceeds the 15% tolerance" without first computing abs(student - reference) / reference * 100 and confirming it is > 15.
+
+ABSOLUTE RULE — SELF-CONSISTENCY (this fixes a known failure mode):
+A data_accuracy_error whose own explanation concludes the value is "within tolerance", "acceptable", "not a real error", or similar is a CONTRADICTION, not a valid error. If you find yourself about to write an explanation like that, this means the value passed the check — DO NOT add a data_accuracy_error entry for it at all. An entry only belongs in the errors list if your explanation unambiguously concludes the discrepancy EXCEEDS the 15% tolerance and IS a genuine error.
 """
 
         checklists = {
@@ -1221,8 +1224,40 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
         )
         parsed = self._clean_json(raw)
         errors = parsed.get("errors", [])
+
+        # Safety net for a known model failure mode: despite explicit
+        # instructions, the error-detection model sometimes computes that a
+        # numeric value IS within the ±15% tolerance (correctly, in its own
+        # explanation text) but still emits a data_accuracy_error entry for
+        # it anyway. Since the explanation is the model's own verdict, any
+        # entry whose explanation contradicts itself this way is a false
+        # positive — drop it rather than surface it as a genuine error.
+        before = len(errors)
+        errors = [e for e in errors if not self._is_self_contradicting_data_accuracy_error(e)]
+        if len(errors) != before:
+            logger.info(
+                f"  → [{criterion_name}] dropped {before - len(errors)} self-contradicting "
+                "data_accuracy_error false positive(s)."
+            )
+
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
         return errors
+
+    _WITHIN_TOLERANCE_RE = re.compile(
+        r"within (the )?(±?\s*15\s*%|tolerance)"
+        r"|acceptable round"
+        r"|is acceptable"
+        r"|not\s+(be\s+)?(treated|flagged|considered)\s+as\s+(a\s+)?(data\s+)?error"
+        r"|should not be (treated|flagged|considered)",
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def _is_self_contradicting_data_accuracy_error(cls, error: dict) -> bool:
+        if error.get("error_id") != "data_accuracy_error":
+            return False
+        explanation = f"{error.get('explanation', '')} {error.get('context', '')}"
+        return bool(cls._WITHIN_TOLERANCE_RE.search(explanation))
 
     # ------------------------------------------------------------------
     # MODEL B: FULL SCORING + SUMMARY
