@@ -1075,6 +1075,11 @@ The reference data below may occasionally note that some axis, gridline, or tick
 - Absence of proof is NOT proof of a mistake. If you cannot cross-check a specific number/year/label against clear reference data, you MUST treat that claim as UNVERIFIED and say nothing about it — do NOT create an error for it "just in case."
 - NEVER write a data_accuracy_error whose justification is that the reference/chart data is unreadable, garbled, missing, or otherwise unavailable — that is disqualifying, not incriminating.
 - Only ever flag data_accuracy_error when the reference data gives you a CLEAR, READABLE value or label that DIRECTLY CONTRADICTS the student's claim by more than 15%. If in doubt, do not flag.
+
+ABSOLUTE RULE — APPROXIMATE LANGUAGE IS NOT AN ERROR (IELTS Task 1 expects it):
+Phrases such as "nearly 2", "around 1.5", "just over 3", "approximately 80", "roughly 34", "about 5.5" are CORRECT academic reporting when the implied magnitude is within ±15% of the reference value.
+Example: reference = 1.9, student writes "nearly 2 tonnes" → |2 − 1.9| / 1.9 ≈ 5% → MUST NOT flag.
+Do NOT flag data_accuracy_error merely because the student did not write the exact decimal from the reference. Only flag when the implied number differs by MORE than 15%.
 """
 
         checklists = {
@@ -1092,6 +1097,7 @@ EXHAUSTIVE CHECKLIST – Task Response (Academic Report):
   NEVER use 'systematic misreporting' reasoning to override the ±15% tolerance rule.
   f) EXPLANATION FORMAT: write explanations in plain language only. Do NOT include mathematical formulas like |X-Y|/Z = N% in any 'explanation' or 'context' field.
   g) IF THE REFERENCE DATA IS UNREADABLE/MISSING for a value: do NOT flag it. An extraction limitation is not evidence the student is wrong — skip that claim entirely rather than flagging it.
+  h) APPROXIMATE LANGUAGE: "nearly / around / about / roughly / just over / approximately X" is acceptable whenever X is within ±15% of the reference. Do NOT flag "nearly 2" for a reference of 1.9 (only ~5% off).
 
 □ COVERAGE: Does the report cover ALL key features shown in the chart (peaks, troughs, outliers)?
 □ Are significant features highlighted (highest/lowest values, dramatic changes)?
@@ -1296,15 +1302,33 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
         re.IGNORECASE,
     )
 
+    # Catches "imprecise wording" false positives: the model flags "nearly 2"
+    # for a reference of 1.9 as a Major data error even though that is well
+    # within the ±15% tolerance and is normal IELTS Task 1 language.
+    _IMPRECISION_ONLY_RE = re.compile(
+        r"\bimprecise\b"
+        r"|\bwording implies\b"
+        r"|\bmore precise\b"
+        r"|\bnot (the )?exact\b"
+        r"|\bcloser to\b.{0,40}\bthan\b"
+        r"|\bclearly plotted\b",
+        re.IGNORECASE,
+    )
+
     @classmethod
     def _is_self_contradicting_data_accuracy_error(cls, error: dict) -> bool:
         if error.get("error_id") != "data_accuracy_error":
             return False
         explanation = f"{error.get('explanation', '')} {error.get('context', '')}"
-        return bool(
-            cls._WITHIN_TOLERANCE_RE.search(explanation)
-            or cls._UNVERIFIABLE_REFERENCE_RE.search(explanation)
-        )
+        if cls._WITHIN_TOLERANCE_RE.search(explanation) or cls._UNVERIFIABLE_REFERENCE_RE.search(explanation):
+            return True
+        # Imprecision-only complaints with no claim of a >15% magnitude error
+        # are not data accuracy errors under the grader's own tolerance rule.
+        if cls._IMPRECISION_ONLY_RE.search(explanation) and not re.search(
+            r"(more than|exceeds?|over)\s+(the\s+)?15\s*%", explanation, re.IGNORECASE
+        ):
+            return True
+        return False
 
     # Matches a bracketed non-answer inside corrected_text, e.g.
     # "[unit not readable]", "[value unclear]", "[unknown]", "[not visible]".

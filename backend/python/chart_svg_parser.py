@@ -181,11 +181,13 @@ def _legend_map(elements: dict) -> Dict[str, str]:
 def _x_labels(elements: dict, baseline_y: float) -> List[Tuple[float, str]]:
     """Category labels along the baseline (years, countries, etc.).
 
-    Y-axis tick numbers (e.g. '0.0', '103.2') sit near the baseline too but
-    use text-anchor='end' and sit left of the plot — exclude those so the
-    first bar group is not mis-labelled '0.0' instead of '2000'.
+    Y-axis tick numbers (e.g. '0.0', '103.2') also sit near the baseline, but
+    they always use text-anchor='end' (right-aligned against the left axis).
+    X-axis category labels use 'middle'/'start' and sit *below* the baseline —
+    including the first category, which often sits at the plot's left edge
+    (e.g. year '1990' at x≈80). Only exclude end-anchored ticks; never drop
+    a middle-anchored label just because it is near the left edge.
     """
-    plot_left = min(_f(ln, "x1", 60.0) for ln in elements["line"]) if elements["line"] else 60.0
     labels = []
     for t in elements["text"]:
         if "transform" in t or not t["_content"]:
@@ -194,8 +196,8 @@ def _x_labels(elements: dict, baseline_y: float) -> List[Tuple[float, str]]:
         if tx is None or ty is None:
             continue
         if baseline_y + 2 <= ty <= baseline_y + 40:
-            anchor = t.get("text-anchor", "start")
-            if anchor == "end" or tx < plot_left + 10:
+            # Y-axis ticks are right-aligned; x-axis categories are not.
+            if t.get("text-anchor", "start") == "end":
                 continue
             labels.append((tx, t["_content"]))
     return sorted(labels)
@@ -333,8 +335,9 @@ def parse_chart_svg_reference(svg_text: str) -> Optional[str]:
             f"{body}\n\n"
             "DATA ACCURACY CHECKING INSTRUCTION:\n"
             "The reference values above are exact. Accept stated values within ±15% "
-            "tolerance for rounding. Only flag as data error if a value differs by more "
-            "than 15% from its reference value."
+            "tolerance for rounding, including approximate language (nearly / around / "
+            "about / roughly / just over / approximately). Only flag as data error if a "
+            "value differs by more than 15% from its reference value."
         )
 
     axes = _build_axes(elements)
@@ -385,6 +388,7 @@ def parse_chart_svg_reference(svg_text: str) -> Optional[str]:
         + "\n".join(lines_out)
         + "\n\nDATA ACCURACY CHECKING INSTRUCTION:\n"
           "The reference values above are exact. Accept stated values within ±15% "
-          "tolerance for rounding. Only flag as data error if a value differs by more "
-          "than 15% from its reference value."
+          "tolerance for rounding, including approximate language (nearly / around / "
+          "about / roughly / just over / approximately). Only flag as data error if a "
+          "value differs by more than 15% from its reference value."
     )
