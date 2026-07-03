@@ -424,9 +424,29 @@ function TableView({ seed }) {
   );
 }
 
+// ── Real SVG chart (from the question bank's own chart data) ─────────────────
+// Only ever fed markup we generated ourselves when the question bank was
+// imported (see backend/scripts/importReportBank.js) — never user input —
+// but still reject anything that isn't a bare <svg>...</svg> as a safety net
+// before it goes through dangerouslySetInnerHTML.
+function isSafeSvg(markup) {
+  return typeof markup === 'string' && /^\s*<svg[\s>]/i.test(markup) && !/<script/i.test(markup);
+}
+
+function SvgChartView({ svg }) {
+  return (
+    <div
+      className="w-full flex justify-center [&_svg]:max-w-full [&_svg]:h-auto"
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
-const QuestionChart = ({ type, seed = '' }) => {
+const QuestionChart = ({ type, seed = '', svg = null }) => {
   const wrapper = 'bg-[#F3F4F6] rounded-[12px] p-3';
+
+  if (isSafeSvg(svg)) return <div className={wrapper}><SvgChartView svg={svg} /></div>;
 
   if (type === 'line') return <div className={wrapper}><LineChartView seed={seed} /></div>;
   if (type === 'bar') return <div className={wrapper}><BarChartView seed={seed} /></div>;

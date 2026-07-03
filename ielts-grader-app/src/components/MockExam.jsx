@@ -111,16 +111,16 @@ function LetterQuestionDisplay({ text }) {
   );
 }
 
-function ReportQuestionDisplay({ text, chartType }) {
+function ReportQuestionDisplay({ text, chartType, chartSvg }) {
   const { scenario, instruction } = parseReportQuestion(text);
   return (
     <>
       <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-4">
         {scenario}
       </h2>
-      {chartType && (
+      {(chartSvg || chartType) && (
         <div className="mb-4">
-          <QuestionChart type={chartType} seed={text} />
+          <QuestionChart type={chartType} seed={text} svg={chartSvg} />
         </div>
       )}
       <p className="text-[12px] md:text-[13px] text-[#475467] leading-[1.6] font-medium">
@@ -172,6 +172,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
           const q = {
             prompt: data.question_text,
             note: noteForTimeLimit(data.time_limit_seconds, resolvedExam, resolvedTask),
+            chartSvg: data.chart_svg || null,
           };
           setCurrentQuestion(q);
           setExamTaskId(data.id);
@@ -480,7 +481,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
               {isLetterTask ? (
                 <LetterQuestionDisplay text={question.prompt} />
               ) : isReportTask ? (
-                <ReportQuestionDisplay text={question.prompt} chartType={questionChartType} />
+                <ReportQuestionDisplay text={question.prompt} chartType={questionChartType} chartSvg={question.chartSvg} />
               ) : (
                 <>
                   <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
