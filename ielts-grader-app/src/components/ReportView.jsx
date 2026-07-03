@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function resolveTaskVariant(examType, taskType) {
@@ -90,6 +90,96 @@ const CollapsibleCard = ({ title, sectionKey, expanded, onToggle, children, defa
   );
 };
 
+// Official IELTS criteria order — matches the grader error taxonomy hierarchy
+// (Task Response / Task Achievement → Coherence & Cohesion → Lexical Resource → GRA).
+const TAXONOMY_CRITERIA_ORDER = [
+  'Task Response',
+  'Task Achievement',
+  'Coherence & Cohesion',
+  'Lexical Resource',
+  'Grammatical Range & Accuracy',
+];
+
+const SEVERITY_ORDER = ['Major', 'High', 'Medium', 'Low'];
+
+const severityBadgeClass = (severity) => {
+  if (severity === 'Major') return 'bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]';
+  if (severity === 'High') return 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]';
+  if (severity === 'Medium') return 'bg-[#FFF7ED] text-[#EA580C] border-[#FED7AA]';
+  return 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]';
+};
+
+/** Group errors by a taxonomy field, preserving a stable display order. */
+function groupErrorsBy(errors, key, orderList) {
+  const map = {};
+  errors.forEach((e) => {
+    const k = e[key] || 'General';
+    if (!map[k]) map[k] = [];
+    map[k].push(e);
+  });
+  const keys = Object.keys(map);
+  keys.sort((a, b) => {
+    const ia = orderList.indexOf(a);
+    const ib = orderList.indexOf(b);
+    if (ia === -1 && ib === -1) {
+      const diff = map[b].length - map[a].length;
+      return diff !== 0 ? diff : a.localeCompare(b);
+    }
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+  return keys.map((k) => ({ key: k, errors: map[k] }));
+}
+
+function ErrorCard({ error, index }) {
+  const criteria = error.criteria || 'N/A';
+  const sub = error.sub_category || 'General';
+  return (
+    <div className="border-b border-[#F2F4F7] last:border-0 px-4 md:px-6 py-5">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <span className="text-[12px] font-bold text-[#9CA3AF]">#{index}</span>
+        <span className="text-[14px] font-bold text-[#101828]">{error.title || 'Error'}</span>
+        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase border ${severityBadgeClass(error.severity)}`}>
+          {error.severity || 'Medium'}
+        </span>
+        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]">
+          {criteria} → {sub}
+        </span>
+        {error.location_text && (
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F0FDF4] text-[#166534] border border-[#D1FAE5]">
+            {error.location_text}
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div className="bg-[#FEF2F2] rounded-[10px] p-4">
+          <p className="text-[11px] font-bold text-[#DC2626] mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+            <XCircle size={12} /> Original
+          </p>
+          <p className="text-[13px] text-[#7F1D1D] font-medium leading-relaxed italic">
+            "{error.original_text}"
+          </p>
+        </div>
+        <div className="bg-[#F0FDF4] rounded-[10px] p-4">
+          <p className="text-[11px] font-bold text-[#16A34A] mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+            <CheckCircle size={12} /> Correction
+          </p>
+          <p className="text-[13px] text-[#14532D] font-medium leading-relaxed">
+            {error.correction_text}
+          </p>
+        </div>
+      </div>
+      {error.explanation && (
+        <p className="text-[13px] text-[#475467] leading-relaxed">
+          <span className="font-semibold text-[#101828]">{error.title || 'Error'}: </span>
+          {error.explanation}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const ReportView = ({ onBack, data, showHeader = false }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Overview");
@@ -122,6 +212,9 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
   };
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  // Error Analysis detailed-corrections grouping — mirrors examinee ground truth
+  // toggles: By Criteria | By Sub-Category | By Severity (taxonomy hierarchy).
+  const [errorGroupBy, setErrorGroupBy] = useState('criteria');
   const profileRef = useRef(null);
 
   const { user } = useAuth();
@@ -596,137 +689,165 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
             </div>
         ) : activeTab === "Error Analysis" ? (() => {
+          // Taxonomy-driven layout (matches examinee ground truth):
+          // 1) severity stats  2) distribution by official criteria
+          // 3) error-type cards (taxonomy labels)  4) corrections grouped by
+          //    Criteria / Sub-Category / Severity with Criteria → Sub-Category tags.
           const errors = data?.errors || [];
-          const majorCount = errors.filter(e => e.severity === 'Major').length;
-          const highCount  = errors.filter(e => e.severity === 'High').length;
-          const medCount   = errors.filter(e => e.severity === 'Medium').length;
-          // Sub-category aggregation
-          const subCatMap = {};
-          errors.forEach(e => { subCatMap[e.sub_category] = (subCatMap[e.sub_category] || 0) + 1; });
-          const subCats = Object.entries(subCatMap).sort((a,b) => b[1]-a[1]);
-          const maxSubCat = subCats[0]?.[1] || 1;
+          const severityCounts = {
+            Major: errors.filter((e) => e.severity === 'Major').length,
+            High: errors.filter((e) => e.severity === 'High').length,
+            Medium: errors.filter((e) => e.severity === 'Medium').length,
+            Low: errors.filter((e) => e.severity === 'Low').length,
+          };
+
+          const byCriteria = groupErrorsBy(errors, 'criteria', TAXONOMY_CRITERIA_ORDER);
+          const maxCriteria = Math.max(1, ...byCriteria.map((g) => g.errors.length));
+
+          // Error-type breakdown: taxonomy error labels (title field from grader tags)
+          const typeMap = {};
+          errors.forEach((e) => {
+            const label = e.title || 'Unknown';
+            if (!typeMap[label]) typeMap[label] = { count: 0, sample: e, criteria: e.criteria, sub: e.sub_category };
+            typeMap[label].count += 1;
+          });
+          const errorTypes = Object.entries(typeMap)
+            .map(([label, info]) => ({ label, ...info }))
+            .sort((a, b) => b.count - a.count);
+
+          const groups =
+            errorGroupBy === 'criteria'
+              ? groupErrorsBy(errors, 'criteria', TAXONOMY_CRITERIA_ORDER)
+              : errorGroupBy === 'sub_category'
+              ? groupErrorsBy(errors, 'sub_category', [])
+              : groupErrorsBy(errors, 'severity', SEVERITY_ORDER);
+
+          const groupTitle = (key) =>
+            errorGroupBy === 'severity' ? `${String(key).toUpperCase()} Severity` : key;
+
           return (
           <div className="space-y-8">
-            {/* Header Info Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
+            {/* Severity stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 md:gap-4">
               {[
-                { label: "Total Errors", count: String(errors.length), color: "text-[#00C9B1]" },
-                { label: "Major", count: String(majorCount), color: "text-[#EA4335]" },
-                { label: "High Severity", count: String(highCount), color: "text-[#F59E0B]" },
-                { label: "Medium", count: String(medCount), color: "text-[#1A96F3]" }
+                { label: 'Total Errors', count: errors.length, color: 'text-[#00C9B1]' },
+                { label: 'Major', count: severityCounts.Major, color: 'text-[#EA4335]' },
+                { label: 'High', count: severityCounts.High, color: 'text-[#F59E0B]' },
+                { label: 'Medium', count: severityCounts.Medium, color: 'text-[#1A96F3]' },
+                { label: 'Low', count: severityCounts.Low, color: 'text-[#16A34A]' },
               ].map((item, idx) => (
-                <div key={idx} className="bg-white rounded-[16px] p-6 border border-gray-100 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
-                  <div>
-                    <p className="text-[12px] font-bold text-gray-400 mb-1 uppercase tracking-wider">{item.label}</p>
-                    <p className={`text-[28px] font-black ${item.color}`}>{item.count}</p>
-                  </div>
-                  <div className="bg-gray-50 p-2.5 rounded-full text-gray-400">
-                    <Info size={24} strokeWidth={2.5} />
-                  </div>
+                <div key={idx} className="bg-white rounded-[16px] p-4 md:p-5 border border-gray-100 shadow-sm">
+                  <p className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">{item.label}</p>
+                  <p className={`text-[24px] md:text-[28px] font-black ${item.color}`}>{item.count}</p>
                 </div>
               ))}
             </div>
 
-            {/* Errors by Sub-Category */}
-            <div className="bg-white rounded-[8px] p-4 md:p-8 border border-[#E5E7EB] shadow-sm">
-              <h3 className="text-[15px] font-bold text-[#101828] mb-5 md:mb-8">Errors by Sub-Category</h3>
-              {subCats.length === 0 ? (
+            {/* Distribution by official criteria (taxonomy top level) */}
+            <div className="bg-white rounded-[16px] p-4 md:p-8 border border-[#E5E7EB] shadow-sm">
+              <h3 className="text-[15px] font-bold text-[#101828] mb-1">Error Distribution by Criteria</h3>
+              <p className="text-[13px] text-gray-400 mb-5">Official IELTS criteria from the grader taxonomy</p>
+              {byCriteria.length === 0 ? (
                 <p className="text-[14px] text-gray-400">No errors detected.</p>
               ) : (
-              <div className="space-y-5">
-                {subCats.map(([label, count], idx) => (
-                  <div key={idx} className="flex items-center">
-                    <span className="text-[12px] md:text-[13px] font-medium text-[#475467] w-[120px] md:w-[240px] shrink-0">{label}</span>
-                    <div className="flex-1 flex items-center gap-3 md:gap-8">
-                      <span className="text-[13px] font-bold text-[#101828] w-6">{count}</span>
+                <div className="space-y-4">
+                  {byCriteria.map(({ key, errors: group }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-[12px] md:text-[13px] font-medium text-[#475467] w-[120px] md:w-[220px] shrink-0">{key}</span>
+                      <span className="text-[13px] font-bold text-[#101828] w-6">{group.length}</span>
                       <div className="h-[10px] flex-1 bg-[#F2F4F7] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#1A96F3] rounded-full" style={{ width: `${(count / maxSubCat) * 100}%` }}></div>
+                        <div
+                          className="h-full bg-[#1A96F3] rounded-full"
+                          style={{ width: `${(group.length / maxCriteria) * 100}%` }}
+                        />
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Detailed Error Breakdown — Unified Box */}
-            <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <div
-                className="px-4 md:px-8 py-4 md:py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => toggleSection('errorAnalysis')}
-              >
-                <h3 className="text-[16px] font-bold text-[#101828]">Detailed Error Breakdown</h3>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.errorAnalysis ? "rotate-180" : ""}`} />
-              </div>
-
-              {expandedSections.errorAnalysis && (
-                <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {errors.length === 0 && (
-                    <p className="text-[14px] text-gray-400 text-center py-8">No errors detected in this submission.</p>
-                  )}
-                  {errors.map((rawError, _ei) => {
-                    const error = { id: String(_ei + 1), title: rawError.title, severity: rawError.severity, criteria: rawError.criteria, sub: rawError.sub_category, loc: rawError.location_text, original: rawError.original_text, correction: rawError.correction_text, explanation: rawError.explanation };
-                    const sevColor = error.severity === "Major"
-                      ? "bg-[#FEE2E2] text-[#DC2626]"
-                      : error.severity === "High"
-                      ? "bg-[#FEF3C7] text-[#D97706]"
-                      : error.severity === "Medium"
-                      ? "bg-[#FFF7ED] text-[#EA580C]"
-                      : "bg-[#F0FDF4] text-[#16A34A]";
-                    return (
-                    <div key={error.id} className="rounded-[12px] border border-[#E5E7EB] overflow-hidden">
-                      {/* Error Header */}
-                      <div className="px-6 py-4 flex items-center justify-between border-b border-[#E5E7EB] bg-white">
-                        <div className="flex items-center gap-3">
-                          <span className="text-[15px] font-bold text-[#101828]">#{error.id}</span>
-                          <h4 className="text-[15px] font-bold text-[#101828]">{error.title}</h4>
+            {/* Error type breakdown (taxonomy tags / error labels) */}
+            <div className="bg-white rounded-[16px] p-4 md:p-8 border border-[#E5E7EB] shadow-sm">
+              <h3 className="text-[15px] font-bold text-[#101828] mb-1">Error Type Breakdown</h3>
+              <p className="text-[13px] text-gray-400 mb-5">Specific taxonomy error types detected in your writing</p>
+              {errorTypes.length === 0 ? (
+                <p className="text-[14px] text-gray-400">No specific error types detected.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {errorTypes.map((t) => (
+                    <div
+                      key={t.label}
+                      className="rounded-[12px] border border-[#E5E7EB] p-4 hover:shadow-sm transition-shadow"
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-2 pb-2 border-b border-[#F2F4F7]">
+                        <div className="min-w-0">
+                          <p className="text-[14px] font-bold text-[#101828] truncate">{t.label}</p>
+                          <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+                            {(t.criteria || '—')} → {(t.sub || '—')}
+                          </p>
                         </div>
-                        <span className={`px-3 py-0.5 rounded text-[11px] font-bold tracking-wide ${sevColor}`}>
-                          {error.severity.toUpperCase()}
+                        <span className="shrink-0 bg-[#F1F5F9] text-[#475569] text-[12px] font-bold px-3 py-1 rounded-full">
+                          {t.count}×
                         </span>
                       </div>
+                      <p className="text-[12px] text-[#64748B] leading-relaxed line-clamp-3">
+                        {t.sample?.explanation || 'No description available'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                      {/* Metadata Row */}
-                      <div className="px-6 py-3 flex flex-wrap items-center gap-x-8 gap-y-1.5 border-b border-[#E5E7EB] bg-[#FAFAFA]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-tight">Criteria</span>
-                          <span className="text-[13px] font-semibold text-[#374151]">{error.criteria}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-tight">Sub-Category</span>
-                          <span className="text-[13px] font-semibold text-[#374151]">{error.sub}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-tight">Location</span>
-                          <span className="text-[13px] font-semibold text-[#374151]">{error.loc}</span>
-                        </div>
+            {/* Detailed corrections — taxonomy-grouped views */}
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-sm overflow-hidden">
+              <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#E5E7EB] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#101828]">All Corrections</h3>
+                  <p className="text-[12px] text-gray-400 mt-0.5">Grouped by the grader error taxonomy</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'criteria', label: 'By Criteria' },
+                    { id: 'sub_category', label: 'By Sub-Category' },
+                    { id: 'severity', label: 'By Severity' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setErrorGroupBy(opt.id)}
+                      className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition-colors ${
+                        errorGroupBy === opt.id
+                          ? 'bg-[#1A96F3] text-white'
+                          : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {errors.length === 0 ? (
+                <p className="text-[14px] text-gray-400 text-center py-10">No errors detected in this submission.</p>
+              ) : (
+                <div className="divide-y divide-[#E5E7EB]">
+                  {groups.map(({ key, errors: group }) => (
+                    <div key={key}>
+                      <div className="px-4 md:px-8 py-3 md:py-4 bg-[#F9FAFB] flex items-center justify-between">
+                        <h4 className="text-[14px] md:text-[15px] font-bold text-[#101828]">{groupTitle(key)}</h4>
+                        <span className="text-[12px] font-bold text-[#64748B] bg-white border border-[#E5E7EB] px-3 py-1 rounded-full">
+                          {group.length} error{group.length !== 1 ? 's' : ''}
+                        </span>
                       </div>
-
-                      <div className="p-4 md:p-6 space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                          {/* Original box */}
-                          <div className="bg-[#FEF2F2] rounded-[10px] p-5">
-                            <p className="text-[11px] font-bold text-[#DC2626] mb-2.5 uppercase tracking-wider flex items-center gap-2">
-                              <XCircle size={13} /> ORIGINAL
-                            </p>
-                            <p className="text-[14px] text-[#7F1D1D] font-semibold leading-relaxed italic">"{error.original}"</p>
-                          </div>
-                          {/* Correction box */}
-                          <div className="bg-[#F0FDF4] rounded-[10px] p-5">
-                            <p className="text-[11px] font-bold text-[#16A34A] mb-2.5 uppercase tracking-wider flex items-center gap-2">
-                              <CheckCircle size={13} /> CORRECTION
-                            </p>
-                            <p className="text-[14px] text-[#14532D] font-semibold leading-relaxed">{error.correction}</p>
-                          </div>
-                        </div>
-                        {/* Explanation — inline, no box */}
-                        <p className="text-[14px] text-[#475467] leading-relaxed">
-                          {error.explanation}
-                        </p>
+                      <div>
+                        {group.map((err, i) => (
+                          <ErrorCard key={`${key}-${i}`} error={err} index={i + 1} />
+                        ))}
                       </div>
                     </div>
-                  );
-                  })}
+                  ))}
                 </div>
               )}
             </div>
