@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useGrade } from '../context/GradeContext';
 import { extractFileText } from '../utils/extractFileText';
 import QuestionChart, { detectChartType } from './QuestionChart';
+import { isGeneralTask1Letter, parseLetterQuestion } from '../utils/parseLetterQuestion';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -24,8 +25,24 @@ const QUESTION_BANK = {
     { prompt: "Some people think that governments should ban dangerous sports activities. Others believe people should have freedom to choose their activities. Discuss both views and give your own opinion.", note: "Write at least 250 words. You have 40 minutes." },
   ],
   'General-Task 1': [
-    { prompt: "You have recently started work at a new company. Write a letter to an English-speaking friend. Explain why you changed jobs, describe your new job, and tell them your other news.", note: "Write at least 150 words. Begin: Dear ___, You have 20 minutes." },
-    { prompt: "You have seen an advertisement for part-time work in a local shop. Write a letter to the shop manager explaining why you want the job, your relevant experience, and when you are available.", note: "Write at least 150 words. Begin: Dear Manager, You have 20 minutes." },
+    {
+      prompt: `You have recently started work at a new company. Write a letter to an English-speaking friend.
+
+In your letter:
+1. Explain why you changed jobs
+2. Describe your new job
+3. Tell them your other news`,
+      note: 'You should spend about 20 minutes on this task.\n\nWrite at least 150 words.',
+    },
+    {
+      prompt: `You have seen an advertisement for part-time work in a local shop. Write a letter to the shop manager.
+
+In your letter:
+1. Explain why you want the job
+2. Describe your relevant experience
+3. Say when you are available to work`,
+      note: 'You should spend about 20 minutes on this task.\n\nWrite at least 150 words.',
+    },
   ],
 };
 
@@ -37,7 +54,10 @@ function currentTaskStorageKey(examType, taskType) {
   return `mock_current_task_${examType || 'Academic'}_${taskType || 'Task 2'}`;
 }
 
-function noteForTimeLimit(seconds) {
+function noteForTimeLimit(seconds, examType, taskType) {
+  if (isGeneralTask1Letter(examType, taskType)) {
+    return 'You should spend about 20 minutes on this task.\n\nWrite at least 150 words.';
+  }
   return seconds <= 1200
     ? 'Write at least 150 words. You have 20 minutes.'
     : 'Write at least 250 words. You have 40 minutes.';
@@ -58,10 +78,36 @@ function pickFallbackQuestion(bank, storageKey, excludeIndex = null) {
   return { question: bank[idx], index: idx };
 }
 
+function LetterQuestionDisplay({ text }) {
+  const { scenario, bullets } = parseLetterQuestion(text);
+  return (
+    <>
+      <p className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-4">
+        {scenario}
+      </p>
+      {bullets.length > 0 && (
+        <div className="mb-2">
+          <p className="text-[13px] md:text-[14px] font-bold text-[#101828] mb-3">In your letter:</p>
+          <ul className="space-y-2.5">
+            {bullets.map((bullet, index) => (
+              <li key={index} className="flex gap-2.5 text-[13px] md:text-[14px] text-[#344054] leading-[1.65]">
+                <span className="font-bold text-[#0EA5E9] shrink-0 w-5">{index + 1}.</span>
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
+
 const MockExam = ({ examType, taskType, onExit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { setSubmissionId: setContextSubmissionId, updateEssayData } = useGrade();
+  const isAcademicTask1 = examType === 'Academic' && (taskType || '').includes('1');
+  const isLetterTask = isGeneralTask1Letter(examType, taskType);
   const isTask1 = (taskType || '').includes('1');
   const startSeconds = isTask1 ? 1199 : 2399;
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
@@ -92,7 +138,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
       if (data?.question_text) {
         const q = {
           prompt: data.question_text,
-          note: noteForTimeLimit(data.time_limit_seconds),
+          note: noteForTimeLimit(data.time_limit_seconds, resolvedExam, resolvedTask),
         };
         setCurrentQuestion(q);
         setExamTaskId(data.id);
@@ -128,9 +174,9 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const question = currentQuestion || bank[0];
 
   const questionChartType = useMemo(() => {
-    if (examType !== 'Academic' || !isTask1) return null;
+    if (!isAcademicTask1) return null;
     return question.chartType || detectChartType(question.prompt);
-  }, [question, examType, isTask1]);
+  }, [question, isAcademicTask1]);
 
   // Derive display name and initials from auth user
   const displayName = user?.full_name || 'Candidate';
@@ -396,16 +442,20 @@ const MockExam = ({ examType, taskType, onExit }) => {
             </div>
           ) : (
             <>
-              <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
-                {question.prompt}
-              </h2>
+              {isLetterTask ? (
+                <LetterQuestionDisplay text={question.prompt} />
+              ) : (
+                <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
+                  {question.prompt}
+                </h2>
+              )}
               {questionChartType && (
                 <div className="mb-5">
                   <QuestionChart type={questionChartType} seed={question.prompt} />
                 </div>
               )}
-              <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90">
-                <p>{question.note}</p>
+              <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90 mt-5">
+                <p className="whitespace-pre-line">{question.note}</p>
               </div>
             </>
           )}
@@ -414,7 +464,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
         <div className="flex-1 flex flex-col bg-white">
           <textarea
             className="flex-1 p-4 md:p-10 outline-none text-[15px] md:text-[16px] text-[#475467] leading-[1.8] font-normal resize-none placeholder:text-gray-300 custom-scrollbar"
-            placeholder="Start writing your essay here..."
+            placeholder={isLetterTask ? 'Type your letter here…' : 'Start writing your essay here...'}
             value={essay}
             onChange={(e) => setEssay(e.target.value)}
             disabled={showTimeUp || isGrading}
