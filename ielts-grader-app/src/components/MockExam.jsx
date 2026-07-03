@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, HelpCircle, RotateCcw, Paperclip, ChevronDown, Clock, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { X, HelpCircle, RotateCcw, RefreshCw, Paperclip, ChevronDown, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -29,6 +29,35 @@ const QUESTION_BANK = {
   ],
 };
 
+function seenStorageKey(examType, taskType) {
+  return `mock_seen_${examType || 'Academic'}_${taskType || 'Task 2'}`;
+}
+
+function currentTaskStorageKey(examType, taskType) {
+  return `mock_current_task_${examType || 'Academic'}_${taskType || 'Task 2'}`;
+}
+
+function noteForTimeLimit(seconds) {
+  return seconds <= 1200
+    ? 'Write at least 150 words. You have 20 minutes.'
+    : 'Write at least 250 words. You have 40 minutes.';
+}
+
+/** Pick a random unseen question from the offline bank; resets when all have been shown. */
+function pickFallbackQuestion(bank, storageKey, excludeIndex = null) {
+  let seen = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+  let indices = bank.map((_, i) => i).filter(i => i !== excludeIndex && !seen.includes(i));
+  if (indices.length === 0) {
+    seen = [];
+    indices = bank.map((_, i) => i).filter(i => i !== excludeIndex);
+    sessionStorage.setItem(storageKey, '[]');
+  }
+  if (indices.length === 0) indices = [0];
+  const idx = indices[Math.floor(Math.random() * indices.length)];
+  sessionStorage.setItem(storageKey, JSON.stringify([...seen, idx]));
+  return { question: bank[idx], index: idx };
+}
+
 const MockExam = ({ examType, taskType, onExit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -38,24 +67,65 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
   const bank = QUESTION_BANK[key] || QUESTION_BANK['Academic-Task 2'];
 
-  // Dynamic unique question fetched from DB — falls back to hardcoded bank if API fails
-  const [dynamicQuestion, setDynamicQuestion] = useState(null);
-  useEffect(() => {
-    api.getNextTask({ exam_type: examType || 'Academic', task_type: taskType || 'Task 2', session_type: 'mock' })
-      .then(({ data }) => {
-        if (!data) return;
-        setDynamicQuestion({
-          prompt: data.question_text,
-          note: data.time_limit_seconds <= 1200
-            ? 'Write at least 150 words. You have 20 minutes.'
-            : 'Write at least 250 words. You have 40 minutes.',
-        });
-      })
-      .catch(() => { /* silently use QUESTION_BANK fallback */ });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examType, taskType]);
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [examTaskId, setExamTaskId] = useState(null);
+  const [questionLoading, setQuestionLoading] = useState(true);
+  const [essay, setEssay] = useState('');
+  const examTaskIdRef = useRef(null);
 
-  const question = dynamicQuestion || bank[Math.floor(Date.now() / 86400000) % bank.length];
+  const loadNextQuestion = useCallback(async ({ clearEssay = false } = {}) => {
+    const resolvedExam = examType || 'Academic';
+    const resolvedTask = taskType || 'Task 2';
+    const seenKey = seenStorageKey(resolvedExam, resolvedTask);
+    const currentKey = currentTaskStorageKey(resolvedExam, resolvedTask);
+    const excludeId = examTaskIdRef.current || sessionStorage.getItem(currentKey) || undefined;
+
+    setQuestionLoading(true);
+    try {
+      const { data } = await api.getNextTask({
+        exam_type: resolvedExam,
+        task_type: resolvedTask,
+        session_type: 'mock',
+        exclude_task_id: excludeId || undefined,
+      });
+
+      if (data?.question_text) {
+        const q = {
+          prompt: data.question_text,
+          note: noteForTimeLimit(data.time_limit_seconds),
+        };
+        setCurrentQuestion(q);
+        setExamTaskId(data.id);
+        examTaskIdRef.current = data.id;
+        sessionStorage.setItem(currentKey, data.id);
+        if (clearEssay) setEssay('');
+        return;
+      }
+    } catch {
+      // fall through to offline bank
+    }
+
+    const excludeIndex = excludeId?.startsWith('fallback-')
+      ? parseInt(excludeId.replace('fallback-', ''), 10)
+      : null;
+    const { question: fallbackQ, index } = pickFallbackQuestion(bank, seenKey, Number.isNaN(excludeIndex) ? null : excludeIndex);
+    const fallbackId = `fallback-${index}`;
+    setCurrentQuestion(fallbackQ);
+    setExamTaskId(fallbackId);
+    examTaskIdRef.current = fallbackId;
+    sessionStorage.setItem(currentKey, fallbackId);
+    if (clearEssay) setEssay('');
+  }, [examType, taskType, bank]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadNextQuestion().finally(() => {
+      if (!cancelled) setQuestionLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [loadNextQuestion]);
+
+  const question = currentQuestion || bank[0];
 
   const questionChartType = useMemo(() => {
     if (examType !== 'Academic' || !isTask1) return null;
@@ -71,7 +141,6 @@ const MockExam = ({ examType, taskType, onExit }) => {
     .map(w => w[0].toUpperCase())
     .join('');
 
-  const [essay, setEssay] = useState('');
   const [timeLeft, setTimeLeft] = useState(startSeconds);
   const [wordCount, setWordCount] = useState(0);
   const [showTimeUp, setShowTimeUp] = useState(false);
@@ -124,6 +193,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
         task_type: taskType || 'Task 2',
         essay_content: essay,
         time_spent_seconds: timeSpent,
+        exam_task_id: examTaskId?.startsWith('fallback-') ? null : examTaskId,
       });
       setSubmissionId(res.submission_id);
       setContextSubmissionId(res.submission_id); // persist for AnalysisReadyPage polling
@@ -242,6 +312,14 @@ const MockExam = ({ examType, taskType, onExit }) => {
     if (window.confirm('Are you sure you want to clear your essay?')) setEssay('');
   };
 
+  const handleRefreshQuestion = async () => {
+    if (isGrading || showTimeUp) return;
+    if (essay.trim() && !window.confirm('Load a new question? Your current essay will be cleared.')) return;
+    setQuestionLoading(true);
+    await loadNextQuestion({ clearEssay: true });
+    setQuestionLoading(false);
+  };
+
   const handleFileAttach = async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
@@ -294,22 +372,43 @@ const MockExam = ({ examType, taskType, onExit }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div className="w-full md:w-[400px] lg:w-[480px] border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC]">
-          <div className="mb-4 md:mb-6">
+          <div className="mb-4 md:mb-6 flex items-center justify-between gap-3">
             <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
               {examType} {taskType || 'Task 2'}
             </span>
+            <button
+              onClick={handleRefreshQuestion}
+              disabled={questionLoading || isGrading || showTimeUp}
+              title="New question"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-[11px] font-semibold text-[#344054] border border-gray-200 hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {questionLoading
+                ? <Loader2 size={14} className="animate-spin" />
+                : <RefreshCw size={14} />
+              }
+              <span className="hidden sm:inline">New question</span>
+            </button>
           </div>
-          <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
-            {question.prompt}
-          </h2>
-          {questionChartType && (
-            <div className="mb-5">
-              <QuestionChart type={questionChartType} seed={question.prompt} />
+          {questionLoading && !currentQuestion ? (
+            <div className="flex items-center gap-2 text-[13px] text-gray-500 py-8">
+              <Loader2 size={18} className="animate-spin text-[#0EA5E9]" />
+              Loading question…
             </div>
+          ) : (
+            <>
+              <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
+                {question.prompt}
+              </h2>
+              {questionChartType && (
+                <div className="mb-5">
+                  <QuestionChart type={questionChartType} seed={question.prompt} />
+                </div>
+              )}
+              <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90">
+                <p>{question.note}</p>
+              </div>
+            </>
           )}
-          <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90">
-            <p>{question.note}</p>
-          </div>
         </div>
 
         <div className="flex-1 flex flex-col bg-white">

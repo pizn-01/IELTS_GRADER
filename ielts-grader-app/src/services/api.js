@@ -320,12 +320,13 @@ export const api = {
 
   // ─── GET /api/tasks/next ─────────────────────────────────────────────────────
   // Returns one question not yet assigned to this user (unique per user)
-  getNextTask: async ({ exam_type, task_type, session_type = 'mock' } = {}) => {
+  getNextTask: async ({ exam_type, task_type, session_type = 'mock', exclude_task_id } = {}) => {
     try {
       const q = new URLSearchParams();
       if (exam_type) q.set('exam_type', exam_type);
       if (task_type) q.set('task_type', task_type);
       q.set('session_type', session_type);
+      if (exclude_task_id) q.set('exclude_task_id', exclude_task_id);
       const res = await fetch(`${BASE_URL}/tasks/next?${q}`, { headers: getHeaders() });
       if (!res.ok) throw new Error(`Next task fetch failed (${res.status})`);
       return await res.json();

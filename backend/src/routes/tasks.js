@@ -32,9 +32,9 @@ router.get('/', authenticateToken, async (req, res) => {
 // ─── GET /api/tasks/next ──────────────────────────────────────────────────────
 // Returns one task the user hasn't been assigned yet (or the least-recently
 // assigned one if all have been seen). Records the assignment.
-// ?exam_type=Academic&task_type=Task+2&session_type=mock
+// ?exam_type=Academic&task_type=Task+2&session_type=mock&exclude_task_id=<uuid>
 router.get('/next', authenticateToken, async (req, res) => {
-  const { exam_type = 'Academic', task_type = 'Task 2', session_type = 'mock' } = req.query;
+  const { exam_type = 'Academic', task_type = 'Task 2', session_type = 'mock', exclude_task_id } = req.query;
   const userId = req.user.userId;
 
   try {
@@ -53,32 +53,44 @@ router.get('/next', authenticateToken, async (req, res) => {
 
     // 2. Tasks already assigned to this user for the same exam/type
     const taskIds = allTasks.map(t => t.id);
-    const { data: assignments } = await supabaseAdmin
+    const { data: assignments, error: assignErr } = await supabaseAdmin
       .from('user_question_assignments')
       .select('task_id, assigned_at')
       .eq('user_id', userId)
       .in('task_id', taskIds)
       .order('assigned_at', { ascending: false });
 
+    if (assignErr) {
+      console.error('[tasks/next] Assignment lookup failed:', assignErr.message);
+      throw assignErr;
+    }
+
     const assignedIds = new Set((assignments || []).map(a => a.task_id));
 
     // 3. Pick from unseen tasks first; fall back to least-recently assigned
     let candidate;
-    const unseen = allTasks.filter(t => !assignedIds.has(t.id));
+    const pool = allTasks.filter(t => t.id !== exclude_task_id);
+    const unseen = pool.filter(t => !assignedIds.has(t.id));
 
     if (unseen.length > 0) {
       candidate = unseen[Math.floor(Math.random() * unseen.length)];
+    } else if (pool.length > 0) {
+      // All seen — pick the one assigned longest ago (last in desc-ordered list)
+      const oldestAssignedId = assignments?.[assignments.length - 1]?.task_id;
+      candidate = pool.find(t => t.id === oldestAssignedId) || pool[Math.floor(Math.random() * pool.length)];
     } else {
-      // All seen — pick the one assigned longest ago
-      const lastAssignedId = assignments?.[assignments.length - 1]?.task_id;
-      candidate = allTasks.find(t => t.id === lastAssignedId) || allTasks[0];
+      // Only one task in bank and user asked to exclude it — return it anyway
+      candidate = allTasks[Math.floor(Math.random() * allTasks.length)];
     }
 
     // 4. Record the assignment
-    await supabaseAdmin
+    const { error: insertErr } = await supabaseAdmin
       .from('user_question_assignments')
-      .insert({ user_id: userId, task_id: candidate.id, session_type })
-      .catch(err => console.warn('[tasks/next] Assignment insert failed:', err.message));
+      .insert({ user_id: userId, task_id: candidate.id, session_type });
+
+    if (insertErr) {
+      console.error('[tasks/next] Assignment insert failed:', insertErr.message);
+    }
 
     return res.json({ data: candidate });
   } catch (err) {
