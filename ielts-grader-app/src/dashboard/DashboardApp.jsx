@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import Layout from '../components/Layout';
@@ -99,6 +99,12 @@ function DashboardApp() {
   const targetBand = user?.target_band || '7.5';
   const creditsRemaining = user?.credits_remaining ?? 4;
 
+  const defaultChartTask = useMemo(() => {
+    const recent = recentSubmissions?.[0];
+    if (!recent?.type || !recent?.task) return 'Academic Task 2';
+    return `${recent.type} ${recent.task}`;
+  }, [recentSubmissions]);
+
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
       <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
@@ -143,7 +149,7 @@ function DashboardApp() {
           </motion.div>
         </div>
 
-        <SkillGrowth hasData={hasData} rawSeriesData={analyticsSeries?.chartData} isLoading={isLoading} />
+        <SkillGrowth hasData={hasData} defaultTask={defaultChartTask} isLoading={isLoading} />
         <RecentReports hasData={hasData} dynamicReports={recentSubmissions} onOpenReport={handleOpenRecentReport} />
 
         <PracticeModal
