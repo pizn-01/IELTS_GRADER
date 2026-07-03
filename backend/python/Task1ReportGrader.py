@@ -1069,6 +1069,12 @@ You MUST compute the actual percentage difference before stating any claim about
 
 ABSOLUTE RULE — SELF-CONSISTENCY (this fixes a known failure mode):
 A data_accuracy_error whose own explanation concludes the value is "within tolerance", "acceptable", "not a real error", or similar is a CONTRADICTION, not a valid error. If you find yourself about to write an explanation like that, this means the value passed the check — DO NOT add a data_accuracy_error entry for it at all. An entry only belongs in the errors list if your explanation unambiguously concludes the discrepancy EXCEEDS the 15% tolerance and IS a genuine error.
+
+ABSOLUTE RULE — UNREADABLE/MISSING REFERENCE DATA IS NOT EVIDENCE OF AN ERROR:
+The reference data below may occasionally note that some axis, gridline, or tick label was unreadable, unclear, garbled, or could not be extracted from the chart image. This is a LIMITATION OF THE EXTRACTION PROCESS, not a fact about the student's report, and it must NEVER be used to flag data_accuracy_error.
+- Absence of proof is NOT proof of a mistake. If you cannot cross-check a specific number/year/label against clear reference data, you MUST treat that claim as UNVERIFIED and say nothing about it — do NOT create an error for it "just in case."
+- NEVER write a data_accuracy_error whose justification is that the reference/chart data is unreadable, garbled, missing, or otherwise unavailable — that is disqualifying, not incriminating.
+- Only ever flag data_accuracy_error when the reference data gives you a CLEAR, READABLE value or label that DIRECTLY CONTRADICTS the student's claim by more than 15%. If in doubt, do not flag.
 """
 
         checklists = {
@@ -1085,6 +1091,7 @@ EXHAUSTIVE CHECKLIST – Task Response (Academic Report):
   Do NOT flag different unit representations of the same value.
   NEVER use 'systematic misreporting' reasoning to override the ±15% tolerance rule.
   f) EXPLANATION FORMAT: write explanations in plain language only. Do NOT include mathematical formulas like |X-Y|/Z = N% in any 'explanation' or 'context' field.
+  g) IF THE REFERENCE DATA IS UNREADABLE/MISSING for a value: do NOT flag it. An extraction limitation is not evidence the student is wrong — skip that claim entirely rather than flagging it.
 
 □ COVERAGE: Does the report cover ALL key features shown in the chart (peaks, troughs, outliers)?
 □ Are significant features highlighted (highest/lowest values, dramatic changes)?
@@ -1252,12 +1259,32 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
         re.IGNORECASE,
     )
 
+    # Catches the second known failure mode: the model admits the reference
+    # data itself couldn't be read/extracted, then flags the student's claim
+    # anyway as if that were evidence of a mistake. An extraction gap is not
+    # proof the student is wrong, so any data_accuracy_error whose own
+    # explanation blames unreadable/missing reference data is a false
+    # positive and must be dropped.
+    _UNVERIFIABLE_REFERENCE_RE = re.compile(
+        r"unreadable|garbled|illegible"
+        r"|cannot be (extracted|verified|confirmed|determined)"
+        r"|can(no|')t be (extracted|verified|confirmed|determined)"
+        r"|(not|isn'?t|is not) verifiable"
+        r"|unable to (verify|confirm|extract|determine)"
+        r"|no(t)? (readable|available|reliable) reference"
+        r"|reference data (is|was) (unclear|unavailable|missing|incomplete)",
+        re.IGNORECASE,
+    )
+
     @classmethod
     def _is_self_contradicting_data_accuracy_error(cls, error: dict) -> bool:
         if error.get("error_id") != "data_accuracy_error":
             return False
         explanation = f"{error.get('explanation', '')} {error.get('context', '')}"
-        return bool(cls._WITHIN_TOLERANCE_RE.search(explanation))
+        return bool(
+            cls._WITHIN_TOLERANCE_RE.search(explanation)
+            or cls._UNVERIFIABLE_REFERENCE_RE.search(explanation)
+        )
 
     # ------------------------------------------------------------------
     # MODEL B: FULL SCORING + SUMMARY
@@ -3232,8 +3259,14 @@ IMPORTANT: suggested_enrichments MUST contain EXACTLY 3 items."""
                 logger.info("[IMAGE] Screenshot provided — extracting chart data via vision...")
                 gen = await self._extract_chart_data_from_image(chart_image, report_prompt, chart_type)
                 chart_data_context = gen["text"]
-                if gen.get("extracted_prompt"):
-                    report_prompt = gen["extracted_prompt"]
+                _extracted_prompt = (gen.get("extracted_prompt") or "").strip()
+                # The chart screenshot itself rarely contains the question text (it's
+                # stored separately), so vision extraction usually returns "N/A" here.
+                # Only use it as a fallback when the caller didn't already supply a
+                # real prompt — never let a placeholder/garbage value clobber the
+                # genuine question text passed in from the database.
+                if _extracted_prompt and not _extracted_prompt.upper().startswith("N/A") and not report_prompt.strip():
+                    report_prompt = _extracted_prompt
                     logger.info("[IMAGE] report_prompt updated from vision extraction")
             else:
                 gen = self._generate_chart_reference(report_prompt, chart_type)
