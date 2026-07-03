@@ -845,8 +845,73 @@ If the essay is genuinely error-free for this criterion, return {{"errors": []}}
         )
         parsed = self._clean_json(raw)
         errors = parsed.get("errors", [])
+
+        # Code-level safety net only for ideas_underdeveloped: drop flags where
+        # the quoted claim sits in a multi-sentence paragraph (support continues
+        # after the claim). Does not alter prompts or other error types.
+        before = len(errors)
+        errors = [
+            e for e in errors
+            if not self._is_ideas_underdeveloped_false_positive(e, user_answer)
+        ]
+        if len(errors) != before:
+            logger.info(
+                f"  → [{criterion_name}] dropped {before - len(errors)} "
+                "ideas_underdeveloped false positive(s) (paragraph has further support)."
+            )
+
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
         return errors
+
+    @staticmethod
+    def _paragraph_containing(text: str, quote: str) -> Optional[str]:
+        """Return the paragraph that contains quote, or None if not found."""
+        if not text or not quote:
+            return None
+        # Collapse whitespace for a tolerant search, then map back to a paragraph.
+        paragraphs = re.split(r"\n\s*\n", text.strip())
+        if len(paragraphs) == 1:
+            paragraphs = [p for p in text.split("\n") if p.strip()] or paragraphs
+        quote_norm = re.sub(r"\s+", " ", quote.strip()).lower()
+        for para in paragraphs:
+            para_norm = re.sub(r"\s+", " ", para.strip()).lower()
+            if quote_norm and quote_norm in para_norm:
+                return para.strip()
+        # Fallback: whole text as one block if quote appears anywhere
+        full_norm = re.sub(r"\s+", " ", text.strip()).lower()
+        if quote_norm and quote_norm in full_norm:
+            return text.strip()
+        return None
+
+    @classmethod
+    def _is_ideas_underdeveloped_false_positive(cls, error: dict, user_answer: str) -> bool:
+        """True when ideas_underdeveloped was flagged but the same paragraph continues."""
+        if error.get("error_id") != "ideas_underdeveloped":
+            return False
+        quote = (error.get("original_text") or "").strip()
+        if not quote:
+            return False
+        para = cls._paragraph_containing(user_answer, quote)
+        if not para:
+            return False
+        quote_norm = re.sub(r"\s+", " ", quote).lower()
+        para_norm = re.sub(r"\s+", " ", para).lower()
+        idx = para_norm.find(quote_norm)
+        if idx < 0:
+            return False
+        after = para_norm[idx + len(quote_norm):].strip()
+        # Another sentence (or substantial continuation) in the same paragraph
+        # means the claim is not standing alone — treat as false positive.
+        if re.search(r"[.!?]\s+\S", after):
+            return True
+        if len(after.split()) >= 12:
+            return True
+        # Multi-sentence paragraph even if quote is near the end: development
+        # exists in the paragraph as a whole.
+        sentences = [s for s in re.split(r"(?<=[.!?])\s+", para.strip()) if s.strip()]
+        if len(sentences) >= 2 and len(para.split()) >= 25:
+            return True
+        return False
 
     async def _perform_detailed_independent_scoring(
         self, user_answer: str, essay_prompt: str, model: str = SCORING_MODEL_A
