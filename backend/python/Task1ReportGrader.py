@@ -84,7 +84,7 @@ ERROR_TAXONOMY = {
                             "severity": "major",
                             "band_impact": -1.5,
                             "description": "Fails to include key features or data trends from the chart/graph.",
-                            "detection_hint": "Check if main data points or significant changes are mentioned; missing overview. SCOPE: whole report — confirm features are absent from the full response before flagging.",
+                            "detection_hint": "Check if main data points or significant changes are mentioned; missing overview. Also: confirm features are absent from the FULL report before flagging.",
                             "example_triggers": ["Describing all data points without highlighting the main trend"]
                         },
                         {
@@ -93,7 +93,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "A significant trend, peak, trough, or outlier visible in the data is not mentioned.",
-                            "detection_hint": "Identify top 3-5 most notable features from the chart; check each against the response. SCOPE: whole report — confirm each feature is absent from the full text.",
+                            "detection_hint": "Identify top 3-5 most notable features from the chart; check each against the response. Also: confirm each feature is absent from the FULL report before flagging.",
                             "example_triggers": [
                                 "Ignoring the dramatic peak in 1995 while describing surrounding years",
                                 "Not mentioning the only category that decreased while all others rose"
@@ -110,7 +110,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "The overview of the data is missing or contradicts the details provided.",
-                            "detection_hint": "Ensure an overview paragraph is present and consistent with the data body. SCOPE: whole report — compare overview with body paragraphs.",
+                            "detection_hint": "Ensure an overview paragraph is present and consistent with the data body. Also: compare overview with body across the FULL report.",
                             "example_triggers": ["Overview says data increased, but body paragraphs show a decrease"]
                         },
                         {
@@ -119,7 +119,7 @@ ERROR_TAXONOMY = {
                             "severity": "medium",
                             "band_impact": -0.5,
                             "description": "Fails to provide a final summary of the main data features.",
-                            "detection_hint": "Absence of a concluding statement or a clear overview paragraph. SCOPE: whole report.",
+                            "detection_hint": "Absence of a concluding statement or a clear overview paragraph. Also: judge only after reading the FULL report.",
                             "example_triggers": ["Ending with a specific detail rather than a summary of the whole chart"]
                         }
                     ]
@@ -133,7 +133,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "The response describes categories or time periods in isolation without comparing or contrasting them.",
-                            "detection_hint": "Check whether the response uses comparative language ('higher than', 'while', 'whereas') to relate data groups. SCOPE: whole report — do not flag if comparisons appear elsewhere in the text.",
+                            "detection_hint": "Check whether the response uses comparative language ('higher than', 'while', 'whereas') to relate data groups. Also: do not flag if comparisons appear elsewhere in the FULL report.",
                             "example_triggers": [
                                 "Describing Country A and Country B in separate sentences with no comparison",
                                 "Listing yearly values without noting which was the highest or lowest"
@@ -161,11 +161,8 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -0.75,
                             "description": "Trends are mentioned without supporting data (numbers/percentages).",
-                            "detection_hint": "Descriptive claims about trends lacking numerical evidence from the prompt. SCOPE: full paragraph minimum — NEVER flag a trend sentence if the same paragraph continues with figures, years, or comparisons. Only flag when the paragraph as a whole lacks quantitative support.",
-                            "example_triggers": [
-                                "The numbers went up. (No mention of how much or when)",
-                                "A paragraph that only asserts a trend with no figures anywhere in it"
-                            ]
+                            "detection_hint": "Descriptive claims about trends lacking numerical evidence from the prompt. Also: read the FULL paragraph before flagging — never flag a trend sentence if the same paragraph continues with figures, years, or comparisons.",
+                            "example_triggers": ["The numbers went up. (No mention of how much or when)"]
                         }
                     ]
                 },
@@ -197,7 +194,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "Data report lacks a clear introduction, overview, and grouped details.",
-                            "detection_hint": "Missing introduction/overview/body grouping. SCOPE: whole report — judge overall sectioning only after reading the full text.",
+                            "detection_hint": "Missing introduction/overview/body grouping. Also: judge overall sectioning only after reading the FULL report.",
                             "example_triggers": ["Randomly listing numbers without clear grouping"]
                         },
                         {
@@ -220,7 +217,7 @@ ERROR_TAXONOMY = {
                             "severity": "medium",
                             "band_impact": -0.75,
                             "description": "Combining unrelated data categories into a single, confusing paragraph.",
-                            "detection_hint": "Failure to group similar trends or contrasting categories together. SCOPE: full paragraph — read the entire paragraph before flagging.",
+                            "detection_hint": "Failure to group similar trends or contrasting categories together. Also: read the FULL paragraph before flagging.",
                             "example_triggers": ["Single paragraph mixing population data, oil prices, and birth rates"]
                         }
                     ]
@@ -311,7 +308,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "The entire response relies on a narrow set of trend words with no attempt at variety or sophistication.",
-                            "detection_hint": "Type-token ratio for trend vocabulary is very low across the full response. SCOPE: pattern-across-text — judge range across the full report, not one sentence.",
+                            "detection_hint": "Type-token ratio for trend vocabulary is very low across the full response. Also: judge range across the FULL report (pattern-across-text), not one sentence.",
                             "example_triggers": [
                                 "Only 'increase' and 'decrease' used across 200+ words",
                                 "No use of adverbs (sharply, gradually) or nouns (surge, dip, plateau)"
@@ -541,7 +538,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "The response relies exclusively on simple sentences with no complex or compound structures.",
-                            "detection_hint": "Absence of subordinate clauses, relative clauses, or non-finite structures across the full response. SCOPE: pattern-across-text — judge range across the full report, not one sentence.",
+                            "detection_hint": "Absence of subordinate clauses, relative clauses, or non-finite structures across the full response. Also: judge range across the FULL report (pattern-across-text), not one sentence.",
                             "example_triggers": [
                                 "Oil rose. Coal fell. Gas stayed. (Three simple sentences with no variety)",
                                 "No use of 'which', 'while', 'having risen', 'despite' across the response"
@@ -1035,25 +1032,12 @@ COMPLETENESS RULES (prevent misses):
 - Do not stop at obvious errors — check every sentence and word for subtle issues too, all count, all must be reported
 - Minor errors (low severity) are still errors — include them
 
-CONTEXT SCOPE BY ERROR TYPE (apply ONLY to the listed IDs — do not generalize to other tags):
-Most tags are SHORT-SPAN (phrase/sentence): grammar, punctuation, spelling, articles, prepositions,
-word form, imprecise_word_choice, collocation, awkward_phrase, data_accuracy_error on a specific figure, etc.
-Judge those at the local phrase/sentence.
-
-PARAGRAPH-SCOPE IDs only (read the FULL paragraph before flagging):
-- ideas_underdeveloped, paragraph_unity, logical_progression_gap, weak_topic_sentence
-
-WHOLE-REPORT-SCOPE IDs only (read the FULL report before flagging):
-- task_achievement_partial, key_feature_missing, comparison_missing, position_unclear_or_inconsistent,
-  weak_or_missing_conclusion, poor_overall_structure
-
-PATTERN-ACROSS-TEXT IDs only (scan the full text for frequency/range patterns — not development judgments):
-- limited_vocabulary_range, limited_grammatical_range, repetition_basic_lexis, overuse_linkers, underuse_linkers
-
-ABSOLUTE RULE — ideas_underdeveloped only:
-A trend claim is NOT underdeveloped if the same paragraph continues with numbers, years, percentages,
-or comparisons. Only flag when the paragraph as a WHOLE asserts a trend without quantitative support.
-original_text may quote the claim, but your explanation MUST confirm you checked the rest of the paragraph.
+CONTEXT SCOPE BY ERROR TYPE (additive — apply ONLY to the listed IDs; do not change how other tags are judged):
+- SHORT-SPAN (default for most tags — phrase/sentence): grammar, punctuation, spelling, articles, prepositions, word form, imprecise_word_choice, collocation, awkward_phrase, data_accuracy_error on a specific figure, and similar local tags.
+- PARAGRAPH-SCOPE IDs only (read the FULL paragraph before flagging): ideas_underdeveloped, paragraph_unity, logical_progression_gap, weak_topic_sentence.
+- WHOLE-REPORT-SCOPE IDs only (read the FULL report before flagging): task_achievement_partial, key_feature_missing, comparison_missing, position_unclear_or_inconsistent, weak_or_missing_conclusion, poor_overall_structure.
+- PATTERN-ACROSS-TEXT IDs only (scan full text for frequency/range patterns): limited_vocabulary_range, limited_grammatical_range, repetition_basic_lexis, overuse_linkers, underuse_linkers.
+- ideas_underdeveloped only: a trend claim is NOT underdeveloped if the same paragraph continues with numbers, years, percentages, or comparisons. Only flag when the paragraph as a WHOLE lacks quantitative support. original_text may quote the claim, but the explanation must confirm the rest of the paragraph was checked.
 
 The correct number of errors is however many actually exist. There is no floor and no ceiling. Report exactly what you find.
 
@@ -1136,7 +1120,7 @@ EXHAUSTIVE CHECKLIST – Task Response (Academic Report):
 
 □ DEVELOPMENT: Are trends mentioned with supporting data (numbers/percentages)?
 □ Check for descriptive claims about trends lacking numerical evidence from the prompt.
-□ ideas_underdeveloped SCOPE: for that tag only, read the ENTIRE paragraph before flagging — do not flag a trend claim if figures appear later in the same paragraph.
+□ ideas_underdeveloped only: read the ENTIRE paragraph before flagging — do not flag a trend claim if figures appear later in the same paragraph.
 
 □ RELEVANCE: Is all content relevant to the chart data only (no personal opinions or external reasoning)?
 □ Check for 'I think' or reasons for trends that are not visible in the provided data.

@@ -65,7 +65,7 @@ ERROR_TAXONOMY = {
                             "severity": "major",
                             "band_impact": -1.5,
                             "description": "Essay fails to address all parts of the prompt (e.g., misses the 'advantages' part).",
-                            "detection_hint": "Structured prompt-check for all required parts (Discuss both views, etc). SCOPE: whole essay — confirm a required part is absent from the full response before flagging.",
+                            "detection_hint": "Structured prompt-check for all required parts (Discuss both views, etc). Also: confirm a required part is absent from the FULL essay before flagging.",
                             "example_triggers": ["Prompt asked for causes and solutions, essay only discusses causes"]
                         }
                     ]
@@ -79,7 +79,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.25,
                             "description": "The writer's opinion is missing or changes throughout the essay.",
-                            "detection_hint": "Contradictory stance detection; position drift between paragraphs. SCOPE: whole essay — compare intro, body, and conclusion.",
+                            "detection_hint": "Contradictory stance detection; position drift between paragraphs. Also: compare intro, body, and conclusion across the FULL essay.",
                             "example_triggers": ["Agreeing in the intro but arguing the opposite in the body"]
                         }
                     ]
@@ -93,11 +93,8 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -0.75,
                             "description": "Arguments are stated but not supported by explanations or examples.",
-                            "detection_hint": "Short claims lacking depth; single-sentence paragraphs with no support. SCOPE: full paragraph minimum — NEVER flag a claim sentence if the same paragraph continues with reasons, examples, or elaboration. Only flag when the paragraph as a whole lacks support.",
-                            "example_triggers": [
-                                "Governments should pay for it because it is good for society. (No explanation)",
-                                "A body paragraph that is only one claim with no follow-up support"
-                            ]
+                            "detection_hint": "Short claims lacking depth; single-sentence paragraphs with no support. Also: read the FULL paragraph before flagging — never flag a claim sentence if the same paragraph continues with reasons, examples, or elaboration.",
+                            "example_triggers": ["Governments should pay for it because it is good for society. (No explanation)"]
                         }
                     ]
                 },
@@ -124,7 +121,7 @@ ERROR_TAXONOMY = {
                             "severity": "medium",
                             "band_impact": -0.75,
                             "description": "Missing a final summary or a conclusion that introduces new, unrelated ideas.",
-                            "detection_hint": "No concluding paragraph or final summary found. SCOPE: whole essay — check the final paragraph(s) after reading the full text.",
+                            "detection_hint": "No concluding paragraph or final summary found. Also: judge only after reading the FULL essay.",
                             "example_triggers": ["Intro and body are present, but the essay ends abruptly after the last point"]
                         }
                     ]
@@ -143,7 +140,7 @@ ERROR_TAXONOMY = {
                             "severity": "major",
                             "band_impact": -1.5,
                             "description": "The essay lacks a standard academic format (Intro, 2-3 Body Paragraphs, Conclusion).",
-                            "detection_hint": "Missing or incorrectly ordered essay sections. SCOPE: whole essay.",
+                            "detection_hint": "Missing or incorrectly ordered essay sections. Also: judge overall sectioning only after reading the FULL essay.",
                             "example_triggers": ["Essay is one long block of text with no indentations or breaks"]
                         },
                         {
@@ -152,7 +149,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "The first sentence of a paragraph doesn't clearly state the main argument of that paragraph.",
-                            "detection_hint": "Paragraph starting with vague or filler text not introducing the main claim. SCOPE: full paragraph — judge the opening against what the rest of the paragraph develops.",
+                            "detection_hint": "Paragraph starting with vague or filler text not introducing the main claim. Also: judge the opening against what the rest of the paragraph develops.",
                             "example_triggers": ["Paragraph starts with 'Now I will talk about another thing.'"]
                         },
                         {
@@ -175,7 +172,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "Including multiple conflicting arguments within the same paragraph.",
-                            "detection_hint": "Abrupt shifts between unrelated ideas within a single paragraph block. SCOPE: full paragraph — read the entire paragraph before flagging.",
+                            "detection_hint": "Abrupt shifts between unrelated ideas within a single paragraph block. Also: read the FULL paragraph before flagging.",
                             "example_triggers": ["A paragraph discusses environmental benefits then suddenly shifts to economic costs"]
                         }
                     ]
@@ -706,25 +703,12 @@ COMPLETENESS RULES (prevent misses):
 - Do not stop at obvious errors — check every sentence and word for subtle issues too, all count, all must be reported
 - Minor errors (low severity) are still errors — include them
 
-CONTEXT SCOPE BY ERROR TYPE (apply ONLY to the listed IDs — do not generalize to other tags):
-Most tags are SHORT-SPAN (phrase/sentence): grammar, punctuation, spelling, articles, prepositions,
-word form, imprecise_word_choice, collocation, awkward_phrase, register_informal, misspelling, etc.
-Judge those at the local phrase/sentence — do NOT require whole-paragraph or whole-essay context.
-
-PARAGRAPH-SCOPE IDs only (read the FULL paragraph before flagging):
-- ideas_underdeveloped, paragraph_unity, logical_progression_gap, weak_topic_sentence
-
-WHOLE-ESSAY-SCOPE IDs only (read the FULL essay before flagging):
-- task_achievement_partial, position_unclear_or_inconsistent, weak_or_missing_conclusion, poor_overall_structure
-
-PATTERN-ACROSS-TEXT IDs only (scan the full text for frequency/patterns, not for "development"):
-- repetition_basic_lexis, overuse_linkers, underuse_linkers
-
-ABSOLUTE RULE — ideas_underdeveloped only:
-A claim sentence is NOT underdeveloped if the same paragraph continues with explanation, reasons,
-examples, or elaboration. Only flag when the paragraph (or body section) as a WHOLE asserts an idea
-without supporting development. original_text may quote the claim, but your explanation MUST confirm
-you checked the rest of the paragraph and state what support is missing.
+CONTEXT SCOPE BY ERROR TYPE (additive — apply ONLY to the listed IDs; do not change how other tags are judged):
+- SHORT-SPAN (default for most tags — phrase/sentence): grammar, punctuation, spelling, articles, prepositions, word form, imprecise_word_choice, collocation, awkward_phrase, register_informal, misspelling, and similar local tags.
+- PARAGRAPH-SCOPE IDs only (read the FULL paragraph before flagging): ideas_underdeveloped, paragraph_unity, logical_progression_gap, weak_topic_sentence.
+- WHOLE-ESSAY-SCOPE IDs only (read the FULL essay before flagging): task_achievement_partial, position_unclear_or_inconsistent, weak_or_missing_conclusion, poor_overall_structure.
+- PATTERN-ACROSS-TEXT IDs only (scan full text for frequency/patterns): repetition_basic_lexis, overuse_linkers, underuse_linkers.
+- ideas_underdeveloped only: a claim sentence is NOT underdeveloped if the same paragraph continues with explanation, reasons, examples, or elaboration. Only flag when the paragraph as a WHOLE lacks support. original_text may quote the claim, but the explanation must confirm the rest of the paragraph was checked.
 
 The correct number of errors is however many actually exist. There is no floor and no ceiling. Report exactly what you find.
 
@@ -746,7 +730,7 @@ EXHAUSTIVE CHECKLIST – Task Response:
 □ Check for memorised content that doesn't fit this specific prompt
 □ Check for underdeveloped single-sentence arguments lacking support
 □ Check for any paragraph where the argument is asserted but never explained
-□ ideas_underdeveloped SCOPE: for that tag only, read the ENTIRE paragraph before flagging — do not flag a claim if the same paragraph continues with support""",
+□ ideas_underdeveloped only: read the ENTIRE paragraph before flagging — do not flag a claim if the same paragraph continues with support""",
 
             "Coherence & Cohesion": """
 EXHAUSTIVE CHECKLIST – Coherence & Cohesion:
