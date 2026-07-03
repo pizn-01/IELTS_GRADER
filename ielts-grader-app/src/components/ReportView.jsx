@@ -505,6 +505,17 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 <div className="space-y-4">
                   {(() => {
                     const allErrors = data?.errors || [];
+                    // The grader defines its own sub-category hierarchy per criterion
+                    // (and it differs by exam/task type — e.g. Task 1 Report's Task
+                    // Response has Data Accuracy/Coverage/Overview.../Comparison/
+                    // Development/Relevance, while Task 2's has Coverage/Position/
+                    // Development/Relevance/Conclusion). That hierarchy — with a
+                    // performance summary and a short verbatim example per
+                    // sub-category — already comes back from the grader as
+                    // raw_grader_output.primary.sub_category_scores; this is the
+                    // authoritative list of categories to show here, not individual
+                    // error instances (which are just occurrences, not categories).
+                    const subCategoryScores = data?.raw_grader_output?.primary?.sub_category_scores || {};
                     const sections = [
                       { id: "taskResponse",    title: "Task Response",                  band: data?.response_band,  key: "Task Response" },
                       { id: "coherenceCohesion", title: "Coherence & Cohesion",         band: data?.coherence_band, key: "Coherence & Cohesion" },
@@ -515,7 +526,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                       const bandVal = section.band != null ? parseFloat(section.band) : null;
                       const bandStr = bandVal != null ? bandVal.toFixed(1) : '—';
                       const isExpanded = expandedSections[section.id];
-                      const critErrors = allErrors.filter(e => e.criteria === section.key).slice(0, 6);
+                      const subRows = subCategoryScores[section.key] || [];
+                      // Fallback for older reports graded before sub_category_scores
+                      // existed: show raw error instances instead of an empty state.
+                      const critErrors = subRows.length === 0 ? allErrors.filter(e => e.criteria === section.key).slice(0, 6) : [];
                       return (
                         <div key={idx} className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
                           <div
@@ -530,7 +544,28 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                           </div>
                           {isExpanded && (
                             <div className="border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                              {critErrors.length === 0 ? (
+                              {subRows.length > 0 ? subRows.map((row, i) => {
+                                const rb = row.band != null ? parseFloat(row.band) : null;
+                                const rowColor = rb == null ? '#9CA3AF' : rb >= 7 ? '#00C9B1' : rb >= 5.5 ? '#F59E0B' : '#EF4444';
+                                const rowStyle = rb == null ? "bg-gray-50 text-gray-400 border-gray-200" : rb >= 7 ? "bg-[#E6FFFA] text-[#00C9B1] border-[#B2F5EA]" : rb >= 5.5 ? "bg-[#FFF7ED] text-[#F59E0B] border-[#F59E0B]" : "bg-[#FFF5F5] text-[#EA4335] border-[#EA4335]";
+                                return (
+                                  <div key={i} className="px-4 md:px-8 py-4 md:py-5 border-b border-gray-100 last:border-0">
+                                    <div className="flex items-center flex-wrap gap-2 md:gap-3 mb-2">
+                                      <span className="text-[13px] md:text-[14px] font-bold text-[#101828]">{row.name}</span>
+                                      <span className={`${rowStyle} inline-flex items-center justify-center border-[1px] text-[11px] md:text-[12px] font-medium px-2 md:px-2.5 py-0.5 rounded-full uppercase leading-none`} style={{ color: rowColor }}>Band {rb != null ? rb.toFixed(1) : '—'}</span>
+                                    </div>
+                                    {row.strength && (
+                                      <p className="text-[12px] md:text-[13px] text-[#101828] leading-relaxed font-normal mb-1"><span className="font-semibold text-[#00C9B1]">Strength: </span>{row.strength}</p>
+                                    )}
+                                    {row.weakness && (
+                                      <p className="text-[12px] md:text-[13px] text-[#101828] leading-relaxed font-normal mb-1"><span className="font-semibold text-[#EA4335]">Weakness: </span>{row.weakness}</p>
+                                    )}
+                                    {row.evidence && (
+                                      <p className="text-[12px] md:text-[13px] text-gray-500 leading-relaxed font-normal italic mt-1">e.g. "{row.evidence}"</p>
+                                    )}
+                                  </div>
+                                );
+                              }) : critErrors.length === 0 ? (
                                 <div className="px-4 md:px-8 py-4 md:py-5 text-[13px] text-gray-400">No errors detected in this category.</div>
                               ) : critErrors.map((err, i) => {
                                 const sevStyle = err.severity === 'Major'

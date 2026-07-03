@@ -1181,7 +1181,12 @@ For EACH error you find, provide exactly these fields:
 - band_impact     : Numeric value from the taxonomy (negative float)
 - location        : e.g. "Paragraph 2, Sentence 3"
 - original_text   : EXACT verbatim quote (3–10 words) from the report
-- corrected_text  : The corrected version
+- corrected_text  : The corrected version — a real, usable piece of text the student could
+                     paste into their report. NEVER write a bracketed placeholder like
+                     "[unit not readable]", "[unclear]", or "[value unknown]" here. If you
+                     cannot confidently produce an actual corrected value/word (e.g. because
+                     the reference data for that specific detail is unreadable), that means
+                     you cannot properly correct it — do NOT include this error at all.
 - explanation     : Clear, specific reason this is an error
 - context         : Brief surrounding context helping the reader find it
 
@@ -1247,6 +1252,21 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
                 "data_accuracy_error false positive(s)."
             )
 
+        # Narrow safety net for a related but distinct failure: an error
+        # (of ANY type, not just data_accuracy_error) whose 'corrected_text'
+        # is a non-answer bracketed placeholder (e.g. "measured in [unit not
+        # readable], with") rather than an actual usable correction. This is
+        # never a valid suggestion to show a student, regardless of why the
+        # model couldn't fill it in, so that single entry is dropped —
+        # everything else in the list is left untouched.
+        before2 = len(errors)
+        errors = [e for e in errors if not self._has_unusable_placeholder_correction(e)]
+        if len(errors) != before2:
+            logger.info(
+                f"  → [{criterion_name}] dropped {before2 - len(errors)} error(s) with an "
+                "unusable placeholder correction."
+            )
+
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
         return errors
 
@@ -1285,6 +1305,23 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
             cls._WITHIN_TOLERANCE_RE.search(explanation)
             or cls._UNVERIFIABLE_REFERENCE_RE.search(explanation)
         )
+
+    # Matches a bracketed non-answer inside corrected_text, e.g.
+    # "[unit not readable]", "[value unclear]", "[unknown]", "[not visible]".
+    # Deliberately scoped to brackets containing one of these specific
+    # give-up phrases so that legitimate bracketed clarifications (rare, but
+    # not this failure mode) aren't affected.
+    _PLACEHOLDER_CORRECTION_RE = re.compile(
+        r"\[[^\]]*(not readable|unreadable|not visible|illegible|unclear|unknown|"
+        r"not available|unavailable|cannot be (read|determined|verified)|"
+        r"can'?t be (read|determined|verified))[^\]]*\]",
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def _has_unusable_placeholder_correction(cls, error: dict) -> bool:
+        corrected = error.get("corrected_text", "") or ""
+        return bool(cls._PLACEHOLDER_CORRECTION_RE.search(corrected))
 
     # ------------------------------------------------------------------
     # MODEL B: FULL SCORING + SUMMARY

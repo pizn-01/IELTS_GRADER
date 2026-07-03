@@ -182,8 +182,10 @@ function mapPythonResult(raw) {
       impact: e.severity === 'major' ? 'High' : 'Medium',
     }));
 
-  // sub_category_scores for the Dual Assessment tab:
-  // { criterion: [{ name, band, strength, weakness }] }
+  // sub_category_scores for the Dual Assessment tab and the Overview tab's
+  // per-criterion breakdown: { criterion: [{ name, band, strength, weakness, evidence }] }
+  // `evidence` is the grader's own verbatim (<=20 word) quote from the essay
+  // backing that sub-category's assessment — used as the "small example" in the UI.
   const sub_category_scores = {};
   for (const criterion of CRITERIA_ORDER) {
     const subcats = (averaged[criterion] || {}).sub_categories || {};
@@ -192,6 +194,7 @@ function mapPythonResult(raw) {
       band: sc.score,
       strength: sc.strengths || '',
       weakness: sc.weaknesses || '',
+      evidence: sc.evidence || '',
     }));
     if (rows.length > 0) sub_category_scores[criterion] = rows;
   }
