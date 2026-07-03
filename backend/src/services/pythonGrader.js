@@ -1,6 +1,9 @@
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
+const sharp = require('sharp');
 const { supabaseAdmin } = require('./supabase');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
@@ -67,10 +70,23 @@ async function getTaskRow(exam_task_id) {
   if (!exam_task_id) return null;
   const { data } = await supabaseAdmin
     .from('exam_tasks')
-    .select('question_text, title')
+    .select('question_text, title, chart_svg')
     .eq('id', exam_task_id)
     .single();
   return data || null;
+}
+
+// Task1ReportGrader.py's data-accuracy checking is only as good as the
+// reference data it's given: without a real chart, it fabricates generic
+// "Series A/B" numbers that have nothing to do with what the candidate was
+// actually shown, producing bogus "Data Accuracy" errors. Rasterize the
+// question bank's real chart_svg to PNG so the grader's GPT-4o vision
+// extraction path reads the exact chart the candidate saw.
+async function renderChartSvgToTempFile(svg) {
+  const png = await sharp(Buffer.from(svg)).png().toBuffer();
+  const filePath = path.join(os.tmpdir(), `chart-${crypto.randomUUID()}.png`);
+  await fs.promises.writeFile(filePath, png);
+  return filePath;
 }
 
 // exam_tasks doesn't store letter_type / bullet_points / chart_type, so we
@@ -335,6 +351,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
 
     let scriptName;
     let args;
+    let chartImagePath = null;
     if (taskVariant === 'task1-letter') {
       scriptName = 'Task1LetterGrader.py';
       args = [
@@ -353,6 +370,14 @@ async function gradeEssayAsync(submissionId, submissionData) {
         '--chart-type', chartType,
         '--user-answer', essay_content,
       ];
+      if (taskRow?.chart_svg) {
+        try {
+          chartImagePath = await renderChartSvgToTempFile(taskRow.chart_svg);
+          args.push('--chart-image-file', chartImagePath);
+        } catch (err) {
+          console.warn('[pythonGrader] Chart SVG rasterization failed, grading without real chart data:', err.message);
+        }
+      }
     } else {
       scriptName = 'AnswerGrader.py';
       args = [
@@ -362,7 +387,14 @@ async function gradeEssayAsync(submissionId, submissionData) {
       ];
     }
 
-    const result = mapPythonResult(await runPythonScript(scriptName, args));
+    let result;
+    try {
+      result = mapPythonResult(await runPythonScript(scriptName, args));
+    } finally {
+      if (chartImagePath) {
+        fs.promises.unlink(chartImagePath).catch(() => {});
+      }
+    }
 
     // ── Validate and sanitize all band scores (safety net — same
     //    validation grader.js applies before insert) ──────────────────────
