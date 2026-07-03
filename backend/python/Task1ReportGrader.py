@@ -1292,7 +1292,7 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
         if len(errors) != before3:
             logger.info(
                 f"  → [{criterion_name}] dropped {before3 - len(errors)} "
-                "ideas_underdeveloped false positive(s) (paragraph has further support)."
+                "ideas_underdeveloped false positive(s) (support cues after quote)."
             )
 
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
@@ -1387,9 +1387,24 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
             return text.strip()
         return None
 
+    # Support cues that must appear *after* the quoted claim in the same
+    # paragraph before we treat ideas_underdeveloped as a false positive.
+    # Mere extra sentences / length are not enough (avoids over-dropping).
+    _SUPPORT_CUE_RE = re.compile(
+        r"\b("
+        r"because|since|as a result|due to|owing to|"
+        r"for example|for instance|such as|e\.g\.|"
+        r"this (is|means|shows|leads|results)|"
+        r"specifically|namely|in other words"
+        r")\b"
+        r"|\d+(?:\.\d+)?%?"  # clear number / percentage / year
+        ,
+        re.IGNORECASE,
+    )
+
     @classmethod
     def _is_ideas_underdeveloped_false_positive(cls, error: dict, user_answer: str) -> bool:
-        """True when ideas_underdeveloped was flagged but the same paragraph continues."""
+        """True only when text after the quote has explicit support cues."""
         if error.get("error_id") != "ideas_underdeveloped":
             return False
         quote = (error.get("original_text") or "").strip()
@@ -1404,19 +1419,9 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
         if idx < 0:
             return False
         after = para_norm[idx + len(quote_norm):].strip()
-        # Another sentence or substantial continuation in the same paragraph,
-        # or multi-sentence paragraph with real length — claim is not alone.
-        if re.search(r"[.!?]\s+\S", after):
-            return True
-        if len(after.split()) >= 12:
-            return True
-        # Report-specific: digits/years after the claim count as quantitative support.
-        if re.search(r"\d", after):
-            return True
-        sentences = [s for s in re.split(r"(?<=[.!?])\s+", para.strip()) if s.strip()]
-        if len(sentences) >= 2 and len(para.split()) >= 25:
-            return True
-        return False
+        if not after:
+            return False
+        return bool(cls._SUPPORT_CUE_RE.search(after))
 
     # ------------------------------------------------------------------
     # MODEL B: FULL SCORING + SUMMARY
