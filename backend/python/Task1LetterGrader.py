@@ -75,7 +75,7 @@ ERROR_TAXONOMY = {
                             "severity": "medium",
                             "band_impact": -0.5,
                             "description": "Letter starts with clear purpose but drifts or loses focus.",
-                            "detection_hint": "Check if all paragraphs relate back to stated purpose. Look for tangents or irrelevant content.",
+                            "detection_hint": "Check if all paragraphs relate back to stated purpose. Look for tangents or irrelevant content. SCOPE: whole letter — never judge from one sentence alone.",
                             "example_triggers": ["Starts as complaint but becomes chatty", "Mixes purposes (complaint + request + update)", "Loses thread of main purpose"]
                         }
                     ]
@@ -98,7 +98,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "Tone shifts between formal and informal within the letter.",
-                            "detection_hint": "Check for: starting formal then using slang, mixing 'I would appreciate' with 'wanna', shifting from polite to aggressive.",
+                            "detection_hint": "Check for: starting formal then using slang, mixing 'I would appreciate' with 'wanna', shifting from polite to aggressive. SCOPE: whole letter — compare tone across opening, body, and closing.",
                             "example_triggers": ["'I am writing to express my concern... Anyway the thing was rubbish'", "Formal opening with casual closing", "Mix of contractions and formal phrases"]
                         },
                         {
@@ -130,7 +130,7 @@ ERROR_TAXONOMY = {
                             "severity": "major",
                             "band_impact": -2.0,
                             "description": "One or more bullet points from the prompt are completely missing or barely mentioned.",
-                            "detection_hint": "CRITICAL: Count bullet points in prompt vs letter. ALL must be present and clearly addressed. Missing even one bullet point = major penalty.",
+                            "detection_hint": "CRITICAL: Count bullet points in prompt vs letter. ALL must be present and clearly addressed. Missing even one bullet point = major penalty. SCOPE: whole letter — confirm the bullet is absent from the full letter before flagging.",
                             "example_triggers": ["Only 2 of 3 bullet points addressed", "Bullet point mentioned in passing only", "No clear response to specific bullet point"]
                         },
                         {
@@ -139,7 +139,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "Bullet point mentioned but not adequately developed.",
-                            "detection_hint": "Each bullet needs 2-3+ sentences with details. Single sentence responses or vague mentions = error.",
+                            "detection_hint": "Each bullet needs 2-3+ sentences with details. Single sentence responses or vague mentions = error. SCOPE: full bullet section — NEVER flag from one sentence if the same paragraph continues with detail. Only flag when the whole bullet section lacks support.",
                             "example_triggers": ["'The product was broken. Please replace it.' (2 bullets in 2 sentences)", "Bullet answered in one sentence without detail", "Vague treatment without specifics"]
                         }
                     ]
@@ -153,7 +153,7 @@ ERROR_TAXONOMY = {
                             "severity": "medium",
                             "band_impact": -0.5,
                             "description": "Letter lacks adequate explanation, examples, or supporting information.",
-                            "detection_hint": "Look for bare statements without context: 'It was bad' (what specifically?), 'I contacted them' (when? how? result?). Band 7+ needs: circumstances, timing, consequences, specifics.",
+                            "detection_hint": "Look for bare statements without context: 'It was bad' (what specifically?), 'I contacted them' (when? how? result?). Band 7+ needs: circumstances, timing, consequences, specifics. SCOPE: full paragraph / bullet section — do not flag a bare statement if the same paragraph continues with specifics.",
                             "example_triggers": ["'I am unhappy' (no explanation why)", "'Please help' (no details about what help needed)", "Generic statements without examples"]
                         },
                         {
@@ -204,7 +204,7 @@ ERROR_TAXONOMY = {
                             "severity": "high",
                             "band_impact": -1.0,
                             "description": "Letter lacks standard formatting (Salutation, Body, Closing).",
-                            "detection_hint": "Missing salutation/closing or sections appearing in wrong order. Check: letter begins with 'Dear...' and ends with appropriate sign-off + name?",
+                            "detection_hint": "Missing salutation/closing or sections appearing in wrong order. Check: letter begins with 'Dear...' and ends with appropriate sign-off + name? SCOPE: whole letter.",
                             "example_triggers": ["No 'Dear...' salutation", "No closing signature", "Body paragraphs before salutation"]
                         },
                         {
@@ -314,7 +314,7 @@ ERROR_TAXONOMY = {
                             "severity": "medium",
                             "band_impact": -0.5,
                             "description": "Paragraph jumps between different bullet points or topics.",
-                            "detection_hint": "Each paragraph should focus on ONE bullet point. Check for: mixing multiple requirements, abrupt topic shifts within paragraph. Ideal: 1 paragraph per bullet.",
+                            "detection_hint": "Each paragraph should focus on ONE bullet point. Check for: mixing multiple requirements, abrupt topic shifts within paragraph. Ideal: 1 paragraph per bullet. SCOPE: full paragraph — read the entire paragraph before flagging.",
                             "example_triggers": ["Same paragraph discusses problem AND solution", "Paragraph addresses bullets 1 and 3, skips 2", "Multiple unrelated ideas in one paragraph"]
                         }
                     ]
@@ -489,7 +489,7 @@ ERROR_TAXONOMY = {
                             "severity": "medium",
                             "band_impact": -0.5,
                             "description": "Over-reliance on simple sentence structures without attempting complex forms.",
-                            "detection_hint": "Band 7+ letters should show: complex sentences (because, although, while, if), compound sentences (and, but, or), varied sentence openings. All simple sentences = Band 5-6 ceiling. 10+ simple sentences in a row = error.",
+                            "detection_hint": "Band 7+ letters should show: complex sentences (because, although, while, if), compound sentences (and, but, or), varied sentence openings. All simple sentences = Band 5-6 ceiling. 10+ simple sentences in a row = error. SCOPE: pattern-across-text — judge variety across the full letter, not one sentence.",
                             "example_triggers": ["Entire letter in simple Subject-Verb-Object", "No subordinators (because, although, when, if)", "No complex structures attempted"]
                         }
                     ]
@@ -920,6 +920,28 @@ YOUR GOAL: Find every genuine error — major and minor.
 - Minor errors (low severity) still count — include them
 - There is no floor or ceiling on error count — report exactly what exists
 
+CONTEXT SCOPE BY ERROR TYPE (apply ONLY to the listed IDs — do not generalize to other tags):
+Most tags are SHORT-SPAN (phrase/sentence): grammar, punctuation, spelling, articles, prepositions,
+word form, imprecise_word_choice, collocation, awkward_phrase, incorrect_salutation, incorrect_closing, etc.
+Judge those at the local phrase/sentence.
+
+PARAGRAPH / BULLET-SECTION SCOPE IDs only (read the FULL section before flagging):
+- insufficient_bullet_development, insufficient_supporting_detail, paragraph_unity,
+  logical_progression_gap, weak_topic_sentence
+
+WHOLE-LETTER SCOPE IDs only (read the FULL letter before flagging):
+- bullet_point_missing, purpose_unclear, purpose_not_maintained, tone_inconsistent,
+  register_inconsistency, weak_or_missing_conclusion, poor_overall_structure
+
+PATTERN-ACROSS-TEXT IDs only (scan the full text for frequency/range patterns — not development judgments):
+- limited_sentence_variety, insufficient_letter_vocabulary, repetition_basic_lexis,
+  overuse_linkers, underuse_linkers
+
+ABSOLUTE RULE — insufficient_bullet_development / insufficient_supporting_detail only:
+A statement is NOT underdeveloped if the same paragraph (or bullet section) continues with
+context, timing, specifics, or examples. Only flag when that section as a WHOLE lacks support.
+original_text may quote the thin claim, but your explanation MUST confirm you checked the rest of the section.
+
 # CRITICAL LETTER-SPECIFIC CHECKS:
 For {criterion_name}, you MUST verify:
 """
@@ -932,6 +954,7 @@ For {criterion_name}, you MUST verify:
 - BULLET COVERAGE: ALL bullet points addressed with 2-3+ sentences each?
 - DETAIL: Each bullet has context, specifics, timing, examples?
 - CONCLUSION: Appropriate closing statement + correct sign-off + name?
+- insufficient_bullet_development SCOPE: for that tag only, read the FULL bullet section before flagging — do not flag if the same paragraph continues with detail
 """
         elif criterion_name == "Coherence & Cohesion":
             system_prompt += """
