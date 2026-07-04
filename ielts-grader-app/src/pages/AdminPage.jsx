@@ -427,50 +427,164 @@ const SupportTab = () => {
 };
 
 // ── Tasks Tab ─────────────────────────────────────────────────────────────────
-const EMPTY_TASK = { exam_type: 'Academic', task_type: 'Task 2', title: '', question_text: '', time_limit_seconds: '' };
+const EXAM_FILTERS = [
+  { id: 'all', label: 'All types' },
+  { id: 'Academic|Task 1', label: 'Academic · Task 1' },
+  { id: 'Academic|Task 2', label: 'Academic · Task 2' },
+  { id: 'General|Task 1', label: 'General · Task 1' },
+  { id: 'General|Task 2', label: 'General · Task 2' },
+];
+
+const SUMMARY_COMBOS = [
+  { key: 'Academic|Task 1', label: 'Academic · Task 1' },
+  { key: 'Academic|Task 2', label: 'Academic · Task 2' },
+  { key: 'General|Task 1', label: 'General · Task 1' },
+  { key: 'General|Task 2', label: 'General · Task 2' },
+];
+
+const EMPTY_TASK = {
+  exam_type: 'Academic',
+  task_type: 'Task 2',
+  question_text: '',
+  prompt: '',
+  chart_svg: '',
+  chart_type: 'Bar chart',
+  letter_type: 'Formal',
+  bullet_points: ['', '', ''],
+  topic: '',
+  type: '',
+};
+
+function detectJsonFormat(item) {
+  if (!item || typeof item !== 'object') return null;
+  if (item.prompt && item['chart-type']) return { exam_type: 'Academic', task_type: 'Task 1', format: 'report' };
+  if (item.prompt && (item['letter-type'] || item['bullet-points'])) return { exam_type: 'General', task_type: 'Task 1', format: 'letter' };
+  if (item.question) return { exam_type: 'Academic', task_type: 'Task 2', format: 'task2' };
+  if (item.exam_type && item.task_type) return { exam_type: item.exam_type, task_type: item.task_type, format: 'internal' };
+  return null;
+}
+
+function taskToForm(t) {
+  if (!t) return { ...EMPTY_TASK };
+  const base = {
+    ...t,
+    prompt: t.question_text || '',
+    chart_svg: t.chart_svg || '',
+    chart_type: 'Bar chart',
+    letter_type: 'Formal',
+    bullet_points: ['', '', ''],
+    topic: '',
+    type: '',
+  };
+  if (t.exam_type === 'General' && t.task_type === 'Task 1') {
+    const m = t.title?.match(/^Letter \(([^)]+)\)/);
+    if (m) base.letter_type = m[1];
+    const bulletMatch = t.question_text?.match(/In your letter:\n([\s\S]*)/);
+    if (bulletMatch) {
+      base.bullet_points = bulletMatch[1]
+        .split('\n')
+        .map(line => line.replace(/^\d+\.\s*/, '').trim())
+        .filter(Boolean)
+        .slice(0, 5);
+      while (base.bullet_points.length < 3) base.bullet_points.push('');
+      base.prompt = t.question_text.split('\n\nIn your letter:')[0].trim();
+    }
+  }
+  if (t.exam_type === 'Academic' && t.task_type === 'Task 2' && t.title?.includes(' — ')) {
+    const [topic, typePart] = t.title.split(' — ');
+    base.topic = topic;
+    base.type = typePart;
+    base.question_text = (t.question_text || '').replace(/\n\nWrite at least 250 words\.?\s*$/i, '').trim();
+  }
+  if (t.exam_type === 'Academic' && t.task_type === 'Task 1') {
+    const ct = t.title?.split(' — ')[0];
+    if (ct) base.chart_type = ct;
+    base.prompt = (t.question_text || '')
+      .replace(/\n\nSummarise the information[\s\S]*$/i, '')
+      .trim();
+  }
+  return base;
+}
 
 const TasksTab = () => {
   const [tasks, setTasks]       = useState([]);
+  const [summary, setSummary]   = useState({});
+  const [total, setTotal]       = useState(0);
+  const [page, setPage]         = useState(1);
+  const [perPage]               = useState(50);
   const [form, setForm]         = useState(null);
   const [isNew, setIsNew]       = useState(false);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
   const [history, setHistory]   = useState(null);
-  const [filter, setFilter]     = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [examFilter, setExamFilter]     = useState('all');
+  const [sortBy, setSortBy]             = useState('created_at');
+  const [sortOrder, setSortOrder]       = useState('desc');
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importExamType, setImportExamType] = useState('Academic');
   const [importTaskType, setImportTaskType] = useState('Task 2');
+  const [importFormat, setImportFormat] = useState(null);
+  const [importAutoDetected, setImportAutoDetected] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState(null); // { imported, skipped, errors, message }
+  const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
 
   const load = useCallback(() => {
-    api.admin.getTasks().then(r => setTasks(r.data || [])).catch(() => {});
-  }, []);
+    const params = {
+      page,
+      per_page: perPage,
+      status: statusFilter,
+      sort: sortBy,
+      order: sortOrder,
+    };
+    if (examFilter !== 'all') {
+      const [exam_type, task_type] = examFilter.split('|');
+      params.exam_type = exam_type;
+      params.task_type = task_type;
+    }
+    api.admin.getTasks(params).then(r => {
+      setTasks(r.data || []);
+      setSummary(r.summary || {});
+      setTotal(r.total || 0);
+    }).catch(() => {});
+  }, [page, perPage, statusFilter, examFilter, sortBy, sortOrder]);
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = tasks.filter(t => {
-    if (filter === 'active')   return t.is_active;
-    if (filter === 'inactive') return !t.is_active;
-    return true;
-  });
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   const openCreate = () => { setForm({ ...EMPTY_TASK }); setIsNew(true); setError(''); };
-  const openEdit   = (t) => { setForm({ ...t }); setIsNew(false); setError(''); };
+  const openEdit   = (t) => { setForm(taskToForm(t)); setIsNew(false); setError(''); };
   const closeForm  = () => { setForm(null); setError(''); };
+
+  const buildSavePayload = () => {
+    const f = form;
+    const payload = {
+      exam_type: f.exam_type,
+      task_type: f.task_type,
+    };
+    if (f.exam_type === 'Academic' && f.task_type === 'Task 1') {
+      payload.prompt = f.prompt?.trim();
+      payload.chart_svg = f.chart_svg?.trim() || undefined;
+      payload.chart_type = f.chart_type?.trim() || 'Chart';
+    } else if (f.exam_type === 'General' && f.task_type === 'Task 1') {
+      payload.prompt = f.prompt?.trim();
+      payload.letter_type = f.letter_type || 'Formal';
+      payload.bullet_points = (f.bullet_points || []).map(b => b.trim()).filter(Boolean);
+    } else {
+      payload.question_text = f.question_text?.trim();
+      payload.topic = f.topic?.trim();
+      payload.type = f.type?.trim();
+    }
+    return payload;
+  };
 
   const save = async () => {
     setSaving(true); setError('');
     try {
-      const payload = {
-        exam_type: form.exam_type,
-        task_type: form.task_type,
-        title: form.title.trim(),
-        question_text: form.question_text.trim(),
-        time_limit_seconds: form.time_limit_seconds ? parseInt(form.time_limit_seconds) : undefined,
-      };
+      const payload = buildSavePayload();
       if (isNew) {
         const res = await api.admin.createTask(payload);
         if (res?.error) throw new Error(res.error);
@@ -497,6 +611,30 @@ const TasksTab = () => {
     setHistory({ task: t, entries: res.data || [] });
   };
 
+  const handleImportFileChange = async (file) => {
+    setImportFile(file);
+    setImportResult(null);
+    setImportFormat(null);
+    setImportAutoDetected(false);
+    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      if (items[0]) {
+        const detected = detectJsonFormat(items[0]);
+        if (detected) {
+          setImportExamType(detected.exam_type);
+          setImportTaskType(detected.task_type);
+          setImportFormat(detected.format);
+          setImportAutoDetected(true);
+        }
+      }
+    } catch {
+      // ignore — import endpoint will validate
+    }
+  };
+
   const handleImport = async () => {
     if (!importFile) return;
     setImporting(true);
@@ -510,6 +648,8 @@ const TasksTab = () => {
     setImportResult(result);
     if (result?.imported > 0) {
       setImportFile(null);
+      setImportFormat(null);
+      setImportAutoDetected(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
       load();
     }
@@ -517,17 +657,59 @@ const TasksTab = () => {
 
   const typeColor = (taskType) => taskType === 'Task 1' ? 'blue' : 'green';
 
+  const formValid = () => {
+    if (!form) return false;
+    if (form.exam_type === 'Academic' && form.task_type === 'Task 1') {
+      return Boolean(form.prompt?.trim());
+    }
+    if (form.exam_type === 'General' && form.task_type === 'Task 1') {
+      return Boolean(form.prompt?.trim());
+    }
+    return Boolean(form.question_text?.trim());
+  };
+
+  const formatDate = (iso) => {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
+        {EXAM_FILTERS.map(f => (
+          <button
+            key={f.id}
+            onClick={() => { setExamFilter(f.id); setPage(1); }}
+            className={`px-3 h-[34px] rounded-[8px] text-[11px] font-bold border transition-all ${examFilter === f.id ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+          >
+            {f.label}
+          </button>
+        ))}
+        <span className="w-px h-6 bg-gray-200" />
         {['all', 'active', 'inactive'].map(f => (
-          <button key={f} onClick={() => setFilter(f)} className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all capitalize ${filter === f ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+          <button key={f} onClick={() => { setStatusFilter(f); setPage(1); }} className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all capitalize ${statusFilter === f ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
             {f}
           </button>
         ))}
         <button onClick={load} className="p-2 border border-gray-200 rounded-[8px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
         <div className="ml-auto flex items-center gap-2">
+          <select
+            value={sortBy}
+            onChange={e => { setSortBy(e.target.value); setPage(1); }}
+            className="h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-600 outline-none"
+          >
+            <option value="created_at">Sort: Created</option>
+            <option value="usage">Sort: Usage</option>
+            <option value="avg_score">Sort: Avg score</option>
+          </select>
+          <button
+            onClick={() => { setSortOrder(o => o === 'asc' ? 'desc' : 'asc'); setPage(1); }}
+            className="h-[36px] px-3 border border-gray-200 rounded-[8px] text-[12px] font-bold text-gray-500 hover:bg-gray-50"
+            title="Toggle sort direction"
+          >
+            {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
+          </button>
           <button onClick={() => { setShowImport(i => !i); setImportResult(null); }} className={`flex items-center gap-2 px-4 h-[36px] rounded-[10px] text-[13px] font-bold border transition-all ${showImport ? 'bg-blue-600 text-white border-transparent' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
             <Upload size={15} /> Import
           </button>
@@ -543,23 +725,39 @@ const TasksTab = () => {
           <div className="flex items-center gap-2 mb-1">
             <FileJson size={18} className="text-blue-600" />
             <h3 className="text-[14px] font-bold text-[#101828]">Bulk Import Questions</h3>
-            <span className="text-[11px] text-gray-400 ml-1">Supports .json and .pdf files</span>
           </div>
           <p className="text-[12px] text-gray-400 leading-relaxed">
-            Upload a JSON array (GitHub question bank format or internal format) or a PDF. For GitHub-format JSON and PDFs, specify the exam type and task type below.
+            Upload a JSON question bank: <strong>ielts_task2.json</strong>, <strong>ielts_task1_report.json</strong>, or <strong>ielts_task1_letter.json</strong>.
+            Exam and task type are auto-detected from the file format. PDF import is also supported (manual type required).
           </p>
+
+          {importAutoDetected && importFormat && (
+            <p className="text-[12px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-[8px] px-3 py-2">
+              Detected format: <strong>{importFormat}</strong> → {importExamType} · {importTaskType}
+            </p>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[11px] font-bold text-gray-500 block mb-1 uppercase tracking-wide">Exam Type</label>
-              <select value={importExamType} onChange={e => setImportExamType(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 h-[38px] text-[13px] outline-none focus:border-blue-400">
+              <select
+                value={importExamType}
+                onChange={e => { setImportExamType(e.target.value); setImportAutoDetected(false); }}
+                disabled={importAutoDetected && importFormat !== 'task2'}
+                className="w-full border border-gray-200 rounded-[10px] px-3 h-[38px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50"
+              >
                 <option value="Academic">Academic</option>
                 <option value="General">General</option>
               </select>
             </div>
             <div>
               <label className="text-[11px] font-bold text-gray-500 block mb-1 uppercase tracking-wide">Task Type</label>
-              <select value={importTaskType} onChange={e => setImportTaskType(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 h-[38px] text-[13px] outline-none focus:border-blue-400">
+              <select
+                value={importTaskType}
+                onChange={e => { setImportTaskType(e.target.value); setImportAutoDetected(false); }}
+                disabled={importAutoDetected && importFormat !== 'task2'}
+                className="w-full border border-gray-200 rounded-[10px] px-3 h-[38px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50"
+              >
                 <option value="Task 1">Task 1</option>
                 <option value="Task 2">Task 2</option>
               </select>
@@ -570,7 +768,7 @@ const TasksTab = () => {
             className="border-2 border-dashed border-gray-200 rounded-[12px] p-6 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-all"
             onClick={() => fileInputRef.current?.click()}
             onDragOver={e => e.preventDefault()}
-            onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setImportFile(f); }}
+            onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleImportFileChange(f); }}
           >
             <Upload size={24} className="mx-auto mb-2 text-gray-400" />
             {importFile ? (
@@ -578,7 +776,7 @@ const TasksTab = () => {
             ) : (
               <p className="text-[13px] text-gray-400">Click or drag a <strong>.json</strong> or <strong>.pdf</strong> file here</p>
             )}
-            <input ref={fileInputRef} type="file" accept=".json,.pdf,application/json,application/pdf" className="hidden" onChange={e => setImportFile(e.target.files[0] || null)} />
+            <input ref={fileInputRef} type="file" accept=".json,.pdf,application/json,application/pdf" className="hidden" onChange={e => handleImportFileChange(e.target.files[0] || null)} />
           </div>
 
           {importResult && (
@@ -594,7 +792,7 @@ const TasksTab = () => {
           )}
 
           <div className="flex gap-3">
-            <button onClick={() => { setShowImport(false); setImportFile(null); setImportResult(null); }} className="flex-1 h-[38px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
+            <button onClick={() => { setShowImport(false); setImportFile(null); setImportResult(null); setImportAutoDetected(false); }} className="flex-1 h-[38px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
             <button onClick={handleImport} disabled={!importFile || importing} className="flex-1 h-[38px] bg-blue-600 text-white rounded-[10px] text-[13px] font-bold disabled:opacity-50 hover:bg-blue-700">
               {importing ? 'Importing…' : 'Import Questions'}
             </button>
@@ -603,32 +801,27 @@ const TasksTab = () => {
       )}
 
       {/* Analytics summary */}
-      {tasks.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {['Academic-Task 1', 'Academic-Task 2', 'General-Task 1', 'General-Task 2'].map(combo => {
-            const [exam, , num] = combo.split('-');
-            const taskType = `Task ${num}`;
-            const group = tasks.filter(t => t.exam_type === exam && t.task_type === taskType);
-            const usage = group.reduce((s, t) => s + (t.usage_count || 0), 0);
-            return (
-              <div key={combo} className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-4">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{combo.replace('-', ' · ')}</p>
-                <p className="text-[22px] font-black text-[#101828] leading-none">{group.filter(t => t.is_active).length}<span className="text-[12px] font-semibold text-gray-400 ml-1">active</span></p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{usage} total submissions</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {SUMMARY_COMBOS.map(combo => {
+          const stats = summary[combo.key] || { active: 0, total: 0, submissions: 0 };
+          return (
+            <div key={combo.key} className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{combo.label}</p>
+              <p className="text-[22px] font-black text-[#101828] leading-none">{stats.active}<span className="text-[12px] font-semibold text-gray-400 ml-1">active</span></p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{stats.submissions} total submissions</p>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Table */}
       <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
-        <table className="w-full text-[13px] min-w-[600px]">
+        <table className="w-full text-[13px] min-w-[800px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
-            <tr>{['Type', 'Title', 'Question (preview)', 'Usage', 'Status', 'Actions'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
+            <tr>{['Type', 'Title', 'Question (preview)', 'Created', 'Usage', 'Avg score', 'Status', 'Actions'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {filtered.map(t => (
+            {tasks.map(t => (
               <tr key={t.id} className={`hover:bg-gray-50/50 ${!t.is_active ? 'opacity-50' : ''}`}>
                 <td className="px-5 py-3">
                   <div className="flex flex-col gap-0.5">
@@ -637,10 +830,12 @@ const TasksTab = () => {
                   </div>
                 </td>
                 <td className="px-5 py-3 font-medium text-[#101828] max-w-[160px] truncate">{t.title}</td>
-                <td className="px-5 py-3 text-gray-400 max-w-[260px]">
+                <td className="px-5 py-3 text-gray-400 max-w-[220px]">
                   <span className="line-clamp-2 text-[12px]">{t.question_text?.slice(0, 100)}{t.question_text?.length > 100 ? '…' : ''}</span>
                 </td>
+                <td className="px-5 py-3 text-gray-500 text-[12px] whitespace-nowrap">{formatDate(t.created_at)}</td>
                 <td className="px-5 py-3 text-gray-500 font-bold">{t.usage_count ?? 0}</td>
+                <td className="px-5 py-3 text-gray-500 font-bold">{t.avg_score != null ? t.avg_score.toFixed(1) : '—'}</td>
                 <td className="px-5 py-3">
                   <Pill label={t.is_active ? 'Active' : 'Disabled'} color={t.is_active ? 'green' : 'gray'} />
                 </td>
@@ -657,12 +852,27 @@ const TasksTab = () => {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">No tasks found.</td></tr>
+            {tasks.length === 0 && (
+              <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400">No tasks found.</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[12px] text-gray-400">{total} task{total !== 1 ? 's' : ''} · page {page} of {totalPages}</p>
+          <div className="flex items-center gap-2">
+            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-2 border border-gray-200 rounded-[8px] disabled:opacity-40 hover:bg-gray-50">
+              <ChevronLeft size={16} />
+            </button>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-2 border border-gray-200 rounded-[8px] disabled:opacity-40 hover:bg-gray-50">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Create / Edit Modal */}
       {form && (
@@ -670,44 +880,106 @@ const TasksTab = () => {
           <div className="absolute inset-0 bg-black/40" onClick={closeForm} />
           <div className="relative bg-white rounded-[20px] w-full max-w-[560px] p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-[16px] font-bold text-[#101828]">{isNew ? 'Create Task' : 'Edit Task'}</h3>
+            {!isNew && form.title && (
+              <p className="text-[12px] text-gray-400">Title: <span className="text-gray-600 font-medium">{form.title}</span></p>
+            )}
             {error && <p className="text-[12px] text-red-500 bg-red-50 rounded-[8px] px-3 py-2">{error}</p>}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[12px] font-bold text-gray-500 block mb-1">Exam Type</label>
-                <select value={form.exam_type} onChange={e => setForm(x => ({ ...x, exam_type: e.target.value }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
+                <select value={form.exam_type} onChange={e => setForm(x => ({ ...EMPTY_TASK, exam_type: e.target.value, task_type: x.task_type }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
                   <option value="Academic">Academic</option>
                   <option value="General">General</option>
                 </select>
               </div>
               <div>
                 <label className="text-[12px] font-bold text-gray-500 block mb-1">Task Type</label>
-                <select value={form.task_type} onChange={e => setForm(x => ({ ...x, task_type: e.target.value, time_limit_seconds: e.target.value === 'Task 1' ? 1200 : 2400 }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
+                <select value={form.task_type} onChange={e => setForm(x => ({ ...EMPTY_TASK, exam_type: x.exam_type, task_type: e.target.value }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
                   <option value="Task 1">Task 1</option>
                   <option value="Task 2">Task 2</option>
                 </select>
               </div>
             </div>
 
-            <div>
-              <label className="text-[12px] font-bold text-gray-500 block mb-1">Title</label>
-              <input type="text" placeholder="e.g. Graph analysis — population growth" value={form.title} onChange={e => setForm(x => ({ ...x, title: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
-            </div>
+            {/* Academic Task 1 — report */}
+            {form.exam_type === 'Academic' && form.task_type === 'Task 1' && (
+              <>
+                <div>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Chart type</label>
+                  <input type="text" placeholder="e.g. Bar chart, Line graph" value={form.chart_type} onChange={e => setForm(x => ({ ...x, chart_type: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+                </div>
+                <div>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Report prompt</label>
+                  <textarea rows={4} placeholder="The chart below shows…" value={form.prompt} onChange={e => setForm(x => ({ ...x, prompt: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-blue-400 resize-none leading-relaxed" />
+                </div>
+                <div>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Chart SVG</label>
+                  <textarea rows={5} placeholder="Paste SVG markup here…" value={form.chart_svg} onChange={e => setForm(x => ({ ...x, chart_svg: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[12px] font-mono outline-none focus:border-blue-400 resize-none" />
+                  <p className="text-[11px] text-gray-400 mt-1">Summarise instruction and word count are added automatically.</p>
+                </div>
+              </>
+            )}
 
-            <div>
-              <label className="text-[12px] font-bold text-gray-500 block mb-1">Question / Prompt</label>
-              <textarea rows={6} placeholder="Write the full question or essay prompt here…" value={form.question_text} onChange={e => setForm(x => ({ ...x, question_text: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-blue-400 resize-none leading-relaxed" />
-            </div>
+            {/* General Task 1 — letter */}
+            {form.exam_type === 'General' && form.task_type === 'Task 1' && (
+              <>
+                <div>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Letter type</label>
+                  <select value={form.letter_type} onChange={e => setForm(x => ({ ...x, letter_type: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400">
+                    <option value="Formal">Formal</option>
+                    <option value="Semi-formal">Semi-formal</option>
+                    <option value="Informal">Informal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Scenario / prompt</label>
+                  <textarea rows={4} placeholder="You recently… Write a letter to…" value={form.prompt} onChange={e => setForm(x => ({ ...x, prompt: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-blue-400 resize-none leading-relaxed" />
+                </div>
+                <div>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Bullet points</label>
+                  {(form.bullet_points || ['', '', '']).map((bp, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      placeholder={`Bullet ${i + 1}`}
+                      value={bp}
+                      onChange={e => setForm(x => {
+                        const bullets = [...(x.bullet_points || ['', '', ''])];
+                        bullets[i] = e.target.value;
+                        return { ...x, bullet_points: bullets };
+                      })}
+                      className="w-full border border-gray-200 rounded-[10px] px-4 h-[38px] text-[13px] outline-none focus:border-blue-400 mb-2"
+                    />
+                  ))}
+                </div>
+              </>
+            )}
 
-            <div>
-              <label className="text-[12px] font-bold text-gray-500 block mb-1">Time Limit (seconds)</label>
-              <input type="number" placeholder={form.task_type === 'Task 1' ? '1200' : '2400'} value={form.time_limit_seconds} onChange={e => setForm(x => ({ ...x, time_limit_seconds: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
-              <p className="text-[11px] text-gray-400 mt-1">Task 1 = 1200s (20 min) · Task 2 = 2400s (40 min)</p>
-            </div>
+            {/* Task 2 */}
+            {!(form.exam_type === 'Academic' && form.task_type === 'Task 1') && !(form.exam_type === 'General' && form.task_type === 'Task 1') && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[12px] font-bold text-gray-500 block mb-1">Topic</label>
+                    <input type="text" placeholder="e.g. Education" value={form.topic} onChange={e => setForm(x => ({ ...x, topic: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+                  </div>
+                  <div>
+                    <label className="text-[12px] font-bold text-gray-500 block mb-1">Question type</label>
+                    <input type="text" placeholder="e.g. Opinion" value={form.type} onChange={e => setForm(x => ({ ...x, type: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Question</label>
+                  <textarea rows={6} placeholder="Write the full essay prompt here…" value={form.question_text} onChange={e => setForm(x => ({ ...x, question_text: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-blue-400 resize-none leading-relaxed" />
+                  <p className="text-[11px] text-gray-400 mt-1">Title and word-count footer are generated automatically (40 min limit).</p>
+                </div>
+              </>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button onClick={closeForm} className="flex-1 h-[40px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
-              <button onClick={save} disabled={saving || !form.title || !form.question_text} className="flex-1 h-[40px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-bold disabled:opacity-50">{saving ? 'Saving…' : isNew ? 'Create' : 'Save Changes'}</button>
+              <button onClick={save} disabled={saving || !formValid()} className="flex-1 h-[40px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-bold disabled:opacity-50">{saving ? 'Saving…' : isNew ? 'Create' : 'Save Changes'}</button>
             </div>
           </div>
         </div>
@@ -724,7 +996,7 @@ const TasksTab = () => {
               <p className="text-[13px] text-gray-400 py-4 text-center">No changes recorded yet.</p>
             ) : (
               <div className="space-y-4">
-                {history.entries.map((e, i) => (
+                {history.entries.map((e) => (
                   <div key={e.id} className="bg-gray-50 rounded-[12px] p-4 text-[12px]">
                     <p className="text-gray-400 mb-2">{new Date(e.created_at).toLocaleString()}</p>
                     {e.previous_title && (

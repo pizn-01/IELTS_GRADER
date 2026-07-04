@@ -4,6 +4,12 @@ const pdfParse = require('pdf-parse');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
+const {
+  inferExamTaskType,
+  normalizeCreatePayload,
+  normalizeBankItem,
+  SUMMARY_COMBOS,
+} = require('../utils/taskBankFormat');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
@@ -494,34 +500,124 @@ router.post('/users/:id/credits', async (req, res) => {
 });
 
 // ─── GET /api/admin/tasks ──────────────────────────────────────────────────────
-// Returns all tasks (active + inactive) with submission usage counts
+// Paginated task list with per-task usage + avg score; includes summary cards
 router.get('/tasks', async (req, res) => {
   try {
-    const { data: tasks, error } = await supabaseAdmin
+    const {
+      page = 1,
+      per_page = 50,
+      exam_type,
+      task_type,
+      status = 'all',
+      sort = 'created_at',
+      order = 'desc',
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const perPage = Math.min(Math.max(1, parseInt(per_page, 10) || 50), 100);
+    const sortKey = ['created_at', 'usage', 'avg_score'].includes(sort) ? sort : 'created_at';
+    const sortAsc = order === 'asc';
+
+    // Summary: task counts per exam/task combo
+    const { data: allTasksMeta, error: metaErr } = await supabaseAdmin
       .from('exam_tasks')
-      .select('id, exam_type, task_type, title, question_text, time_limit_seconds, is_active, created_at, updated_at')
-      .order('exam_type')
-      .order('task_type')
-      .order('created_at');
+      .select('exam_type, task_type, is_active');
 
-    if (error) throw error;
+    if (metaErr) throw metaErr;
 
-    // Submission counts grouped by exam_type + task_type for analytics
-    const { data: subs } = await supabaseAdmin
+    const summary = {};
+    for (const combo of SUMMARY_COMBOS) {
+      summary[combo.key] = { active: 0, total: 0, submissions: 0 };
+    }
+    (allTasksMeta || []).forEach(t => {
+      const k = `${t.exam_type}|${t.task_type}`;
+      if (!summary[k]) summary[k] = { active: 0, total: 0, submissions: 0 };
+      summary[k].total += 1;
+      if (t.is_active !== false) summary[k].active += 1;
+    });
+
+    const { data: subsByCategory } = await supabaseAdmin
       .from('submissions')
       .select('exam_type, task_type');
 
-    const countMap = {};
-    (subs || []).forEach(s => {
+    (subsByCategory || []).forEach(s => {
       const k = `${s.exam_type}|${s.task_type}`;
-      countMap[k] = (countMap[k] || 0) + 1;
+      if (summary[k]) summary[k].submissions += 1;
     });
 
+    // Per-task usage + avg score
+    const { data: subsWithReports, error: subsErr } = await supabaseAdmin
+      .from('submissions')
+      .select('exam_task_id, status, reports(overall_band)')
+      .not('exam_task_id', 'is', null);
+
+    if (subsErr) throw subsErr;
+
+    const usageMap = {};
+    const scoreAcc = {};
+    (subsWithReports || []).forEach(s => {
+      const id = s.exam_task_id;
+      usageMap[id] = (usageMap[id] || 0) + 1;
+      const report = Array.isArray(s.reports) ? s.reports[0] : s.reports;
+      const band = report?.overall_band;
+      if (s.status === 'graded' && band != null && !Number.isNaN(Number(band))) {
+        if (!scoreAcc[id]) scoreAcc[id] = { sum: 0, count: 0 };
+        scoreAcc[id].sum += Number(band);
+        scoreAcc[id].count += 1;
+      }
+    });
+
+    const avgMap = {};
+    Object.entries(scoreAcc).forEach(([id, { sum, count }]) => {
+      avgMap[id] = Math.round((sum / count) * 10) / 10;
+    });
+
+    // Filtered task rows (for sort + pagination)
+    let taskQuery = supabaseAdmin
+      .from('exam_tasks')
+      .select('id, exam_type, task_type, title, question_text, time_limit_seconds, is_active, created_at, updated_at, chart_svg');
+
+    if (exam_type) taskQuery = taskQuery.eq('exam_type', exam_type);
+    if (task_type) taskQuery = taskQuery.eq('task_type', task_type);
+    if (status === 'active') taskQuery = taskQuery.eq('is_active', true);
+    if (status === 'inactive') taskQuery = taskQuery.eq('is_active', false);
+
+    const { data: tasks, error: tasksErr } = await taskQuery;
+    if (tasksErr) throw tasksErr;
+
+    let rows = (tasks || []).map(t => ({
+      ...t,
+      usage_count: usageMap[t.id] || 0,
+      avg_score: avgMap[t.id] ?? null,
+    }));
+
+    rows.sort((a, b) => {
+      let av;
+      let bv;
+      if (sortKey === 'usage') {
+        av = a.usage_count;
+        bv = b.usage_count;
+      } else if (sortKey === 'avg_score') {
+        av = a.avg_score ?? -1;
+        bv = b.avg_score ?? -1;
+      } else {
+        av = new Date(a.created_at).getTime();
+        bv = new Date(b.created_at).getTime();
+      }
+      if (av === bv) return 0;
+      return sortAsc ? (av < bv ? -1 : 1) : (av > bv ? -1 : 1);
+    });
+
+    const total = rows.length;
+    const start = (pageNum - 1) * perPage;
+    const data = rows.slice(start, start + perPage);
+
     return res.json({
-      data: (tasks || []).map(t => ({
-        ...t,
-        usage_count: countMap[`${t.exam_type}|${t.task_type}`] || 0,
-      })),
+      summary,
+      data,
+      total,
+      page: pageNum,
+      per_page: perPage,
     });
   } catch (err) {
     console.error('[admin/tasks GET]', err.message);
@@ -531,27 +627,18 @@ router.get('/tasks', async (req, res) => {
 
 // ─── POST /api/admin/tasks ─────────────────────────────────────────────────────
 router.post('/tasks', async (req, res) => {
-  const { exam_type, task_type, title, question_text, time_limit_seconds } = req.body;
-
-  if (!exam_type || !task_type || !title || !question_text) {
-    return res.status(400).json({ error: 'exam_type, task_type, title, and question_text are required.' });
-  }
-  if (!['Academic', 'General'].includes(exam_type)) {
-    return res.status(400).json({ error: 'exam_type must be "Academic" or "General".' });
-  }
-  if (!['Task 1', 'Task 2'].includes(task_type)) {
-    return res.status(400).json({ error: 'task_type must be "Task 1" or "Task 2".' });
-  }
-
   try {
+    const row = normalizeCreatePayload(req.body);
+
     const { data, error } = await supabaseAdmin
       .from('exam_tasks')
       .insert({
-        exam_type,
-        task_type,
-        title: title.trim(),
-        question_text: question_text.trim(),
-        time_limit_seconds: time_limit_seconds || (task_type === 'Task 1' ? 1200 : 2400),
+        exam_type: row.exam_type,
+        task_type: row.task_type,
+        title: row.title,
+        question_text: row.question_text,
+        chart_svg: row.chart_svg || null,
+        time_limit_seconds: row.time_limit_seconds,
         is_active: true,
       })
       .select()
@@ -561,7 +648,8 @@ router.post('/tasks', async (req, res) => {
     return res.status(201).json(data);
   } catch (err) {
     console.error('[admin/tasks POST]', err.message);
-    return res.status(500).json({ error: 'Failed to create task.' });
+    const msg = err.message || 'Failed to create task.';
+    return res.status(err.message?.includes('required') ? 400 : 500).json({ error: msg });
   }
 });
 
@@ -569,22 +657,49 @@ router.post('/tasks', async (req, res) => {
 // Saves previous version to task_history before updating
 router.patch('/tasks/:id', async (req, res) => {
   const { id } = req.params;
-  const { title, question_text, time_limit_seconds, is_active } = req.body;
+  const { question_text, is_active, chart_svg, prompt, bullet_points, letter_type, topic, type: task2Type } = req.body;
 
   try {
     const { data: current, error: fetchError } = await supabaseAdmin
       .from('exam_tasks')
-      .select('title, question_text')
+      .select('title, question_text, exam_type, task_type, chart_svg')
       .eq('id', id)
       .single();
 
     if (fetchError || !current) return res.status(404).json({ error: 'Task not found.' });
 
     const updates = { updated_at: new Date().toISOString() };
-    if (title !== undefined)              updates.title = title.trim();
-    if (question_text !== undefined)      updates.question_text = question_text.trim();
-    if (time_limit_seconds !== undefined) updates.time_limit_seconds = time_limit_seconds;
-    if (is_active !== undefined)          updates.is_active = Boolean(is_active);
+    if (is_active !== undefined) updates.is_active = Boolean(is_active);
+
+    const contentFieldsProvided =
+      question_text !== undefined ||
+      prompt !== undefined ||
+      chart_svg !== undefined ||
+      bullet_points !== undefined ||
+      letter_type !== undefined ||
+      topic !== undefined ||
+      task2Type !== undefined;
+
+    if (contentFieldsProvided) {
+      const normalized = normalizeCreatePayload({
+        exam_type: current.exam_type,
+        task_type: current.task_type,
+        question_text: question_text ?? current.question_text,
+        prompt: prompt ?? question_text ?? current.question_text,
+        chart_svg: chart_svg !== undefined ? chart_svg : current.chart_svg,
+        bullet_points,
+        letter_type,
+        topic,
+        type: task2Type,
+        chart_type: req.body.chart_type,
+      });
+      updates.title = normalized.title;
+      updates.question_text = normalized.question_text;
+      if (normalized.chart_svg !== undefined) {
+        updates.chart_svg = normalized.chart_svg;
+      }
+      updates.time_limit_seconds = normalized.time_limit_seconds;
+    }
 
     const { data, error } = await supabaseAdmin
       .from('exam_tasks')
@@ -595,10 +710,9 @@ router.patch('/tasks/:id', async (req, res) => {
 
     if (error) throw error;
 
-    // Record history when question content changes
     const contentChanged =
-      (title !== undefined && title.trim() !== current.title) ||
-      (question_text !== undefined && question_text.trim() !== current.question_text);
+      contentFieldsProvided &&
+      (updates.title !== current.title || updates.question_text !== current.question_text);
 
     if (contentChanged) {
       await supabaseAdmin
@@ -717,98 +831,50 @@ router.post('/tasks/import', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No questions found in the file.' });
     }
 
-    // ── Normalise to internal schema ──────────────────────────────────────────
+    // Load existing titles for duplicate detection within this import batch + DB
+    const { data: existingTasks } = await supabaseAdmin
+      .from('exam_tasks')
+      .select('exam_type, task_type, title');
+
+    const existingTitleKeys = new Set(
+      (existingTasks || []).map(t => `${t.exam_type}|${t.task_type}|${t.title}`)
+    );
+    const seenTitles = new Set();
+
     const toInsert = [];
     const errors = [];
+    let skipped = 0;
+
+    const importExamType = exam_type || inferExamTaskType(rawItems[0]).exam_type;
 
     for (let i = 0; i < rawItems.length; i++) {
       const item = rawItems[i];
+      const { row, error: normErr } = normalizeBankItem(item, {
+        exam_type: importExamType,
+        seenTitles,
+      });
 
-      // Already in internal format
-      if (item.exam_type && item.task_type && item.question_text) {
-        if (!['Academic', 'General'].includes(item.exam_type)) {
-          errors.push(`Row ${i + 1}: invalid exam_type "${item.exam_type}".`);
-          continue;
-        }
-        if (!['Task 1', 'Task 2'].includes(item.task_type)) {
-          errors.push(`Row ${i + 1}: invalid task_type "${item.task_type}".`);
-          continue;
-        }
-        toInsert.push({
-          exam_type: item.exam_type,
-          task_type: item.task_type,
-          title: (item.title || `Question ${i + 1}`).trim().slice(0, 255),
-          question_text: item.question_text.trim(),
-          time_limit_seconds: item.time_limit_seconds || (item.task_type === 'Task 1' ? 1200 : 2400),
-          is_active: true,
-        });
+      if (normErr || !row) {
+        errors.push(`Row ${i + 1}: ${normErr || 'skipped'}.`);
         continue;
       }
 
-      // GitHub task2 format: { id, topic, type, question }
-      if (item.question) {
-        const et = exam_type || 'Academic';
-        const tt = task_type || 'Task 2';
-        if (!['Academic', 'General'].includes(et) || !['Task 1', 'Task 2'].includes(tt)) {
-          errors.push(`Row ${i + 1}: provide valid exam_type and task_type in the form.`);
-          continue;
-        }
-        const topicStr = [item.topic, item.type].filter(Boolean).join(' — ');
-        toInsert.push({
-          exam_type: et,
-          task_type: tt,
-          title: topicStr || `Question ${i + 1}`,
-          question_text: item.question.trim(),
-          time_limit_seconds: tt === 'Task 1' ? 1200 : 2400,
-          is_active: true,
-        });
+      const titleKey = `${row.exam_type}|${row.task_type}|${row.title}`;
+      if (existingTitleKeys.has(titleKey)) {
+        skipped += 1;
         continue;
       }
 
-      // GitHub task1 letter format: { "exam-name", "letter-type", opening-line, prompt, bullet-points }
-      if (item.prompt && (item['letter-type'] || item['bullet-points'])) {
-        const et = exam_type || 'General';
-        const tt = task_type || 'Task 1';
-        const bulletText = Array.isArray(item['bullet-points'])
-          ? '\n\nIn your letter, include:\n' + item['bullet-points'].map(b => `• ${b}`).join('\n')
-          : '';
-        const fullText = [
-          item['opening-line'] ? `Opening: ${item['opening-line']}` : '',
-          item.prompt,
-          bulletText,
-        ].filter(Boolean).join('\n\n');
-        toInsert.push({
-          exam_type: et,
-          task_type: tt,
-          title: item['letter-type'] ? `${item['letter-type']} Letter` : `Question ${i + 1}`,
-          question_text: fullText.trim(),
-          time_limit_seconds: 1200,
-          is_active: true,
-        });
-        continue;
-      }
-
-      // GitHub task1 report format: { "exam-name", "chart-type", prompt (may include SVG) }
-      if (item.prompt && item['chart-type']) {
-        const et = exam_type || 'Academic';
-        const tt = task_type || 'Task 1';
-        toInsert.push({
-          exam_type: et,
-          task_type: tt,
-          title: item['chart-type'] || `Question ${i + 1}`,
-          question_text: item.prompt.trim(),
-          time_limit_seconds: 1200,
-          is_active: true,
-        });
-        continue;
-      }
-
-      errors.push(`Row ${i + 1}: unrecognised format — skipped.`);
+      existingTitleKeys.add(titleKey);
+      toInsert.push(row);
     }
 
     if (toInsert.length === 0) {
       return res.status(400).json({
-        error: 'No valid questions could be parsed.',
+        error: skipped > 0
+          ? 'All questions already exist in the database (duplicates skipped).'
+          : 'No valid questions could be parsed.',
+        skipped,
         details: errors.slice(0, 10),
       });
     }
@@ -828,9 +894,9 @@ router.post('/tasks/import', upload.single('file'), async (req, res) => {
 
     return res.status(201).json({
       imported,
-      skipped: errors.length,
+      skipped: skipped + errors.length,
       errors: errors.slice(0, 20),
-      message: `Successfully imported ${imported} question${imported !== 1 ? 's' : ''}.`,
+      message: `Successfully imported ${imported} question${imported !== 1 ? 's' : ''}${skipped ? ` (${skipped} duplicate${skipped !== 1 ? 's' : ''} skipped)` : ''}.`,
     });
   } catch (err) {
     console.error('[admin/tasks/import]', err.message);

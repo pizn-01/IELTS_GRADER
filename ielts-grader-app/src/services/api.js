@@ -470,7 +470,10 @@ export const api = {
     updateDiscount: (id, body) => fetch(`${BASE_URL}/admin/discounts/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
     deleteDiscount: (id) => fetch(`${BASE_URL}/admin/discounts/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
     // Task management
-    getTasks: () => fetch(`${BASE_URL}/admin/tasks`, { headers: getHeaders() }).then(r => r.json()),
+    getTasks: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/tasks${q ? `?${q}` : ''}`, { headers: getHeaders() }).then(r => r.json());
+    },
     createTask: (body) => fetch(`${BASE_URL}/admin/tasks`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
     updateTask: (id, body) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
     deleteTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
