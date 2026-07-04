@@ -47,6 +47,14 @@ const AnalysisReadyPage = () => {
             task_type: essayData.taskType || 'Task 2',
             essay_content: essayData.essayContent,
             question_text: essayData.questionContent || '',
+            bullet_points: essayData.bulletPoints || [],
+            letter_type: essayData.letterType || undefined,
+            opening_line: essayData.openingLine || undefined,
+            chart_type: essayData.chartType || undefined,
+            chart_image:
+              essayData.taskVariant === 'task1-report' && essayData.chartImage
+                ? essayData.chartImage
+                : undefined,
             time_spent_seconds: 0,
           });
           currentSubId = res.submission_id;

@@ -5,6 +5,19 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
+import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
+
+const readAsDataURL = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read image.'));
+    reader.readAsDataURL(file);
+  });
+
+const isImageFile = (file) =>
+  file && (file.type?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name || ''));
+
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -31,6 +44,7 @@ const Hero = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [questionText, setQuestionText] = useState('');
   const [essayText, setEssayText] = useState('');
+  const [questionChartImage, setQuestionChartImage] = useState(null);
   const promptFileRef = useRef(null);
   const essayFileRef = useRef(null);
 
@@ -247,17 +261,17 @@ const Hero = () => {
                       Your Question / Prompt <span className="text-[#9CA3AF] font-normal">(recommended)</span>
                     </label>
                     <div className="relative">
-                      <input
-                        type="text"
+                      <textarea
                         value={questionText}
                         onChange={(e) => setQuestionText(e.target.value)}
-                        placeholder="Type, paste, or upload PDF / DOCX / image"
-                        className="w-full h-[44px] px-4 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all"
+                        placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
+                        rows={3}
+                        className="w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y"
                       />
                       <button
                         type="button"
                         onClick={() => promptFileRef.current?.click()}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
+                        className="absolute right-3 top-3 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
                       >
                         <Paperclip size={16} />
                       </button>
@@ -272,7 +286,12 @@ const Hero = () => {
                           if (!file) return;
                           setFileReadError('');
                           try {
-                            const text = await extractFileText(file);
+                            if (isImageFile(file)) {
+                              setQuestionChartImage(await readAsDataURL(file));
+                            } else {
+                              setQuestionChartImage(null);
+                            }
+                            const text = normalizeParagraphBreaks(await extractFileText(file));
                             setQuestionText(text.trim());
                           } catch (err) {
                             setFileReadError(err.message || 'Could not read the question file.');
@@ -280,22 +299,27 @@ const Hero = () => {
                         }}
                       />
                     </div>
+                    {questionChartImage && (
+                      <p className="text-[11px] text-[#059669] mt-1">
+                        Question image retained for chart grading (not shown in the text box).
+                      </p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Your Essay</label>
                     <div className="relative">
-                      <input
-                        type="text"
+                      <textarea
                         value={essayText}
                         onChange={(e) => setEssayText(e.target.value)}
-                        placeholder="Type, paste, or upload PDF / DOCX / image"
-                        className="w-full h-[44px] px-4 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all"
+                        placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
+                        rows={5}
+                        className="w-full min-h-[120px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y"
                       />
                       <button
                         type="button"
                         onClick={() => essayFileRef.current?.click()}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
+                        className="absolute right-3 top-3 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
                       >
                         <Paperclip size={16} />
                       </button>
@@ -310,7 +334,7 @@ const Hero = () => {
                           if (!file) return;
                           setFileReadError('');
                           try {
-                            const text = await extractFileText(file);
+                            const text = normalizeParagraphBreaks(await extractFileText(file));
                             setEssayText(text.trim());
                           } catch (err) {
                             setFileReadError(err.message || 'Could not read file.');
@@ -332,20 +356,38 @@ const Hero = () => {
                     try {
                       const detectSource = (questionText || essayText).trim();
                       const detected = await api.detectTask(detectSource);
-                      const promptForGrading = (questionText || detected.prompt || '').trim();
+                      const promptForGrading = normalizeParagraphBreaks(
+                        (questionText || detected.prompt || '').trim(),
+                      );
+                      const essayForGrading = normalizeParagraphBreaks(essayText);
                       updateEssayData({
-                        essayContent: essayText,
+                        essayContent: essayForGrading,
                         questionContent: promptForGrading,
                         examType: detected.exam_type,
                         taskType: detected.task_type,
+                        bulletPoints: detected.bulletPoints || [],
+                        letterType: detected.letterType || null,
+                        openingLine: detected.openingLine || '',
+                        chartType: detected.chartType || null,
+                        taskVariant: detected.task || null,
+                        chartImage:
+                          detected.task === 'task1-report' ? questionChartImage : null,
                       });
 
                       if (user && user.credits_remaining > 0) {
                         const res = await api.submitAttempt({
                           exam_type: detected.exam_type,
                           task_type: detected.task_type,
-                          essay_content: essayText,
+                          essay_content: essayForGrading,
                           question_text: promptForGrading,
+                          bullet_points: detected.bulletPoints || [],
+                          letter_type: detected.letterType || undefined,
+                          opening_line: detected.openingLine || undefined,
+                          chart_type: detected.chartType || undefined,
+                          chart_image:
+                            detected.task === 'task1-report' && questionChartImage
+                              ? questionChartImage
+                              : undefined,
                           time_spent_seconds: 0,
                         });
                         setSubmissionId(res.submission_id);

@@ -11,6 +11,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
+from error_postprocess import (
+    dedupe_pattern_errors,
+    is_poor_overall_structure_paragraph_artifact,
+    normalize_paragraph_breaks,
+)
 
 # Setup logging
 logging.basicConfig(
@@ -858,6 +863,25 @@ If the essay is genuinely error-free for this criterion, return {{"errors": []}}
             logger.info(
                 f"  → [{criterion_name}] dropped {before - len(errors)} "
                 "ideas_underdeveloped false positive(s) (support cues after quote)."
+            )
+
+        before2 = len(errors)
+        errors = [
+            e for e in errors
+            if not is_poor_overall_structure_paragraph_artifact(e, user_answer)
+        ]
+        if len(errors) != before2:
+            logger.info(
+                f"  → [{criterion_name}] dropped {before2 - len(errors)} "
+                "poor_overall_structure false positive(s) (paragraph input artifact)."
+            )
+
+        before3 = len(errors)
+        errors = dedupe_pattern_errors(errors)
+        if len(errors) != before3:
+            logger.info(
+                f"  → [{criterion_name}] deduped {before3 - len(errors)} "
+                "pattern-level error(s)."
             )
 
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
@@ -3536,6 +3560,7 @@ IMPORTANT: suggested_enrichments MUST contain EXACTLY 3 items."""
 
         Total parallel calls: 20 (was 17 in v7.0).
         """
+        user_answer = normalize_paragraph_breaks(user_answer or "")
         try:
             logger.info("=" * 80)
             logger.info("IELTS GRADING v7.1 – VOCAB-SPLIT / JSON-TRIM / GRAMMAR-3 / FLOW-CLEAN")

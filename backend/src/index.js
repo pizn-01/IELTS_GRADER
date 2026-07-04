@@ -30,7 +30,8 @@ app.use(cors());
 // We capture it in the verify hook so the normal JSON middleware still works
 // for all other routes.
 app.use(express.json({
-  limit: '10mb',
+  // Upload flow may attach a chart image as base64 (~10–12MB).
+  limit: '20mb',
   verify: (req, _res, buf) => {
     if (req.originalUrl.includes('/stripe/webhook')) {
       req.rawBody = buf;

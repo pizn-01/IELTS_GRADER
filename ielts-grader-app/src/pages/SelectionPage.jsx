@@ -58,6 +58,14 @@ const SelectionPage = () => {
           let examType = essayData.examType;
           let taskType = essayData.taskType;
           let questionText = essayData.questionContent || '';
+          let meta = {
+            bulletPoints: essayData.bulletPoints || [],
+            letterType: essayData.letterType,
+            openingLine: essayData.openingLine || '',
+            chartType: essayData.chartType,
+            taskVariant: essayData.taskVariant,
+            chartImage: essayData.chartImage,
+          };
           if (!examType || !taskType) {
             const detected = await api.detectTask(
               (questionText || essayData.essayContent).trim(),
@@ -65,13 +73,34 @@ const SelectionPage = () => {
             examType = detected.exam_type;
             taskType = detected.task_type;
             questionText = questionText || detected.prompt || '';
-            updateEssayData({ examType, taskType, questionContent: questionText });
+            meta = {
+              bulletPoints: detected.bulletPoints || [],
+              letterType: detected.letterType,
+              openingLine: detected.openingLine || '',
+              chartType: detected.chartType,
+              taskVariant: detected.task,
+              chartImage: essayData.chartImage,
+            };
+            updateEssayData({
+              examType,
+              taskType,
+              questionContent: questionText,
+              ...meta,
+            });
           }
           const res = await api.submitAttempt({
             exam_type: examType,
             task_type: taskType,
             essay_content: essayData.essayContent,
             question_text: questionText,
+            bullet_points: meta.bulletPoints,
+            letter_type: meta.letterType || undefined,
+            opening_line: meta.openingLine || undefined,
+            chart_type: meta.chartType || undefined,
+            chart_image:
+              meta.taskVariant === 'task1-report' && meta.chartImage
+                ? meta.chartImage
+                : undefined,
             time_spent_seconds: 0,
           });
           setSubmissionId(res.submission_id);

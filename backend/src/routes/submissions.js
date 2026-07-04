@@ -14,11 +14,27 @@ router.post('/', authenticateToken, async (req, res) => {
     time_spent_seconds = 0,
     exam_task_id,
     question_text,
+    bullet_points,
+    letter_type,
+    opening_line,
+    chart_type,
+    chart_image,
   } = req.body;
   const userId = req.user.userId;
 
   if (!exam_type || !task_type || !essay_content) {
     return res.status(400).json({ error: 'exam_type, task_type, and essay_content are required.' });
+  }
+
+  // chart_image can be large (data URL); cap before deducting credits
+  let chartImage;
+  if (typeof chart_image === 'string' && chart_image.length > 0) {
+    if (chart_image.length > 16 * 1024 * 1024) {
+      return res.status(400).json({
+        error: 'Chart image is too large. Please use a smaller photo (under ~10MB).',
+      });
+    }
+    chartImage = chart_image;
   }
 
   const word_count = essay_content.trim().split(/\s+/).filter(Boolean).length;
@@ -94,6 +110,11 @@ router.post('/', authenticateToken, async (req, res) => {
     essay_content,
     exam_task_id: exam_task_id || null,
     question_text: typeof question_text === 'string' ? question_text.trim() : '',
+    bullet_points: Array.isArray(bullet_points) ? bullet_points : undefined,
+    letter_type: typeof letter_type === 'string' ? letter_type : undefined,
+    opening_line: typeof opening_line === 'string' ? opening_line : undefined,
+    chart_type: typeof chart_type === 'string' ? chart_type : undefined,
+    chart_image: chartImage,
     userId,
     original_credits: profile.credits_remaining,
   }).catch(err => console.error('[gradeEssayAsync] Uncaught:', err.message));

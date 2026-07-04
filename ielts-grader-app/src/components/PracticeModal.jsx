@@ -4,6 +4,19 @@ import { X, Upload, Clock, Info, ChevronDown, Paperclip } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
+import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
+
+const readAsDataURL = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read image.'));
+    reader.readAsDataURL(file);
+  });
+
+const isImageFile = (file) =>
+  file && (file.type?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name || ''));
+
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
   const navigate = useNavigate();
@@ -20,6 +33,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const [fileReadError, setFileReadError] = useState('');
   const [detectedLabel, setDetectedLabel] = useState('');
   const [extracting, setExtracting] = useState(false);
+  const [questionChartImage, setQuestionChartImage] = useState(null);
+  const [chartNote, setChartNote] = useState('');
 
   // Grading state
   const [gradingProgress, setGradingProgress] = useState(0);
@@ -40,7 +55,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
     setFileReadError('');
     setExtracting(true);
     try {
-      const text = await extractFileText(file);
+      const text = normalizeParagraphBreaks(await extractFileText(file));
       setEssayFile(file);
       setEssayText(text);
     } catch (err) {
@@ -54,8 +69,19 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
     if (!file) return;
     setFileReadError('');
     setExtracting(true);
+    setChartNote('');
     try {
-      const text = await extractFileText(file);
+      // Keep original image for Task 1 report chart grading (not shown in text box).
+      if (isImageFile(file)) {
+        try {
+          setQuestionChartImage(await readAsDataURL(file));
+        } catch {
+          setQuestionChartImage(null);
+        }
+      } else {
+        setQuestionChartImage(null);
+      }
+      const text = normalizeParagraphBreaks(await extractFileText(file));
       setQuestionFile(file);
       setQuestionText(text);
     } catch (err) {
@@ -74,6 +100,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const removeQuestionFile = () => {
     setQuestionFile(null);
     setQuestionText('');
+    setQuestionChartImage(null);
+    setChartNote('');
   };
 
   // Start the smooth visual progress animation (0 → 88%, then real status drives to 100%)
@@ -121,13 +149,30 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
       setTaskType(resolvedTask);
       setDetectedLabel(`${resolvedExam} ${resolvedTask}`);
 
-      const promptForGrading = (questionText || detected.prompt || '').trim();
+      const promptForGrading = normalizeParagraphBreaks(
+        (questionText || detected.prompt || '').trim(),
+      );
+      const essayForGrading = normalizeParagraphBreaks(essayText);
+
+      if (detected.task === 'task1-report' && questionChartImage) {
+        setChartNote('Chart image will be used for data-accuracy grading.');
+      } else {
+        setChartNote('');
+      }
 
       const res = await api.submitAttempt({
         exam_type: resolvedExam,
         task_type: resolvedTask,
-        essay_content: essayText,
+        essay_content: essayForGrading,
         question_text: promptForGrading,
+        bullet_points: detected.bulletPoints || [],
+        letter_type: detected.letterType || undefined,
+        opening_line: detected.openingLine || undefined,
+        chart_type: detected.chartType || undefined,
+        chart_image:
+          detected.task === 'task1-report' && questionChartImage
+            ? questionChartImage
+            : undefined,
         time_spent_seconds: 0,
       });
       submissionId = res.submission_id;
@@ -399,18 +444,18 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                             Your Question / Prompt <span className="text-gray-400 font-normal">(recommended)</span>
                           </label>
                           <div className="relative">
-                            <input
-                              type="text"
+                            <textarea
                               value={questionText}
                               onChange={(e) => setQuestionText(e.target.value)}
-                              placeholder="Type, paste, or upload PDF / DOCX / image"
-                              className="w-full h-[44px] px-4 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors"
+                              placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
+                              rows={3}
+                              className="w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors resize-y"
                             />
                             <button
                               type="button"
                               onClick={() => promptFileInputRef.current?.click()}
                               disabled={extracting}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5 disabled:opacity-40"
+                              className="absolute right-3 top-3 text-gray-500 hover:text-[#111827] transition-colors p-0.5 disabled:opacity-40"
                             >
                               <Paperclip size={16} />
                             </button>
@@ -425,23 +470,28 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                               }}
                             />
                           </div>
+                          {questionChartImage && (
+                            <p className="text-[11px] text-[#059669]">
+                              Question image retained for chart grading (not shown in the text box).
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-1.5">
                           <label className="text-[12px] font-bold text-[#111827]">Your Essay</label>
                           <div className="relative">
-                            <input
-                              type="text"
+                            <textarea
                               value={essayText}
                               onChange={(e) => setEssayText(e.target.value)}
-                              placeholder="Type, paste, or upload PDF / DOCX / image"
-                              className="w-full h-[44px] px-4 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors"
+                              placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
+                              rows={5}
+                              className="w-full min-h-[120px] px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors resize-y"
                             />
                             <button
                               type="button"
                               onClick={() => essayFileInputRef.current?.click()}
                               disabled={extracting}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5 disabled:opacity-40"
+                              className="absolute right-3 top-3 text-gray-500 hover:text-[#111827] transition-colors p-0.5 disabled:opacity-40"
                             >
                               <Paperclip size={16} />
                             </button>
@@ -518,6 +568,9 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                     <p className="text-[12px] font-semibold text-[#1A96F3] mb-2">
                       Detected: {detectedLabel}
                     </p>
+                  )}
+                  {chartNote && !gradingError && (
+                    <p className="text-[11px] text-[#059669] mb-2">{chartNote}</p>
                   )}
                   {gradingError ? (
                     <div className="w-full space-y-4 text-center">

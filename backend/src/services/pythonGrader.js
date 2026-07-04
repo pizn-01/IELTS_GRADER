@@ -95,6 +95,25 @@ async function renderChartSvgToTempFile(svg) {
   return filePath;
 }
 
+// Upload flow: question image (data URL or raw base64) for Task 1 report vision grading.
+async function writeUploadedChartImageToTempFile(chartImage) {
+  let b64 = chartImage;
+  let ext = '.png';
+  const dataUrlMatch = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/s.exec(chartImage);
+  if (dataUrlMatch) {
+    const mime = dataUrlMatch[1].toLowerCase();
+    b64 = dataUrlMatch[2];
+    if (mime.includes('jpeg') || mime.includes('jpg')) ext = '.jpg';
+    else if (mime.includes('webp')) ext = '.webp';
+    else if (mime.includes('gif')) ext = '.gif';
+    else ext = '.png';
+  }
+  const buf = Buffer.from(b64, 'base64');
+  const filePath = path.join(os.tmpdir(), `chart-upload-${crypto.randomUUID()}${ext}`);
+  await fs.promises.writeFile(filePath, buf);
+  return filePath;
+}
+
 // exam_tasks doesn't store letter_type / bullet_points / chart_type, so we
 // auto-detect them from the question text using the client's own
 // ImportedQuestionAnalyzer.py (see that file's header comment).
@@ -336,6 +355,11 @@ async function gradeEssayAsync(submissionId, submissionData) {
     essay_content,
     exam_task_id,
     question_text: uploadedQuestionText,
+    bullet_points: uploadedBulletPoints,
+    letter_type: uploadedLetterType,
+    opening_line: uploadedOpeningLine,
+    chart_type: uploadedChartType,
+    chart_image: uploadedChartImage,
     userId,
     original_credits,
   } = submissionData;
@@ -349,17 +373,30 @@ async function gradeEssayAsync(submissionId, submissionData) {
     const questionText = taskRow?.question_text || uploadedQuestionText || '';
     const examName = taskRow?.title || `${exam_type} ${task_type}`;
 
-    let bulletPoints = [];
-    let letterType = 'formal';
-    let chartType = 'Chart';
+    let bulletPoints = Array.isArray(uploadedBulletPoints) ? uploadedBulletPoints : [];
+    let letterType = uploadedLetterType || 'formal';
+    let openingLine = uploadedOpeningLine || '';
+    let chartType = uploadedChartType || 'Chart';
 
-    if (taskVariant !== 'task2' && questionText) {
+    // Prefer ImportedQuestionAnalyzer metadata from upload; only re-detect when missing.
+    const needsMeta =
+      taskVariant !== 'task2' &&
+      questionText &&
+      (
+        (taskVariant === 'task1-letter' && bulletPoints.length === 0) ||
+        (taskVariant === 'task1-report' && !uploadedChartType)
+      );
+
+    if (needsMeta) {
       try {
         const meta = await detectTask1Metadata(questionText);
         if (taskVariant === 'task1-letter') {
-          bulletPoints = Array.isArray(meta.bulletPoints) ? meta.bulletPoints : [];
-          letterType = meta.letterType || 'formal';
-        } else {
+          if (bulletPoints.length === 0) {
+            bulletPoints = Array.isArray(meta.bulletPoints) ? meta.bulletPoints : [];
+          }
+          if (!uploadedLetterType) letterType = meta.letterType || 'formal';
+          if (!uploadedOpeningLine) openingLine = meta.openingLine || '';
+        } else if (!uploadedChartType) {
           chartType = meta.chartType || 'Chart';
         }
       } catch (err) {
@@ -378,7 +415,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
         '--prompt', questionText,
         '--bullet-points', JSON.stringify(bulletPoints),
         '--letter-type', letterType,
-        '--opening-line', '',
+        '--opening-line', openingLine,
         '--user-answer', essay_content,
       ];
     } else if (taskVariant === 'task1-report') {
@@ -402,6 +439,14 @@ async function gradeEssayAsync(submissionId, submissionData) {
           args.push('--chart-image-file', chartImagePath);
         } catch (err) {
           console.warn('[pythonGrader] Chart SVG rasterization failed (vision fallback unavailable):', err.message);
+        }
+      } else if (uploadedChartImage) {
+        // Upload flow: question photo with chart — vision extracts reference data.
+        try {
+          chartImagePath = await writeUploadedChartImageToTempFile(uploadedChartImage);
+          args.push('--chart-image-file', chartImagePath);
+        } catch (err) {
+          console.warn('[pythonGrader] Uploaded chart image write failed:', err.message);
         }
       }
     } else {

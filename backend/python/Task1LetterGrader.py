@@ -11,6 +11,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
+from error_postprocess import (
+    dedupe_pattern_errors,
+    is_poor_overall_structure_paragraph_artifact,
+    normalize_paragraph_breaks,
+)
 
 # Setup logging
 logging.basicConfig(
@@ -1043,6 +1048,26 @@ If the letter is genuinely error-free for this criterion, return {{"errors": []}
         )
         parsed = self._clean_json(raw)
         errors = parsed.get("errors", [])
+
+        before = len(errors)
+        errors = [
+            e for e in errors
+            if not is_poor_overall_structure_paragraph_artifact(e, user_answer)
+        ]
+        if len(errors) != before:
+            logger.info(
+                f"  → [{criterion_name}] dropped {before - len(errors)} "
+                "poor_overall_structure false positive(s) (paragraph input artifact)."
+            )
+
+        before2 = len(errors)
+        errors = dedupe_pattern_errors(errors)
+        if len(errors) != before2:
+            logger.info(
+                f"  → [{criterion_name}] deduped {before2 - len(errors)} "
+                "pattern-level error(s)."
+            )
+
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
         return errors
 
@@ -3204,6 +3229,7 @@ IMPORTANT: suggested_enrichments MUST contain EXACTLY 3 items."""
 
         Total parallel calls: 20 (identical architecture to Task 2 grader).
         """
+        user_answer = normalize_paragraph_breaks(user_answer or "")
         try:
             # Build enriched prompt context
             bp_text = ""

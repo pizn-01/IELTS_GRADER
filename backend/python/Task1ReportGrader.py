@@ -12,6 +12,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
+from error_postprocess import (
+    dedupe_pattern_errors,
+    is_poor_overall_structure_paragraph_artifact,
+    normalize_paragraph_breaks,
+)
 
 # Setup logging
 logging.basicConfig(
@@ -1293,6 +1298,25 @@ If the report is genuinely error-free for this criterion, return {{"errors": []}
             logger.info(
                 f"  → [{criterion_name}] dropped {before3 - len(errors)} "
                 "ideas_underdeveloped false positive(s) (support cues after quote)."
+            )
+
+        before4 = len(errors)
+        errors = [
+            e for e in errors
+            if not is_poor_overall_structure_paragraph_artifact(e, user_answer)
+        ]
+        if len(errors) != before4:
+            logger.info(
+                f"  → [{criterion_name}] dropped {before4 - len(errors)} "
+                "poor_overall_structure false positive(s) (paragraph input artifact)."
+            )
+
+        before5 = len(errors)
+        errors = dedupe_pattern_errors(errors)
+        if len(errors) != before5:
+            logger.info(
+                f"  → [{criterion_name}] deduped {before5 - len(errors)} "
+                "pattern-level error(s)."
             )
 
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
@@ -3410,6 +3434,7 @@ IMPORTANT: suggested_enrichments MUST contain EXACTLY 3 items."""
           - Final score: simple average of Model A and Model B
           - Feedback: Task 2 merged feedback logic using averaged sub-category scores + error penalties
         """
+        user_answer = normalize_paragraph_breaks(user_answer or "")
         try:
             logger.info("=" * 80)
             logger.info("IELTS TASK 1 REPORT GRADING v6.0 – FULL TASK2 ARCHITECTURE")

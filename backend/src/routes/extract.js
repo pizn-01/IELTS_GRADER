@@ -154,6 +154,10 @@ router.post('/detect-task', optionalAuth, async (req, res) => {
       task,
       confidence: result.confidence ?? null,
       prompt: result.prompt || result.cleanedQuestion || questionText,
+      bulletPoints: Array.isArray(result.bulletPoints) ? result.bulletPoints : [],
+      letterType: result.letterType || null,
+      openingLine: result.openingLine || '',
+      chartType: result.chartType || null,
       warnings: result.warnings || [],
     });
   } catch (err) {

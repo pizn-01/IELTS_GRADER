@@ -8,6 +8,14 @@ export const GradeProvider = ({ children }) => {
     taskType: '',
     promptFile: null,
     essayFile: null,
+    essayContent: '',
+    questionContent: '',
+    chartImage: null,
+    bulletPoints: [],
+    letterType: null,
+    openingLine: '',
+    chartType: null,
+    taskVariant: null,
   });
   const [gradingStatus, setGradingStatus] = useState('idle'); // idle, processing, completed
   const [submissionId, setSubmissionId] = useState(null); // set by MockExam after api.submitAttempt succeeds
