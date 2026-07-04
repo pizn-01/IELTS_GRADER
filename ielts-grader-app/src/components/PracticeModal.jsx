@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Clock, Info, ChevronDown, Paperclip } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { extractFileText } from '../utils/extractFileText';
+import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
   const navigate = useNavigate();
@@ -18,6 +18,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const [questionFile, setQuestionFile] = useState(null);
   const [essayFile, setEssayFile] = useState(null);
   const [fileReadError, setFileReadError] = useState('');
+  const [detectedLabel, setDetectedLabel] = useState('');
+  const [extracting, setExtracting] = useState(false);
 
   // Grading state
   const [gradingProgress, setGradingProgress] = useState(0);
@@ -36,23 +38,30 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   const handleEssayFileSelect = async (file) => {
     if (!file) return;
     setFileReadError('');
+    setExtracting(true);
     try {
       const text = await extractFileText(file);
       setEssayFile(file);
       setEssayText(text);
     } catch (err) {
-      setFileReadError(err.message || 'Could not read file. Please upload a .txt, .pdf, or .docx file.');
+      setFileReadError(err.message || 'Could not read file. Please upload a PDF, DOCX, or image (JPG/PNG).');
+    } finally {
+      setExtracting(false);
     }
   };
 
   const handleQuestionFileSelect = async (file) => {
     if (!file) return;
+    setFileReadError('');
+    setExtracting(true);
     try {
       const text = await extractFileText(file);
       setQuestionFile(file);
       setQuestionText(text);
-    } catch {
-      // optional field - fail silently
+    } catch (err) {
+      setFileReadError(err.message || 'Could not read the question file.');
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -92,18 +101,33 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
   };
 
   const handleAnalyzeEssay = async () => {
-    if (!examType || !taskType || wordCount < 10) return;
+    if (wordCount < 10) return;
 
     setStep(3);
     setGradingError('');
+    setDetectedLabel('');
     startProgressAnimation();
 
     let submissionId;
     try {
+      const detectSource = (questionText || essayText).trim();
+      if (!detectSource) {
+        throw new Error('Please provide your essay (and ideally the question prompt).');
+      }
+      const detected = await api.detectTask(detectSource);
+      const resolvedExam = detected.exam_type;
+      const resolvedTask = detected.task_type;
+      setExamType(resolvedExam);
+      setTaskType(resolvedTask);
+      setDetectedLabel(`${resolvedExam} ${resolvedTask}`);
+
+      const promptForGrading = (questionText || detected.prompt || '').trim();
+
       const res = await api.submitAttempt({
-        exam_type: examType,
-        task_type: taskType,
+        exam_type: resolvedExam,
+        task_type: resolvedTask,
         essay_content: essayText,
+        question_text: promptForGrading,
         time_spent_seconds: 0,
       });
       submissionId = res.submission_id;
@@ -304,90 +328,96 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                   </div>
 
                   <div className="space-y-4">
-                    {/* Exam Type */}
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-bold text-[#111827]">Exam Type</label>
-                      <div ref={examDropdownRef}>
-                        <button
-                          type="button"
-                          onClick={() => { setShowExamDropdown(v => !v); setShowTaskDropdown(false); }}
-                          className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] flex items-center justify-between text-[13px] focus:border-[#1A96F3] transition-colors font-medium"
-                        >
-                          <span className={examType ? 'text-[#111827]' : 'text-gray-400'}>{examType || 'Select'}</span>
-                          <ChevronDown className={`text-gray-400 transition-transform duration-200 ${showExamDropdown ? 'rotate-180' : ''}`} size={16} />
-                        </button>
-                        {showExamDropdown && (
-                          <div className="mt-1 bg-white border border-gray-200 rounded-[10px] overflow-hidden shadow-md">
-                            {['Academic', 'General'].map(opt => (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => { setExamType(opt); setShowExamDropdown(false); }}
-                                className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors hover:bg-gray-50 ${examType === opt ? 'text-[#1A96F3] font-bold bg-blue-50/40' : 'text-[#111827] font-medium'}`}
-                              >
-                                {opt}
-                              </button>
-                            ))}
+                    {/* Mock exam still needs manual exam/task selection */}
+                    {selectedOption === 'mock' && (
+                      <>
+                        <div className="space-y-1">
+                          <label className="text-[12px] font-bold text-[#111827]">Exam Type</label>
+                          <div ref={examDropdownRef}>
+                            <button
+                              type="button"
+                              onClick={() => { setShowExamDropdown(v => !v); setShowTaskDropdown(false); }}
+                              className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] flex items-center justify-between text-[13px] focus:border-[#1A96F3] transition-colors font-medium"
+                            >
+                              <span className={examType ? 'text-[#111827]' : 'text-gray-400'}>{examType || 'Select'}</span>
+                              <ChevronDown className={`text-gray-400 transition-transform duration-200 ${showExamDropdown ? 'rotate-180' : ''}`} size={16} />
+                            </button>
+                            {showExamDropdown && (
+                              <div className="mt-1 bg-white border border-gray-200 rounded-[10px] overflow-hidden shadow-md">
+                                {['Academic', 'General'].map(opt => (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => { setExamType(opt); setShowExamDropdown(false); }}
+                                    className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors hover:bg-gray-50 ${examType === opt ? 'text-[#1A96F3] font-bold bg-blue-50/40' : 'text-[#111827] font-medium'}`}
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
 
-                    {/* Task Type */}
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-bold text-[#111827]">Task Type</label>
-                      <div ref={taskDropdownRef}>
-                        <button
-                          type="button"
-                          onClick={() => { setShowTaskDropdown(v => !v); setShowExamDropdown(false); }}
-                          className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] flex items-center justify-between text-[13px] focus:border-[#1A96F3] transition-colors font-medium"
-                        >
-                          <span className={taskType ? 'text-[#111827]' : 'text-gray-400'}>{taskType || 'Select'}</span>
-                          <ChevronDown className={`text-gray-400 transition-transform duration-200 ${showTaskDropdown ? 'rotate-180' : ''}`} size={16} />
-                        </button>
-                        {showTaskDropdown && (
-                          <div className="mt-1 bg-white border border-gray-200 rounded-[10px] overflow-hidden shadow-md">
-                            {['Task 1', 'Task 2'].map(opt => (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => { setTaskType(opt); setShowTaskDropdown(false); }}
-                                className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors hover:bg-gray-50 ${taskType === opt ? 'text-[#1A96F3] font-bold bg-blue-50/40' : 'text-[#111827] font-medium'}`}
-                              >
-                                {opt}
-                              </button>
-                            ))}
+                        <div className="space-y-1">
+                          <label className="text-[12px] font-bold text-[#111827]">Task Type</label>
+                          <div ref={taskDropdownRef}>
+                            <button
+                              type="button"
+                              onClick={() => { setShowTaskDropdown(v => !v); setShowExamDropdown(false); }}
+                              className="w-full bg-white border border-gray-200 rounded-[10px] px-4 h-[44px] flex items-center justify-between text-[13px] focus:border-[#1A96F3] transition-colors font-medium"
+                            >
+                              <span className={taskType ? 'text-[#111827]' : 'text-gray-400'}>{taskType || 'Select'}</span>
+                              <ChevronDown className={`text-gray-400 transition-transform duration-200 ${showTaskDropdown ? 'rotate-180' : ''}`} size={16} />
+                            </button>
+                            {showTaskDropdown && (
+                              <div className="mt-1 bg-white border border-gray-200 rounded-[10px] overflow-hidden shadow-md">
+                                {['Task 1', 'Task 2'].map(opt => (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => { setTaskType(opt); setShowTaskDropdown(false); }}
+                                    className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors hover:bg-gray-50 ${taskType === opt ? 'text-[#1A96F3] font-bold bg-blue-50/40' : 'text-[#111827] font-medium'}`}
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      </>
+                    )}
 
                     {selectedOption === 'upload' && (
                       <>
-                        {/* Question / Prompt (optional) */}
+                        <p className="text-[12px] text-gray-500">
+                          Task type is detected automatically from your question prompt (or essay if no prompt is provided).
+                        </p>
                         <div className="space-y-1.5">
                           <label className="text-[12px] font-bold text-[#111827]">
-                            Your Question / Essay <span className="text-gray-400 font-normal">(optional)</span>
+                            Your Question / Prompt <span className="text-gray-400 font-normal">(recommended)</span>
                           </label>
                           <div className="relative">
                             <input
                               type="text"
                               value={questionText}
                               onChange={(e) => setQuestionText(e.target.value)}
-                              placeholder="You can type, paste, or upload a file"
+                              placeholder="Type, paste, or upload PDF / DOCX / image"
                               className="w-full h-[44px] px-4 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors"
                             />
                             <button
                               type="button"
                               onClick={() => promptFileInputRef.current?.click()}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5"
+                              disabled={extracting}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5 disabled:opacity-40"
                             >
                               <Paperclip size={16} />
                             </button>
                             <input
                               ref={promptFileInputRef}
                               type="file"
-                              accept=".pdf,.doc,.docx"
+                              accept={UPLOAD_ACCEPT}
                               className="hidden"
                               onChange={(e) => {
                                 handleQuestionFileSelect(e.target.files[0]);
@@ -397,7 +427,6 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                           </div>
                         </div>
 
-                        {/* Essay */}
                         <div className="space-y-1.5">
                           <label className="text-[12px] font-bold text-[#111827]">Your Essay</label>
                           <div className="relative">
@@ -405,20 +434,21 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                               type="text"
                               value={essayText}
                               onChange={(e) => setEssayText(e.target.value)}
-                              placeholder="You can type or upload, your essay here"
+                              placeholder="Type, paste, or upload PDF / DOCX / image"
                               className="w-full h-[44px] px-4 pr-11 bg-white border border-gray-200 rounded-[10px] text-[13px] text-[#111827] placeholder-gray-300 outline-none focus:border-[#1A96F3] transition-colors"
                             />
                             <button
                               type="button"
                               onClick={() => essayFileInputRef.current?.click()}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5"
+                              disabled={extracting}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#111827] transition-colors p-0.5 disabled:opacity-40"
                             >
                               <Paperclip size={16} />
                             </button>
                             <input
                               ref={essayFileInputRef}
                               type="file"
-                              accept=".pdf,.doc,.docx"
+                              accept={UPLOAD_ACCEPT}
                               className="hidden"
                               onChange={(e) => {
                                 handleEssayFileSelect(e.target.files[0]);
@@ -426,6 +456,9 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                               }}
                             />
                           </div>
+                          {extracting && (
+                            <p className="text-[11px] text-[#1A96F3] mt-1">Reading file…</p>
+                          )}
                           {fileReadError && (
                             <p className="text-[11px] text-red-500 mt-1">{fileReadError}</p>
                           )}
@@ -445,7 +478,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                       }}
                       disabled={
                         selectedOption === 'upload'
-                          ? (!examType || !taskType || wordCount < 10)
+                          ? (wordCount < 10 || extracting)
                           : (!examType || !taskType)
                       }
                       className="w-full bg-[#2C3E50] text-white h-[46px] rounded-[10px] text-[15px] font-bold flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#34495E]"
@@ -481,6 +514,11 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                     </div>
                   </div>
 
+                  {detectedLabel && !gradingError && (
+                    <p className="text-[12px] font-semibold text-[#1A96F3] mb-2">
+                      Detected: {detectedLabel}
+                    </p>
+                  )}
                   {gradingError ? (
                     <div className="w-full space-y-4 text-center">
                       <h2 className="text-[18px] font-bold text-[#111827]">Grading Failed</h2>

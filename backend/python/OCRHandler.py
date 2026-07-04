@@ -125,7 +125,14 @@ def extract_text_from_pdf(file_path):
                 text = page.extract_text()
                 if text:
                     text_content.append(text)
-        return "\n\n".join(text_content)
+        joined = "\n\n".join(text_content).strip()
+        # Scanned PDFs have no text layer — PyPDF2 cannot OCR them.
+        if len(joined) < 20:
+            return (
+                "Error: This PDF has little or no extractable text (it may be a scan). "
+                "Please upload a clear photo (JPG/PNG) of the page instead."
+            )
+        return joined
     except ImportError:
         return "Error: PyPDF2 library not installed. Install with: pip install PyPDF2"
     except Exception as e:
@@ -168,7 +175,11 @@ def extract_with_openai(file_path):
                         "content": [
                             {
                                 "type": "text",
-                                "text": "Transcribe this IELTS essay image exactly as written. Preserve paragraph breaks. Return ONLY the transcribed text."
+                                "text": (
+                                    "Transcribe all visible IELTS writing on this image exactly as written "
+                                    "(question/prompt and/or essay/letter/report). Preserve paragraph breaks. "
+                                    "Return ONLY the transcribed text."
+                                ),
                             },
                             {
                                 "type": "image_url",

@@ -105,6 +105,40 @@ export const api = {
     }
   },
 
+  // ─── POST /api/extract ──────────────────────────────────────────────────────
+  // Multipart file → OCRHandler (image / PDF / DOCX) → { text }
+  extractFile: async (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    const headers = {};
+    const token = localStorage.getItem('token');
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${BASE_URL}/extract`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Could not extract text from this file.');
+    }
+    return data;
+  },
+
+  // ─── POST /api/detect-task ──────────────────────────────────────────────────
+  detectTask: async (questionText) => {
+    const res = await fetch(`${BASE_URL}/detect-task`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ questionText }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Could not detect the IELTS task type.');
+    }
+    return data;
+  },
+
   // ─── POST /api/submissions ──────────────────────────────────────────────────
   submitAttempt: async (payload) => {
     let serverReachable = false;

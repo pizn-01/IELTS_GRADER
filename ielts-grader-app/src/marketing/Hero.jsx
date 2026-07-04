@@ -4,7 +4,7 @@ import { useGrade } from '../context/GradeContext';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { extractFileText } from '../utils/extractFileText';
+import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ const Hero = () => {
     if (type === 'prompt') updateEssayData({ questionContent: '' });
   };
 
-  const isUploadFormValid = essayData.examType && essayData.taskType && essayText.trim().length > 0;
+  const isUploadFormValid = essayText.trim().length > 0;
 
   return (
     <header id="about" className="bg-[#1A96F30D] relative min-h-[700px] overflow-hidden flex items-center">
@@ -238,46 +238,20 @@ const Hero = () => {
                 </div>
 
                 <div className="space-y-4 flex-1">
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Exam Type</label>
-                    <div className="relative">
-                      <select
-                        value={essayData.examType}
-                        onChange={(e) => updateEssayData({ examType: e.target.value })}
-                        className="w-full h-[44px] px-4 bg-white border border-[#E5E7EB] rounded-[10px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
-                      >
-                        <option value="">Select</option>
-                        <option value="Academic">Academic</option>
-                        <option value="General">General</option>
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
-                    </div>
-                  </div>
+                  <p className="text-[12px] text-[#6B7280]">
+                    Task type is detected automatically from your question prompt (or essay if no prompt is provided).
+                  </p>
 
                   <div>
-                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Task Type</label>
-                    <div className="relative">
-                      <select
-                        value={essayData.taskType}
-                        onChange={(e) => updateEssayData({ taskType: e.target.value })}
-                        className="w-full h-[44px] px-4 bg-white border border-[#E5E7EB] rounded-[10px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
-                      >
-                        <option value="">Select</option>
-                        <option value="Task 1">Task 1</option>
-                        <option value="Task 2">Task 2</option>
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Your Question / Essay</label>
+                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">
+                      Your Question / Prompt <span className="text-[#9CA3AF] font-normal">(recommended)</span>
+                    </label>
                     <div className="relative">
                       <input
                         type="text"
                         value={questionText}
                         onChange={(e) => setQuestionText(e.target.value)}
-                        placeholder="You can type, paste, or upload a file"
+                        placeholder="Type, paste, or upload PDF / DOCX / image"
                         className="w-full h-[44px] px-4 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all"
                       />
                       <button
@@ -290,16 +264,19 @@ const Hero = () => {
                       <input
                         ref={promptFileRef}
                         type="file"
-                        accept=".pdf,.doc,.docx"
+                        accept={UPLOAD_ACCEPT}
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files[0];
                           e.target.value = '';
                           if (!file) return;
+                          setFileReadError('');
                           try {
                             const text = await extractFileText(file);
                             setQuestionText(text.trim());
-                          } catch { /* optional field */ }
+                          } catch (err) {
+                            setFileReadError(err.message || 'Could not read the question file.');
+                          }
                         }}
                       />
                     </div>
@@ -312,7 +289,7 @@ const Hero = () => {
                         type="text"
                         value={essayText}
                         onChange={(e) => setEssayText(e.target.value)}
-                        placeholder="You can type or upload, your essay here"
+                        placeholder="Type, paste, or upload PDF / DOCX / image"
                         className="w-full h-[44px] px-4 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all"
                       />
                       <button
@@ -325,7 +302,7 @@ const Hero = () => {
                       <input
                         ref={essayFileRef}
                         type="file"
-                        accept=".pdf,.doc,.docx"
+                        accept={UPLOAD_ACCEPT}
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files[0];
@@ -352,30 +329,40 @@ const Hero = () => {
                     if (!essayText.trim()) return;
                     setFileReadError('');
                     setIsSubmitting(true);
-                    updateEssayData({ essayContent: essayText, questionContent: questionText });
-                    if (user && user.credits_remaining > 0) {
-                      try {
+                    try {
+                      const detectSource = (questionText || essayText).trim();
+                      const detected = await api.detectTask(detectSource);
+                      const promptForGrading = (questionText || detected.prompt || '').trim();
+                      updateEssayData({
+                        essayContent: essayText,
+                        questionContent: promptForGrading,
+                        examType: detected.exam_type,
+                        taskType: detected.task_type,
+                      });
+
+                      if (user && user.credits_remaining > 0) {
                         const res = await api.submitAttempt({
-                          exam_type: essayData.examType,
-                          task_type: essayData.taskType,
+                          exam_type: detected.exam_type,
+                          task_type: detected.task_type,
                           essay_content: essayText,
+                          question_text: promptForGrading,
                           time_spent_seconds: 0,
                         });
                         setSubmissionId(res.submission_id);
                         setGradingStatus('processing');
                         navigate('/analysis-ready');
-                      } catch (err) {
-                        if (err.message && err.message.includes('Insufficient evaluation credits')) {
-                          navigate('/analysis-ready', { state: { outOfCredits: true } });
-                        } else {
-                          setFileReadError(err.message || 'Submission failed. Please try again.');
-                          setIsSubmitting(false);
-                        }
+                      } else if (user) {
+                        navigate('/analysis-ready');
+                      } else {
+                        navigate('/selection', { state: { flow: 'essay' } });
                       }
-                    } else if (user) {
-                      navigate('/analysis-ready');
-                    } else {
-                      navigate('/selection', { state: { flow: 'essay' } });
+                    } catch (err) {
+                      if (err.message && err.message.includes('Insufficient evaluation credits')) {
+                        navigate('/analysis-ready', { state: { outOfCredits: true } });
+                      } else {
+                        setFileReadError(err.message || 'Submission failed. Please try again.');
+                        setIsSubmitting(false);
+                      }
                     }
                   }}
                   disabled={!isUploadFormValid || isSubmitting}

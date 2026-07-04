@@ -185,13 +185,22 @@ Return ONLY a valid JSON object with this exact structure:
 
 // ─── Main grading orchestrator (called async after submission is saved) ────────
 async function gradeEssayAsync(submissionId, submissionData) {
-  const { exam_type, task_type, essay_content, exam_task_id, userId, original_credits } = submissionData;
+  const {
+    exam_type,
+    task_type,
+    essay_content,
+    exam_task_id,
+    question_text: uploadedQuestionText,
+    userId,
+    original_credits,
+  } = submissionData;
   const word_count = essay_content.trim().split(/\s+/).filter(Boolean).length;
 
   console.log(`[grader] Starting: submission=${submissionId} task=${exam_type} ${task_type} words=${word_count}`);
 
   try {
-    const questionText = await getQuestionText(exam_task_id);
+    const bankQuestion = await getQuestionText(exam_task_id);
+    const questionText = bankQuestion || uploadedQuestionText || null;
 
     // ── Call 1: Primary grading ──────────────────────────────────────────────
     const primaryCompletion = await openai.chat.completions.create({

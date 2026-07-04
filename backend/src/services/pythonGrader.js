@@ -330,14 +330,23 @@ function mapPythonResult(raw) {
 // Same call signature as grader.js's gradeEssayAsync so submissions.js can
 // call either engine interchangeably via graderEngine.js.
 async function gradeEssayAsync(submissionId, submissionData) {
-  const { exam_type, task_type, essay_content, exam_task_id, userId, original_credits } = submissionData;
+  const {
+    exam_type,
+    task_type,
+    essay_content,
+    exam_task_id,
+    question_text: uploadedQuestionText,
+    userId,
+    original_credits,
+  } = submissionData;
 
   console.log(`[pythonGrader] Starting: submission=${submissionId} task=${exam_type} ${task_type}`);
 
   try {
     const taskVariant = resolveTaskVariant(exam_type, task_type);
     const taskRow = await getTaskRow(exam_task_id);
-    const questionText = taskRow?.question_text || '';
+    // Prefer bank task prompt; fall back to uploaded prompt (practice upload flow).
+    const questionText = taskRow?.question_text || uploadedQuestionText || '';
     const examName = taskRow?.title || `${exam_type} ${task_type}`;
 
     let bulletPoints = [];

@@ -14,7 +14,7 @@ const SelectionPage = () => {
   const location = useLocation();
   const flow = location.state?.flow || null; // 'essay' | 'mock' | null
 
-  const { gradingStatus, setGradingStatus, setSubmissionId, essayData } = useGrade();
+  const { gradingStatus, setGradingStatus, setSubmissionId, essayData, updateEssayData } = useGrade();
   const { user, register, signInWithGoogle } = useAuth();
 
   // Form state
@@ -55,10 +55,23 @@ const SelectionPage = () => {
 
       if (flow === 'essay' && essayData?.essayContent) {
         try {
+          let examType = essayData.examType;
+          let taskType = essayData.taskType;
+          let questionText = essayData.questionContent || '';
+          if (!examType || !taskType) {
+            const detected = await api.detectTask(
+              (questionText || essayData.essayContent).trim(),
+            );
+            examType = detected.exam_type;
+            taskType = detected.task_type;
+            questionText = questionText || detected.prompt || '';
+            updateEssayData({ examType, taskType, questionContent: questionText });
+          }
           const res = await api.submitAttempt({
-            exam_type: essayData.examType,
-            task_type: essayData.taskType,
+            exam_type: examType,
+            task_type: taskType,
             essay_content: essayData.essayContent,
+            question_text: questionText,
             time_spent_seconds: 0,
           });
           setSubmissionId(res.submission_id);

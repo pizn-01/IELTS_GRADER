@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useGrade } from '../context/GradeContext';
-import { extractFileText } from '../utils/extractFileText';
+import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import QuestionChart, { detectChartType } from './QuestionChart';
 import { isGeneralTask1Letter, parseLetterQuestion } from '../utils/parseLetterQuestion';
 import { isAcademicTask1Report, parseReportQuestion } from '../utils/parseReportQuestion';
@@ -413,7 +413,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
       const text = await extractFileText(file);
       setEssay(text.trim());
     } catch (err) {
-      setExtractError(err.message || 'Could not read file. Try a .pdf or .docx.');
+      setExtractError(err.message || 'Could not read file. Try a PDF, DOCX, or image.');
     } finally {
       setExtracting(false);
     }
@@ -564,7 +564,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept={UPLOAD_ACCEPT}
               className="hidden"
               onChange={handleFileAttach}
             />

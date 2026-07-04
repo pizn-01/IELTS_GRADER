@@ -7,7 +7,14 @@ const router = express.Router();
 
 // ─── POST /api/submissions ────────────────────────────────────────────────────
 router.post('/', authenticateToken, async (req, res) => {
-  const { exam_type, task_type, essay_content, time_spent_seconds = 0, exam_task_id } = req.body;
+  const {
+    exam_type,
+    task_type,
+    essay_content,
+    time_spent_seconds = 0,
+    exam_task_id,
+    question_text,
+  } = req.body;
   const userId = req.user.userId;
 
   if (!exam_type || !task_type || !essay_content) {
@@ -86,6 +93,7 @@ router.post('/', authenticateToken, async (req, res) => {
     task_type,
     essay_content,
     exam_task_id: exam_task_id || null,
+    question_text: typeof question_text === 'string' ? question_text.trim() : '',
     userId,
     original_credits: profile.credits_remaining,
   }).catch(err => console.error('[gradeEssayAsync] Uncaught:', err.message));

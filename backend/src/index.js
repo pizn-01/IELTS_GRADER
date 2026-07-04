@@ -125,6 +125,7 @@ app.use('/api/submissions', submissionsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api', require('./routes/extract'));
 app.use('/api/support', supportRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_SECRET) — must be BEFORE adminRoutes

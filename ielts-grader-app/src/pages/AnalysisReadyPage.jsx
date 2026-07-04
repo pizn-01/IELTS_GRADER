@@ -46,6 +46,7 @@ const AnalysisReadyPage = () => {
             exam_type: essayData.examType || 'Academic',
             task_type: essayData.taskType || 'Task 2',
             essay_content: essayData.essayContent,
+            question_text: essayData.questionContent || '',
             time_spent_seconds: 0,
           });
           currentSubId = res.submission_id;
