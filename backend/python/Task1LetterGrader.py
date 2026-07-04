@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
 from error_postprocess import (
-    dedupe_pattern_errors,
-    is_poor_overall_structure_paragraph_artifact,
+    log_postprocess_stats,
     normalize_paragraph_breaks,
+    postprocess_detected_errors,
 )
 
 # Setup logging
@@ -1048,26 +1048,8 @@ If the letter is genuinely error-free for this criterion, return {{"errors": []}
         )
         parsed = self._clean_json(raw)
         errors = parsed.get("errors", [])
-
-        before = len(errors)
-        errors = [
-            e for e in errors
-            if not is_poor_overall_structure_paragraph_artifact(e, user_answer)
-        ]
-        if len(errors) != before:
-            logger.info(
-                f"  → [{criterion_name}] dropped {before - len(errors)} "
-                "poor_overall_structure false positive(s) (paragraph input artifact)."
-            )
-
-        before2 = len(errors)
-        errors = dedupe_pattern_errors(errors)
-        if len(errors) != before2:
-            logger.info(
-                f"  → [{criterion_name}] deduped {before2 - len(errors)} "
-                "pattern-level error(s)."
-            )
-
+        errors, stats = postprocess_detected_errors(errors, user_answer)
+        log_postprocess_stats(logger, criterion_name, stats)
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
         return errors
 

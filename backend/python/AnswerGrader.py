@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
 from error_postprocess import (
-    dedupe_pattern_errors,
-    is_poor_overall_structure_paragraph_artifact,
+    log_postprocess_stats,
     normalize_paragraph_breaks,
+    postprocess_detected_errors,
 )
 
 # Setup logging
@@ -850,98 +850,10 @@ If the essay is genuinely error-free for this criterion, return {{"errors": []}}
         )
         parsed = self._clean_json(raw)
         errors = parsed.get("errors", [])
-
-        # Code-level safety net only for ideas_underdeveloped: drop flags where
-        # the quoted claim sits in a multi-sentence paragraph (support continues
-        # after the claim). Does not alter prompts or other error types.
-        before = len(errors)
-        errors = [
-            e for e in errors
-            if not self._is_ideas_underdeveloped_false_positive(e, user_answer)
-        ]
-        if len(errors) != before:
-            logger.info(
-                f"  → [{criterion_name}] dropped {before - len(errors)} "
-                "ideas_underdeveloped false positive(s) (support cues after quote)."
-            )
-
-        before2 = len(errors)
-        errors = [
-            e for e in errors
-            if not is_poor_overall_structure_paragraph_artifact(e, user_answer)
-        ]
-        if len(errors) != before2:
-            logger.info(
-                f"  → [{criterion_name}] dropped {before2 - len(errors)} "
-                "poor_overall_structure false positive(s) (paragraph input artifact)."
-            )
-
-        before3 = len(errors)
-        errors = dedupe_pattern_errors(errors)
-        if len(errors) != before3:
-            logger.info(
-                f"  → [{criterion_name}] deduped {before3 - len(errors)} "
-                "pattern-level error(s)."
-            )
-
+        errors, stats = postprocess_detected_errors(errors, user_answer)
+        log_postprocess_stats(logger, criterion_name, stats)
         logger.info(f"  → [{criterion_name}] {len(errors)} error(s) detected.")
         return errors
-
-    @staticmethod
-    def _paragraph_containing(text: str, quote: str) -> Optional[str]:
-        """Return the paragraph that contains quote, or None if not found."""
-        if not text or not quote:
-            return None
-        # Collapse whitespace for a tolerant search, then map back to a paragraph.
-        paragraphs = re.split(r"\n\s*\n", text.strip())
-        if len(paragraphs) == 1:
-            paragraphs = [p for p in text.split("\n") if p.strip()] or paragraphs
-        quote_norm = re.sub(r"\s+", " ", quote.strip()).lower()
-        for para in paragraphs:
-            para_norm = re.sub(r"\s+", " ", para.strip()).lower()
-            if quote_norm and quote_norm in para_norm:
-                return para.strip()
-        # Fallback: whole text as one block if quote appears anywhere
-        full_norm = re.sub(r"\s+", " ", text.strip()).lower()
-        if quote_norm and quote_norm in full_norm:
-            return text.strip()
-        return None
-
-    # Support cues that must appear *after* the quoted claim in the same
-    # paragraph before we treat ideas_underdeveloped as a false positive.
-    # Mere extra sentences / length are not enough (avoids over-dropping).
-    _SUPPORT_CUE_RE = re.compile(
-        r"\b("
-        r"because|since|as a result|due to|owing to|"
-        r"for example|for instance|such as|e\.g\.|"
-        r"this (is|means|shows|leads|results)|"
-        r"specifically|namely|in other words"
-        r")\b"
-        r"|\d+(?:\.\d+)?%?"  # clear number / percentage
-        ,
-        re.IGNORECASE,
-    )
-
-    @classmethod
-    def _is_ideas_underdeveloped_false_positive(cls, error: dict, user_answer: str) -> bool:
-        """True only when text after the quote has explicit support cues."""
-        if error.get("error_id") != "ideas_underdeveloped":
-            return False
-        quote = (error.get("original_text") or "").strip()
-        if not quote:
-            return False
-        para = cls._paragraph_containing(user_answer, quote)
-        if not para:
-            return False
-        quote_norm = re.sub(r"\s+", " ", quote).lower()
-        para_norm = re.sub(r"\s+", " ", para).lower()
-        idx = para_norm.find(quote_norm)
-        if idx < 0:
-            return False
-        after = para_norm[idx + len(quote_norm):].strip()
-        if not after:
-            return False
-        return bool(cls._SUPPORT_CUE_RE.search(after))
 
     async def _perform_detailed_independent_scoring(
         self, user_answer: str, essay_prompt: str, model: str = SCORING_MODEL_A
