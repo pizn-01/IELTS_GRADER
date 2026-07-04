@@ -131,6 +131,148 @@ def is_self_contradicting_data_accuracy_error(error: dict) -> bool:
     return False
 
 
+# Multipliers for magnitude-normalised comparison (same unit family only).
+_UNIT_MULT = {
+    "billion": 1e9,
+    "bn": 1e9,
+    "million": 1e6,
+    "m": 1e6,
+    "thousand": 1e3,
+    "k": 1e3,
+    "%": 1.0,
+    "percent": 1.0,
+    "percentage": 1.0,
+}
+
+# Number token: comma-grouped (1,000), decimal (39.6), or full integer (1990).
+# Do NOT use \d{1,3} alone — that truncates years like 1990 → 199.
+_NUM = r"(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+\.\d+|\d+)"
+
+# Student/report figure … chart/reference figure (order matters).
+_STUDENT_VS_REF_RE = re.compile(
+    r"(?:report|student|candidate|answer|text|wrote|states?|claims?|says?|mentions?|"
+    r"gives?|cites?|puts?|lists?)"
+    r".{0,80}?"
+    r"(?:around|about|approximately|roughly|nearly|just over|just under|at|is|was|of|to)?\s*"
+    rf"(?P<student>{_NUM})"
+    r"(?:\s*(?P<sunit>billion|million|thousand|percent(?:age)?|bn|[mk]%?|%))?"
+    r".{0,100}?"
+    r"(?:but|while|whereas|however|chart|graph|table|reference|source|actual|true|correct|shows?|is|was)"
+    r".{0,60}?"
+    r"(?:around|about|approximately|roughly|nearly|just over|just under|at|is|was|of|to|shows?)?\s*"
+    rf"(?P<ref>{_NUM})"
+    r"(?:\s*(?P<runit>billion|million|thousand|percent(?:age)?|bn|[mk]%?|%))?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# Fallback: "X … but … Y" / "X, chart shows Y"
+_LOOSE_PAIR_RE = re.compile(
+    rf"(?P<student>{_NUM})"
+    r"(?:\s*(?P<sunit>billion|million|thousand|percent(?:age)?|bn|[mk]%?|%))?"
+    r".{0,50}?"
+    r"(?:but|while|whereas|chart|graph|reference|shows?|actual)"
+    r".{0,40}?"
+    rf"(?P<ref>{_NUM})"
+    r"(?:\s*(?P<runit>billion|million|thousand|percent(?:age)?|bn|[mk]%?|%))?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+_DATA_ACCURACY_TOLERANCE = 0.15  # ±15%
+
+
+def _parse_number_token(raw: str) -> Optional[float]:
+    try:
+        return float(raw.replace(",", ""))
+    except (TypeError, ValueError):
+        return None
+
+
+def _normalize_unit(unit: Optional[str]) -> Optional[str]:
+    if not unit:
+        return None
+    u = unit.lower().rstrip(".")
+    if u in ("m",) and u not in _UNIT_MULT:
+        return "million"
+    if u == "bn":
+        return "billion"
+    if u in ("%", "percent", "percentage"):
+        return "%"
+    return u if u in _UNIT_MULT else None
+
+
+def _to_base(value: float, unit: Optional[str]) -> float:
+    key = _normalize_unit(unit)
+    if key and key in _UNIT_MULT:
+        return value * _UNIT_MULT[key]
+    return value
+
+
+def _looks_like_year(n: float) -> bool:
+    return n == int(n) and 1900 <= int(n) <= 2100
+
+
+def _extract_student_ref_pair(error: dict) -> Optional[Tuple[float, float]]:
+    """
+    Pull (student_value, reference_value) from explanation/context when possible.
+    Returns None if the pair cannot be parsed confidently.
+    """
+    text = f"{error.get('explanation', '')} {error.get('context', '')}"
+    if not text.strip():
+        return None
+
+    for pattern in (_STUDENT_VS_REF_RE, _LOOSE_PAIR_RE):
+        m = pattern.search(text)
+        if not m:
+            continue
+        student = _parse_number_token(m.group("student"))
+        ref = _parse_number_token(m.group("ref"))
+        if student is None or ref is None or ref == 0:
+            continue
+        # Years: percentage tolerance is meaningless (1990 vs 1997 ≈ 0.35%).
+        if _looks_like_year(student) and _looks_like_year(ref):
+            return None
+        sunit = m.groupdict().get("sunit")
+        runit = m.groupdict().get("runit")
+        # If both units present and differ in a way we can't reconcile, skip.
+        su, ru = _normalize_unit(sunit), _normalize_unit(runit)
+        if su and ru and su != ru and {su, ru} != {"%", "%"}:
+            # Allow billion/million mismatch only via base conversion
+            pass
+        student_b = _to_base(student, sunit)
+        ref_b = _to_base(ref, runit)
+        if ref_b == 0:
+            continue
+        return student_b, ref_b
+
+    # Fallback: numbers in original_text vs corrected_text (same unit assumed).
+    o_m = re.search(rf"({_NUM})", error.get("original_text") or "")
+    c_m = re.search(rf"({_NUM})", error.get("corrected_text") or "")
+    if o_m and c_m:
+        student = _parse_number_token(o_m.group(1))
+        ref = _parse_number_token(c_m.group(1))
+        if student is not None and ref is not None and ref != 0:
+            if _looks_like_year(student) and _looks_like_year(ref):
+                return None
+            return student, ref
+    return None
+
+
+def is_within_tolerance_data_accuracy_error(error: dict) -> bool:
+    """
+    Drop data_accuracy_error when student vs reference magnitudes differ by ≤15%,
+    even if the model still calls it a 'mismatch'. Leave the error if numbers
+    cannot be parsed confidently.
+    """
+    if error.get("error_id") != "data_accuracy_error":
+        return False
+    pair = _extract_student_ref_pair(error)
+    if not pair:
+        return False
+    student, ref = pair
+    pct = abs(student - ref) / abs(ref)
+    return pct <= _DATA_ACCURACY_TOLERANCE
+
+
 def has_unusable_placeholder_correction(error: dict) -> bool:
     """Drop any error whose corrected_text is a bracketed give-up placeholder."""
     corrected = error.get("corrected_text", "") or ""
@@ -288,7 +430,13 @@ def postprocess_detected_errors(
     answer = user_answer or ""
 
     before = len(errors)
-    errors = [e for e in errors if not is_self_contradicting_data_accuracy_error(e)]
+    errors = [
+        e for e in errors
+        if not (
+            is_self_contradicting_data_accuracy_error(e)
+            or is_within_tolerance_data_accuracy_error(e)
+        )
+    ]
     stats.data_accuracy_dropped = before - len(errors)
 
     before = len(errors)
@@ -314,8 +462,8 @@ def log_postprocess_stats(logger, criterion_name: str, stats: PostprocessStats) 
     """Emit the same granular log lines graders used before consolidation."""
     if stats.data_accuracy_dropped:
         logger.info(
-            f"  → [{criterion_name}] dropped {stats.data_accuracy_dropped} self-contradicting "
-            "data_accuracy_error false positive(s)."
+            f"  → [{criterion_name}] dropped {stats.data_accuracy_dropped} "
+            "data_accuracy_error false positive(s) (within tolerance / self-contradicting)."
         )
     if stats.placeholder_correction_dropped:
         logger.info(
