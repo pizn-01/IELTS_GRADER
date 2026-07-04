@@ -15,6 +15,21 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 
 
 const router = express.Router();
 
+/** Supabase/PostgREST caps at 1000 rows per request — paginate to fetch all. */
+async function fetchAllRows(buildQuery, pageSize = 1000) {
+  const all = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+    if (error) throw error;
+    if (!data?.length) break;
+    all.push(...data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
 // All admin routes require JWT + is_admin flag
 router.use(authenticateToken, requireAdmin);
 
@@ -518,40 +533,44 @@ router.get('/tasks', async (req, res) => {
     const sortKey = ['created_at', 'usage', 'avg_score'].includes(sort) ? sort : 'created_at';
     const sortAsc = order === 'asc';
 
-    // Summary: task counts per exam/task combo
-    const { data: allTasksMeta, error: metaErr } = await supabaseAdmin
-      .from('exam_tasks')
-      .select('exam_type, task_type, is_active');
-
-    if (metaErr) throw metaErr;
-
+    // Summary: exact counts (avoid 1000-row PostgREST cap on full-table scans)
     const summary = {};
-    for (const combo of SUMMARY_COMBOS) {
-      summary[combo.key] = { active: 0, total: 0, submissions: 0 };
-    }
-    (allTasksMeta || []).forEach(t => {
-      const k = `${t.exam_type}|${t.task_type}`;
-      if (!summary[k]) summary[k] = { active: 0, total: 0, submissions: 0 };
-      summary[k].total += 1;
-      if (t.is_active !== false) summary[k].active += 1;
-    });
+    await Promise.all(SUMMARY_COMBOS.map(async (combo) => {
+      const base = () => supabaseAdmin
+        .from('exam_tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('exam_type', combo.exam_type)
+        .eq('task_type', combo.task_type);
 
-    const { data: subsByCategory } = await supabaseAdmin
-      .from('submissions')
-      .select('exam_type, task_type');
+      const [{ count: total }, { count: active }, { count: submissions }] = await Promise.all([
+        base(),
+        supabaseAdmin
+          .from('exam_tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('exam_type', combo.exam_type)
+          .eq('task_type', combo.task_type)
+          .eq('is_active', true),
+        supabaseAdmin
+          .from('submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('exam_type', combo.exam_type)
+          .eq('task_type', combo.task_type),
+      ]);
 
-    (subsByCategory || []).forEach(s => {
-      const k = `${s.exam_type}|${s.task_type}`;
-      if (summary[k]) summary[k].submissions += 1;
-    });
+      summary[combo.key] = {
+        active: active ?? 0,
+        total: total ?? 0,
+        submissions: submissions ?? 0,
+      };
+    }));
 
-    // Per-task usage + avg score
-    const { data: subsWithReports, error: subsErr } = await supabaseAdmin
-      .from('submissions')
-      .select('exam_task_id, status, reports(overall_band)')
-      .not('exam_task_id', 'is', null);
-
-    if (subsErr) throw subsErr;
+    // Per-task usage + avg score (paginate submissions — may exceed 1000)
+    const subsWithReports = await fetchAllRows(() =>
+      supabaseAdmin
+        .from('submissions')
+        .select('exam_task_id, status, reports(overall_band)')
+        .not('exam_task_id', 'is', null)
+    );
 
     const usageMap = {};
     const scoreAcc = {};
@@ -572,18 +591,17 @@ router.get('/tasks', async (req, res) => {
       avgMap[id] = Math.round((sum / count) * 10) / 10;
     });
 
-    // Filtered task rows (for sort + pagination)
-    let taskQuery = supabaseAdmin
-      .from('exam_tasks')
-      .select('id, exam_type, task_type, title, question_text, time_limit_seconds, is_active, created_at, updated_at, chart_svg');
-
-    if (exam_type) taskQuery = taskQuery.eq('exam_type', exam_type);
-    if (task_type) taskQuery = taskQuery.eq('task_type', task_type);
-    if (status === 'active') taskQuery = taskQuery.eq('is_active', true);
-    if (status === 'inactive') taskQuery = taskQuery.eq('is_active', false);
-
-    const { data: tasks, error: tasksErr } = await taskQuery;
-    if (tasksErr) throw tasksErr;
+    // Filtered task rows (paginate — question bank has 1000+ rows)
+    const tasks = await fetchAllRows(() => {
+      let q = supabaseAdmin
+        .from('exam_tasks')
+        .select('id, exam_type, task_type, title, question_text, time_limit_seconds, is_active, created_at, updated_at, chart_svg');
+      if (exam_type) q = q.eq('exam_type', exam_type);
+      if (task_type) q = q.eq('task_type', task_type);
+      if (status === 'active') q = q.eq('is_active', true);
+      if (status === 'inactive') q = q.eq('is_active', false);
+      return q;
+    });
 
     let rows = (tasks || []).map(t => ({
       ...t,
