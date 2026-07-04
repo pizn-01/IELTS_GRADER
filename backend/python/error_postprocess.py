@@ -11,8 +11,8 @@ from __future__ import annotations
 import re
 from typing import Dict, List
 
-# One entry max per submission — these describe essay-wide patterns, not
-# per-occurrence issues.
+# Pattern-across-text IDs: one card per (error_id, severity), not one per
+# occurrence. Different severities stay separate; same severity collapses.
 PATTERN_ERROR_IDS = frozenset({
     "overuse_linkers",
     "underuse_linkers",
@@ -23,8 +23,6 @@ PATTERN_ERROR_IDS = frozenset({
     "insufficient_letter_vocabulary",
 })
 
-_SEVERITY_RANK = {"major": 0, "high": 1, "medium": 2, "low": 3}
-
 _PARAGRAPH_ARTIFACT_RE = re.compile(
     r"continuous block|double spaces?|one (long )?block|"
     r"without (clear )?paragraph|no paragraph|missing paragraph|"
@@ -33,42 +31,68 @@ _PARAGRAPH_ARTIFACT_RE = re.compile(
 )
 
 
-def _severity_rank(error: dict) -> int:
-    sev = (error.get("severity") or "medium").lower()
-    return _SEVERITY_RANK.get(sev, 2)
+def _norm_severity(error: dict) -> str:
+    sev = (error.get("severity") or "medium").lower().strip()
+    if sev not in ("major", "high", "medium", "low"):
+        return "medium"
+    return sev
 
 
 def dedupe_pattern_errors(errors: List[dict]) -> List[dict]:
-    """Keep a single highest-severity instance of each pattern-level error_id."""
+    """
+    Collapse pattern-level errors by (error_id, severity).
+
+    Five medium overuse_linkers → one medium card (examples merged).
+    A high and a medium overuse_linkers → two cards, one per severity.
+    """
     if not errors:
         return errors
 
-    best: Dict[str, dict] = {}
-    best_idx: Dict[str, int] = {}
-    out: List[dict] = []
+    # key -> (first_index, kept_error, list of original_text snippets)
+    groups: Dict[tuple, tuple] = {}
 
     for i, err in enumerate(errors):
         eid = err.get("error_id") or ""
         if eid not in PATTERN_ERROR_IDS:
-            out.append(err)
             continue
-        prev = best.get(eid)
-        if prev is None or _severity_rank(err) < _severity_rank(prev):
-            best[eid] = err
-            best_idx[eid] = i
+        key = (eid, _norm_severity(err))
+        snippet = (err.get("original_text") or "").strip()
+        if key not in groups:
+            groups[key] = (i, dict(err), [snippet] if snippet else [])
+        else:
+            idx, kept, snippets = groups[key]
+            if snippet and snippet not in snippets:
+                snippets.append(snippet)
+            groups[key] = (idx, kept, snippets)
 
-    # Re-insert pattern winners in original order (first occurrence position
-    # of the chosen instance).
-    winners = sorted(best_idx.items(), key=lambda kv: kv[1])
-    # Merge into out preserving relative order: walk original list, emit
-    # non-pattern as-is, emit pattern only when we hit the chosen index.
-    chosen_positions = set(best_idx.values())
+    # Attach merged examples to each kept card
+    for key, (idx, kept, snippets) in list(groups.items()):
+        unique = [s for s in snippets if s]
+        if len(unique) > 1:
+            examples = "; ".join(f'"{s}"' for s in unique[:8])
+            expl = (kept.get("explanation") or "").rstrip()
+            suffix = f" Examples across the text: {examples}."
+            if suffix.strip() not in expl:
+                kept["explanation"] = (expl + suffix).strip()
+            # Keep first quote as original_text; note multiplicity in context
+            if unique:
+                kept["original_text"] = unique[0]
+                kept["context"] = (
+                    (kept.get("context") or "")
+                    + (f" Also: {', '.join(unique[1:6])}." if len(unique) > 1 else "")
+                ).strip()
+        groups[key] = (idx, kept, snippets)
+
+    chosen_positions = {idx: kept for idx, kept, _ in groups.values()}
+    # Map position -> kept error (may be enriched)
+    pos_to_kept = {idx: kept for (idx, kept, _) in groups.values()}
+
     result: List[dict] = []
     for i, err in enumerate(errors):
         eid = err.get("error_id") or ""
         if eid in PATTERN_ERROR_IDS:
-            if i in chosen_positions:
-                result.append(best[eid])
+            if i in pos_to_kept:
+                result.append(pos_to_kept[i])
         else:
             result.append(err)
     return result
