@@ -5,10 +5,11 @@ import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage1 = () => {
-  const { login, signInWithGoogle } = useAuth();
+  const { login, signInWithGoogle, rememberMePreference } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(rememberMePreference ?? true);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -34,7 +35,7 @@ const LoginPage1 = () => {
     setError('');
     setIsSubmitting(true);
     try {
-      await login({ email, password });
+      await login({ email, password, rememberMe });
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
@@ -103,8 +104,54 @@ const LoginPage1 = () => {
 
           {/* Remember Me + Forgot Password */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: '#4B5563', fontWeight: 500 }}>
-              <input type="checkbox" defaultChecked style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: COLORS.blue }} />
+            <label
+              htmlFor="remember-me"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: '#1a1f36',
+                fontWeight: 600,
+                userSelect: 'none',
+              }}
+            >
+              <span
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '6px',
+                  border: rememberMe ? `2px solid ${COLORS.blue}` : '2px solid #9CA3AF',
+                  background: rememberMe ? COLORS.blue : '#FFFFFF',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                  boxShadow: rememberMe ? '0 0 0 3px rgba(59, 130, 246, 0.15)' : 'none',
+                }}
+                aria-hidden
+              >
+                {rememberMe && (
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 6.2L4.8 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{
+                  position: 'absolute',
+                  opacity: 0,
+                  width: 0,
+                  height: 0,
+                  margin: 0,
+                }}
+              />
               Remember me
             </label>
             <Link to="/forgot-password" style={{ fontSize: '14px', fontWeight: 700, color: COLORS.blue, textDecoration: 'none' }}>

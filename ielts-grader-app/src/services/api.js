@@ -1,8 +1,10 @@
+import { getAuthToken } from '../utils/authStorage';
+
 const BASE_URL = '/api';
 
 const getHeaders = () => {
   const headers = { 'Content-Type': 'application/json' };
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 };
@@ -111,7 +113,7 @@ export const api = {
     const form = new FormData();
     form.append('file', file);
     const headers = {};
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch(`${BASE_URL}/extract`, {
       method: 'POST',
@@ -476,7 +478,7 @@ export const api = {
     // Bulk import tasks from JSON or PDF
     importTasks: (formData) => fetch(`${BASE_URL}/admin/tasks/import`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${getAuthToken()}` },
       body: formData,
     }).then(r => r.json()),
     // Question assignment log

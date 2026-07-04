@@ -1,18 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
+import {
+  getAuthToken,
+  setAuthToken,
+  clearAuthToken,
+  getRememberMePreference,
+} from '../utils/authStorage';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [token, setToken] = useState(() => getAuthToken());
   const [isLoading, setIsLoading] = useState(true);
 
   // On mount: if a token exists, silently validate it and hydrate user state
   useEffect(() => {
     const bootstrap = async () => {
-      const storedToken = localStorage.getItem('token');
+      const storedToken = getAuthToken();
       if (!storedToken) {
         setIsLoading(false);
         return;
@@ -20,9 +26,10 @@ export const AuthProvider = ({ children }) => {
       try {
         const userData = await api.getMe();
         setUser(userData);
+        setToken(storedToken);
       } catch {
         // Token invalid or expired — clear it out
-        localStorage.removeItem('token');
+        clearAuthToken();
         setToken(null);
       } finally {
         setIsLoading(false);
@@ -33,11 +40,12 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Login: call the API, persist the JWT, hydrate user state.
-   * Returns the user object on success, throws on failure.
+   * credentials.rememberMe controls localStorage vs sessionStorage.
    */
   const login = async (credentials) => {
-    const { token: t, user: u } = await api.login(credentials);
-    localStorage.setItem('token', t);
+    const { rememberMe = true, ...rest } = credentials || {};
+    const { token: t, user: u } = await api.login(rest);
+    setAuthToken(t, !!rememberMe);
     setToken(t);
     setUser(u);
     return u;
@@ -45,11 +53,11 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Register: call the API, persist the JWT, hydrate user state.
-   * Returns the user object on success, throws on failure.
+   * New accounts default to remembered sessions.
    */
   const register = async (profile) => {
     const { token: t, user: u } = await api.register(profile);
-    localStorage.setItem('token', t);
+    setAuthToken(t, true);
     setToken(t);
     setUser(u);
     return u;
@@ -59,7 +67,7 @@ export const AuthProvider = ({ children }) => {
    * Logout: clear persisted token and reset all auth state.
    */
   const logout = () => {
-    localStorage.removeItem('token');
+    clearAuthToken();
     setToken(null);
     setUser(null);
   };
@@ -87,10 +95,10 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * setUserFromToken: called by OAuthCallbackPage after exchanging
-   * the Supabase token for our backend JWT.
+   * the Supabase token for our backend JWT. OAuth sessions are remembered.
    */
   const setUserFromToken = (token, userData) => {
-    localStorage.setItem('token', token);
+    setAuthToken(token, true);
     setToken(token);
     setUser(userData);
   };
@@ -106,6 +114,7 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     signInWithGoogle,
     setUserFromToken,
+    rememberMePreference: getRememberMePreference(),
   };
 
   return (
