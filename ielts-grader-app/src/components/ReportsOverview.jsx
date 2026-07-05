@@ -4,7 +4,7 @@ import ReportView from './ReportView';
 import { api } from '../services/api';
 import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, Search, Calendar, FileText, ChevronRight, Download, Eye, AlertTriangle, TrendingDown, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import PerformanceOverviewDashboard from './PerformanceOverviewDashboard';
 
 // Hardcoded chartData removed — replaced by analyticsData.chartData from API
 
@@ -406,285 +406,46 @@ const ReportsOverview = ({ onBack }) => {
         </div>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
-        {activeTab === "Overview" ? 
-          <div className="space-y-8">
-            {/* Main Stats Bar */}
-            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm flex items-center h-[120px] min-w-[520px]"
-            >
-              {/* Latest Band */}
-              <div className="flex-1 pl-8 flex flex-col justify-center">
-                {loadingAnalytics ? (
-                  <div className="h-10 w-16 bg-gray-100 rounded animate-pulse mb-1" />
-                ) : (
-                  <span className="text-[#101828] tracking-tighter" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600, fontSize: '40px', lineHeight: '1' }}>{latestBand ?? '—'}</span>
-                )}
-                <span className="text-[14px] text-[#667085] mt-1.5 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Latest Band</span>
-              </div>
-
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
-
-              {/* First */}
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>First</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{firstBand ?? '—'}</span>
-              </div>
-
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
-
-              {/* Average */}
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Average</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{avgBand ?? '—'}</span>
-              </div>
-
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
-
-              {/* Best */}
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Best</span>
-                <span className="text-[28px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{bestBand ?? '—'}</span>
-              </div>
-
-              <div className="w-px h-[60px] bg-[#E5E7EB]"></div>
-
-              {/* Change */}
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <span className="text-[13px] text-[#667085] mb-1 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Change</span>
-                <span className="text-[28px] font-semibold" style={{ fontFamily: "'Montserrat', sans-serif", color: rawChange == null ? '#101828' : parseFloat(rawChange) >= 0 ? '#00C9B1' : '#EF4444' }}>
-                  {rawChange == null ? '—' : parseFloat(rawChange) >= 0 ? `+${rawChange}` : rawChange}
-                </span>
-              </div>
-            </motion.div>
-            </div>
-
-            {/* Row 1: Profile, Summary, Strengths */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Activity Profile */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                <div className="px-4 md:px-8 py-4 md:py-6 border-b border-[#F2F4F7]">
-                  <h3 className="text-[18px] font-bold text-[#101828]">Activity Profile</h3>
-                </div>
-                <div className="p-4 md:p-8 space-y-6 md:space-y-10 flex-1">
-                  <div>
-                    <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Exams Completed</p>
-                    <p className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{examCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-[14px] text-[#667085] mb-2 font-medium" style={{ fontFamily: "'Nunito', sans-serif" }}>Study Period</p>
-                    <p className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{studyPeriod}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Executive Summary */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                <div className="px-4 md:px-8 py-4 md:py-6 border-b border-[#F2F4F7]">
-                  <h3 className="text-[18px] font-bold text-[#101828]">Executive Summary</h3>
-                </div>
-                <div className="p-4 md:p-8 space-y-6 md:space-y-10 flex-1">
-                  <div className="space-y-2">
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{trendLabel}</p>
-                    <p className="text-[16px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      {trendDetail}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Top Priority Fixes</p>
-                    <p className="text-[14.5px] font-normal text-[#101828] leading-[1.3] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      {topPriorityText}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Core Strengths */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] h-auto md:h-[320px] flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                <div className="px-4 md:px-8 py-4 md:py-6 border-b border-[#F2F4F7]">
-                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '20px' }}>Core Strengths</h3>
-                </div>
-                <div className="p-4 md:p-8 space-y-4 md:space-y-5 flex-1">
-                  {criteriaScores.length > 0 ? criteriaScores.map((c, i) => (
-                    <div key={i} className="p-5 bg-[#F0FDF9] rounded-[20px] border border-[#CCFBEF] flex items-center">
-                      <p className="text-[16px] leading-[1.5] tracking-[0px]" style={{ fontFamily: "'Nunito', sans-serif" }}>
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 md:py-5">
+        {activeTab === "Overview" ?
+          <PerformanceOverviewDashboard
+            loading={loadingAnalytics}
+            latestBand={latestBand}
+            firstBand={firstBand}
+            avgBand={avgBand}
+            bestBand={bestBand}
+            change={rawChange}
+            changePositive={rawChange == null || parseFloat(rawChange) >= 0}
+            examCount={examCount}
+            studyPeriod={studyPeriod}
+            trendLabel={trendLabel}
+            trendDetail={trendDetail}
+            topPriorityText={topPriorityText}
+            insightsPanel={{
+              title: 'Core Strengths',
+              content: criteriaScores.length > 0 ? (
+                <div className="space-y-2">
+                  {criteriaScores.map((c, i) => (
+                    <div key={i} className="p-2.5 bg-[#F0FDF9] rounded-lg border border-[#CCFBEF]">
+                      <p className="text-[11px] leading-snug">
                         <span className="font-bold text-[#30C3A9]">{c.name}:</span>{' '}
                         <span className="font-bold text-[#101828]">avg {c.band} — keep this stable while lifting weaker areas.</span>
                       </p>
                     </div>
-                  )) : (
-                    <p className="text-[14px] text-gray-400 font-medium p-2">Complete more exams to identify your core strengths.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Row 2: Skill Growth (2/3) & Mistake Frequency (1/3) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-              {/* Skill Growth Chart */}
-              <div className="lg:col-span-2 bg-white rounded-[24px] p-4 md:p-8 shadow-sm border border-[#E5E7EB]">
-                <h3 className="text-[18px] font-bold text-[#101828] mb-6 md:mb-10">Skill Growth</h3>
-                
-                <div className="h-[320px] w-full mb-8">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={liveChartData.length > 0 ? liveChartData : []} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#101828', fontSize: 12, fontWeight: 700 }}
-                        dy={10}
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#101828', fontSize: 12, fontWeight: 700 }}
-                        domain={[5.5, 9]}
-                        ticks={[5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0]}
-                        tickFormatter={(value) => value.toFixed(1)}
-                      />
-                      <Tooltip 
-                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: 700 }}
-                      />
-                      <Line type="monotone" dataKey="overall" stroke="#EA4335" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
-                      <Line type="monotone" dataKey="response" stroke="#F59E0B" strokeWidth={3} dot={false} />
-                      <Line type="monotone" dataKey="coherence" stroke="#00C9B1" strokeWidth={3} dot={false} />
-                      <Line type="monotone" dataKey="vocabulary" stroke="#8B62F3" strokeWidth={3} dot={false} />
-                      <Line type="monotone" dataKey="grammar" stroke="#1A96F3" strokeWidth={3} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Legend at Bottom */}
-                <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 pt-4 border-t border-gray-50">
-                  {[
-                    { label: "Overall Band", color: "#EA4335" },
-                    { label: "Task Response", color: "#F59E0B" },
-                    { label: "Coherence", color: "#00C9B1" },
-                    { label: "Vocabulary", color: "#8B62F3" },
-                    { label: "Grammar", color: "#1A96F3" }
-                  ].map(item => (
-                    <div key={item.label} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                      <span className="text-[12px] font-bold text-[#101828]">{item.label}</span>
-                    </div>
                   ))}
                 </div>
-              </div>
-
-              {/* Mistake Frequency — stretches to match Skill Growth height */}
-              <div className="flex flex-col bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden min-h-0">
-                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7] shrink-0">
-                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Mistake Frequency</h3>
-                </div>
-                
-                <div className="p-4 md:p-6 flex-1 flex flex-col min-h-0">
-                  {/* Stats Bar */}
-                  <div className="bg-[#F9FAFB] rounded-[12px] p-3 flex items-center justify-between mb-4 shrink-0">
-                    <span className="text-[14px] font-semibold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Total Instances: <span className="text-[#101828] font-bold">{totalInstances}</span>
-                    </span>
-                    <span className="text-[14px] font-semibold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      Unique Types: <span className="text-[#101828] font-bold">{uniqueTypes}</span>
-                    </span>
-                  </div>
-
-                  {/* Mistake Rows */}
-                  <div className="space-y-0 flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
-                    {sortedErrors.length === 0 ? (
-                      <p className="text-[13px] text-gray-400 py-4">No error data yet. Complete more exams to see patterns.</p>
-                    ) : sortedErrors.map((item, index, arr) => {
-                      const type = item.type === 'red' ? 'red' : item.type === 'yellow' ? 'yellow' : 'gray';
-                      const colors = {
-                        red:    "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
-                        yellow: "text-[#DC6803] bg-[#FFFAEB] border-[#FEC84B]",
-                        gray:   "text-[#344054] bg-[#F2F4F7] border-[#D0D5DD]"
-                      };
-                      return (
-                        <div key={index} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 py-3 ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
-                          <span className={`px-3 py-1 rounded-full border text-[12px] font-bold self-start ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
-                            {item.label}
-                          </span>
-                          <span className="px-3 py-1 bg-[#1018280D] rounded-full text-[12px] font-bold text-[#101828] self-start sm:self-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                            Count: {item.count}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Row 3: 2×2 criterion grid + High-Impact spanning both rows */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-8">
-              {[
-                { item: criterionCards[0], grid: 'lg:col-start-1 lg:row-start-1' },
-                { item: criterionCards[2], grid: 'lg:col-start-2 lg:row-start-1' },
-                { item: criterionCards[1], grid: 'lg:col-start-1 lg:row-start-2' },
-                { item: criterionCards[3], grid: 'lg:col-start-2 lg:row-start-2' },
-              ].map(({ item, grid }) => (
-                <div key={item.label} className={`bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col ${grid}`}>
-                  <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
-                    <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
-                  </div>
-                  <div className="p-4 md:p-8 space-y-3 flex-1">
-                    <div className="flex items-center justify-between py-1">
-                      <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>First</span>
-                      <span className="text-[16px] font-bold text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.first}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-1">
-                      <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Latest</span>
-                      <span className="text-[18px] font-normal text-[#101828B2]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.latest}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-1">
-                      <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Growth</span>
-                      <div className={`px-4 py-1.5 rounded-full text-[13px] font-bold border ${item.positive ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A94D]' : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        {item.growth}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* High-Impact Areas to Fix — spans full height of 2×2 grid */}
-              <div className="lg:col-start-3 lg:row-start-1 lg:row-span-2 flex flex-col bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden min-h-0">
-                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7] shrink-0">
-                  <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>High-Impact Areas to Fix</h3>
-                </div>
-
-                <div className="px-4 md:px-6 py-4 flex-1 flex flex-col min-h-0">
-                  <div className="space-y-0 flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
-                    {sortedErrors.length === 0 ? (
-                      <p className="text-[14px] text-gray-400 py-4">No data yet.</p>
-                    ) : sortedErrors.map((item, index, arr) => {
-                      const type = item.type === 'red' ? 'red' : 'yellow';
-                      const colors = {
-                        red:    "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
-                        yellow: "text-[#DC6803] bg-[#FFFAEB] border-[#FEC84B]"
-                      };
-                      return (
-                        <div key={index} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 ${index === arr.length - 1 ? 'pt-3 pb-1' : 'py-3'} ${index !== arr.length - 1 ? 'border-b border-[#F2F4F7]' : ''}`}>
-                          <span className="text-[14px] md:text-[16px] font-bold text-[#344054]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                            {item.label}
-                          </span>
-                          <span className={`px-3 py-1 rounded-full border text-[12px] md:text-[14px] font-bold self-start sm:self-auto shrink-0 ${colors[type]}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
-                            {item.impact}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+              ) : (
+                <p className="text-[11px] text-gray-400">Complete more exams to identify your core strengths.</p>
+              ),
+            }}
+            chartData={liveChartData}
+            chartYDomain={[5.5, 9]}
+            chartTicks={[5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0]}
+            frequentErrors={sortedErrors}
+            totalInstances={totalInstances}
+            uniqueTypes={uniqueTypes}
+            criterionCards={criterionCards}
+          />
         : activeTab === "Detailed Breakdown" ? 
           <div className="bg-white rounded-[24px] p-6 md:p-8 shadow-sm border border-[#E5E7EB] space-y-10">
             {/* Top Status Row */}
