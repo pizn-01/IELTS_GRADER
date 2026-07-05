@@ -173,7 +173,7 @@ const ReportsOverview = ({ onBack }) => {
         <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-8 md:py-10 space-y-10">
           {/* Header Section */}
           <div className="space-y-2">
-            <h1 className="text-[32px] md:text-[36px] font-bold text-[#101828] tracking-tight">Reports</h1>
+            <h1 className="text-[32px] md:text-[36px] font-bold text-[#101828] tracking-tight">Performance</h1>
             <p className="text-[14px] md:text-[16px] text-gray-400 font-medium tracking-tight">Choose a task to analyze performance or review past attempts.</p>
           </div>
 
@@ -385,10 +385,7 @@ const ReportsOverview = ({ onBack }) => {
 
           {/* Sub Navigation */}
           <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-            {(activeTask.includes("Task 2") 
-              ? ["Overview", "Error Analysis", "Dual Assessment", "Model Answer", "Vocabulary", "Grammar", "Data Structure", "Flow & Logic"]
-              : ["Overview", "Detailed Breakdown", "Fix Cards", "Strategy", "14-Day sprint", "Templates & Pattern"]
-            ).map((tab) => (
+            {["Overview", "Detailed Breakdown", "Fix Cards", "Strategy", "14-Day sprint", "Templates & Pattern"].map((tab) => (
               <div 
                 key={tab} 
                 className="relative py-4 cursor-pointer group whitespace-nowrap"
@@ -599,10 +596,10 @@ const ReportsOverview = ({ onBack }) => {
                   </div>
 
                   {/* Mistake Rows */}
-                  <div className="space-y-0 flex-1">
+                  <div className="space-y-0 flex-1 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
                     {sortedErrors.length === 0 ? (
                       <p className="text-[13px] text-gray-400 py-4">No error data yet. Complete more exams to see patterns.</p>
-                    ) : sortedErrors.slice(0, 6).map((item, index, arr) => {
+                    ) : sortedErrors.map((item, index, arr) => {
                       const type = item.type === 'red' ? 'red' : item.type === 'yellow' ? 'yellow' : 'gray';
                       const colors = {
                         red:    "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
@@ -621,10 +618,6 @@ const ReportsOverview = ({ onBack }) => {
                       );
                     })}
                   </div>
-
-                  <button className="text-[15px] font-bold text-[#101828] mt-6 hover:text-gray-600 transition-colors" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    Load more...
-                  </button>
                 </div>
               </div>
             </div>
@@ -692,10 +685,10 @@ const ReportsOverview = ({ onBack }) => {
                 </div>
 
                 <div className="px-4 md:px-6 pt-0 pb-4 md:pb-5 flex-1 flex flex-col">
-                  <div className="space-y-0 flex-1">
+                  <div className="space-y-0 flex-1 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
                     {sortedErrors.length === 0 ? (
                       <p className="text-[14px] text-gray-400 py-4">No data yet.</p>
-                    ) : sortedErrors.slice(0, 7).map((item, index, arr) => {
+                    ) : sortedErrors.map((item, index, arr) => {
                       const type = item.type === 'red' ? 'red' : 'yellow';
                       const colors = {
                         red:    "text-[#D92D20] bg-[#FEF3F2] border-[#FDA29B]",
@@ -713,10 +706,6 @@ const ReportsOverview = ({ onBack }) => {
                       );
                     })}
                   </div>
-
-                  <button className="w-full text-center text-[15px] font-bold text-[#101828] mt-0 hover:text-gray-600 transition-colors" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    Load more...
-                  </button>
                 </div>
               </div>
             </div>

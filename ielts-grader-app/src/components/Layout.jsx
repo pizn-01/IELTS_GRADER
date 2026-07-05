@@ -30,7 +30,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
 
   const navItems = [
     { label: 'Dashboard', id: 'dashboard' },
-    { label: 'Reports', id: 'reports' },
+    { label: 'Performance', id: 'reports' },
     { label: 'Your Subscription', id: 'subscription' },
     { label: 'Settings', id: 'settings' },
   ];
@@ -246,7 +246,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
             <div className="px-3 pb-2">
               {[
                 { label: 'Dashboard',    icon: <LayoutDashboard size={20} />, id: 'dashboard' },
-                { label: 'Reports',      icon: <BarChart3 size={20} />,       id: 'reports' },
+                { label: 'Performance',  icon: <BarChart3 size={20} />,       id: 'reports' },
                 { label: 'Profile',      icon: <User size={20} />,            id: 'settings' },
                 { label: 'Subscription', icon: <CircleDollarSign size={20} />,id: 'subscription' },
                 { label: 'Support',      icon: <HelpCircle size={20} />,      id: 'settings' },
