@@ -305,7 +305,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
             </div>
 
             {/* Row 2: Skill Growth (2/3) & Mistake Frequency (1/3) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
               {/* Skill Growth Chart */}
               <div className="lg:col-span-2 bg-white rounded-[24px] p-8 shadow-sm border border-[#E5E7EB]">
                 <h3 className="text-[18px] font-bold text-[#101828] mb-10">Skill Growth</h3>
@@ -367,15 +367,15 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 </div>
               </div>
 
-              {/* Mistake Frequency */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden self-start w-full">
-                <div className="px-6 py-4 border-b border-[#F2F4F7]">
+              {/* Mistake Frequency — stretches to match Skill Growth height */}
+              <div className="flex flex-col bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden min-h-0">
+                <div className="px-6 py-4 border-b border-[#F2F4F7] shrink-0">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Mistake Frequency</h3>
                 </div>
                 
-                <div className="p-6">
+                <div className="p-6 flex-1 flex flex-col min-h-0">
                   {/* Stats Bar */}
-                  <div className="bg-[#F9FAFB] rounded-[12px] p-3 flex items-center justify-between mb-4">
+                  <div className="bg-[#F9FAFB] rounded-[12px] p-3 flex items-center justify-between mb-4 shrink-0">
                     <span className="text-[14px] font-semibold text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>
                       Total Instances: <span className="text-[#101828] font-bold">{totalInstances}</span>
                     </span>
@@ -385,7 +385,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
                   </div>
 
                   {/* Mistake Rows */}
-                  <div className="space-y-0 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="space-y-0 flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
                     {frequentErrors.length === 0 ? (
                       <p className="text-[13px] text-gray-400 py-4">No error data yet. Complete more exams.</p>
                     ) : frequentErrors.map((item, index, arr) => {
