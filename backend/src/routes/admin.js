@@ -595,7 +595,7 @@ router.get('/tasks', async (req, res) => {
     const tasks = await fetchAllRows(() => {
       let q = supabaseAdmin
         .from('exam_tasks')
-        .select('id, exam_type, task_type, title, question_text, time_limit_seconds, is_active, created_at, updated_at, chart_svg');
+        .select('id, exam_type, task_type, title, question_text, time_limit_seconds, is_active, created_at, updated_at, chart_svg, chart_image');
       if (exam_type) q = q.eq('exam_type', exam_type);
       if (task_type) q = q.eq('task_type', task_type);
       if (status === 'active') q = q.eq('is_active', true);
@@ -605,6 +605,8 @@ router.get('/tasks', async (req, res) => {
 
     let rows = (tasks || []).map(t => ({
       ...t,
+      chart_image: undefined,
+      has_chart_image: Boolean(t.chart_image),
       usage_count: usageMap[t.id] || 0,
       avg_score: avgMap[t.id] ?? null,
     }));
@@ -656,6 +658,7 @@ router.post('/tasks', async (req, res) => {
         title: row.title,
         question_text: row.question_text,
         chart_svg: row.chart_svg || null,
+        chart_image: row.chart_image || null,
         time_limit_seconds: row.time_limit_seconds,
         is_active: true,
       })
@@ -671,16 +674,34 @@ router.post('/tasks', async (req, res) => {
   }
 });
 
+// ─── GET /api/admin/tasks/:id ────────────────────────────────────────────────
+router.get('/tasks/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('exam_tasks')
+      .select('id, exam_type, task_type, title, question_text, chart_svg, chart_image, time_limit_seconds, is_active, created_at, updated_at')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) return res.status(404).json({ error: 'Task not found.' });
+    return res.json(data);
+  } catch (err) {
+    console.error('[admin/tasks/:id GET]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch task.' });
+  }
+});
+
 // ─── PATCH /api/admin/tasks/:id ───────────────────────────────────────────────
 // Saves previous version to task_history before updating
 router.patch('/tasks/:id', async (req, res) => {
   const { id } = req.params;
-  const { question_text, is_active, chart_svg, prompt, bullet_points, letter_type, topic, type: task2Type } = req.body;
+  const { question_text, is_active, chart_svg, chart_image, prompt, bullet_points, letter_type, topic, type: task2Type } = req.body;
 
   try {
     const { data: current, error: fetchError } = await supabaseAdmin
       .from('exam_tasks')
-      .select('title, question_text, exam_type, task_type, chart_svg')
+      .select('title, question_text, exam_type, task_type, chart_svg, chart_image')
       .eq('id', id)
       .single();
 
@@ -693,6 +714,7 @@ router.patch('/tasks/:id', async (req, res) => {
       question_text !== undefined ||
       prompt !== undefined ||
       chart_svg !== undefined ||
+      chart_image !== undefined ||
       bullet_points !== undefined ||
       letter_type !== undefined ||
       topic !== undefined ||
@@ -705,16 +727,21 @@ router.patch('/tasks/:id', async (req, res) => {
         question_text: question_text ?? current.question_text,
         prompt: prompt ?? question_text ?? current.question_text,
         chart_svg: chart_svg !== undefined ? chart_svg : current.chart_svg,
+        chart_image: chart_image !== undefined ? chart_image : current.chart_image,
         bullet_points,
         letter_type,
         topic,
         type: task2Type,
         chart_type: req.body.chart_type,
+        chart_source: req.body.chart_source,
       });
       updates.title = normalized.title;
       updates.question_text = normalized.question_text;
       if (normalized.chart_svg !== undefined) {
         updates.chart_svg = normalized.chart_svg;
+      }
+      if (normalized.chart_image !== undefined) {
+        updates.chart_image = normalized.chart_image;
       }
       updates.time_limit_seconds = normalized.time_limit_seconds;
     }
@@ -752,20 +779,38 @@ router.patch('/tasks/:id', async (req, res) => {
 });
 
 // ─── DELETE /api/admin/tasks/:id ─────────────────────────────────────────────
-// Soft-delete: sets is_active = false (preserves history)
+// ?permanent=true — hard delete. Deactivate via PATCH is_active instead.
 router.delete('/tasks/:id', async (req, res) => {
   const { id } = req.params;
+  const permanent = req.query.permanent === 'true';
+
+  if (!permanent) {
+    return res.status(400).json({
+      error: 'Use ?permanent=true to permanently delete. Deactivate via PATCH is_active instead.',
+    });
+  }
+
   try {
+    const { count, error: countErr } = await supabaseAdmin
+      .from('submissions')
+      .select('*', { count: 'exact', head: true })
+      .eq('exam_task_id', id);
+
+    if (countErr) throw countErr;
+
     const { error } = await supabaseAdmin
       .from('exam_tasks')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .delete()
       .eq('id', id);
 
     if (error) throw error;
-    return res.json({ message: 'Task deactivated.' });
+    return res.json({
+      message: 'Task permanently deleted.',
+      usage_count: count || 0,
+    });
   } catch (err) {
     console.error('[admin/tasks/:id DELETE]', err.message);
-    return res.status(500).json({ error: 'Failed to deactivate task.' });
+    return res.status(500).json({ error: 'Failed to delete task.' });
   }
 });
 

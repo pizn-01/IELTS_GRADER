@@ -1,7 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson } from 'lucide-react';
+import ExamQuestionPanel from '../components/ExamQuestionPanel';
+import { buildPreviewQuestionText } from '../utils/buildPreviewQuestionText';
+import { extractFileText } from '../utils/extractFileText';
+import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson, Image as ImageIcon } from 'lucide-react';
+
+const readAsDataURL = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read image.'));
+    reader.readAsDataURL(file);
+  });
 
 const TABS = ['Overview', 'Users', 'Submissions', 'Tasks', 'Assignments', 'Discounts', 'Support'];
 
@@ -442,12 +453,63 @@ const SUMMARY_COMBOS = [
   { key: 'General|Task 2', label: 'General · Task 2' },
 ];
 
+const TASK_CATEGORY_OPTIONS = EXAM_FILTERS.filter(f => f.id !== 'all');
+
+const CHART_TYPE_OPTIONS = [
+  'Bar chart',
+  'Line graph',
+  'Pie chart',
+  'Table',
+  'Mixed chart',
+  'Grouped bar chart',
+  'Two pie charts',
+  'Map',
+  'Process diagram',
+];
+
+const LETTER_TYPE_OPTIONS = ['Formal', 'Semi-formal', 'Informal'];
+
+const TASK2_TOPIC_OPTIONS = [
+  'Education',
+  'Technology',
+  'Environment',
+  'Health',
+  'Society',
+  'Work',
+  'Crime',
+  'Government',
+  'Media',
+  'Transport',
+  'Culture',
+  'Other',
+];
+
+const TASK2_QUESTION_TYPE_OPTIONS = [
+  'Opinion',
+  'Discussion',
+  'Problem-Solution',
+  'Advantages-Disadvantages',
+  'Direct question',
+  'Other',
+];
+
+const CHART_SOURCE_OPTIONS = [
+  { value: 'svg', label: 'SVG markup' },
+  { value: 'image', label: 'Image upload' },
+];
+
+function formPreset(exam_type, task_type) {
+  return { ...EMPTY_TASK, exam_type, task_type };
+}
+
 const EMPTY_TASK = {
   exam_type: 'Academic',
   task_type: 'Task 2',
   question_text: '',
   prompt: '',
   chart_svg: '',
+  chart_image: '',
+  chart_source: 'svg',
   chart_type: 'Bar chart',
   letter_type: 'Formal',
   bullet_points: ['', '', ''],
@@ -501,7 +563,10 @@ function taskToForm(t) {
     if (ct) base.chart_type = ct;
     base.prompt = (t.question_text || '')
       .replace(/\n\nSummarise the information[\s\S]*$/i, '')
+      .replace(/\s*\[chart image provided\]\s*/gi, ' ')
       .trim();
+    base.chart_image = t.chart_image || '';
+    base.chart_source = t.chart_image && !t.chart_svg ? 'image' : 'svg';
   }
   return base;
 }
@@ -530,6 +595,12 @@ const TasksTab = () => {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+  const chartImageInputRef = useRef(null);
+  const promptExtractRef = useRef(null);
+  const [previewTask, setPreviewTask] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [deletingTask, setDeletingTask] = useState(null);
+  const [extractingPrompt, setExtractingPrompt] = useState(false);
 
   const load = useCallback(() => {
     const params = {
@@ -556,7 +627,17 @@ const TasksTab = () => {
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   const openCreate = () => { setForm({ ...EMPTY_TASK }); setIsNew(true); setError(''); };
-  const openEdit   = (t) => { setForm(taskToForm(t)); setIsNew(false); setError(''); };
+  const openEdit = async (t) => {
+    setError('');
+    setIsNew(false);
+    try {
+      const full = await api.admin.getTask(t.id);
+      if (full?.error) throw new Error(full.error);
+      setForm(taskToForm(full?.id ? full : t));
+    } catch {
+      setForm(taskToForm(t));
+    }
+  };
   const closeForm  = () => { setForm(null); setError(''); };
 
   const buildSavePayload = () => {
@@ -567,8 +648,15 @@ const TasksTab = () => {
     };
     if (f.exam_type === 'Academic' && f.task_type === 'Task 1') {
       payload.prompt = f.prompt?.trim();
-      payload.chart_svg = f.chart_svg?.trim() || undefined;
       payload.chart_type = f.chart_type?.trim() || 'Chart';
+      payload.chart_source = f.chart_source || 'svg';
+      if (f.chart_source === 'image') {
+        payload.chart_image = f.chart_image || undefined;
+        payload.chart_svg = '';
+      } else {
+        payload.chart_svg = f.chart_svg?.trim() || undefined;
+        payload.chart_image = '';
+      }
     } else if (f.exam_type === 'General' && f.task_type === 'Task 1') {
       payload.prompt = f.prompt?.trim();
       payload.letter_type = f.letter_type || 'Formal';
@@ -605,6 +693,91 @@ const TasksTab = () => {
     await api.admin.updateTask(t.id, { is_active: !t.is_active }).catch(() => {});
     load();
   };
+
+  const openPreview = async (t) => {
+    setPreviewLoading(true);
+    setPreviewTask({ loading: true, title: t.title, exam_type: t.exam_type, task_type: t.task_type });
+    try {
+      const full = await api.admin.getTask(t.id);
+      if (full?.error) throw new Error(full.error);
+      setPreviewTask(full);
+    } catch (e) {
+      setPreviewTask({ error: e.message || 'Could not load task.' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingTask) return;
+    const res = await api.admin.deleteTask(deletingTask.id).catch(e => ({ error: e.message }));
+    setDeletingTask(null);
+    if (res?.error) {
+      setError(res.error);
+    } else {
+      load();
+    }
+  };
+
+  const handlePromptExtract = async (file) => {
+    if (!file) return;
+    setExtractingPrompt(true);
+    setError('');
+    try {
+      const text = await extractFileText(file);
+      setForm(x => ({ ...x, prompt: text.trim() }));
+    } catch (e) {
+      setError(e.message || 'Could not extract text from file.');
+    } finally {
+      setExtractingPrompt(false);
+    }
+  };
+
+  const handleChartImageSelect = async (file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await readAsDataURL(file);
+      setForm(x => ({ ...x, chart_image: dataUrl, chart_source: 'image' }));
+    } catch (e) {
+      setError(e.message || 'Could not read chart image.');
+    }
+  };
+
+  const previewQuestionText = useMemo(
+    () => (form ? buildPreviewQuestionText(form) : ''),
+    [form],
+  );
+
+  const previewChartType = useMemo(() => {
+    if (!form || form.exam_type !== 'Academic' || form.task_type !== 'Task 1') return null;
+    return form.chart_type || 'Chart';
+  }, [form]);
+
+  const chartTypeOptions = useMemo(() => {
+    const fromBank = tasks
+      .filter(t => t.exam_type === 'Academic' && t.task_type === 'Task 1')
+      .map(t => t.title?.split(' — ')[0])
+      .filter(Boolean);
+    return [...new Set([...CHART_TYPE_OPTIONS, ...fromBank])];
+  }, [tasks]);
+
+  const task2TopicOptions = useMemo(() => {
+    const fromBank = tasks
+      .filter(t => t.task_type === 'Task 2' && t.title?.includes(' — '))
+      .map(t => t.title.split(' — ')[0])
+      .filter(Boolean);
+    return [...new Set([...TASK2_TOPIC_OPTIONS, ...fromBank])];
+  }, [tasks]);
+
+  const task2TypeOptions = useMemo(() => {
+    const fromBank = tasks
+      .filter(t => t.task_type === 'Task 2' && t.title?.includes(' — '))
+      .map(t => t.title.split(' — ').slice(1).join(' — '))
+      .filter(Boolean);
+    return [...new Set([...TASK2_QUESTION_TYPE_OPTIONS, ...fromBank])];
+  }, [tasks]);
+
+  const taskCategoryValue = form ? `${form.exam_type}|${form.task_type}` : 'Academic|Task 2';
 
   const showHistory = async (t) => {
     const res = await api.admin.getTaskHistory(t.id).catch(() => ({ data: [] }));
@@ -660,7 +833,11 @@ const TasksTab = () => {
   const formValid = () => {
     if (!form) return false;
     if (form.exam_type === 'Academic' && form.task_type === 'Task 1') {
-      return Boolean(form.prompt?.trim());
+      const hasPrompt = Boolean(form.prompt?.trim());
+      const hasChart = form.chart_source === 'image'
+        ? Boolean(form.chart_image)
+        : Boolean(form.chart_svg?.trim());
+      return hasPrompt && hasChart;
     }
     if (form.exam_type === 'General' && form.task_type === 'Task 1') {
       return Boolean(form.prompt?.trim());
@@ -675,47 +852,69 @@ const TasksTab = () => {
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {EXAM_FILTERS.map(f => (
-          <button
-            key={f.id}
-            onClick={() => { setExamFilter(f.id); setPage(1); }}
-            className={`px-3 h-[34px] rounded-[8px] text-[11px] font-bold border transition-all ${examFilter === f.id ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-          >
-            {f.label}
-          </button>
-        ))}
-        <span className="w-px h-6 bg-gray-200" />
-        {['all', 'active', 'inactive'].map(f => (
-          <button key={f} onClick={() => { setStatusFilter(f); setPage(1); }} className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all capitalize ${statusFilter === f ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
-            {f}
-          </button>
-        ))}
-        <button onClick={load} className="p-2 border border-gray-200 rounded-[8px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
-        <div className="ml-auto flex items-center gap-2">
-          <select
-            value={sortBy}
-            onChange={e => { setSortBy(e.target.value); setPage(1); }}
-            className="h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-600 outline-none"
-          >
-            <option value="created_at">Sort: Created</option>
-            <option value="usage">Sort: Usage</option>
-            <option value="avg_score">Sort: Avg score</option>
-          </select>
-          <button
-            onClick={() => { setSortOrder(o => o === 'asc' ? 'desc' : 'asc'); setPage(1); }}
-            className="h-[36px] px-3 border border-gray-200 rounded-[8px] text-[12px] font-bold text-gray-500 hover:bg-gray-50"
-            title="Toggle sort direction"
-          >
-            {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
-          </button>
-          <button onClick={() => { setShowImport(i => !i); setImportResult(null); }} className={`flex items-center gap-2 px-4 h-[36px] rounded-[10px] text-[13px] font-bold border transition-all ${showImport ? 'bg-blue-600 text-white border-transparent' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-            <Upload size={15} /> Import
-          </button>
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 h-[36px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939]">
-            <Plus size={15} /> New Task
-          </button>
+      {/* Toolbar — aligned dropdown filters */}
+      <div className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Exam type</label>
+            <select
+              value={examFilter}
+              onChange={e => { setExamFilter(e.target.value); setPage(1); }}
+              className="w-full h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-700 outline-none focus:border-blue-400 bg-white"
+            >
+              {EXAM_FILTERS.map(f => (
+                <option key={f.id} value={f.id}>{f.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Status</label>
+            <select
+              value={statusFilter}
+              onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+              className="w-full h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-700 outline-none focus:border-blue-400 bg-white capitalize"
+            >
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Sort by</label>
+            <select
+              value={sortBy}
+              onChange={e => { setSortBy(e.target.value); setPage(1); }}
+              className="w-full h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-700 outline-none focus:border-blue-400 bg-white"
+            >
+              <option value="created_at">Created</option>
+              <option value="usage">Usage</option>
+              <option value="avg_score">Avg score</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Order</label>
+            <select
+              value={sortOrder}
+              onChange={e => { setSortOrder(e.target.value); setPage(1); }}
+              className="w-full h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-700 outline-none focus:border-blue-400 bg-white"
+            >
+              <option value="desc">Newest first</option>
+              <option value="asc">Oldest first</option>
+            </select>
+          </div>
+          <div className="col-span-2 sm:col-span-1 flex gap-2">
+            <button onClick={load} title="Refresh" className="h-[36px] w-full border border-gray-200 rounded-[8px] hover:bg-gray-50 flex items-center justify-center">
+              <RefreshCw size={16} className="text-gray-500" />
+            </button>
+          </div>
+          <div className="col-span-2 sm:col-span-2 lg:col-span-2 flex gap-2 justify-end">
+            <button onClick={() => { setShowImport(i => !i); setImportResult(null); }} className={`flex items-center justify-center gap-2 flex-1 h-[36px] rounded-[8px] text-[12px] font-bold border transition-all ${showImport ? 'bg-blue-600 text-white border-transparent' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+              <Upload size={14} /> Import
+            </button>
+            <button onClick={openCreate} className="flex items-center justify-center gap-2 flex-1 h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[12px] font-bold hover:bg-[#1D2939]">
+              <Plus size={14} /> New Task
+            </button>
+          </div>
         </div>
       </div>
 
@@ -816,13 +1015,18 @@ const TasksTab = () => {
 
       {/* Table */}
       <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
-        <table className="w-full text-[13px] min-w-[800px]">
+        <table className="w-full text-[13px] min-w-[960px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
-            <tr>{['Type', 'Title', 'Question (preview)', 'Created', 'Usage', 'Avg score', 'Status', 'Actions'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
+            <tr>
+              {['Type', 'Title', 'Question (preview)', 'Created', 'Usage', 'Avg score', 'Status'].map(h => (
+                <th key={h} className="px-4 py-3 text-left">{h}</th>
+              ))}
+              <th className="px-4 py-3 text-left sticky right-0 bg-gray-50 min-w-[220px] shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)]">Actions</th>
+            </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {tasks.map(t => (
-              <tr key={t.id} className={`hover:bg-gray-50/50 ${!t.is_active ? 'opacity-50' : ''}`}>
+              <tr key={t.id} className={`group hover:bg-gray-50/50 ${!t.is_active ? 'opacity-50' : ''}`}>
                 <td className="px-5 py-3">
                   <div className="flex flex-col gap-0.5">
                     <Pill label={t.exam_type} color="blue" />
@@ -839,14 +1043,32 @@ const TasksTab = () => {
                 <td className="px-5 py-3">
                   <Pill label={t.is_active ? 'Active' : 'Disabled'} color={t.is_active ? 'green' : 'gray'} />
                 </td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => openEdit(t)} className="text-[12px] font-bold text-blue-600 hover:underline">Edit</button>
-                    <button onClick={() => showHistory(t)} title="View history"><History size={14} className="text-gray-400 hover:text-gray-600" /></button>
-                    <button onClick={() => toggleActive(t)} title={t.is_active ? 'Deactivate' : 'Activate'}>
+                <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-[#FAFAFA] min-w-[220px] shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)]">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => openPreview(t)}
+                      title="Preview exam UI"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100"
+                    >
+                      <Eye size={13} /> View
+                    </button>
+                    <button onClick={() => openEdit(t)} className="inline-flex items-center px-2 py-1 rounded-[6px] text-[11px] font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200">
+                      Edit
+                    </button>
+                    <button onClick={() => showHistory(t)} title="View history" className="p-1.5 rounded-[6px] text-gray-500 hover:bg-gray-100 border border-gray-200">
+                      <History size={14} />
+                    </button>
+                    <button onClick={() => toggleActive(t)} title={t.is_active ? 'Deactivate' : 'Activate'} className="p-0.5">
                       {t.is_active
                         ? <ToggleRight size={22} className="text-emerald-500" />
                         : <ToggleLeft size={22} className="text-gray-300" />}
+                    </button>
+                    <button
+                      onClick={() => setDeletingTask(t)}
+                      title="Permanently delete"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-100"
+                    >
+                      <Trash2 size={13} /> Delete
                     </button>
                   </div>
                 </td>
@@ -885,21 +1107,25 @@ const TasksTab = () => {
             )}
             {error && <p className="text-[12px] text-red-500 bg-red-50 rounded-[8px] px-3 py-2">{error}</p>}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[12px] font-bold text-gray-500 block mb-1">Exam Type</label>
-                <select value={form.exam_type} onChange={e => setForm(x => ({ ...EMPTY_TASK, exam_type: e.target.value, task_type: x.task_type }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
-                  <option value="Academic">Academic</option>
-                  <option value="General">General</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-gray-500 block mb-1">Task Type</label>
-                <select value={form.task_type} onChange={e => setForm(x => ({ ...EMPTY_TASK, exam_type: x.exam_type, task_type: e.target.value }))} disabled={!isNew} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50">
-                  <option value="Task 1">Task 1</option>
-                  <option value="Task 2">Task 2</option>
-                </select>
-              </div>
+            <div>
+              <label className="text-[12px] font-bold text-gray-500 block mb-1">Task category</label>
+              <select
+                value={taskCategoryValue}
+                onChange={e => {
+                  const [exam_type, task_type] = e.target.value.split('|');
+                  if (isNew) {
+                    setForm(formPreset(exam_type, task_type));
+                  } else {
+                    setForm(x => ({ ...x, exam_type, task_type }));
+                  }
+                }}
+                disabled={!isNew}
+                className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 disabled:bg-gray-50"
+              >
+                {TASK_CATEGORY_OPTIONS.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.label}</option>
+                ))}
+              </select>
             </div>
 
             {/* Academic Task 1 — report */}
@@ -907,17 +1133,76 @@ const TasksTab = () => {
               <>
                 <div>
                   <label className="text-[12px] font-bold text-gray-500 block mb-1">Chart type</label>
-                  <input type="text" placeholder="e.g. Bar chart, Line graph" value={form.chart_type} onChange={e => setForm(x => ({ ...x, chart_type: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+                  <select
+                    value={chartTypeOptions.includes(form.chart_type) ? form.chart_type : 'Other'}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setForm(x => ({ ...x, chart_type: v === 'Other' ? '' : v }));
+                    }}
+                    className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400"
+                  >
+                    {chartTypeOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                    <option value="Other">Other (custom)</option>
+                  </select>
+                  {(!form.chart_type || !chartTypeOptions.includes(form.chart_type)) && (
+                    <input
+                      type="text"
+                      placeholder="Custom chart type…"
+                      value={form.chart_type || ''}
+                      onChange={e => setForm(x => ({ ...x, chart_type: e.target.value }))}
+                      className="w-full mt-2 border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400"
+                    />
+                  )}
                 </div>
                 <div>
-                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Report prompt</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[12px] font-bold text-gray-500">Report prompt</label>
+                    <button
+                      type="button"
+                      onClick={() => promptExtractRef.current?.click()}
+                      disabled={extractingPrompt}
+                      className="text-[11px] font-bold text-blue-600 hover:underline disabled:opacity-50"
+                    >
+                      {extractingPrompt ? 'Extracting…' : 'Extract from file'}
+                    </button>
+                    <input ref={promptExtractRef} type="file" accept=".pdf,.docx,.jpg,.jpeg,.png,.webp" className="hidden" onChange={e => { handlePromptExtract(e.target.files?.[0]); e.target.value = ''; }} />
+                  </div>
                   <textarea rows={4} placeholder="The chart below shows…" value={form.prompt} onChange={e => setForm(x => ({ ...x, prompt: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[13px] outline-none focus:border-blue-400 resize-none leading-relaxed" />
                 </div>
                 <div>
-                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Chart SVG</label>
-                  <textarea rows={5} placeholder="Paste SVG markup here…" value={form.chart_svg} onChange={e => setForm(x => ({ ...x, chart_svg: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[12px] font-mono outline-none focus:border-blue-400 resize-none" />
-                  <p className="text-[11px] text-gray-400 mt-1">Summarise instruction and word count are added automatically.</p>
+                  <label className="text-[12px] font-bold text-gray-500 block mb-1">Chart source</label>
+                  <select
+                    value={form.chart_source || 'svg'}
+                    onChange={e => setForm(x => ({ ...x, chart_source: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400 bg-white"
+                  >
+                    {CHART_SOURCE_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
                 </div>
+                {form.chart_source === 'svg' ? (
+                  <div>
+                    <label className="text-[12px] font-bold text-gray-500 block mb-1">Chart SVG</label>
+                    <textarea rows={5} placeholder="Paste SVG markup here…" value={form.chart_svg} onChange={e => setForm(x => ({ ...x, chart_svg: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-[12px] font-mono outline-none focus:border-blue-400 resize-none" />
+                    <p className="text-[11px] text-gray-400 mt-1">Summarise instruction and word count are added automatically.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-[12px] font-bold text-gray-500 block mb-1">Chart image</label>
+                    <input ref={chartImageInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={e => { handleChartImageSelect(e.target.files?.[0]); e.target.value = ''; }} />
+                    <button type="button" onClick={() => chartImageInputRef.current?.click()} className="flex items-center gap-2 w-full h-[40px] border border-dashed border-blue-300 bg-blue-50/40 rounded-[10px] px-4 text-[12px] font-semibold text-blue-700 hover:bg-blue-50">
+                      <ImageIcon size={16} /> {form.chart_image ? 'Replace chart image' : 'Upload chart image (JPG/PNG)'}
+                    </button>
+                    {form.chart_image && (
+                      <div className="mt-3 bg-[#F3F4F6] rounded-[12px] p-3">
+                        <img src={form.chart_image} alt="Chart preview" className="max-w-full h-auto mx-auto block" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
@@ -927,9 +1212,9 @@ const TasksTab = () => {
                 <div>
                   <label className="text-[12px] font-bold text-gray-500 block mb-1">Letter type</label>
                   <select value={form.letter_type} onChange={e => setForm(x => ({ ...x, letter_type: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400">
-                    <option value="Formal">Formal</option>
-                    <option value="Semi-formal">Semi-formal</option>
-                    <option value="Informal">Informal</option>
+                    {LETTER_TYPE_OPTIONS.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -962,11 +1247,51 @@ const TasksTab = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[12px] font-bold text-gray-500 block mb-1">Topic</label>
-                    <input type="text" placeholder="e.g. Education" value={form.topic} onChange={e => setForm(x => ({ ...x, topic: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+                    <select
+                      value={task2TopicOptions.includes(form.topic) ? form.topic : (form.topic ? 'Other' : TASK2_TOPIC_OPTIONS[0])}
+                      onChange={e => {
+                        const v = e.target.value;
+                        setForm(x => ({ ...x, topic: v === 'Other' ? '' : v }));
+                      }}
+                      className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400"
+                    >
+                      {task2TopicOptions.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    {(!form.topic || !task2TopicOptions.includes(form.topic)) && (
+                      <input
+                        type="text"
+                        placeholder="Custom topic…"
+                        value={form.topic || ''}
+                        onChange={e => setForm(x => ({ ...x, topic: e.target.value }))}
+                        className="w-full mt-2 border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="text-[12px] font-bold text-gray-500 block mb-1">Question type</label>
-                    <input type="text" placeholder="e.g. Opinion" value={form.type} onChange={e => setForm(x => ({ ...x, type: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400" />
+                    <select
+                      value={task2TypeOptions.includes(form.type) ? form.type : (form.type ? 'Other' : TASK2_QUESTION_TYPE_OPTIONS[0])}
+                      onChange={e => {
+                        const v = e.target.value;
+                        setForm(x => ({ ...x, type: v === 'Other' ? '' : v }));
+                      }}
+                      className="w-full border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400"
+                    >
+                      {task2TypeOptions.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    {(!form.type || !task2TypeOptions.includes(form.type)) && (
+                      <input
+                        type="text"
+                        placeholder="Custom question type…"
+                        value={form.type || ''}
+                        onChange={e => setForm(x => ({ ...x, type: e.target.value }))}
+                        className="w-full mt-2 border border-gray-200 rounded-[10px] px-4 h-[40px] text-[13px] outline-none focus:border-blue-400"
+                      />
+                    )}
                   </div>
                 </div>
                 <div>
@@ -975,6 +1300,26 @@ const TasksTab = () => {
                   <p className="text-[11px] text-gray-400 mt-1">Title and word-count footer are generated automatically (40 min limit).</p>
                 </div>
               </>
+            )}
+
+            {/* Live exam preview */}
+            {form && (
+              <div className="border border-gray-100 rounded-[12px] overflow-hidden">
+                <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Exam preview</p>
+                </div>
+                <div className="bg-[#F8FAFC] p-4">
+                  <ExamQuestionPanel
+                    examType={form.exam_type}
+                    taskType={form.task_type}
+                    questionText={previewQuestionText}
+                    chartSvg={form.chart_source !== 'image' ? (form.chart_svg || null) : null}
+                    chartImage={form.chart_source === 'image' ? (form.chart_image || null) : null}
+                    chartType={previewChartType}
+                    timeLimitSeconds={form.task_type === 'Task 1' ? 1200 : 2400}
+                  />
+                </div>
+              </div>
             )}
 
             <div className="flex gap-3 pt-2">
@@ -1016,6 +1361,65 @@ const TasksTab = () => {
               </div>
             )}
             <button onClick={() => setHistory(null)} className="mt-4 w-full h-[38px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Exam UI Preview Modal */}
+      {previewTask && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setPreviewTask(null)} />
+          <div className="relative bg-white rounded-[20px] w-full max-w-[520px] shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-[16px] font-bold text-[#101828]">Exam preview</h3>
+                {previewTask.title && (
+                  <p className="text-[12px] text-gray-400 mt-0.5 truncate max-w-[360px]">{previewTask.title}</p>
+                )}
+              </div>
+              <button onClick={() => setPreviewTask(null)} className="p-1 text-gray-400 hover:text-gray-600">
+                <CloseIcon size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-6 bg-[#F8FAFC] flex-1">
+              {previewLoading || previewTask.loading ? (
+                <p className="text-[13px] text-gray-500 py-8 text-center">Loading preview…</p>
+              ) : previewTask.error ? (
+                <p className="text-[13px] text-red-500 py-8 text-center">{previewTask.error}</p>
+              ) : (
+                <ExamQuestionPanel
+                  examType={previewTask.exam_type}
+                  taskType={previewTask.task_type}
+                  questionText={previewTask.question_text}
+                  chartSvg={previewTask.chart_svg}
+                  chartImage={previewTask.chart_image}
+                  chartType={previewTask.title?.split(' — ')[0]}
+                  timeLimitSeconds={previewTask.time_limit_seconds}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent Delete Confirmation */}
+      {deletingTask && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeletingTask(null)} />
+          <div className="relative bg-white rounded-[20px] w-full max-w-[420px] p-7 shadow-2xl">
+            <h3 className="text-[16px] font-bold text-[#101828] mb-2">Delete task permanently?</h3>
+            <p className="text-[13px] text-gray-500 leading-relaxed mb-1">
+              <span className="font-semibold text-[#101828]">{deletingTask.title}</span> will be removed from the question bank. This cannot be undone.
+            </p>
+            {(deletingTask.usage_count ?? 0) > 0 && (
+              <p className="text-[12px] text-amber-600 bg-amber-50 rounded-[8px] px-3 py-2 mt-3">
+                {deletingTask.usage_count} submission{deletingTask.usage_count !== 1 ? 's' : ''} reference this task — they will keep their scores but lose the task link.
+              </p>
+            )}
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setDeletingTask(null)} className="flex-1 h-[40px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
+              <button onClick={confirmDelete} className="flex-1 h-[40px] bg-red-600 text-white rounded-[10px] text-[13px] font-bold hover:bg-red-700">Delete</button>
+            </div>
           </div>
         </div>
       )}

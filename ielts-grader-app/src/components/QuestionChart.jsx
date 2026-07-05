@@ -442,11 +442,19 @@ function SvgChartView({ svg }) {
   );
 }
 
+function ImageChartView({ src }) {
+  return (
+    <img src={src} alt="" className="max-w-full h-auto mx-auto block" />
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
-const QuestionChart = ({ type, seed = '', svg = null }) => {
+const QuestionChart = ({ type, seed = '', svg = null, image = null }) => {
   const wrapper = 'bg-[#F3F4F6] rounded-[12px] p-3';
 
   if (isSafeSvg(svg)) return <div className={wrapper}><SvgChartView svg={svg} /></div>;
+
+  if (image) return <div className={wrapper}><ImageChartView src={image} /></div>;
 
   if (type === 'line') return <div className={wrapper}><LineChartView seed={seed} /></div>;
   if (type === 'bar') return <div className={wrapper}><BarChartView seed={seed} /></div>;

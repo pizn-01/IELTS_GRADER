@@ -6,9 +6,9 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useGrade } from '../context/GradeContext';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
-import QuestionChart, { detectChartType } from './QuestionChart';
-import { isGeneralTask1Letter, parseLetterQuestion } from '../utils/parseLetterQuestion';
-import { isAcademicTask1Report, parseReportQuestion } from '../utils/parseReportQuestion';
+import ExamQuestionPanel, { noteForTimeLimit } from './ExamQuestionPanel';
+import { isGeneralTask1Letter } from '../utils/parseLetterQuestion';
+import { detectChartType } from './QuestionChart';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -63,15 +63,6 @@ function currentTaskStorageKey(examType, taskType) {
   return `mock_current_task_${examType || 'Academic'}_${taskType || 'Task 2'}`;
 }
 
-function noteForTimeLimit(seconds, examType, taskType) {
-  if (isGeneralTask1Letter(examType, taskType) || isAcademicTask1Report(examType, taskType)) {
-    return 'You should spend about 20 minutes on this task.\n\nWrite at least 150 words.';
-  }
-  return seconds <= 1200
-    ? 'Write at least 150 words. You have 20 minutes.'
-    : 'Write at least 250 words. You have 40 minutes.';
-}
-
 /** Pick a random unseen question from the offline bank; resets when all have been shown. */
 function pickFallbackQuestion(bank, storageKey, excludeIndex = null) {
   let seen = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
@@ -87,56 +78,12 @@ function pickFallbackQuestion(bank, storageKey, excludeIndex = null) {
   return { question: bank[idx], index: idx };
 }
 
-function LetterQuestionDisplay({ text }) {
-  const { scenario, bullets } = parseLetterQuestion(text);
-  return (
-    <>
-      <p className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-4">
-        {scenario}
-      </p>
-      {bullets.length > 0 && (
-        <div className="mb-2">
-          <p className="text-[13px] md:text-[14px] font-bold text-[#101828] mb-3">In your letter:</p>
-          <ul className="space-y-2.5">
-            {bullets.map((bullet, index) => (
-              <li key={index} className="flex gap-2.5 text-[13px] md:text-[14px] text-[#344054] leading-[1.65]">
-                <span className="font-bold text-[#0EA5E9] shrink-0 w-5">{index + 1}.</span>
-                <span>{bullet}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </>
-  );
-}
-
-function ReportQuestionDisplay({ text, chartType, chartSvg }) {
-  const { scenario, instruction } = parseReportQuestion(text);
-  return (
-    <>
-      <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-4">
-        {scenario}
-      </h2>
-      {(chartSvg || chartType) && (
-        <div className="mb-4">
-          <QuestionChart type={chartType} seed={text} svg={chartSvg} />
-        </div>
-      )}
-      <p className="text-[12px] md:text-[13px] text-[#475467] leading-[1.6] font-medium">
-        {instruction}
-      </p>
-    </>
-  );
-}
-
 const MockExam = ({ examType, taskType, onExit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { setSubmissionId: setContextSubmissionId, updateEssayData } = useGrade();
   const isAcademicTask1 = examType === 'Academic' && (taskType || '').includes('1');
   const isLetterTask = isGeneralTask1Letter(examType, taskType);
-  const isReportTask = isAcademicTask1Report(examType, taskType);
   const isTask1 = (taskType || '').includes('1');
   const startSeconds = isTask1 ? 1199 : 2399;
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
@@ -173,6 +120,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
             prompt: data.question_text,
             note: noteForTimeLimit(data.time_limit_seconds, resolvedExam, resolvedTask),
             chartSvg: data.chart_svg || null,
+            chartImage: data.chart_image || null,
           };
           setCurrentQuestion(q);
           setExamTaskId(data.id);
@@ -477,27 +425,15 @@ const MockExam = ({ examType, taskType, onExit }) => {
               Loading question…
             </div>
           ) : (
-            <>
-              {isLetterTask ? (
-                <LetterQuestionDisplay text={question.prompt} />
-              ) : isReportTask ? (
-                <ReportQuestionDisplay text={question.prompt} chartType={questionChartType} chartSvg={question.chartSvg} />
-              ) : (
-                <>
-                  <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-5">
-                    {question.prompt}
-                  </h2>
-                  {questionChartType && (
-                    <div className="mb-5">
-                      <QuestionChart type={questionChartType} seed={question.prompt} />
-                    </div>
-                  )}
-                </>
-              )}
-              <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90 mt-5">
-                <p className="whitespace-pre-line">{question.note}</p>
-              </div>
-            </>
+            <ExamQuestionPanel
+              examType={examType}
+              taskType={taskType}
+              questionText={question.prompt}
+              chartSvg={question.chartSvg}
+              chartImage={question.chartImage}
+              chartType={questionChartType}
+              timeNote={question.note}
+            />
           )}
         </div>
 

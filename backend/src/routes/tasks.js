@@ -11,7 +11,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
   let query = supabaseAdmin
     .from('exam_tasks')
-    .select('id, exam_type, task_type, title, question_text, chart_svg, time_limit_seconds')
+    .select('id, exam_type, task_type, title, question_text, chart_svg, chart_image, time_limit_seconds')
     .eq('is_active', true)
     .order('created_at', { ascending: true })
     .limit(200);
@@ -41,7 +41,7 @@ router.get('/next', authenticateToken, async (req, res) => {
     // 1. All active tasks for this exam/type
     const { data: allTasks, error: tasksErr } = await supabaseAdmin
       .from('exam_tasks')
-      .select('id, exam_type, task_type, title, question_text, chart_svg, time_limit_seconds')
+      .select('id, exam_type, task_type, title, question_text, chart_svg, chart_image, time_limit_seconds')
       .eq('is_active', true)
       .eq('exam_type', exam_type)
       .eq('task_type', task_type);

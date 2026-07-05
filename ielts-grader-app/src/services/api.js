@@ -475,8 +475,9 @@ export const api = {
       return fetch(`${BASE_URL}/admin/tasks${q ? `?${q}` : ''}`, { headers: getHeaders() }).then(r => r.json());
     },
     createTask: (body) => fetch(`${BASE_URL}/admin/tasks`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    getTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}`, { headers: getHeaders() }).then(r => r.json()),
     updateTask: (id, body) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
-    deleteTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
+    deleteTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}?permanent=true`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
     getTaskHistory: (id) => fetch(`${BASE_URL}/admin/tasks/${id}/history`, { headers: getHeaders() }).then(r => r.json()),
     // Bulk import tasks from JSON or PDF
     importTasks: (formData) => fetch(`${BASE_URL}/admin/tasks/import`, {

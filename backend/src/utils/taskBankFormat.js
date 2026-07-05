@@ -5,6 +5,8 @@
 
 const SVG_RE = /<svg[\s\S]*?<\/svg>/i;
 const TITLE_MAX = 60;
+const MAX_CHART_IMAGE_BYTES = 16 * 1024 * 1024;
+const CHART_IMAGE_PLACEHOLDER = '[chart image provided]';
 
 const REPORT_FOOTER = [
   'Summarise the information by selecting and reporting the main features, and make comparisons where relevant.',
@@ -37,6 +39,21 @@ function dedupeTitle(title, seenSet) {
   seenSet.add(candidate);
   return candidate;
 }
+
+function validateChartImage(chartImage) {
+  if (!chartImage) return;
+  if (typeof chartImage !== 'string' || chartImage.length > MAX_CHART_IMAGE_BYTES) {
+    throw new Error('Chart image exceeds 16MB limit.');
+  }
+}
+
+function appendChartImagePlaceholder(text) {
+  const t = (text || '').trim();
+  if (!t || CHART_IMAGE_PLACEHOLDER_RE.test(t)) return t;
+  return `${t} ${CHART_IMAGE_PLACEHOLDER}`.trim();
+}
+
+const CHART_IMAGE_PLACEHOLDER_RE = /\s*\[chart image provided\]\s*/i;
 
 function timeLimitFor(taskType) {
   return taskType === 'Task 1' ? 1200 : 2400;
@@ -102,6 +119,7 @@ function normalizeTask2(item, examType = 'Academic') {
     question_text,
     time_limit_seconds: 2400,
     chart_svg: null,
+    chart_image: null,
     is_active: true,
   };
 }
@@ -126,6 +144,7 @@ function normalizeLetter(item) {
     question_text,
     time_limit_seconds: 1200,
     chart_svg: null,
+    chart_image: null,
     is_active: true,
   };
 }
@@ -133,14 +152,30 @@ function normalizeLetter(item) {
 function normalizeReport(item) {
   const { cleanPrompt, chartSvg } = extractSvg(item.prompt || '');
   const chartType = item['chart-type'] || 'Chart';
-  const title = buildTitle(chartType, cleanPrompt);
-  const question_text = ensureFooter(cleanPrompt, REPORT_FOOTER);
+  const rawImage = item.chart_image || item['chart-image'] || null;
+
+  let chart_svg = chartSvg;
+  let chart_image = rawImage || null;
+
+  if (chart_svg) {
+    chart_image = null;
+  } else if (chart_image) {
+    validateChartImage(chart_image);
+    chart_svg = null;
+  }
+
+  const promptForTitle = cleanPrompt.replace(CHART_IMAGE_PLACEHOLDER_RE, ' ').replace(/\s+/g, ' ').trim();
+  const title = buildTitle(chartType, promptForTitle);
+  const bodyPrompt = chart_image ? appendChartImagePlaceholder(cleanPrompt) : cleanPrompt;
+  const question_text = ensureFooter(bodyPrompt, REPORT_FOOTER);
+
   return {
     exam_type: 'Academic',
     task_type: 'Task 1',
     title,
     question_text,
-    chart_svg: chartSvg,
+    chart_svg,
+    chart_image,
     time_limit_seconds: 1200,
     is_active: true,
   };
@@ -153,6 +188,7 @@ function normalizeInternal(item) {
     title: (item.title || 'Question').trim().slice(0, 255),
     question_text: item.question_text.trim(),
     chart_svg: item.chart_svg || null,
+    chart_image: item.chart_image || null,
     time_limit_seconds: item.time_limit_seconds || timeLimitFor(item.task_type),
     is_active: item.is_active !== false,
   };
@@ -167,6 +203,7 @@ function normalizeCreatePayload(body) {
     task_type,
     question_text,
     chart_svg,
+    chart_image,
     topic,
     type: task2Type,
     letter_type,
@@ -181,7 +218,7 @@ function normalizeCreatePayload(body) {
   // Academic Task 1 report
   if (exam_type === 'Academic' && task_type === 'Task 1') {
     const rawPrompt = (prompt || question_text || '').trim();
-    if (!rawPrompt && !chart_svg) throw new Error('Prompt is required.');
+    const image = chart_image || null;
     let cleanPrompt = rawPrompt;
     let svg = chart_svg || null;
     if (rawPrompt && SVG_RE.test(rawPrompt)) {
@@ -189,11 +226,22 @@ function normalizeCreatePayload(body) {
       cleanPrompt = extracted.cleanPrompt;
       svg = svg || extracted.chartSvg;
     }
+    if (!cleanPrompt && !svg && !image) {
+      throw new Error('Prompt is required.');
+    }
+    if (!svg && !image) {
+      throw new Error('Chart SVG or chart image is required.');
+    }
     const chartType = body.chart_type || 'Chart';
-    return normalizeReport({
+    const reportItem = {
       'chart-type': chartType,
       prompt: svg ? `${cleanPrompt}${svg}` : cleanPrompt,
-    });
+    };
+    if (svg) {
+      return normalizeReport(reportItem);
+    }
+    validateChartImage(image);
+    return normalizeReport({ ...reportItem, chart_image: image });
   }
 
   // General Task 1 letter
@@ -280,4 +328,6 @@ module.exports = {
   extractSvg,
   SUMMARY_COMBOS,
   timeLimitFor,
+  validateChartImage,
+  MAX_CHART_IMAGE_BYTES,
 };

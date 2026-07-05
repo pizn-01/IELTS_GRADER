@@ -70,7 +70,7 @@ async function getTaskRow(exam_task_id) {
   if (!exam_task_id) return null;
   const { data } = await supabaseAdmin
     .from('exam_tasks')
-    .select('question_text, title, chart_svg')
+    .select('question_text, title, chart_svg, chart_image')
     .eq('id', exam_task_id)
     .single();
   return data || null;
@@ -439,6 +439,13 @@ async function gradeEssayAsync(submissionId, submissionData) {
           args.push('--chart-image-file', chartImagePath);
         } catch (err) {
           console.warn('[pythonGrader] Chart SVG rasterization failed (vision fallback unavailable):', err.message);
+        }
+      } else if (taskRow?.chart_image) {
+        try {
+          chartImagePath = await writeUploadedChartImageToTempFile(taskRow.chart_image);
+          args.push('--chart-image-file', chartImagePath);
+        } catch (err) {
+          console.warn('[pythonGrader] Bank chart image write failed:', err.message);
         }
       } else if (uploadedChartImage) {
         // Upload flow: question photo with chart — vision extracts reference data.
