@@ -16,6 +16,54 @@ const REPORT_FOOTER = [
 
 const TASK2_FOOTER = 'Write at least 250 words.';
 
+const TASK2_TYPE_LABELS = [
+  'Advantages & Disadvantages',
+  'Problem & Solution',
+  'Double Question',
+  'Discussion',
+  'Opinion',
+];
+
+function stripTitleDedupeSuffix(title) {
+  return (title || '').replace(/\s\(\d+\)$/, '').trim();
+}
+
+function stripTask2Footer(text) {
+  return (text || '').replace(/\n\nWrite at least 250 words\.?\s*$/i, '').trim();
+}
+
+/**
+ * Parse "Topic — Type" (and optional legacy suffix) from a Task 2 title.
+ */
+function parseTask2TitleParts(title) {
+  const stripped = stripTitleDedupeSuffix(title);
+  for (const type of TASK2_TYPE_LABELS) {
+    const marker = ` — ${type}`;
+    const idx = stripped.indexOf(marker);
+    if (idx !== -1) {
+      return {
+        topic: stripped.slice(0, idx).trim(),
+        type,
+      };
+    }
+  }
+  const idx = stripped.indexOf(' — ');
+  if (idx === -1) return { topic: stripped, type: '' };
+  return {
+    topic: stripped.slice(0, idx).trim(),
+    type: stripped.slice(idx + 3).trim(),
+  };
+}
+
+/** Rebuild a unique Task 2 title: Topic — Type — question snippet */
+function rebuildTask2Title(title, questionText) {
+  const { topic, type } = parseTask2TitleParts(title);
+  const prefix = [topic, type].filter(Boolean).join(' — ');
+  const body = stripTask2Footer(questionText);
+  if (!prefix) return truncateTitle(body) || 'Question';
+  return buildTitle(prefix, body);
+}
+
 function truncateTitle(text, maxLen = TITLE_MAX) {
   const t = (text || '').replace(/\s+/g, ' ').trim();
   if (t.length <= maxLen) return t;
@@ -110,7 +158,9 @@ function normalizeTask2(item, examType = 'Academic') {
   const et = ['Academic', 'General'].includes(examType) ? examType : 'Academic';
   const topicStr = [item.topic, item.type].filter(Boolean).join(' — ');
   const questionBody = (item.question || '').trim();
-  const title = topicStr || truncateTitle(questionBody) || 'Question';
+  const title = topicStr
+    ? buildTitle(topicStr, questionBody)
+    : truncateTitle(questionBody) || 'Question';
   const question_text = ensureFooter(questionBody, TASK2_FOOTER);
   return {
     exam_type: et,
@@ -330,4 +380,9 @@ module.exports = {
   timeLimitFor,
   validateChartImage,
   MAX_CHART_IMAGE_BYTES,
+  TASK2_TYPE_LABELS,
+  stripTitleDedupeSuffix,
+  parseTask2TitleParts,
+  rebuildTask2Title,
+  stripTask2Footer,
 };
