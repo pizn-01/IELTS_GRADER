@@ -513,6 +513,15 @@ const CHART_SOURCE_OPTIONS = [
   { value: 'image', label: 'Image upload' },
 ];
 
+const TASK_SORT_OPTIONS = [
+  { value: 'created_at:desc', label: 'Newest first' },
+  { value: 'created_at:asc', label: 'Oldest first' },
+  { value: 'usage:desc', label: 'Most used' },
+  { value: 'usage:asc', label: 'Least used' },
+  { value: 'avg_score:desc', label: 'Highest avg score' },
+  { value: 'avg_score:asc', label: 'Lowest avg score' },
+];
+
 function formPreset(exam_type, task_type) {
   return { ...EMPTY_TASK, exam_type, task_type };
 }
@@ -861,10 +870,10 @@ const TasksTab = () => {
 
   return (
     <div className="space-y-4">
-      {/* Toolbar — aligned dropdown filters */}
-      <div className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
-          <div>
+      {/* Toolbar — filters left, actions right */}
+      <div className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[140px]">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Exam type</label>
             <select
               value={examFilter}
@@ -876,7 +885,7 @@ const TasksTab = () => {
               ))}
             </select>
           </div>
-          <div>
+          <div className="min-w-[120px]">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Status</label>
             <select
               value={statusFilter}
@@ -888,42 +897,34 @@ const TasksTab = () => {
               <option value="inactive">Inactive</option>
             </select>
           </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Sort by</label>
+          <div className="min-w-[160px]">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Sort</label>
             <select
-              value={sortBy}
-              onChange={e => { setSortBy(e.target.value); setPage(1); }}
+              value={`${sortBy}:${sortOrder}`}
+              onChange={e => {
+                const [sort, order] = e.target.value.split(':');
+                setSortBy(sort);
+                setSortOrder(order);
+                setPage(1);
+              }}
               className="w-full h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-700 outline-none focus:border-blue-400 bg-white"
             >
-              <option value="created_at">Created</option>
-              <option value="usage">Usage</option>
-              <option value="avg_score">Avg score</option>
+              {TASK_SORT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Order</label>
-            <select
-              value={sortOrder}
-              onChange={e => { setSortOrder(e.target.value); setPage(1); }}
-              className="w-full h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] font-semibold text-gray-700 outline-none focus:border-blue-400 bg-white"
-            >
-              <option value="desc">Newest first</option>
-              <option value="asc">Oldest first</option>
-            </select>
-          </div>
-          <div className="col-span-2 sm:col-span-1 flex gap-2">
-            <button onClick={load} title="Refresh" className="h-[36px] w-full border border-gray-200 rounded-[8px] hover:bg-gray-50 flex items-center justify-center">
-              <RefreshCw size={16} className="text-gray-500" />
-            </button>
-          </div>
-          <div className="col-span-2 sm:col-span-2 lg:col-span-2 flex gap-2 justify-end">
-            <button onClick={() => { setShowImport(i => !i); setImportResult(null); }} className={`flex items-center justify-center gap-2 flex-1 h-[36px] rounded-[8px] text-[12px] font-bold border transition-all ${showImport ? 'bg-blue-600 text-white border-transparent' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-              <Upload size={14} /> Import
-            </button>
-            <button onClick={openCreate} className="flex items-center justify-center gap-2 flex-1 h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[12px] font-bold hover:bg-[#1D2939]">
-              <Plus size={14} /> New Task
-            </button>
-          </div>
+          <button onClick={load} title="Refresh" className="h-[36px] w-[36px] border border-gray-200 rounded-[8px] hover:bg-gray-50 flex items-center justify-center shrink-0">
+            <RefreshCw size={16} className="text-gray-500" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 lg:pl-6 lg:border-l lg:border-gray-100">
+          <button onClick={() => { setShowImport(i => !i); setImportResult(null); }} className={`flex items-center justify-center gap-2 h-[36px] px-4 rounded-[8px] text-[12px] font-bold border transition-all whitespace-nowrap ${showImport ? 'bg-blue-600 text-white border-transparent' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+            <Upload size={14} /> Import
+          </button>
+          <button onClick={openCreate} className="flex items-center justify-center gap-2 h-[36px] px-4 bg-[#2C3E50] text-white rounded-[8px] text-[12px] font-bold hover:bg-[#1D2939] whitespace-nowrap">
+            <Plus size={14} /> New Task
+          </button>
         </div>
       </div>
 
@@ -1024,58 +1025,56 @@ const TasksTab = () => {
 
       {/* Table */}
       <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
-        <table className="w-full text-[13px] min-w-[960px]">
+        <table className="w-full text-[13px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>
-              {['Type', 'Title', 'Question (preview)', 'Created', 'Usage', 'Avg score', 'Status'].map(h => (
-                <th key={h} className="px-4 py-3 text-left">{h}</th>
+              {['Type', 'Question', 'Created', 'Usage', 'Avg score', 'Status', 'Actions'].map(h => (
+                <th key={h} className={`px-4 py-3 text-left ${h === 'Actions' ? 'whitespace-nowrap min-w-[280px]' : ''}`}>{h}</th>
               ))}
-              <th className="px-4 py-3 text-left sticky right-0 bg-gray-50 min-w-[220px] shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {tasks.map(t => (
               <tr key={t.id} className={`group hover:bg-gray-50/50 ${!t.is_active ? 'opacity-50' : ''}`}>
-                <td className="px-5 py-3">
+                <td className="px-4 py-3">
                   <div className="flex flex-col gap-0.5">
                     <Pill label={t.exam_type} color="blue" />
                     <Pill label={t.task_type} color={typeColor(t.task_type)} />
                   </div>
                 </td>
-                <td className="px-5 py-3 font-medium text-[#101828] max-w-[160px] truncate">{t.title}</td>
-                <td className="px-5 py-3 text-gray-400 max-w-[220px]">
-                  <span className="line-clamp-2 text-[12px]">{t.question_text?.slice(0, 100)}{t.question_text?.length > 100 ? '…' : ''}</span>
+                <td className="px-4 py-3 text-gray-500 max-w-[320px]">
+                  <span className="line-clamp-2 text-[12px] leading-relaxed">{t.question_text?.slice(0, 140)}{t.question_text?.length > 140 ? '…' : ''}</span>
                 </td>
-                <td className="px-5 py-3 text-gray-500 text-[12px] whitespace-nowrap">{formatDate(t.created_at)}</td>
-                <td className="px-5 py-3 text-gray-500 font-bold">{t.usage_count ?? 0}</td>
-                <td className="px-5 py-3 text-gray-500 font-bold">{t.avg_score != null ? t.avg_score.toFixed(1) : '—'}</td>
-                <td className="px-5 py-3">
+                <td className="px-4 py-3 text-gray-500 text-[12px] whitespace-nowrap">{formatDate(t.created_at)}</td>
+                <td className="px-4 py-3 text-gray-500 font-bold">{t.usage_count ?? 0}</td>
+                <td className="px-4 py-3 text-gray-500 font-bold">{t.avg_score != null ? t.avg_score.toFixed(1) : '—'}</td>
+                <td className="px-4 py-3">
                   <Pill label={t.is_active ? 'Active' : 'Disabled'} color={t.is_active ? 'green' : 'gray'} />
                 </td>
-                <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-[#FAFAFA] min-w-[220px] shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)]">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <button
                       onClick={() => openPreview(t)}
                       title="Preview exam UI"
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100 shrink-0"
                     >
                       <Eye size={13} /> View
                     </button>
-                    <button onClick={() => openEdit(t)} className="inline-flex items-center px-2 py-1 rounded-[6px] text-[11px] font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200">
+                    <button onClick={() => openEdit(t)} className="inline-flex items-center px-2 py-1 rounded-[6px] text-[11px] font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 shrink-0">
                       Edit
                     </button>
-                    <button onClick={() => showHistory(t)} title="View history" className="p-1.5 rounded-[6px] text-gray-500 hover:bg-gray-100 border border-gray-200">
+                    <button onClick={() => showHistory(t)} title="View history" className="inline-flex items-center justify-center p-1 rounded-[6px] text-gray-500 hover:bg-gray-100 border border-gray-200 shrink-0">
                       <History size={14} />
                     </button>
-                    <button onClick={() => toggleActive(t)} title={t.is_active ? 'Deactivate' : 'Activate'} className="p-0.5">
+                    <button onClick={() => toggleActive(t)} title={t.is_active ? 'Deactivate' : 'Activate'} className="shrink-0 p-0.5">
                       {t.is_active
-                        ? <ToggleRight size={22} className="text-emerald-500" />
-                        : <ToggleLeft size={22} className="text-gray-300" />}
+                        ? <ToggleRight size={20} className="text-emerald-500" />
+                        : <ToggleLeft size={20} className="text-gray-300" />}
                     </button>
                     <button
                       onClick={() => setDeletingTask(t)}
                       title="Permanently delete"
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-100"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-100 shrink-0"
                     >
                       <Trash2 size={13} /> Delete
                     </button>
@@ -1084,7 +1083,7 @@ const TasksTab = () => {
               </tr>
             ))}
             {tasks.length === 0 && (
-              <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400">No tasks found.</td></tr>
+              <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No tasks found.</td></tr>
             )}
           </tbody>
         </table>
