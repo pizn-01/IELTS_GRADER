@@ -978,4 +978,20 @@ const ReportsOverview = ({ onBack }) => {
                ))}
             </div>
           </div>
+        :
+          <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+             <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+                   <MoreHorizontal className="text-gray-300" />
+                </div>
+                <h3 className="text-[18px] font-bold text-[#101828]">{activeTab} Section</h3>
+                <p className="text-gray-400 text-[14px]">This section is coming soon as part of your dynamic roadmap.</p>
+             </div>
+          </div>
+        }
+      </div>
+    </div>
+  );
+};
 
+export default ReportsOverview;
