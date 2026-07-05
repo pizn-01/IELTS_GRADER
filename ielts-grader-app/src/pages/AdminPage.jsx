@@ -481,17 +481,32 @@ const TASK2_TOPIC_OPTIONS = [
   'Media',
   'Transport',
   'Culture',
+  'Globalization',
   'Other',
 ];
 
+/** Matches question-bank title suffixes; dedupe adds " (2)", " (3)", etc. */
 const TASK2_QUESTION_TYPE_OPTIONS = [
   'Opinion',
   'Discussion',
-  'Problem-Solution',
-  'Advantages-Disadvantages',
-  'Direct question',
+  'Problem & Solution',
+  'Advantages & Disadvantages',
+  'Double Question',
   'Other',
 ];
+
+function stripTitleDedupeSuffix(text) {
+  return (text || '').replace(/\s\(\d+\)$/, '').trim();
+}
+
+function parseTask2Title(title) {
+  if (!title?.includes(' — ')) return { topic: '', type: '' };
+  const [topic, ...rest] = title.split(' — ');
+  return {
+    topic: stripTitleDedupeSuffix(topic),
+    type: stripTitleDedupeSuffix(rest.join(' — ')),
+  };
+}
 
 const CHART_SOURCE_OPTIONS = [
   { value: 'svg', label: 'SVG markup' },
@@ -552,10 +567,10 @@ function taskToForm(t) {
       base.prompt = t.question_text.split('\n\nIn your letter:')[0].trim();
     }
   }
-  if (t.exam_type === 'Academic' && t.task_type === 'Task 2' && t.title?.includes(' — ')) {
-    const [topic, typePart] = t.title.split(' — ');
+  if (t.task_type === 'Task 2' && t.title?.includes(' — ')) {
+    const { topic, type } = parseTask2Title(t.title);
     base.topic = topic;
-    base.type = typePart;
+    base.type = type;
     base.question_text = (t.question_text || '').replace(/\n\nWrite at least 250 words\.?\s*$/i, '').trim();
   }
   if (t.exam_type === 'Academic' && t.task_type === 'Task 1') {
@@ -764,18 +779,12 @@ const TasksTab = () => {
   const task2TopicOptions = useMemo(() => {
     const fromBank = tasks
       .filter(t => t.task_type === 'Task 2' && t.title?.includes(' — '))
-      .map(t => t.title.split(' — ')[0])
+      .map(t => parseTask2Title(t.title).topic)
       .filter(Boolean);
-    return [...new Set([...TASK2_TOPIC_OPTIONS, ...fromBank])];
+    return [...new Set([...TASK2_TOPIC_OPTIONS.filter(o => o !== 'Other'), ...fromBank, 'Other'])];
   }, [tasks]);
 
-  const task2TypeOptions = useMemo(() => {
-    const fromBank = tasks
-      .filter(t => t.task_type === 'Task 2' && t.title?.includes(' — '))
-      .map(t => t.title.split(' — ').slice(1).join(' — '))
-      .filter(Boolean);
-    return [...new Set([...TASK2_QUESTION_TYPE_OPTIONS, ...fromBank])];
-  }, [tasks]);
+  const task2TypeOptions = TASK2_QUESTION_TYPE_OPTIONS;
 
   const taskCategoryValue = form ? `${form.exam_type}|${form.task_type}` : 'Academic|Task 2';
 
