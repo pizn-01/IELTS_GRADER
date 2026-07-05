@@ -385,7 +385,7 @@ const ReportsOverview = ({ onBack }) => {
 
           {/* Sub Navigation */}
           <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-            {["Overview", "Detailed Breakdown", "Fix Cards", "Strategy", "14-Day sprint", "Templates & Pattern"].map((tab) => (
+            {["Overview", "Detailed Breakdown", "Fix Cards", "Strategy", "14-Day sprint"].map((tab) => (
               <div 
                 key={tab} 
                 className="relative py-4 cursor-pointer group whitespace-nowrap"
@@ -623,7 +623,7 @@ const ReportsOverview = ({ onBack }) => {
             </div>
 
             {/* Row 3: Grid of 3 columns (2 stacked card cols + 1 long list col) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
               {/* Col 1: Task Response & Lexical Resource */}
               <div className="space-y-8">
                 {criterionCards.slice(0, 2).map(item => (
@@ -679,13 +679,13 @@ const ReportsOverview = ({ onBack }) => {
               </div>
 
               {/* Col 3: High-Impact Areas to Fix */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden self-start w-full">
-                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7]">
+              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden h-full min-h-0">
+                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7] shrink-0">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>High-Impact Areas to Fix</h3>
                 </div>
 
-                <div className="px-4 md:px-6 py-4">
-                  <div className="space-y-0 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                <div className="px-4 md:px-6 py-4 flex-1 flex flex-col min-h-0">
+                  <div className="space-y-0 flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
                     {sortedErrors.length === 0 ? (
                       <p className="text-[14px] text-gray-400 py-4">No data yet.</p>
                     ) : sortedErrors.map((item, index, arr) => {
@@ -1003,85 +1003,4 @@ const ReportsOverview = ({ onBack }) => {
                ))}
             </div>
           </div>
-        : activeTab === "Templates & Pattern" ? 
-          <div className="space-y-4">
-            {/* Templates & Best Patterns */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-4 md:px-8 py-3 md:py-4 border-b border-[#F2F4F7]">
-                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Templates & Best Patterns</h3>
-                 <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Leverage these carefully curated templates and your own highest-scoring patterns to draft faster and more accurately.</p>
-               </div>
-               
-               <div className="p-5 space-y-3">
-                  <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
-                    <p className="text-[16px] font-bold text-[#1A96F3] mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>Balanced Discussion + Clear Position</p>
-                    <p className="text-[16px] font-semibold text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      In contemporary society, will, artificial, believe, cause has become a widely debated issue. While some people argue that it brings clear benefits, others contend that it causes significant drawbacks. This essay will examine both perspectives and explain why I believe the advantages outweigh the disadvantages
-                    </p>
-                  </div>
-                  <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
-                    <p className="text-[16px] font-bold text-[#1A96F3] mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>Direct Thesis First (Band 7 + Style)</p>
-                    <p className="text-[16px] font-semibold text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      I largely agree that will, artificial, believe, cause brings more benefits than harms, although some negative consequences remain. This essay will discuss both sides before presenting my position.
-                    </p>
-                  </div>
-               </div>
-            </div>
 
-            {/* Topic Sentence Templates */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-4 md:px-8 py-3 md:py-4 border-b border-[#F2F4F7]">
-                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Topic Sentence Templates</h3>
-                 <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Versatile, high-scoring structures to elevate your writing.</p>
-               </div>
-               
-               <div className="p-5 space-y-3">
-                  <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
-                    <p className="text-[16px] font-bold text-[#1A96F3] mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>Reason + Mechanism</p>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>One key reason is that - this happens because</p>
-                  </div>
-                  <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
-                    <p className="text-[16px] font-bold text-[#1A96F3] mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>Example-Ready</p>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>A clear example of this can be seen when, which leads to</p>
-                  </div>
-                  <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
-                    <p className="text-[16px] font-bold text-[#1A96F3] mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>Concession</p>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Although is a valid concern is more significant because</p>
-                  </div>
-               </div>
-            </div>
-
-            {/* Conclusion + Condition */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-4 md:px-8 py-3 md:py-4 border-b border-[#F2F4F7]">
-                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Conclusion + Condition</h3>
-                 <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Summarize effectively to leave a confident, lasting impression.</p>
-               </div>
-               
-               <div className="p-5">
-                  <div className="bg-[#F0F9FF] border border-[#E0F2FE] rounded-[12px] p-4">
-                    <p className="text-[16px] font-bold text-[#1A96F3] mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>Weighing + Condition</p>
-                    <p className="text-[16px] font-semibold text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      In conclusion, although will, artificial, believe, cause can create certain problems, its overall impact is positive. These benefits are strongest when policymakers apply sensible regulation to limit
-                    </p>
-                  </div>
-               </div>
-            </div>
-          </div>
-        : 
-          <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
-             <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
-                   <MoreHorizontal className="text-gray-300" />
-                </div>
-                <h3 className="text-[18px] font-bold text-[#101828]">{activeTab} Section</h3>
-                <p className="text-gray-400 text-[14px]">This section is coming soon as part of your dynamic roadmap.</p>
-             </div>
-          </div>
-        }
-      </div>
-    </div>
-  );
-};
-
-export default ReportsOverview;
