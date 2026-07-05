@@ -518,6 +518,8 @@ const TASK_SORT_OPTIONS = [
   { value: 'created_at:asc', label: 'Oldest first' },
   { value: 'usage:desc', label: 'Most used' },
   { value: 'usage:asc', label: 'Least used' },
+  { value: 'skips:desc', label: 'Most skipped' },
+  { value: 'skips:asc', label: 'Least skipped' },
   { value: 'avg_score:desc', label: 'Highest avg score' },
   { value: 'avg_score:asc', label: 'Lowest avg score' },
 ];
@@ -1028,7 +1030,7 @@ const TasksTab = () => {
         <table className="w-full text-[13px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>
-              {['Type', 'Question', 'Created', 'Usage', 'Avg score', 'Status', 'Actions'].map(h => (
+              {['Type', 'Question', 'Created', 'Usage', 'Skips', 'Avg score', 'Status', 'Actions'].map(h => (
                 <th key={h} className={`px-4 py-3 text-left ${h === 'Actions' ? 'whitespace-nowrap min-w-[280px]' : ''}`}>{h}</th>
               ))}
             </tr>
@@ -1047,6 +1049,7 @@ const TasksTab = () => {
                 </td>
                 <td className="px-4 py-3 text-gray-500 text-[12px] whitespace-nowrap">{formatDate(t.created_at)}</td>
                 <td className="px-4 py-3 text-gray-500 font-bold">{t.usage_count ?? 0}</td>
+                <td className="px-4 py-3 text-gray-500 font-bold">{t.skip_count ?? 0}</td>
                 <td className="px-4 py-3 text-gray-500 font-bold">{t.avg_score != null ? t.avg_score.toFixed(1) : '—'}</td>
                 <td className="px-4 py-3">
                   <Pill label={t.is_active ? 'Active' : 'Disabled'} color={t.is_active ? 'green' : 'gray'} />
@@ -1083,7 +1086,7 @@ const TasksTab = () => {
               </tr>
             ))}
             {tasks.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No tasks found.</td></tr>
+              <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400">No tasks found.</td></tr>
             )}
           </tbody>
         </table>

@@ -530,7 +530,7 @@ router.get('/tasks', async (req, res) => {
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const perPage = Math.min(Math.max(1, parseInt(per_page, 10) || 50), 100);
-    const sortKey = ['created_at', 'usage', 'avg_score'].includes(sort) ? sort : 'created_at';
+    const sortKey = ['created_at', 'usage', 'avg_score', 'skips'].includes(sort) ? sort : 'created_at';
     const sortAsc = order === 'asc';
 
     // Summary: exact counts (avoid 1000-row PostgREST cap on full-table scans)
@@ -591,6 +591,24 @@ router.get('/tasks', async (req, res) => {
       avgMap[id] = Math.round((sum / count) * 10) / 10;
     });
 
+    // Skips = assignments without a matching submission (refresh / "New question")
+    const assignments = await fetchAllRows(() =>
+      supabaseAdmin
+        .from('user_question_assignments')
+        .select('task_id')
+        .not('task_id', 'is', null)
+    );
+
+    const assignmentMap = {};
+    (assignments || []).forEach(a => {
+      assignmentMap[a.task_id] = (assignmentMap[a.task_id] || 0) + 1;
+    });
+
+    const skipMap = {};
+    Object.keys(assignmentMap).forEach(id => {
+      skipMap[id] = Math.max(0, assignmentMap[id] - (usageMap[id] || 0));
+    });
+
     // Filtered task rows (paginate — question bank has 1000+ rows)
     const tasks = await fetchAllRows(() => {
       let q = supabaseAdmin
@@ -608,6 +626,7 @@ router.get('/tasks', async (req, res) => {
       chart_image: undefined,
       has_chart_image: Boolean(t.chart_image),
       usage_count: usageMap[t.id] || 0,
+      skip_count: skipMap[t.id] || 0,
       avg_score: avgMap[t.id] ?? null,
     }));
 
@@ -617,6 +636,9 @@ router.get('/tasks', async (req, res) => {
       if (sortKey === 'usage') {
         av = a.usage_count;
         bv = b.usage_count;
+      } else if (sortKey === 'skips') {
+        av = a.skip_count;
+        bv = b.skip_count;
       } else if (sortKey === 'avg_score') {
         av = a.avg_score ?? -1;
         bv = b.avg_score ?? -1;

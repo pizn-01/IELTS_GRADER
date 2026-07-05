@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { X, HelpCircle, RotateCcw, RefreshCw, Paperclip, ChevronDown, Clock, Loader2 } from 'lucide-react';
+import { X, HelpCircle, RotateCcw, RefreshCw, Paperclip, ChevronDown, Clock, Loader2, ToggleRight, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -182,6 +182,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState('');
   const [showAttachmentTooltip, setShowAttachmentTooltip] = useState(false);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
   const progressRef = useRef(0);
   const startTimeRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -350,6 +351,53 @@ const MockExam = ({ examType, taskType, onExit }) => {
     setQuestionLoading(false);
   };
 
+  const isAdmin = Boolean(user?.is_admin);
+  const isDbTask = Boolean(examTaskId && !examTaskId.startsWith('fallback-'));
+  const adminControlsDisabled = questionLoading || adminActionLoading || isGrading || showTimeUp;
+
+  const clearCurrentTaskSession = () => {
+    const currentKey = currentTaskStorageKey(examType || 'Academic', taskType || 'Task 2');
+    examTaskIdRef.current = null;
+    sessionStorage.removeItem(currentKey);
+    setExamTaskId(null);
+  };
+
+  const handleAdminDeactivate = async () => {
+    if (!isAdmin || !isDbTask || adminControlsDisabled) return;
+    if (!window.confirm('Deactivate this question? It will no longer appear in exams.')) return;
+    setAdminActionLoading(true);
+    setQuestionLoading(true);
+    try {
+      const res = await api.admin.updateTask(examTaskId, { is_active: false });
+      if (res?.error) throw new Error(res.error);
+      clearCurrentTaskSession();
+      await loadNextQuestion({ clearEssay: true });
+    } catch (err) {
+      window.alert(err.message || 'Failed to deactivate question.');
+    } finally {
+      setAdminActionLoading(false);
+      setQuestionLoading(false);
+    }
+  };
+
+  const handleAdminDelete = async () => {
+    if (!isAdmin || !isDbTask || adminControlsDisabled) return;
+    if (!window.confirm('Permanently delete this question from the database? This cannot be undone.')) return;
+    setAdminActionLoading(true);
+    setQuestionLoading(true);
+    try {
+      const res = await api.admin.deleteTask(examTaskId);
+      if (res?.error) throw new Error(res.error);
+      clearCurrentTaskSession();
+      await loadNextQuestion({ clearEssay: true });
+    } catch (err) {
+      window.alert(err.message || 'Failed to delete question.');
+    } finally {
+      setAdminActionLoading(false);
+      setQuestionLoading(false);
+    }
+  };
+
   const handleFileAttach = async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
@@ -406,18 +454,40 @@ const MockExam = ({ examType, taskType, onExit }) => {
             <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
               {examType} {taskType || 'Task 2'}
             </span>
-            <button
-              onClick={handleRefreshQuestion}
-              disabled={questionLoading || isGrading || showTimeUp}
-              title="New question"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-[11px] font-semibold text-[#344054] border border-gray-200 hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {questionLoading
-                ? <Loader2 size={14} className="animate-spin" />
-                : <RefreshCw size={14} />
-              }
-              <span className="hidden sm:inline">New question</span>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isAdmin && isDbTask && (
+                <>
+                  <button
+                    onClick={handleAdminDeactivate}
+                    disabled={adminControlsDisabled}
+                    title="Deactivate question"
+                    className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ToggleRight size={16} />
+                  </button>
+                  <button
+                    onClick={handleAdminDelete}
+                    disabled={adminControlsDisabled}
+                    title="Permanently delete question"
+                    className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleRefreshQuestion}
+                disabled={questionLoading || isGrading || showTimeUp}
+                title="New question"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-[11px] font-semibold text-[#344054] border border-gray-200 hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {questionLoading
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <RefreshCw size={14} />
+                }
+                <span className="hidden sm:inline">New question</span>
+              </button>
+            </div>
           </div>
           {questionLoading && !currentQuestion ? (
             <div className="flex items-center gap-2 text-[13px] text-gray-500 py-8">
