@@ -622,64 +622,39 @@ const ReportsOverview = ({ onBack }) => {
               </div>
             </div>
 
-            {/* Row 3: 3 equal columns — flex keeps High-Impact height synced with stacked criterion cols */}
-            <div className="flex flex-col lg:flex-row gap-8 lg:items-stretch">
-              {/* Col 1: Task Response & Lexical Resource */}
-              <div className="flex-1 min-w-0 flex flex-col gap-8">
-                {criterionCards.slice(0, 2).map(item => (
-                  <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                    <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
-                      <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
+            {/* Row 3: 2×2 criterion grid + High-Impact spanning both rows */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-8">
+              {[
+                { item: criterionCards[0], grid: 'lg:col-start-1 lg:row-start-1' },
+                { item: criterionCards[2], grid: 'lg:col-start-2 lg:row-start-1' },
+                { item: criterionCards[1], grid: 'lg:col-start-1 lg:row-start-2' },
+                { item: criterionCards[3], grid: 'lg:col-start-2 lg:row-start-2' },
+              ].map(({ item, grid }) => (
+                <div key={item.label} className={`bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col ${grid}`}>
+                  <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
+                    <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
+                  </div>
+                  <div className="p-4 md:p-8 space-y-3 flex-1">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>First</span>
+                      <span className="text-[16px] font-bold text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.first}</span>
                     </div>
-                    <div className="p-4 md:p-8 space-y-3 flex-1">
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>First</span>
-                        <span className="text-[16px] font-bold text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.first}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Latest</span>
-                        <span className="text-[18px] font-normal text-[#101828B2]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.latest}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Growth</span>
-                        <div className={`px-4 py-1.5 rounded-full text-[13px] font-bold border ${item.positive ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A94D]' : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
-                          {item.growth}
-                        </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Latest</span>
+                      <span className="text-[18px] font-normal text-[#101828B2]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.latest}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Growth</span>
+                      <div className={`px-4 py-1.5 rounded-full text-[13px] font-bold border ${item.positive ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A94D]' : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
+                        {item.growth}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
 
-              {/* Col 2: Coherence & Grammatical */}
-              <div className="flex-1 min-w-0 flex flex-col gap-8">
-                {criterionCards.slice(2, 4).map(item => (
-                  <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                    <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
-                      <h4 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.label}</h4>
-                    </div>
-                    <div className="p-4 md:p-8 space-y-3 flex-1">
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>First</span>
-                        <span className="text-[16px] font-bold text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.first}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Latest</span>
-                        <span className="text-[18px] font-normal text-[#101828B2]" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.latest}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Growth</span>
-                        <div className={`px-4 py-1.5 rounded-full text-[13px] font-bold border ${item.positive ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A980]' : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>
-                          {item.growth}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Col 3: High-Impact Areas to Fix */}
-              <div className="flex-1 min-w-0 flex flex-col bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden min-h-0">
+              {/* High-Impact Areas to Fix — spans full height of 2×2 grid */}
+              <div className="lg:col-start-3 lg:row-start-1 lg:row-span-2 flex flex-col bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden min-h-0">
                 <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7] shrink-0">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>High-Impact Areas to Fix</h3>
                 </div>
