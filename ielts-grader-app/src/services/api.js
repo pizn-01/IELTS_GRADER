@@ -34,9 +34,9 @@ const offlineFallbacks = {
     profile_image_url: null,
   },
   chartData: [
-    { name: 'W1', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
-    { name: 'W2', overall: 7.2, response: 6.7, coherence: 6.4, vocabulary: 7.8, grammar: 6.9 },
-    { name: 'W3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
+    { name: '1', examLabel: 'Exam 1', overall: 6.8, response: 6.3, coherence: 6.0, vocabulary: 7.4, grammar: 6.5 },
+    { name: '2', examLabel: 'Exam 2', overall: 7.2, response: 6.7, coherence: 6.4, vocabulary: 7.8, grammar: 6.9 },
+    { name: '3', examLabel: 'Exam 3', overall: 7.4, response: 6.9, coherence: 6.6, vocabulary: 8.0, grammar: 7.1 },
   ],
   frequentErrors: [
     { label: 'Repetition of Basic Lexis', count: 12, impact: 'High Impact', type: 'red' },

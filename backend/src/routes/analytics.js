@@ -49,7 +49,8 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     );
 
     const chartData = sortedReports.map((row, idx) => ({
-      name: `W${idx + 1}`,
+      name: `${idx + 1}`,
+      examLabel: `Exam ${idx + 1}`,
       overall: parseFloat(row.overall_band),
       response: parseFloat(row.response_band),
       coherence: parseFloat(row.coherence_band),
