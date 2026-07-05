@@ -4,6 +4,8 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // ─── GET /api/tasks ───────────────────────────────────────────────────────────
 // Returns all active tasks (used by practice upload flow)
 router.get('/', authenticateToken, async (req, res) => {
@@ -83,7 +85,18 @@ router.get('/next', authenticateToken, async (req, res) => {
       candidate = allTasks[Math.floor(Math.random() * allTasks.length)];
     }
 
-    // 4. Record the assignment
+    // 4. User skipped the previous question (refresh / "New question")
+    if (exclude_task_id && UUID_RE.test(exclude_task_id)) {
+      const { error: skipErr } = await supabaseAdmin
+        .from('user_question_assignments')
+        .insert({ user_id: userId, task_id: exclude_task_id, session_type: 'skipped' });
+
+      if (skipErr) {
+        console.error('[tasks/next] Skip record failed:', skipErr.message);
+      }
+    }
+
+    // 5. Record the new assignment
     const { error: insertErr } = await supabaseAdmin
       .from('user_question_assignments')
       .insert({ user_id: userId, task_id: candidate.id, session_type });

@@ -183,6 +183,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const [extractError, setExtractError] = useState('');
   const [showAttachmentTooltip, setShowAttachmentTooltip] = useState(false);
   const [adminActionLoading, setAdminActionLoading] = useState(false);
+  const [adminActionError, setAdminActionError] = useState('');
   const progressRef = useRef(0);
   const startTimeRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -362,36 +363,45 @@ const MockExam = ({ examType, taskType, onExit }) => {
     setExamTaskId(null);
   };
 
-  const handleAdminDeactivate = async () => {
-    if (!isAdmin || !isDbTask || adminControlsDisabled) return;
+  const handleAdminDeactivate = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const taskId = examTaskIdRef.current;
+    if (!isAdmin || !taskId || taskId.startsWith('fallback-') || adminControlsDisabled) return;
     if (!window.confirm('Deactivate this question? It will no longer appear in exams.')) return;
+    setAdminActionError('');
     setAdminActionLoading(true);
     setQuestionLoading(true);
     try {
-      const res = await api.admin.updateTask(examTaskId, { is_active: false });
-      if (res?.error) throw new Error(res.error);
+      const res = await api.admin.updateTask(taskId, { is_active: false });
+      if (res.is_active !== false) {
+        throw new Error('Task was not deactivated. Please try again.');
+      }
       clearCurrentTaskSession();
       await loadNextQuestion({ clearEssay: true });
     } catch (err) {
-      window.alert(err.message || 'Failed to deactivate question.');
+      setAdminActionError(err.message || 'Failed to deactivate question.');
     } finally {
       setAdminActionLoading(false);
       setQuestionLoading(false);
     }
   };
 
-  const handleAdminDelete = async () => {
-    if (!isAdmin || !isDbTask || adminControlsDisabled) return;
+  const handleAdminDelete = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const taskId = examTaskIdRef.current;
+    if (!isAdmin || !taskId || taskId.startsWith('fallback-') || adminControlsDisabled) return;
     if (!window.confirm('Permanently delete this question from the database? This cannot be undone.')) return;
+    setAdminActionError('');
     setAdminActionLoading(true);
     setQuestionLoading(true);
     try {
-      const res = await api.admin.deleteTask(examTaskId);
-      if (res?.error) throw new Error(res.error);
+      await api.admin.deleteTask(taskId);
       clearCurrentTaskSession();
       await loadNextQuestion({ clearEssay: true });
     } catch (err) {
-      window.alert(err.message || 'Failed to delete question.');
+      setAdminActionError(err.message || 'Failed to delete question.');
     } finally {
       setAdminActionLoading(false);
       setQuestionLoading(false);
@@ -458,6 +468,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
               {isAdmin && isDbTask && (
                 <>
                   <button
+                    type="button"
                     onClick={handleAdminDeactivate}
                     disabled={adminControlsDisabled}
                     title="Deactivate question"
@@ -466,6 +477,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
                     <ToggleRight size={16} />
                   </button>
                   <button
+                    type="button"
                     onClick={handleAdminDelete}
                     disabled={adminControlsDisabled}
                     title="Permanently delete question"
@@ -476,6 +488,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
                 </>
               )}
               <button
+                type="button"
                 onClick={handleRefreshQuestion}
                 disabled={questionLoading || isGrading || showTimeUp}
                 title="New question"
@@ -489,6 +502,11 @@ const MockExam = ({ examType, taskType, onExit }) => {
               </button>
             </div>
           </div>
+          {adminActionError && (
+            <p className="mb-3 text-[12px] font-medium text-red-600 bg-red-50 border border-red-100 rounded-[8px] px-3 py-2">
+              {adminActionError}
+            </p>
+          )}
           {questionLoading && !currentQuestion ? (
             <div className="flex items-center gap-2 text-[13px] text-gray-500 py-8">
               <Loader2 size={18} className="animate-spin text-[#0EA5E9]" />

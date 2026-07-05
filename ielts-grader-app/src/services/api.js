@@ -9,6 +9,18 @@ const getHeaders = () => {
   return headers;
 };
 
+const adminRequest = async (url, options = {}) => {
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...getHeaders(), ...options.headers },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || `Request failed (${res.status})`);
+  }
+  return data;
+};
+
 // ─── Offline-only fallbacks ───────────────────────────────────────────────────
 // These are ONLY used when the server is genuinely unreachable (network error).
 // They are NEVER used when the server responds with an HTTP error code.
@@ -476,8 +488,8 @@ export const api = {
     },
     createTask: (body) => fetch(`${BASE_URL}/admin/tasks`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
     getTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}`, { headers: getHeaders() }).then(r => r.json()),
-    updateTask: (id, body) => fetch(`${BASE_URL}/admin/tasks/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
-    deleteTask: (id) => fetch(`${BASE_URL}/admin/tasks/${id}?permanent=true`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json()),
+    updateTask: (id, body) => adminRequest(`${BASE_URL}/admin/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    deleteTask: (id) => adminRequest(`${BASE_URL}/admin/tasks/${id}?permanent=true`, { method: 'DELETE' }),
     getTaskHistory: (id) => fetch(`${BASE_URL}/admin/tasks/${id}/history`, { headers: getHeaders() }).then(r => r.json()),
     // Bulk import tasks from JSON or PDF
     importTasks: (formData) => fetch(`${BASE_URL}/admin/tasks/import`, {

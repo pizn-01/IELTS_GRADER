@@ -591,22 +591,18 @@ router.get('/tasks', async (req, res) => {
       avgMap[id] = Math.round((sum / count) * 10) / 10;
     });
 
-    // Skips = assignments without a matching submission (refresh / "New question")
-    const assignments = await fetchAllRows(() =>
+    // Skips = explicit skip events (refresh / "New question" with exclude_task_id)
+    const skipRows = await fetchAllRows(() =>
       supabaseAdmin
         .from('user_question_assignments')
         .select('task_id')
+        .eq('session_type', 'skipped')
         .not('task_id', 'is', null)
     );
 
-    const assignmentMap = {};
-    (assignments || []).forEach(a => {
-      assignmentMap[a.task_id] = (assignmentMap[a.task_id] || 0) + 1;
-    });
-
     const skipMap = {};
-    Object.keys(assignmentMap).forEach(id => {
-      skipMap[id] = Math.max(0, assignmentMap[id] - (usageMap[id] || 0));
+    (skipRows || []).forEach(row => {
+      skipMap[row.task_id] = (skipMap[row.task_id] || 0) + 1;
     });
 
     // Filtered task rows (paginate — question bank has 1000+ rows)
