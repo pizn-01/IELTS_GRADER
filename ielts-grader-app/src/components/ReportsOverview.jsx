@@ -622,10 +622,10 @@ const ReportsOverview = ({ onBack }) => {
               </div>
             </div>
 
-            {/* Row 3: Grid of 3 columns (2 stacked card cols + 1 long list col) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            {/* Row 3: 3 equal columns — flex keeps High-Impact height synced with stacked criterion cols */}
+            <div className="flex flex-col lg:flex-row gap-8 lg:items-stretch">
               {/* Col 1: Task Response & Lexical Resource */}
-              <div className="space-y-8">
+              <div className="flex-1 min-w-0 flex flex-col gap-8">
                 {criterionCards.slice(0, 2).map(item => (
                   <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                     <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
@@ -652,7 +652,7 @@ const ReportsOverview = ({ onBack }) => {
               </div>
 
               {/* Col 2: Coherence & Grammatical */}
-              <div className="space-y-8">
+              <div className="flex-1 min-w-0 flex flex-col gap-8">
                 {criterionCards.slice(2, 4).map(item => (
                   <div key={item.label} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                     <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
@@ -679,7 +679,7 @@ const ReportsOverview = ({ onBack }) => {
               </div>
 
               {/* Col 3: High-Impact Areas to Fix */}
-              <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden h-full min-h-0">
+              <div className="flex-1 min-w-0 flex flex-col bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden min-h-0">
                 <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#F2F4F7] shrink-0">
                   <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>High-Impact Areas to Fix</h3>
                 </div>
