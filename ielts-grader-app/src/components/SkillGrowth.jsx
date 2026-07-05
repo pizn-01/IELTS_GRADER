@@ -156,55 +156,42 @@ const SkillGrowth = ({ hasData = true, defaultTask = 'Academic Task 2', isLoadin
       <div className="h-[300px] md:h-[400px] w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartSeries} margin={{ top: 10, right: 20, left: -10, bottom: 30 }}>
-            <defs>
-              <filter id="shadow" height="200%" width="200%" x="-50%" y="-50%">
-                <feGaussianBlur in="SourceAlpha" stdDeviation="3.5" result="blur" />
-                <feOffset in="blur" dx="0" dy="4" result="offsetBlur" />
-                <feComponentTransfer>
-                  <feFuncA type="linear" slope="0.15" />
-                </feComponentTransfer>
-                <feMerge>
-                  <feMergeNode />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={true} horizontal={false} />
-            <CartesianGrid stroke="#F1F5F9" vertical={false} horizontal={true} />
-            <XAxis 
-              dataKey="name" 
-              axisLine={false} 
-              tickLine={false} 
+            <CartesianGrid stroke="#E2E8F0" strokeDasharray="4 4" vertical horizontal />
+            <XAxis
+              dataKey="name"
+              axisLine={{ stroke: '#CBD5E1' }}
+              tickLine={{ stroke: '#CBD5E1' }}
               tick={{ fontSize: 11, fill: '#64748B', fontWeight: 500 }}
-              dy={15}
+              dy={8}
             />
-            <YAxis 
-              domain={[0, 9]} 
+            <YAxis
+              domain={[0, 9]}
               ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
               interval={0}
-              axisLine={false}
-              tickLine={false}
+              axisLine={{ stroke: '#CBD5E1' }}
+              tickLine={{ stroke: '#CBD5E1' }}
               tick={{ fontSize: 11, fill: '#64748B', fontWeight: 500 }}
               dx={-10}
               tickFormatter={(value) => value.toFixed(1)}
             />
-            <Tooltip 
-              contentStyle={{ 
-                borderRadius: '12px', 
-                border: 'none', 
-                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', 
-                padding: '12px', 
+            <Tooltip
+              contentStyle={{
+                borderRadius: '8px',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
+                padding: '10px 12px',
                 fontSize: '12px',
-                backgroundColor: '#fff'
+                backgroundColor: '#fff',
               }}
-              cursor={{ stroke: '#F1F5F9', strokeWidth: 2 }}
+              cursor={{ stroke: '#CBD5E1', strokeWidth: 1, strokeDasharray: '4 4' }}
+              formatter={(value) => [Number(value).toFixed(1), undefined]}
             />
-            
-            <Line type="monotone" dataKey="coherence" stroke="#10B981" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} style={{ filter: 'url(#shadow)' }} />
-            <Line type="monotone" dataKey="response" stroke="#F59E0B" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} style={{ filter: 'url(#shadow)' }} />
-            <Line type="monotone" dataKey="grammar" stroke="#3B82F6" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} style={{ filter: 'url(#shadow)' }} />
-            <Line type="monotone" dataKey="overall" stroke="#EF4444" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} style={{ filter: 'url(#shadow)' }} />
-            <Line type="monotone" dataKey="vocabulary" stroke="#8B5CF6" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} style={{ filter: 'url(#shadow)' }} />
+
+            <Line type="linear" dataKey="coherence" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981', strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls />
+            <Line type="linear" dataKey="response" stroke="#F59E0B" strokeWidth={2} dot={{ r: 3, fill: '#F59E0B', strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls />
+            <Line type="linear" dataKey="grammar" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3, fill: '#3B82F6', strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls />
+            <Line type="linear" dataKey="overall" stroke="#EF4444" strokeWidth={2.5} dot={{ r: 3.5, fill: '#EF4444', strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls />
+            <Line type="linear" dataKey="vocabulary" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3, fill: '#8B5CF6', strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls />
           </LineChart>
         </ResponsiveContainer>
       </div>
