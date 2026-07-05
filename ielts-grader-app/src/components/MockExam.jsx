@@ -433,6 +433,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
               chartImage={question.chartImage}
               chartType={questionChartType}
               timeNote={question.note}
+              showBadge={false}
             />
           )}
         </div>
