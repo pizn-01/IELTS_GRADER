@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
+import { dashboardGoalSubtitle } from '../utils/goalProgress';
 
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
@@ -29,13 +30,24 @@ function DashboardApp() {
   const [hasData, setHasData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch analytics + recent submissions
+  // Fetch analytics + recent submissions; refresh profile so target band stays current
   const fetchDashboardData = async () => {
     try {
-      const [metrics, submissionsRes] = await Promise.all([
+      const [metrics, submissionsRes, freshUser] = await Promise.all([
         api.getDashboardAnalytics(),
         api.getSubmissions({ limit: 10 }),
+        api.getMe().catch(() => null),
       ]);
+
+      if (freshUser) {
+        updateUser({
+          target_band: freshUser.target_band,
+          target_band_confirmed: freshUser.target_band_confirmed,
+          credits_remaining: freshUser.credits_remaining,
+          full_name: freshUser.full_name,
+        });
+      }
+
       setAnalyticsSeries(metrics);
 
       // Shape graded submissions for RecentReports
@@ -97,8 +109,18 @@ function DashboardApp() {
   };
 
   const candidateFirstName = user?.full_name?.split(' ')[0] || 'Candidate';
-  const targetBand = user?.target_band || DEFAULT_TARGET_BAND;
+  const targetBand = parseFloat(user?.target_band) || DEFAULT_TARGET_BAND;
   const creditsRemaining = user?.credits_remaining ?? 4;
+
+  const latestBand = useMemo(() => {
+    const scores = analyticsSeries?.chartData?.map(d => d.overall).filter(v => v != null) ?? [];
+    return scores.length ? parseFloat(scores[scores.length - 1]) : null;
+  }, [analyticsSeries]);
+
+  const dashboardSubtitle = useMemo(
+    () => dashboardGoalSubtitle({ latestBand, targetBand, creditsRemaining }),
+    [latestBand, targetBand, creditsRemaining],
+  );
 
   const defaultChartTask = useMemo(() => {
     const recent = recentSubmissions?.[0];
@@ -121,7 +143,7 @@ function DashboardApp() {
               Welcome back, {candidateFirstName}
             </h1>
             <p className="text-gray-500 font-medium tracking-tight text-sm md:text-base">
-              You're on track for Band {Number(targetBand).toFixed(1)} — {creditsRemaining} evaluation credits remaining.
+              {dashboardSubtitle}
             </p>
           </motion.div>
 
@@ -167,7 +189,11 @@ function DashboardApp() {
             // Refresh credit count and dashboard data after a submission is graded
             try {
               const fresh = await api.getMe();
-              updateUser({ credits_remaining: fresh.credits_remaining });
+              updateUser({
+                credits_remaining: fresh.credits_remaining,
+                target_band: fresh.target_band,
+                target_band_confirmed: fresh.target_band_confirmed,
+              });
             } catch {} // non-critical
 
             fetchDashboardData();

@@ -17,3 +17,14 @@ export function goalStatusText(latestBand, targetBand) {
   const gap = (targetBand - latestBand).toFixed(1);
   return `You're ${gap} band point${gap === '1.0' ? '' : 's'} away from your goal of Band ${targetBand.toFixed(1)}. Focus on your weakest criterion to close the gap.`;
 }
+
+export function dashboardGoalSubtitle({ latestBand, targetBand, creditsRemaining }) {
+  const bandLabel = Number(targetBand).toFixed(1);
+  const credits = `${creditsRemaining} evaluation credit${creditsRemaining === 1 ? '' : 's'} remaining`;
+
+  if (latestBand != null && Number(latestBand) >= Number(targetBand)) {
+    return `You've reached Band ${bandLabel}! — ${credits}.`;
+  }
+
+  return `You're on track for Band ${bandLabel} — ${credits}.`;
+}
