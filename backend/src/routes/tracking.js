@@ -2,13 +2,10 @@ const express = require('express');
 const { supabaseAdmin } = require('../services/supabase');
 const { normalizeAttribution } = require('../utils/attribution');
 const { lookupGeo } = require('../utils/geoip');
+const { getClientIp } = require('../utils/getClientIp');
 const { parseUserAgent } = require('../utils/parseUserAgent');
 
 const router = express.Router();
-
-function getClientIp(req) {
-  return req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || null;
-}
 
 // ─── POST /api/tracking/pageview ─────────────────────────────────────────────
 router.post('/pageview', async (req, res) => {

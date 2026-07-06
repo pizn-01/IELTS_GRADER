@@ -2,6 +2,12 @@ import { getAuthToken } from '../utils/authStorage';
 
 const BASE_URL = '/api';
 
+// Tracking bypasses Vercel proxy so Fly.io sees the real visitor IP for geo lookup.
+const TRACKING_URL = import.meta.env.VITE_TRACKING_URL
+  || (import.meta.env.PROD
+    ? 'https://ielts-grader-backend.fly.dev/api/tracking/pageview'
+    : `${BASE_URL}/tracking/pageview`);
+
 const getHeaders = () => {
   const headers = { 'Content-Type': 'application/json' };
   const token = getAuthToken();
@@ -53,7 +59,7 @@ export const api = {
   // ─── POST /api/tracking/pageview ─────────────────────────────────────────────
   trackPageView: async (payload) => {
     try {
-      await fetch(`${BASE_URL}/tracking/pageview`, {
+      await fetch(TRACKING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
