@@ -6,10 +6,9 @@ import SkillGrowth from '../components/SkillGrowth';
 import RecentReports from '../components/RecentReports';
 import PracticeModal from '../components/PracticeModal';
 import { NotificationBanner } from '../components/Modals';
-import ReportView from '../components/ReportView';
-import ReportsOverview from '../components/ReportsOverview';
-import Settings from '../components/Settings';
+import DashboardKpiStrip from './DashboardKpiStrip';
 import { motion } from 'framer-motion';
+import { BarChart3, Play } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
@@ -21,16 +20,13 @@ function DashboardApp() {
 
   const [showModal, setShowModal] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
-  const [reportData, setReportData] = useState(null);
-  const [reportShowHeader, setReportShowHeader] = useState(false);
   const [profileImage, setProfileImage] = useState(user?.profile_image_url || null);
 
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
-  const [recentSubmissions, setRecentSubmissions] = useState(null); // null = loading, [] = loaded+empty
+  const [recentSubmissions, setRecentSubmissions] = useState(null);
   const [hasData, setHasData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch analytics + recent submissions; refresh profile so target band stays current
   const fetchDashboardData = async () => {
     try {
       const [metrics, submissionsRes, freshUser] = await Promise.all([
@@ -50,7 +46,6 @@ function DashboardApp() {
 
       setAnalyticsSeries(metrics);
 
-      // Shape graded submissions for RecentReports
       const formatted = (submissionsRes.data || [])
         .filter(s => s.status === 'graded')
         .slice(0, 10)
@@ -73,12 +68,10 @@ function DashboardApp() {
     }
   };
 
-  // Fetch on mount
   useEffect(() => {
     fetchDashboardData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Lenis smooth scroll
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -117,6 +110,12 @@ function DashboardApp() {
     return scores.length ? parseFloat(scores[scores.length - 1]) : null;
   }, [analyticsSeries]);
 
+  const examsCount = useMemo(() => {
+    if (recentSubmissions === null) return null;
+    const fromChart = analyticsSeries?.chartData?.length ?? 0;
+    return Math.max(recentSubmissions.length, fromChart);
+  }, [recentSubmissions, analyticsSeries]);
+
   const dashboardSubtitle = useMemo(
     () => dashboardGoalSubtitle({ latestBand, targetBand, creditsRemaining }),
     [latestBand, targetBand, creditsRemaining],
@@ -130,63 +129,100 @@ function DashboardApp() {
 
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
-        <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} credits={creditsRemaining} />
+      <div className="w-full max-w-[1440px] mx-auto">
+        {/* Hero band */}
+        <div className="relative overflow-hidden border-b border-[#E5E7EB]/60">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(90deg, #E0F2FE 0%, #FCE7F3 40%, #FCE7F3 60%, #CFFAFE 100%)',
+              opacity: 0.75,
+            }}
+          />
+          <div className="relative z-10 px-4 md:px-6 pt-6 md:pt-10 pb-6 md:pb-8">
+            <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} credits={creditsRemaining} />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              Welcome back, {candidateFirstName}
-            </h1>
-            <p className="text-gray-500 font-medium tracking-tight text-sm md:text-base">
-              {dashboardSubtitle}
-            </p>
-          </motion.div>
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-6 md:mb-8">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <p className="text-[12px] font-bold text-[#1A96F3] uppercase tracking-widest mb-2">Dashboard</p>
+                <h1 className="text-[28px] md:text-[32px] font-bold text-[#101828] tracking-tight mb-2">
+                  Welcome back, {candidateFirstName}
+                </h1>
+                <p className="text-[#667085] font-medium text-sm md:text-[15px] max-w-xl leading-relaxed">
+                  {dashboardSubtitle}
+                </p>
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-          >
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/performance')}
-              className="bg-white text-[#2C3E50] border border-[#2C3E50] w-full sm:w-auto px-6 h-[50px] rounded-[16px] text-[16px] flex items-center justify-center hover:bg-gray-50 transition-all shadow-sm font-semibold"
-            >
-              View Overall Performance
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowModal(true)}
-              className="bg-[#2C3E50] text-white w-full sm:w-[201px] h-[50px] rounded-[16px] text-[16px] flex items-center justify-center hover:bg-opacity-90 transition-all shadow-sm"
-            >
-              Start New Practice
-            </motion.button>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.08 }}
+                className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate('/performance')}
+                  className="bg-white/90 backdrop-blur-sm text-[#2C3E50] border border-[#D0D5DD] w-full sm:w-auto px-5 h-[48px] rounded-[14px] text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-white transition-all shadow-sm"
+                >
+                  <BarChart3 size={18} />
+                  View Overall Performance
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowModal(true)}
+                  className="bg-[#2C3E50] text-white w-full sm:w-auto px-6 h-[48px] rounded-[14px] text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-all shadow-sm"
+                >
+                  <Play size={18} fill="currentColor" />
+                  Start New Practice
+                </motion.button>
+              </motion.div>
+            </div>
+
+            <DashboardKpiStrip
+              latestBand={latestBand}
+              targetBand={targetBand}
+              creditsRemaining={creditsRemaining}
+              examsCount={examsCount}
+              loading={isLoading}
+            />
+          </div>
         </div>
 
-        <SkillGrowth hasData={hasData} defaultTask={defaultChartTask} isLoading={isLoading} />
-        <RecentReports hasData={hasData} dynamicReports={recentSubmissions} onOpenReport={handleOpenRecentReport} />
+        {/* Main canvas */}
+        <div className="px-4 md:px-6 py-6 md:py-8">
+          <div className="bg-[#F4F6F8] rounded-[24px] border border-[#E5E7EB]/80 p-4 md:p-6 flex flex-col gap-6">
+            <SkillGrowth
+              hasData={hasData}
+              defaultTask={defaultChartTask}
+              isLoading={isLoading}
+              targetBand={targetBand}
+              onStartPractice={() => setShowModal(true)}
+            />
+            <RecentReports
+              hasData={hasData}
+              dynamicReports={recentSubmissions}
+              onOpenReport={handleOpenRecentReport}
+              onStartPractice={() => setShowModal(true)}
+            />
+          </div>
+        </div>
 
         <PracticeModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           onStartMock={(type, task) => {
             setShowModal(false);
-            // Navigate to the dedicated /mock-exam route with exam config in state
             navigate('/mock-exam', { state: { examType: type, taskType: task } });
           }}
           onAnalysisComplete={async (submissionId, reportData) => {
             setShowModal(false);
 
-            // Refresh credit count and dashboard data after a submission is graded
             try {
               const fresh = await api.getMe();
               updateUser({

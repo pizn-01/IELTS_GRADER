@@ -66,21 +66,18 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
     : "You've used all 5 reports for this week. Upgrade to Monthly Mastery ($19.99) for up to 40 reports.";
 
   return (
-    <div
-      style={{ backgroundColor: '#1A96F333' }}
-      className="border border-[#3B82F6] rounded-xl px-4 md:px-5 py-3 md:py-0 flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-10 w-full md:h-[60px] gap-4"
-    >
-      <div className="flex items-start md:items-center gap-3 md:gap-4">
-        <div className="w-5 h-5 border-2 border-[#3B82F6] rounded-full flex items-center justify-center text-[#3B82F6] text-[10px] font-black shrink-0 mt-0.5 md:mt-0">
-           i
+    <div className="bg-[#EFF8FF]/80 border border-[#B2DDFF] rounded-[16px] px-4 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+      <div className="flex items-start sm:items-center gap-3">
+        <div className="w-5 h-5 border border-[#1A96F3] rounded-full flex items-center justify-center text-[#1A96F3] text-[10px] font-black shrink-0 mt-0.5 sm:mt-0">
+          i
         </div>
-        <p className="text-[18px] text-[#101828] font-normal leading-[100%] tracking-[0px]">
+        <p className="text-[14px] text-[#175CD3] font-medium leading-snug">
           {message}
         </p>
       </div>
       <button
         onClick={() => navigate('/upgrade')}
-        className="bg-[#2C3E50] text-white w-full md:w-auto px-8 h-[36px] rounded-lg text-xs font-semibold hover:bg-[#1E293B] transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+        className="bg-[#2C3E50] text-white w-full sm:w-auto px-5 h-[34px] rounded-[10px] text-[12px] font-semibold hover:bg-[#1D2939] transition-all flex items-center justify-center whitespace-nowrap shrink-0"
       >
         Upgrade
       </button>
