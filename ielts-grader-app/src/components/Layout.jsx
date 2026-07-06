@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLearningNavBadge } from '../hooks/useLearningNavBadge';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
   const { user, updateUser } = useAuth();
@@ -37,6 +38,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
   ];
 
   const creditsRemaining = user?.credits_remaining ?? 0;
+  const learningNavBadge = useLearningNavBadge();
 
   return (
     <div className="min-h-screen bg-white">
@@ -69,6 +71,9 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                     <span className={currentView === item.id ? 'text-[#101828] font-bold' : 'text-gray-400 hover:text-gray-600 transition-colors'}>
                       {item.label}
                     </span>
+                    {item.id === 'learning' && learningNavBadge && (
+                      <span className="absolute top-3 right-[-10px] w-2 h-2 rounded-full bg-[#1A96F3]" aria-hidden />
+                    )}
                     {currentView === item.id && (
                       <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1A96F3] rounded-t-full" />
                     )}
@@ -266,6 +271,9 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                     {item.icon}
                   </span>
                   <span className="text-[15px] font-semibold">{item.label}</span>
+                  {item.id === 'learning' && learningNavBadge && (
+                    <span className="ml-auto w-2 h-2 rounded-full bg-[#1A96F3] shrink-0" aria-hidden />
+                  )}
                 </button>
               ))}
             </div>

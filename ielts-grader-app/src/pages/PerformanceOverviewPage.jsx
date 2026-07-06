@@ -10,7 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { formatGoalGap, goalStatusText } from '../utils/goalProgress';
 import { api } from '../services/api';
-import LearningMaterialPromo from '../components/LearningMaterialPromo';
+import LearningEditionModal from '../components/LearningEditionModal';
+import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
@@ -30,6 +31,15 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const {
+    learningStatus,
+    modalEdition,
+    refreshLearningStatus,
+    dismissModal,
+    goToLearning,
+    showModal: showLearningModal,
+  } = useLearningEditionPromo();
+
   const fetchPerformanceData = useCallback(() => {
     setLoading(true);
     const analyticsArgs = activeTask ? { taskType: activeTask } : undefined;
@@ -41,12 +51,13 @@ const PerformanceOverviewPage = ({ onBack }) => {
       setChartData(analytics.chartData || []);
       setFrequentErrors((analytics.frequentErrors || []).slice().sort((a, b) => b.count - a.count));
       setSubmissions((subRes.data || []).filter(s => s.status === 'graded'));
+      refreshLearningStatus();
     }).catch(() => {
       setChartData([]);
       setFrequentErrors([]);
       setSubmissions([]);
     }).finally(() => setLoading(false));
-  }, [activeTask]);
+  }, [activeTask, refreshLearningStatus]);
 
   useEffect(() => {
     fetchPerformanceData();
@@ -406,7 +417,14 @@ const PerformanceOverviewPage = ({ onBack }) => {
         }
       </div>
 
-      <LearningMaterialPromo />
+      <LearningEditionModal
+        isOpen={showLearningModal}
+        edition={modalEdition}
+        priceCents={learningStatus?.priceCents}
+        freeAccess={learningStatus?.freeAccess}
+        onDismiss={dismissModal}
+        onView={goToLearning}
+      />
 
       <TargetBandPrompt
         isOpen={showTargetPrompt}

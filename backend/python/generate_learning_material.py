@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Generate Personalized Learning PDF from a dossier JSON file.
+Multi-pass Personalized Learning PDF generator.
 Usage: python generate_learning_material.py --dossier path.json --output out.pdf
-Stdout: JSON { "success": true, "pdf_path": "...", "page_count": N }
 """
 
 from __future__ import annotations
@@ -13,7 +12,6 @@ import json
 import os
 import re
 import sys
-from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -22,11 +20,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from learning_validate import CRITERIA_CHAPTERS, validate_learning_content  # noqa: E402
+from learning_validate import CRITERIA_CHAPTERS, CRIT_ALIASES, validate_chapter, validate_learning_content  # noqa: E402
 
-MODEL = os.environ.get("LEARNING_MODEL", "gpt-4.1")
+MODEL = os.environ.get("LEARNING_MODEL", "gpt-5.2")
 TEMPERATURE = 0.2
-
 TEMPLATES_PATH = Path(__file__).parent / "learning_templates" / "fallbacks.json"
 
 
@@ -47,195 +44,346 @@ def slugify(text: str) -> str:
     return s[:60] or "unknown"
 
 
-def aggregate_errors_by_criteria(dossier: Dict[str, Any]) -> Dict[str, List[Dict]]:
-    by_crit: Dict[str, List[Dict]] = defaultdict(list)
-    for exam in dossier.get("exams", []):
-        for err in exam.get("errors", []):
-            crit = err.get("criteria") or "Other"
-            by_crit[crit].append({
-                "exam_index": exam.get("exam_index"),
-                "title": err.get("title"),
-                "severity": err.get("severity"),
-                "sub_category": err.get("sub_category"),
-                "explanation": err.get("explanation"),
-                "original_text": err.get("original_text"),
-                "correction_text": err.get("correction_text"),
-            })
-    return by_crit
+def _get_model_config(model: str) -> Dict[str, Any]:
+    if model.startswith("gpt-5"):
+        return {"temperature": 1.0, "max_completion_tokens": 16000, "json_mode": True}
+    return {"temperature": TEMPERATURE, "max_tokens": 8000, "json_mode": True}
 
 
-def collect_grammar_enrichments(dossier: Dict[str, Any], limit: int = 3) -> List[Dict]:
-    seen = set()
-    out: List[Dict] = []
-    for exam in dossier.get("exams", []):
-        ga = exam.get("grammar_analysis") or {}
-        for sug in ga.get("enrichment_suggestions") or []:
-            text = sug if isinstance(sug, str) else (
-                sug.get("lesson") or sug.get("text") or sug.get("suggestion") or ""
-            )
-            key = text.strip().lower()
-            if not key or key in seen:
-                continue
-            seen.add(key)
-            out.append({"exam_index": exam.get("exam_index"), "text": text})
-            if len(out) >= limit:
-                return out
-    return out
+async def _call_json(client, system: str, user: str, model: str = MODEL) -> Dict[str, Any]:
+    cfg = _get_model_config(model)
+    kwargs: Dict[str, Any] = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+    if cfg["json_mode"]:
+        kwargs["response_format"] = {"type": "json_object"}
+    if model.startswith("gpt-5"):
+        kwargs["max_completion_tokens"] = cfg["max_completion_tokens"]
+        kwargs["temperature"] = cfg["temperature"]
+    else:
+        kwargs["max_tokens"] = cfg["max_tokens"]
+        kwargs["temperature"] = cfg["temperature"]
+
+    response = await client.chat.completions.create(**kwargs)
+    raw = response.choices[0].message.content or "{}"
+    return json.loads(raw)
 
 
-def build_llm_payload(dossier: Dict[str, Any]) -> str:
-    """Compact dossier summary for the LLM prompt."""
-    errors_by = aggregate_errors_by_criteria(dossier)
-    enrichments = collect_grammar_enrichments(dossier, 5)
+def build_chapter_input(dossier: Dict[str, Any], criteria: str) -> Dict[str, Any]:
+    agg = dossier.get("aggregated") or {}
+    aliases = CRIT_ALIASES.get(criteria, [criteria])
+    errors = []
+    for alias in aliases:
+        errors.extend((agg.get("by_criteria") or {}).get(alias, []))
 
-    summary = {
+    payload: Dict[str, Any] = {
+        "criteria": criteria,
         "candidate_name": dossier.get("candidate_name"),
         "target_band": dossier.get("target_band"),
         "edition_number": dossier.get("edition_number"),
         "exam_range": dossier.get("exam_range"),
-        "preview": dossier.get("preview"),
-        "errors_by_criteria": {k: v[:12] for k, v in errors_by.items()},
-        "grammar_enrichments_available": enrichments,
-        "exam_bands": [
-            {
-                "exam_index": e.get("exam_index"),
-                "task": f"{e.get('exam_type')} {e.get('task_type')}",
-                "overall": e.get("overall_band"),
-                "response": e.get("response_band"),
-                "coherence": e.get("coherence_band"),
-                "vocabulary": e.get("vocabulary_band"),
-                "grammar": e.get("grammar_band"),
-                "strengths": (e.get("strengths") or [])[:3],
-                "weaknesses": (e.get("weaknesses") or [])[:3],
-                "high_impact_fixes": (e.get("high_impact_fixes") or [])[:3],
-            }
-            for e in dossier.get("exams", [])
-        ],
-    }
-    return json.dumps(summary, ensure_ascii=False)
-
-
-def template_fallback(dossier: Dict[str, Any], errors_by: Dict[str, List]) -> Dict[str, Any]:
-    templates = load_templates()
-    chapters = []
-
-    crit_map = {
-        "Task Response": ["Task Response"],
-        "Coherence and Cohesion": ["Coherence and Cohesion", "Coherence"],
-        "Lexical Resource": ["Lexical Resource"],
-        "Grammatical Range and Accuracy": ["Grammatical Range and Accuracy", "Grammar"],
+        "recurring_errors": errors[:12],
+        "sub_category_scores": agg.get("sub_category_scores") or {},
     }
 
-    for chapter_crit in CRITERIA_CHAPTERS:
-        keys = crit_map.get(chapter_crit, [chapter_crit])
-        sections = []
-        for key in keys:
-            for err in errors_by.get(key, [])[:5]:
-                slug = slugify(err.get("title") or "")
-                tpl = templates.get(slug) or templates.get(slug.replace("repetition_of_", "repetition_"))
-                body = tpl["body"] if tpl else (
-                    f"Recurring issue: {err.get('title')}. "
-                    f"{err.get('explanation') or 'Focus on this pattern in your next practice essays.'}"
-                )
-                sections.append({
-                    "heading": err.get("title") or "Focus area",
-                    "body": body,
-                    "source_refs": [{"exam_index": err.get("exam_index"), "error_title": err.get("title")}],
+    if criteria == "Task Response":
+        tr = agg.get("task_response") or {}
+        payload["weaknesses"] = tr.get("weaknesses", [])[:10]
+        payload["high_impact_fixes"] = tr.get("high_impact_fixes", [])[:10]
+        payload["strengths"] = tr.get("strengths", [])[:6]
+        payload["deep_analysis"] = tr.get("deep_snippets", [])[:5]
+
+    if criteria == "Coherence and Cohesion":
+        for exam in dossier.get("exams", []):
+            fl = exam.get("flow_logic_analysis")
+            if fl:
+                payload.setdefault("flow_logic", []).append({
+                    "exam_index": exam.get("exam_index"),
+                    "analysis": fl,
                 })
 
-        if not sections:
-            sections.append({
-                "heading": "Continue building strength",
-                "body": "No major recurring issues in this criterion for this edition. Maintain your current approach and aim for consistency across task types.",
-                "source_refs": [],
-            })
+    if criteria == "Lexical Resource":
+        payload["vocabulary"] = agg.get("lexical") or {}
+        for exam in dossier.get("exams", []):
+            va = exam.get("vocabulary_analysis")
+            if va:
+                payload.setdefault("vocabulary_by_exam", []).append({
+                    "exam_index": exam.get("exam_index"),
+                    "categories": (va.get("categories") or [])[:4],
+                })
 
-        chapters.append({"criteria": chapter_crit, "sections": sections, "micro_lessons": []})
+    if criteria == "Grammatical Range and Accuracy":
+        payload["grammar"] = agg.get("grammar") or {}
 
-    enrichments = collect_grammar_enrichments(dossier, 3)
-    grammar_ch = next(c for c in chapters if c["criteria"] == "Grammatical Range and Accuracy")
-    for enr in enrichments:
-        grammar_ch["micro_lessons"].append({
-            "title": "Grammar micro-lesson",
-            "body": enr["text"],
-            "source_enrichment": enr["text"],
-        })
+    payload["exam_summaries"] = [
+        {
+            "exam_index": e.get("exam_index"),
+            "task": f"{e.get('exam_type')} {e.get('task_type')}",
+            "bands": {
+                "overall": e.get("overall_band"),
+                "grammar": e.get("grammar_band"),
+            },
+            "essay_excerpt": (e.get("essay_excerpt") or "")[:1500],
+        }
+        for e in dossier.get("exams", [])
+    ]
 
-    return {
-        "overview": {
-            "title": f"Personalized Learning — Edition {dossier.get('edition_number')}",
-            "edition_number": dossier.get("edition_number"),
-            "candidate_name": dossier.get("candidate_name"),
-            "exam_range": dossier.get("exam_range"),
-            "summary": (
-                f"This guide synthesizes patterns from exams {dossier['exam_range']['start']}–"
-                f"{dossier['exam_range']['end']} to help you reach band {dossier.get('target_band') or 'your target'}."
-            ),
-        },
-        "chapters": chapters,
+    return payload
+
+
+CHAPTER_SYSTEM = """You are an expert IELTS Writing teacher creating ONE chapter of a personalized remediation guide.
+You must use ONLY data from the input JSON. Quote the student's actual original_text and correction_text from error instances.
+
+Output JSON:
+{
+  "criteria": "<criterion name>",
+  "sections": [
+    {
+      "heading": string,
+      "body": string (3-5 paragraphs with specific examples; use line breaks \\n\\n between paragraphs),
+      "student_examples": [
+        {"exam_index": number, "original": string, "correction": string, "error_title": string}
+      ],
+      "source_refs": [{"exam_index": number, "error_title": string}]
     }
+  ],
+  "micro_lessons": []
+}
+
+Rules:
+- 3-5 sections targeting the highest-frequency errors for this criterion.
+- Each section MUST include at least one student_examples entry from recurring_errors instances.
+- Name specific error patterns from the data; never invent essay content.
+- Tone: direct, teacher-like, actionable.
+- For Grammar chapter: leave micro_lessons empty (added in a separate pass)."""
 
 
-async def call_llm(dossier: Dict[str, Any]) -> Dict[str, Any]:
-    import openai
+GRAMMAR_LESSONS_SYSTEM = """You are an IELTS grammar teacher. Create micro-lessons for structures the student was SUGGESTED but did NOT USE.
 
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not set")
+Output JSON:
+{
+  "micro_lessons": [
+    {
+      "title": string,
+      "source_enrichment": string (must match an unused enrichment original),
+      "rule": string (2-3 sentences),
+      "when_to_use": [string, string],
+      "your_mistakes": [{"exam_index": number, "original": string, "fix": string}],
+      "mini_exercises": [string, string],
+      "example_sentences": [string, string]
+    }
+  ]
+}
 
-    client = openai.AsyncOpenAI(api_key=api_key)
-    payload = build_llm_payload(dossier)
+Create exactly one micro-lesson per unused enrichment provided (up to 3). Each must be a short focused course (~1 page) with real student grammar errors where available."""
 
-    system = """You are an expert IELTS Writing tutor creating a personalized study guide.
-Output ONLY valid JSON matching this schema:
+
+OVERVIEW_SYSTEM = """Polish the overview and practice plan for a personalized IELTS study guide.
+
+Output JSON:
 {
   "overview": {
     "title": string,
     "edition_number": number,
     "candidate_name": string,
     "exam_range": {"start": number, "end": number},
-    "summary": string (2-3 sentences, grounded in provided data only)
+    "summary": string (3-4 sentences, specific to data),
+    "priority_focus": [string, string, string]
   },
-  "chapters": [
-    {
-      "criteria": one of "Task Response" | "Coherence and Cohesion" | "Lexical Resource" | "Grammatical Range and Accuracy",
-      "sections": [
-        {
-          "heading": string,
-          "body": string (2-4 paragraphs, practical, no invented exam details),
-          "source_refs": [{"exam_index": number, "error_title": string}]
-        }
-      ],
-      "micro_lessons": [] 
-    }
-  ]
+  "practice_plan": {
+    "steps": [string, string, string, string]
+  }
 }
-Rules:
-- Exactly 4 chapters in criteria order.
-- Every section must cite real errors via source_refs from the input data.
-- Do NOT invent errors, bands, or essay content not in the input.
-- Grammar chapter: add up to 3 micro_lessons from grammar_enrichments_available only.
-- Tone: academic, encouraging, specific."""
 
-    user = f"Create the learning guide JSON from this dossier summary:\n\n{payload}"
+Ground every point in the chapter summaries provided. No invented scores."""
 
-    response = await client.chat.completions.create(
-        model=MODEL,
-        temperature=TEMPERATURE,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
+
+async def generate_chapter(client, dossier: Dict[str, Any], criteria: str, retry_feedback: str = "") -> Dict[str, Any]:
+    payload = build_chapter_input(dossier, criteria)
+    user = f"Create the {criteria} chapter from:\n\n{json.dumps(payload, ensure_ascii=False)}"
+    if retry_feedback:
+        user += f"\n\nFix these validation issues:\n{retry_feedback}"
+
+    result = await _call_json(client, CHAPTER_SYSTEM, user)
+    result["criteria"] = criteria
+    return result
+
+
+async def generate_grammar_lessons(client, dossier: Dict[str, Any]) -> List[Dict]:
+    agg = dossier.get("aggregated") or {}
+    grammar = agg.get("grammar") or {}
+    unused = grammar.get("unused_enrichments") or []
+    if not unused:
+        return []
+
+    payload = {
+        "unused_enrichments": unused,
+        "recurring_grammar_errors": grammar.get("recurring_errors", [])[:10],
+        "structures_used": grammar.get("structures_used", []),
+    }
+    user = f"Create micro-lessons from:\n\n{json.dumps(payload, ensure_ascii=False)}"
+    result = await _call_json(client, GRAMMAR_LESSONS_SYSTEM, user)
+    return result.get("micro_lessons") or []
+
+
+async def generate_overview(client, dossier: Dict[str, Any], chapters: List[Dict]) -> Dict[str, Any]:
+    summary = {
+        "candidate_name": dossier.get("candidate_name"),
+        "target_band": dossier.get("target_band"),
+        "edition_number": dossier.get("edition_number"),
+        "exam_range": dossier.get("exam_range"),
+        "preview": dossier.get("preview"),
+        "chapter_headings": [
+            {"criteria": ch.get("criteria"), "sections": [s.get("heading") for s in ch.get("sections", [])]}
+            for ch in chapters
         ],
-    )
+    }
+    user = f"Write overview and practice plan:\n\n{json.dumps(summary, ensure_ascii=False)}"
+    return await _call_json(client, OVERVIEW_SYSTEM, user)
 
-    raw = response.choices[0].message.content or "{}"
-    return json.loads(raw)
+
+def template_chapter(dossier: Dict[str, Any], criteria: str) -> Dict[str, Any]:
+    templates = load_templates()
+    agg = dossier.get("aggregated") or {}
+    aliases = CRIT_ALIASES.get(criteria, [criteria])
+    errors = []
+    for alias in aliases:
+        errors.extend((agg.get("by_criteria") or {}).get(alias, []))
+
+    sections = []
+    for err in errors[:5]:
+        inst = (err.get("instances") or [{}])[0]
+        slug = slugify(err.get("title") or "")
+        tpl = templates.get(slug)
+        body = tpl["body"] if tpl else (
+            f"{err.get('explanation') or err.get('title')}. "
+            f"Appeared {err.get('count', 1)} times across your exams."
+        )
+        sections.append({
+            "heading": err.get("title") or "Focus area",
+            "body": body,
+            "student_examples": [{
+                "exam_index": inst.get("exam_index"),
+                "original": inst.get("original_text") or "",
+                "correction": inst.get("correction_text") or "",
+                "error_title": err.get("title"),
+            }] if inst.get("original_text") else [],
+            "source_refs": [{"exam_index": inst.get("exam_index"), "error_title": err.get("title")}],
+        })
+
+    if not sections:
+        sections.append({
+            "heading": "Maintain consistency",
+            "body": "No major recurring issues in this criterion. Keep practicing across task types.",
+            "student_examples": [],
+            "source_refs": [],
+        })
+
+    chapter = {"criteria": criteria, "sections": sections, "micro_lessons": []}
+
+    if criteria == "Grammatical Range and Accuracy":
+        for enr in (agg.get("grammar") or {}).get("unused_enrichments", [])[:3]:
+            chapter["micro_lessons"].append({
+                "title": enr.get("original") or "Grammar focus",
+                "source_enrichment": enr.get("original"),
+                "rule": enr.get("explanation") or "",
+                "when_to_use": ["In formal academic writing", "When contrasting time periods"],
+                "your_mistakes": [],
+                "mini_exercises": ["Rewrite one body paragraph using this structure."],
+                "example_sentences": [enr.get("improved") or ""],
+            })
+
+    return chapter
+
+
+async def main_async(dossier_path: str, output_path: str) -> Dict[str, Any]:
+    import openai
+
+    dossier = load_dossier(dossier_path)
+    client = openai.AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    used_fallback = False
+
+    chapters: List[Dict[str, Any]] = []
+    chapter_tasks = [generate_chapter(client, dossier, crit) for crit in CRITERIA_CHAPTERS]
+    raw_chapters = await asyncio.gather(*chapter_tasks, return_exceptions=True)
+
+    for i, crit in enumerate(CRITERIA_CHAPTERS):
+        ch = raw_chapters[i]
+        if isinstance(ch, Exception):
+            print(f"[generate_learning_material] Chapter {crit} failed: {ch}", file=sys.stderr)
+            chapters.append(template_chapter(dossier, crit))
+            used_fallback = True
+            continue
+
+        ok, issues = validate_chapter(ch, dossier, crit)
+        if not ok:
+            print(f"[generate_learning_material] {crit} validation failed, retrying: {issues}", file=sys.stderr)
+            try:
+                ch = await generate_chapter(client, dossier, crit, retry_feedback="; ".join(issues))
+                ok, issues = validate_chapter(ch, dossier, crit)
+            except Exception as exc:
+                print(f"[generate_learning_material] {crit} retry failed: {exc}", file=sys.stderr)
+                ok = False
+
+        if not ok:
+            chapters.append(template_chapter(dossier, crit))
+            used_fallback = True
+        else:
+            chapters.append(ch)
+
+    grammar_ch = next((c for c in chapters if c["criteria"] == "Grammatical Range and Accuracy"), None)
+    if grammar_ch is not None:
+        try:
+            lessons = await generate_grammar_lessons(client, dossier)
+            if lessons:
+                grammar_ch["micro_lessons"] = lessons[:3]
+        except Exception as exc:
+            print(f"[generate_learning_material] grammar lessons failed: {exc}", file=sys.stderr)
+            if not grammar_ch.get("micro_lessons"):
+                grammar_ch["micro_lessons"] = template_chapter(dossier, "Grammatical Range and Accuracy").get("micro_lessons", [])
+
+    try:
+        overview_data = await generate_overview(client, dossier, chapters)
+        overview = overview_data.get("overview") or {}
+        practice_plan = overview_data.get("practice_plan") or {}
+    except Exception as exc:
+        print(f"[generate_learning_material] overview failed: {exc}", file=sys.stderr)
+        overview = {
+            "title": f"Personalized Learning — Edition {dossier.get('edition_number')}",
+            "edition_number": dossier.get("edition_number"),
+            "candidate_name": dossier.get("candidate_name"),
+            "exam_range": dossier.get("exam_range"),
+            "summary": f"Remediation guide from exams {dossier['exam_range']['start']}–{dossier['exam_range']['end']}.",
+            "priority_focus": [],
+        }
+        practice_plan = {"steps": [
+            "Review flagged errors from each exam.",
+            "Write one paragraph targeting your weakest criterion.",
+            "Submit a new practice essay and compare error frequency.",
+        ]}
+
+    content = {"overview": overview, "chapters": chapters, "practice_plan": practice_plan}
+    ok, issues = validate_learning_content(content, dossier)
+    if not ok:
+        print(f"[generate_learning_material] final validation warnings: {issues}", file=sys.stderr)
+
+    page_count = render_pdf(content, dossier, output_path)
+    return {
+        "success": True,
+        "pdf_path": output_path,
+        "page_count": page_count,
+        "used_fallback": used_fallback,
+        "content_version": dossier.get("content_version", 2),
+    }
 
 
 def render_pdf(content: Dict[str, Any], dossier: Dict[str, Any], output_path: str) -> int:
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import cm
@@ -244,145 +392,101 @@ def render_pdf(content: Dict[str, Any], dossier: Dict[str, Any], output_path: st
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
-        rightMargin=2 * cm,
-        leftMargin=2 * cm,
-        topMargin=2.5 * cm,
+        rightMargin=1.8 * cm,
+        leftMargin=1.8 * cm,
+        topMargin=2 * cm,
         bottomMargin=2 * cm,
     )
 
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        "BookTitle",
-        parent=styles["Title"],
-        fontSize=22,
-        leading=28,
-        alignment=TA_CENTER,
-        spaceAfter=20,
-        textColor=colors.HexColor("#1a365d"),
-    )
-    h1 = ParagraphStyle(
-        "H1",
-        parent=styles["Heading1"],
-        fontSize=16,
-        leading=20,
-        spaceBefore=18,
-        spaceAfter=10,
-        textColor=colors.HexColor("#2c5282"),
-    )
-    h2 = ParagraphStyle(
-        "H2",
-        parent=styles["Heading2"],
-        fontSize=13,
-        leading=16,
-        spaceBefore=12,
-        spaceAfter=6,
-        textColor=colors.HexColor("#2d3748"),
-    )
-    body = ParagraphStyle(
-        "Body",
-        parent=styles["BodyText"],
-        fontSize=10.5,
-        leading=15,
-        alignment=TA_JUSTIFY,
-        spaceAfter=8,
-    )
-    meta = ParagraphStyle(
-        "Meta",
-        parent=styles["Normal"],
-        fontSize=9,
-        textColor=colors.grey,
-        alignment=TA_CENTER,
-    )
+    title_style = ParagraphStyle("BookTitle", parent=styles["Title"], fontSize=20, leading=26,
+                                   alignment=TA_CENTER, spaceAfter=14, textColor=colors.HexColor("#1a365d"))
+    h1 = ParagraphStyle("H1", parent=styles["Heading1"], fontSize=15, leading=19, spaceBefore=14, spaceAfter=8,
+                        textColor=colors.HexColor("#2c5282"))
+    h2 = ParagraphStyle("H2", parent=styles["Heading2"], fontSize=12, leading=15, spaceBefore=10, spaceAfter=5,
+                        textColor=colors.HexColor("#2d3748"))
+    body = ParagraphStyle("Body", parent=styles["BodyText"], fontSize=10, leading=14, alignment=TA_JUSTIFY, spaceAfter=6)
+    meta = ParagraphStyle("Meta", parent=styles["Normal"], fontSize=9, textColor=colors.grey, alignment=TA_CENTER)
+    callout = ParagraphStyle("Callout", parent=styles["Normal"], fontSize=9.5, leading=13, leftIndent=12,
+                             backColor=colors.HexColor("#f7fafc"), borderPadding=6, spaceAfter=6)
+    callout_label = ParagraphStyle("CalloutLabel", parent=callout, fontName="Helvetica-Bold", textColor=colors.HexColor("#c53030"))
+    callout_fix = ParagraphStyle("CalloutFix", parent=callout, textColor=colors.HexColor("#276749"))
 
     story = []
     overview = content.get("overview") or {}
 
-    story.append(Spacer(1, 2 * cm))
+    story.append(Spacer(1, 1.5 * cm))
     story.append(Paragraph(overview.get("title") or "Personalized Learning Guide", title_style))
     story.append(Paragraph(
-        f"Prepared for {overview.get('candidate_name', 'Candidate')} · "
-        f"Exams {overview.get('exam_range', {}).get('start')}–{overview.get('exam_range', {}).get('end')}",
+        f"{overview.get('candidate_name', 'Candidate')} · Exams {overview.get('exam_range', {}).get('start')}–"
+        f"{overview.get('exam_range', {}).get('end')}",
         meta,
     ))
-    story.append(Spacer(1, 0.5 * cm))
-    story.append(Paragraph(overview.get("summary") or "", body))
+    story.append(Spacer(1, 0.4 * cm))
+    story.append(Paragraph((overview.get("summary") or "").replace("\n", "<br/>"), body))
+
+    for focus in overview.get("priority_focus") or []:
+        story.append(Paragraph(f"• {focus}", body))
 
     preview = dossier.get("preview") or {}
     bands = preview.get("avgBands") or {}
-    if bands:
-        band_line = " · ".join(
-            f"{k.capitalize()}: {v:.1f}"
-            for k, v in bands.items()
-            if v is not None and k != "overall"
-        )
-        if bands.get("overall") is not None:
-            band_line = f"Overall avg: {bands['overall']:.1f}" + (f" · {band_line}" if band_line else "")
-        story.append(Spacer(1, 0.3 * cm))
-        story.append(Paragraph(band_line, meta))
+    if bands.get("overall") is not None:
+        parts = [f"Overall {bands['overall']:.1f}"]
+        for k, label in [("response", "TR"), ("coherence", "CC"), ("vocabulary", "LR"), ("grammar", "GRA")]:
+            if bands.get(k) is not None:
+                parts.append(f"{label} {bands[k]:.1f}")
+        story.append(Paragraph(" · ".join(parts), meta))
 
     story.append(PageBreak())
 
     for ch in content.get("chapters") or []:
-        crit = ch.get("criteria") or "Chapter"
-        story.append(Paragraph(crit, h1))
+        story.append(Paragraph(ch.get("criteria") or "Chapter", h1))
 
         for sec in ch.get("sections") or []:
             story.append(Paragraph(sec.get("heading") or "Section", h2))
-            text = (sec.get("body") or "").replace("\n", "<br/>")
-            story.append(Paragraph(text, body))
+            story.append(Paragraph((sec.get("body") or "").replace("\n", "<br/>"), body))
+
+            for ex in sec.get("student_examples") or []:
+                if ex.get("original"):
+                    story.append(Paragraph("Your writing:", callout_label))
+                    story.append(Paragraph(ex.get("original", "").replace("\n", " "), callout))
+                if ex.get("correction"):
+                    story.append(Paragraph("Better version:", callout_fix))
+                    story.append(Paragraph(ex.get("correction", "").replace("\n", " "), callout))
 
         for lesson in ch.get("micro_lessons") or []:
             story.append(Paragraph(lesson.get("title") or "Micro-lesson", h2))
-            text = (lesson.get("body") or "").replace("\n", "<br/>")
-            story.append(Paragraph(text, body))
+            if lesson.get("rule"):
+                story.append(Paragraph(f"<b>Rule:</b> {lesson['rule']}", body))
+            for item in lesson.get("when_to_use") or []:
+                story.append(Paragraph(f"• {item}", body))
+            for mistake in lesson.get("your_mistakes") or []:
+                story.append(Paragraph(
+                    f"<b>Exam {mistake.get('exam_index')}:</b> {mistake.get('original', '')} → {mistake.get('fix', '')}",
+                    callout,
+                ))
+            for ex in lesson.get("example_sentences") or []:
+                if ex:
+                    story.append(Paragraph(f"Example: {ex}", callout))
+            story.append(Paragraph("<b>Practice:</b>", body))
+            for ex in lesson.get("mini_exercises") or []:
+                story.append(Paragraph(f"• {ex}", body))
 
         story.append(PageBreak())
 
     story.append(Paragraph("Practice Plan", h1))
+    plan = content.get("practice_plan") or {}
+    for i, step in enumerate(plan.get("steps") or [], 1):
+        story.append(Paragraph(f"{i}. {step}", body))
+
+    story.append(Spacer(1, 0.8 * cm))
     story.append(Paragraph(
-        "1. Re-read your flagged errors from exams "
-        f"{overview.get('exam_range', {}).get('start')}–{overview.get('exam_range', {}).get('end')}.<br/>"
-        "2. Write one paragraph targeting your weakest criterion without time pressure.<br/>"
-        "3. Submit your next practice essay and compare error frequency in the following edition.",
-        body,
-    ))
-    story.append(Spacer(1, 1 * cm))
-    story.append(Paragraph(
-        f"Generated {datetime.utcnow().strftime('%Y-%m-%d')} · IELTS Grader Personalized Learning",
+        f"Generated {datetime.utcnow().strftime('%Y-%m-%d')} · IELTS Grader · Edition {overview.get('edition_number', '')}",
         meta,
     ))
 
     doc.build(story)
-    # Rough page estimate from story length
-    return max(12, min(20, 4 + sum(len(ch.get("sections") or []) for ch in content.get("chapters") or [])))
-
-
-async def main_async(dossier_path: str, output_path: str) -> Dict[str, Any]:
-    dossier = load_dossier(dossier_path)
-    errors_by = aggregate_errors_by_criteria(dossier)
-
-    content: Optional[Dict[str, Any]] = None
-    used_fallback = False
-
-    try:
-        content = await call_llm(dossier)
-        ok, issues = validate_learning_content(content, dossier)
-        if not ok:
-            print(f"[generate_learning_material] Validation failed: {issues}", file=sys.stderr)
-            content = template_fallback(dossier, errors_by)
-            used_fallback = True
-    except Exception as exc:
-        print(f"[generate_learning_material] LLM failed, using templates: {exc}", file=sys.stderr)
-        content = template_fallback(dossier, errors_by)
-        used_fallback = True
-
-    page_count = render_pdf(content, dossier, output_path)
-    return {
-        "success": True,
-        "pdf_path": output_path,
-        "page_count": page_count,
-        "used_fallback": used_fallback,
-    }
+    return max(14, min(22, 6 + sum(len(ch.get("sections") or []) + len(ch.get("micro_lessons") or []) for ch in content.get("chapters") or [])))
 
 
 def main():
@@ -390,7 +494,6 @@ def main():
     parser.add_argument("--dossier", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
-
     result = asyncio.run(main_async(args.dossier, args.output))
     print(json.dumps(result))
 

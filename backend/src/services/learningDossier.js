@@ -2,6 +2,185 @@ const { supabaseAdmin } = require('./supabase');
 const { resolveTaskVariant } = require('../utils/taskVariant');
 
 const SEVERITY_ORDER = { Major: 1, High: 2, Medium: 3, Low: 4 };
+const GRA_CRITERIA = ['Grammatical Range and Accuracy', 'Grammar'];
+const CONTENT_VERSION = 2;
+const ESSAY_EXCERPT_LEN = 2500;
+
+function norm(s) {
+  return (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function isStructureUsed(structureName, usedSet) {
+  const n = norm(structureName);
+  if (!n) return false;
+  for (const u of usedSet) {
+    if (u.includes(n) || n.includes(u)) return true;
+  }
+  return false;
+}
+
+/**
+ * Rich aggregation for teacher-quality PDF generation.
+ */
+function buildTeacherDossier(dossier) {
+  const exams = dossier.exams || [];
+  const errorMap = {};
+  const byCriteria = {};
+  const grammarErrors = [];
+  const structuresUsedSet = new Set();
+  const enrichmentCandidates = [];
+  const lexicalItems = [];
+  const taskResponse = {
+    weaknesses: [],
+    high_impact_fixes: [],
+    strengths: [],
+    deep_snippets: [],
+  };
+  const subCategoryAcc = {};
+
+  exams.forEach((exam) => {
+    (exam.errors || []).forEach((err) => {
+      const crit = err.criteria || 'Other';
+      if (!byCriteria[crit]) byCriteria[crit] = {};
+      const key = `${err.title}::${err.sub_category || ''}`;
+      if (!errorMap[key]) {
+        errorMap[key] = {
+          title: err.title,
+          sub_category: err.sub_category,
+          criteria: crit,
+          severity: err.severity,
+          count: 0,
+          instances: [],
+        };
+      }
+      errorMap[key].count += 1;
+      errorMap[key].instances.push({
+        exam_index: exam.exam_index,
+        original_text: err.original_text,
+        correction_text: err.correction_text,
+        explanation: err.explanation,
+        location_text: err.location_text,
+      });
+      if (!byCriteria[crit][key]) byCriteria[crit][key] = errorMap[key];
+
+      if (GRA_CRITERIA.some((g) => crit.includes(g) || g.includes(crit))) {
+        grammarErrors.push(errorMap[key]);
+      }
+    });
+
+    const ga = exam.grammar_analysis || {};
+    (ga.structures_used || []).forEach((s) => structuresUsedSet.add(norm(s)));
+
+    (ga.enrichment_suggestions || []).forEach((sug) => {
+      const item = typeof sug === 'string'
+        ? { original: sug, improved: '', explanation: '' }
+        : {
+            original: sug.original || sug.structure || '',
+            improved: sug.improved || sug.example_context || '',
+            explanation: sug.explanation || sug.benefit || '',
+          };
+      enrichmentCandidates.push({ exam_index: exam.exam_index, ...item });
+    });
+
+    const va = exam.vocabulary_analysis || {};
+    (va.categories || []).forEach((cat) => {
+      (cat.words || []).forEach((w) => {
+        lexicalItems.push({
+          exam_index: exam.exam_index,
+          category: cat.name,
+          word: w.word,
+          definition: w.definition,
+          example: w.example,
+        });
+      });
+    });
+
+    taskResponse.weaknesses.push(...(exam.weaknesses || []).map((w) => ({ exam_index: exam.exam_index, text: w })));
+    taskResponse.high_impact_fixes.push(...(exam.high_impact_fixes || []).map((w) => ({ exam_index: exam.exam_index, text: w })));
+    taskResponse.strengths.push(...(exam.strengths || []).map((w) => ({ exam_index: exam.exam_index, text: w })));
+
+    const deepBlocks = [
+      exam.argumentation_analysis,
+      exam.letter_structure_analysis,
+      exam.data_structure_analysis,
+      exam.flow_logic_analysis,
+    ].filter(Boolean);
+    deepBlocks.forEach((block) => {
+      taskResponse.deep_snippets.push({ exam_index: exam.exam_index, content: block });
+    });
+
+    const subs = exam.sub_category_scores || {};
+    Object.entries(subs).forEach(([crit, data]) => {
+      const subcats = data?.sub_categories || data || {};
+      Object.entries(subcats).forEach(([name, sc]) => {
+        const score = typeof sc === 'object' ? parseFloat(sc.score ?? sc.band) : parseFloat(sc);
+        if (Number.isNaN(score)) return;
+        if (!subCategoryAcc[name]) subCategoryAcc[name] = { scores: [], weaknesses: [] };
+        subCategoryAcc[name].scores.push(score);
+        const weak = typeof sc === 'object' ? sc.weaknesses : null;
+        if (weak) subCategoryAcc[name].weaknesses.push(weak);
+      });
+    });
+  });
+
+  const recurring_errors = Object.values(errorMap)
+    .sort((a, b) => b.count - a.count);
+
+  const by_criteria = {};
+  Object.entries(byCriteria).forEach(([crit, map]) => {
+    by_criteria[crit] = Object.values(map).sort((a, b) => b.count - a.count);
+  });
+
+  const enrichmentCounts = {};
+  enrichmentCandidates.forEach((e) => {
+    const k = norm(e.original);
+    if (!k) return;
+    if (!enrichmentCounts[k]) enrichmentCounts[k] = { ...e, count: 0, exams: [] };
+    enrichmentCounts[k].count += 1;
+    enrichmentCounts[k].exams.push(e.exam_index);
+  });
+
+  const unused_enrichments = Object.values(enrichmentCounts)
+    .filter((e) => !isStructureUsed(e.original, structuresUsedSet))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+    .map((e) => ({
+      original: e.original,
+      improved: e.improved,
+      explanation: e.explanation,
+      suggested_in_exams: [...new Set(e.exams)],
+      times_suggested: e.count,
+    }));
+
+  const sub_category_scores = {};
+  Object.entries(subCategoryAcc).forEach(([name, data]) => {
+    const avg = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;
+    sub_category_scores[name] = {
+      avg_score: Math.round(avg * 10) / 10,
+      min_score: Math.min(...data.scores),
+      weaknesses: [...new Set(data.weaknesses.filter(Boolean))].slice(0, 3),
+    };
+  });
+
+  return {
+    content_version: CONTENT_VERSION,
+    recurring_errors: recurring_errors.slice(0, 40),
+    by_criteria,
+    grammar: {
+      recurring_errors: grammarErrors
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15),
+      structures_used: [...structuresUsedSet].filter(Boolean),
+      unused_enrichments,
+      all_enrichment_suggestions: enrichmentCandidates.slice(0, 20),
+    },
+    lexical: {
+      weak_vocabulary: lexicalItems.slice(0, 30),
+    },
+    task_response: taskResponse,
+    sub_category_scores,
+  };
+}
 
 /**
  * Fetch graded submissions in chronological order (all task types).
@@ -148,7 +327,8 @@ async function buildFullDossier(userId, editionNumber) {
       task_variant,
       word_count: sub.word_count,
       created_at: sub.created_at,
-      essay_excerpt: (sub.essay_content || '').slice(0, 1200),
+      essay_excerpt: (sub.essay_content || '').slice(0, ESSAY_EXCERPT_LEN),
+      essay_full: sub.essay_content || '',
       overall_band: parseFloat(report.overall_band),
       response_band: parseFloat(report.response_band),
       coherence_band: parseFloat(report.coherence_band),
@@ -174,7 +354,7 @@ async function buildFullDossier(userId, editionNumber) {
 
   const preview = await buildPreviewStats(submissionIds);
 
-  return {
+  const base = {
     user_id: userId,
     candidate_name: profile?.full_name || 'Candidate',
     target_band: profile?.target_band ? parseFloat(profile.target_band) : null,
@@ -182,9 +362,13 @@ async function buildFullDossier(userId, editionNumber) {
     exam_range: { start, end },
     submission_ids: submissionIds,
     generated_at: new Date().toISOString(),
+    content_version: CONTENT_VERSION,
     preview,
     exams,
   };
+
+  base.aggregated = buildTeacherDossier(base);
+  return base;
 }
 
 async function getOrCreateEditionRow(userId, editionNumber, submissionIds) {
@@ -221,7 +405,9 @@ module.exports = {
   editionRange,
   buildPreviewStats,
   buildFullDossier,
+  buildTeacherDossier,
   getOrCreateEditionRow,
   EXAMS_PER_EDITION: 5,
   LEARNING_PRICE_CENTS: 500,
+  CONTENT_VERSION,
 };

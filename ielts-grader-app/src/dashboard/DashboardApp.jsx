@@ -13,7 +13,8 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { dashboardGoalSubtitle } from '../utils/goalProgress';
-import LearningMaterialPromo from '../components/LearningMaterialPromo';
+import LearningEditionModal from '../components/LearningEditionModal';
+import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
@@ -27,6 +28,15 @@ function DashboardApp() {
   const [recentSubmissions, setRecentSubmissions] = useState(null);
   const [hasData, setHasData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const {
+    learningStatus,
+    modalEdition,
+    refreshLearningStatus,
+    dismissModal,
+    goToLearning,
+    showModal: showLearningModal,
+  } = useLearningEditionPromo();
 
   const fetchDashboardData = async () => {
     try {
@@ -61,6 +71,7 @@ function DashboardApp() {
 
       const hasGraded = formatted.length > 0 || (metrics?.chartData?.length || 0) > 0;
       setHasData(hasGraded);
+      await refreshLearningStatus();
     } catch (err) {
       console.warn('Dashboard data fetch failed:', err);
       setRecentSubmissions([]);
@@ -193,6 +204,11 @@ function DashboardApp() {
               examsCount={examsCount}
               loading={isLoading}
             />
+            {learningStatus?.progressToNextEdition?.completed >= 3 && (
+              <p className="text-[12px] text-[#667085] mt-3 font-medium">
+                {learningStatus.progressToNextEdition.completed}/5 exams toward your next study guide
+              </p>
+            )}
           </div>
         </div>
 
@@ -215,7 +231,14 @@ function DashboardApp() {
           </div>
         </div>
 
-        <LearningMaterialPromo />
+        <LearningEditionModal
+          isOpen={showLearningModal}
+          edition={modalEdition}
+          priceCents={learningStatus?.priceCents}
+          freeAccess={learningStatus?.freeAccess}
+          onDismiss={dismissModal}
+          onView={goToLearning}
+        />
 
         <PracticeModal
           isOpen={showModal}
@@ -237,6 +260,7 @@ function DashboardApp() {
             } catch {} // non-critical
 
             fetchDashboardData();
+            await refreshLearningStatus();
 
             if (reportData) {
               navigate('/report', { state: { reportData } });

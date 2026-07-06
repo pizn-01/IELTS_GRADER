@@ -75,7 +75,12 @@ async function generateEditionPdf(userId, editionNumber) {
 
   try {
     let dossier = edition.dossier_snapshot;
-    if (!dossier || !dossier.exams || dossier.exams.length < 5) {
+    const needsRebuild = !dossier
+      || !dossier.exams
+      || dossier.exams.length < 5
+      || !dossier.aggregated
+      || dossier.content_version < 2;
+    if (needsRebuild) {
       dossier = await buildFullDossier(userId, editionNumber);
       await supabaseAdmin
         .from('personalized_learning_editions')

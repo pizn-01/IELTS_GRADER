@@ -1,6 +1,5 @@
 """
 Validate LLM learning material JSON against dossier source_refs.
-Every cited error must exist in the dossier; enrichment lessons must map to grammar_analysis.
 """
 
 from __future__ import annotations
@@ -16,16 +15,28 @@ CRITERIA_CHAPTERS = [
     "Grammatical Range and Accuracy",
 ]
 
+CRIT_ALIASES = {
+    "Task Response": ["Task Response"],
+    "Coherence and Cohesion": ["Coherence and Cohesion", "Coherence"],
+    "Lexical Resource": ["Lexical Resource", "Lexical"],
+    "Grammatical Range and Accuracy": ["Grammatical Range and Accuracy", "Grammar"],
+}
+
 
 def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "").strip().lower())
 
 
 def build_source_index(dossier: Dict[str, Any]) -> Dict[str, Any]:
-    """Index errors and grammar enrichments for validation."""
     errors_by_key: Dict[str, Dict] = {}
     error_titles: Set[str] = set()
-    enrichment_texts: Set[str] = set()
+    enrichment_originals: Set[str] = set()
+    unused_enrichment_originals: Set[str] = set()
+
+    agg = dossier.get("aggregated") or {}
+    for err in agg.get("recurring_errors") or []:
+        title = err.get("title") or ""
+        error_titles.add(_norm(title))
 
     for exam in dossier.get("exams", []):
         exam_idx = exam.get("exam_index")
@@ -34,73 +45,85 @@ def build_source_index(dossier: Dict[str, Any]) -> Dict[str, Any]:
             error_titles.add(_norm(title))
             key = f"exam:{exam_idx}:error:{err.get('id') or title}"
             errors_by_key[key] = err
-            errors_by_key[f"exam:{exam_idx}:{_norm(title)}"] = err
 
         ga = exam.get("grammar_analysis") or {}
         for sug in ga.get("enrichment_suggestions") or []:
             if isinstance(sug, str):
-                enrichment_texts.add(_norm(sug))
+                enrichment_originals.add(_norm(sug))
             elif isinstance(sug, dict):
-                text = sug.get("lesson") or sug.get("text") or sug.get("suggestion") or ""
-                enrichment_texts.add(_norm(text))
+                orig = sug.get("original") or sug.get("structure") or sug.get("lesson") or ""
+                enrichment_originals.add(_norm(orig))
+
+    for enr in (agg.get("grammar") or {}).get("unused_enrichments") or []:
+        unused_enrichment_originals.add(_norm(enr.get("original") or ""))
 
     return {
         "errors_by_key": errors_by_key,
         "error_titles": error_titles,
-        "enrichment_texts": enrichment_texts,
+        "enrichment_originals": enrichment_originals,
+        "unused_enrichment_originals": unused_enrichment_originals,
     }
 
 
-def validate_learning_content(
-    content: Dict[str, Any],
-    dossier: Dict[str, Any],
-) -> Tuple[bool, List[str]]:
+def validate_chapter(chapter: Dict[str, Any], dossier: Dict[str, Any], expected_crit: str) -> Tuple[bool, List[str]]:
     issues: List[str] = []
     index = build_source_index(dossier)
 
-    if not isinstance(content, dict):
-        return False, ["Content must be a JSON object"]
+    if chapter.get("criteria") != expected_crit:
+        issues.append(f"Chapter criteria mismatch: {chapter.get('criteria')}")
 
-    chapters = content.get("chapters")
-    if not isinstance(chapters, list) or len(chapters) < 4:
-        issues.append("Expected at least 4 chapters")
+    sections = chapter.get("sections") or []
+    if len(sections) < 1:
+        issues.append("Chapter needs at least one section")
 
-    seen_criteria = set()
-    for ch in chapters or []:
+    for section in sections:
+        refs = section.get("source_refs") or []
+        body = section.get("body") or ""
+        if not body or len(body) < 80:
+            issues.append(f"Section too short: {section.get('heading')}")
+        for ref in refs:
+            if not _ref_valid(ref, index, dossier):
+                issues.append(f"Invalid source_ref: {ref}")
+
+    if expected_crit == "Grammatical Range and Accuracy":
+        for lesson in chapter.get("micro_lessons") or []:
+            src = lesson.get("source_enrichment") or lesson.get("title") or ""
+            if src and _norm(src) not in index["unused_enrichment_originals"]:
+                if not any(_norm(src) in u or u in _norm(src) for u in index["unused_enrichment_originals"] if u):
+                    issues.append(f"Micro-lesson not from unused enrichments: {src[:60]}")
+
+    return len(issues) == 0, issues
+
+
+def validate_learning_content(content: Dict[str, Any], dossier: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    issues: List[str] = []
+    chapters = content.get("chapters") or []
+    if len(chapters) < 4:
+        issues.append("Expected 4 chapters")
+
+    seen = set()
+    for ch in chapters:
         crit = ch.get("criteria")
         if crit:
-            seen_criteria.add(crit)
-        for section in ch.get("sections", []):
-            refs = section.get("source_refs") or []
-            for ref in refs:
-                if not _ref_valid(ref, index, dossier):
-                    issues.append(f"Invalid source_ref: {ref}")
-
-        for lesson in ch.get("micro_lessons", []) or []:
-            src = lesson.get("source_enrichment") or lesson.get("source_ref") or ""
-            if src and _norm(src) not in index["enrichment_texts"]:
-                # Allow partial match
-                if not any(_norm(src) in e or e in _norm(src) for e in index["enrichment_texts"] if e):
-                    issues.append(f"Micro-lesson not grounded in enrichment_suggestions: {src[:80]}")
+            seen.add(crit)
+            ok, ch_issues = validate_chapter(ch, dossier, crit)
+            if not ok:
+                issues.extend(ch_issues)
 
     for required in CRITERIA_CHAPTERS:
-        if required not in seen_criteria:
+        if required not in seen:
             issues.append(f"Missing chapter: {required}")
-
-    overview = content.get("overview") or {}
-    if overview.get("edition_number") != dossier.get("edition_number"):
-        issues.append("Edition number mismatch in overview")
 
     return len(issues) == 0, issues
 
 
 def _ref_valid(ref: Any, index: Dict, dossier: Dict) -> bool:
     if isinstance(ref, dict):
-        exam_idx = ref.get("exam_index")
         title = _norm(ref.get("error_title") or ref.get("title") or "")
         if title and title in index["error_titles"]:
             return True
-        if exam_idx is not None:
+        exam_idx = ref.get("exam_index")
+        if exam_idx is not None and title:
             for exam in dossier.get("exams", []):
                 if exam.get("exam_index") == exam_idx:
                     for err in exam.get("errors", []):
@@ -109,9 +132,6 @@ def _ref_valid(ref: Any, index: Dict, dossier: Dict) -> bool:
         return False
 
     if isinstance(ref, str):
-        key = ref.strip()
-        if key in index["errors_by_key"]:
-            return True
-        return _norm(key) in index["error_titles"]
+        return _norm(ref) in index["error_titles"] or ref in index["errors_by_key"]
 
     return False
