@@ -6,6 +6,7 @@ import PerformanceOverviewDashboard from '../components/PerformanceOverviewDashb
 import TargetBandPrompt from '../components/TargetBandPrompt';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
+import { formatGoalGap, goalStatusText } from '../utils/goalProgress';
 import { api } from '../services/api';
 
 const PerformanceOverviewPage = ({ onBack }) => {
@@ -254,11 +255,12 @@ const PerformanceOverviewPage = ({ onBack }) => {
             totalInstances={totalInstances}
             uniqueTypes={uniqueTypes}
             criterionCards={criterionCards}
+            targetBand={targetBand}
           />
         : activeTab === "Detailed Breakdown" ?
           <div className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E5E7EB] space-y-8">
             {/* Top Status Row */}
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="bg-[#F8FAFC] rounded-[12px] px-6 py-5 flex items-center justify-between border border-[#E5E7EB]">
                 <div>
                   <h4 className="text-[14px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Total Growth</h4>
@@ -273,6 +275,13 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 </div>
                 <span className="text-[24px] font-bold text-[#00C9B1]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{latestBand ?? '—'}</span>
               </div>
+              <div className="bg-[#F8FAFC] rounded-[12px] px-6 py-5 flex items-center justify-between border border-[#E5E7EB]">
+                <div>
+                  <h4 className="text-[14px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Your Goal</h4>
+                  <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Target Band</p>
+                </div>
+                <span className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{targetBand.toFixed(1)}</span>
+              </div>
             </div>
 
             {/* Tutor's Verdict */}
@@ -284,7 +293,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
 
               <p className="text-[15px] font-normal text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
                 {latestBand != null
-                  ? `You have reached an overall band of ${latestBand}${bandChange != null ? `, showing ${parseFloat(bandChange) >= 0 ? 'an improvement' : 'a change'} of ${parseFloat(bandChange) >= 0 ? '+' : ''}${bandChange} since your first attempt` : ''}. Keep applying the feedback to maintain this momentum.`
+                  ? `${goalStatusText(latestBand, targetBand)}${bandChange != null ? ` Since your first attempt, your score has ${parseFloat(bandChange) >= 0 ? 'improved' : 'changed'} by ${parseFloat(bandChange) >= 0 ? '+' : ''}${bandChange}.` : ''}`
                   : 'Complete your first exam to see your personalized verdict.'}
               </p>
 
@@ -310,7 +319,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">
                   <p className="text-[11px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
                   <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    {latestBand != null ? (latestBand >= targetBand ? 'Target Reached' : `+${(targetBand - latestBand).toFixed(1)}`) : '—'}
+                    {formatGoalGap(latestBand, targetBand)}
                   </p>
                 </div>
                 <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">

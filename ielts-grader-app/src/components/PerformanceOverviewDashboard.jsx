@@ -1,6 +1,8 @@
 import React from 'react';
 import { AlertCircle, AlertTriangle, MinusCircle } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+
+import { formatGoalGap, goalProgressPercent } from '../utils/goalProgress';
 
 const CHART_LINES = [
   { label: 'Overall Band', dataKey: 'overall', color: '#EA4335' },
@@ -121,11 +123,15 @@ export default function PerformanceOverviewDashboard({
   totalInstances = 0,
   uniqueTypes = 0,
   criterionCards = [],
+  targetBand = null,
 }) {
   const changeColor = change == null ? '#101828' : changePositive ? '#00C9B1' : '#EF4444';
   const formattedChange = change == null ? '—' : `${changePositive && parseFloat(change) >= 0 ? '+' : ''}${change}`;
   const series = normalizeChartData(chartData);
   const tickInterval = series.length > 12 ? Math.ceil(series.length / 8) - 1 : 0;
+  const goalGap = targetBand != null ? formatGoalGap(latestBand, targetBand) : '—';
+  const goalPct = targetBand != null ? goalProgressPercent(latestBand, targetBand) : 0;
+  const reachedGoal = latestBand != null && targetBand != null && latestBand >= targetBand;
 
   return (
     <div className="bg-[#F4F6F8] rounded-2xl border border-[#E5E7EB] p-3 lg:p-4 overflow-hidden">
@@ -150,6 +156,37 @@ export default function PerformanceOverviewDashboard({
             </div>
           ))}
         </div>
+
+        {targetBand != null && (
+          <div className="bg-white rounded-xl border border-[#E5E7EB] px-4 py-3 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Your Goal</p>
+                <p className="text-[14px] font-semibold text-[#101828] mt-0.5">
+                  Target Band {targetBand.toFixed(1)}
+                  {latestBand != null && (
+                    <span className="text-[#667085] font-medium"> · Latest {Number(latestBand).toFixed(1)}</span>
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <p className="text-[10px] text-[#667085] font-medium">To goal</p>
+                  <p className={`text-[16px] font-bold ${reachedGoal ? 'text-[#00C9B1]' : 'text-[#101828]'}`}>{loading ? '…' : goalGap}</p>
+                </div>
+                <div className="w-[120px]">
+                  <div className="h-2 bg-[#F2F4F7] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${reachedGoal ? 'bg-[#00C9B1]' : 'bg-[#1A96F3]'}`}
+                      style={{ width: `${loading ? 0 : goalPct}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-[#667085] mt-1 text-right">{loading ? '…' : `${goalPct}%`}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Insight row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 shrink-0 min-w-0">
@@ -233,6 +270,15 @@ export default function PerformanceOverviewDashboard({
                         itemStyle={{ fontSize: '11px', fontWeight: 700 }}
                         labelFormatter={(_, payload) => payload?.[0]?.payload?.examLabel || ''}
                       />
+                      {targetBand != null && (
+                        <ReferenceLine
+                          y={targetBand}
+                          stroke="#2C3E50"
+                          strokeDasharray="5 5"
+                          strokeWidth={1.5}
+                          label={{ value: `Goal ${targetBand.toFixed(1)}`, position: 'insideTopRight', fill: '#2C3E50', fontSize: 10, fontWeight: 700 }}
+                        />
+                      )}
                       {CHART_LINES.map((line) => (
                         <Line key={line.dataKey} type="linear" dataKey={line.dataKey} stroke={line.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                       ))}

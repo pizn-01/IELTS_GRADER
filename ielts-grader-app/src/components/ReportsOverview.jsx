@@ -4,6 +4,7 @@ import ReportView from './ReportView';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
+import { formatGoalGap, goalStatusText } from '../utils/goalProgress';
 import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, Search, Calendar, FileText, ChevronRight, Download, Eye, AlertTriangle, TrendingDown, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PerformanceOverviewDashboard from './PerformanceOverviewDashboard';
@@ -131,6 +132,17 @@ const ReportsOverview = ({ onBack }) => {
       positive: growth != null ? parseFloat(growth) >= 0 : true,
     };
   });
+
+  const avgCriteria = [
+    { name: 'Coherence & Cohesion', field: 'coherence' },
+    { name: 'Lexical Resource', field: 'vocabulary' },
+    { name: 'Task Response', field: 'response' },
+    { name: 'Grammatical Range', field: 'grammar' },
+  ].map(c => {
+    const vals = liveChartData.map(d => d[c.field]).filter(Boolean);
+    return { name: c.name, avg: vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : null };
+  }).filter(c => c.avg != null).sort((a, b) => b.avg - a.avg);
+  const bottleneckCrit = avgCriteria[avgCriteria.length - 1] ?? { name: 'Grammatical Range', avg: null };
 
   // Activity Profile — real counts and date range from submissions
   const gradedSubs = submissions.filter(s => s.status === 'graded');
@@ -449,6 +461,7 @@ const ReportsOverview = ({ onBack }) => {
             totalInstances={totalInstances}
             uniqueTypes={uniqueTypes}
             criterionCards={criterionCards}
+            targetBand={targetBand}
           />
         : activeTab === "Detailed Breakdown" ? 
           <div className="bg-white rounded-[24px] p-6 md:p-8 shadow-sm border border-[#E5E7EB] space-y-10">
@@ -484,11 +497,11 @@ const ReportsOverview = ({ onBack }) => {
               <div className="space-y-8">
                 <p className="text-[15px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '140%' }}>
                   {latestBand != null
-                    ? `You have reached an overall band of ${latestBand}${
+                    ? `${goalStatusText(latestBand, targetBand)}${
                         rawChange != null && parseFloat(rawChange) !== 0
-                          ? `, showing ${parseFloat(rawChange) > 0 ? 'an improvement' : 'a change'} of ${parseFloat(rawChange) > 0 ? '+' : ''}${rawChange} since your first attempt.`
-                          : '.'
-                      } Keep applying the feedback to maintain this momentum.`
+                          ? ` Since your first attempt, your score has ${parseFloat(rawChange) > 0 ? 'improved' : 'changed'} by ${parseFloat(rawChange) > 0 ? '+' : ''}${rawChange}.`
+                          : ''
+                      }`
                     : 'Complete your first exam to receive a personalized assessment.'}
                 </p>
 
@@ -514,11 +527,11 @@ const ReportsOverview = ({ onBack }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <div className="bg-white border border-gray-100 rounded-[16px] p-6 md:p-8 shadow-sm flex flex-col justify-center space-y-2">
                    <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
-                   <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>+0.4</p>
+                   <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{formatGoalGap(latestBand, targetBand)}</p>
                 </div>
                 <div className="bg-white border border-gray-100 rounded-[16px] p-6 md:p-8 shadow-sm flex flex-col justify-center space-y-2">
                    <p className="text-[13px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>Lowest Hanging Fruit</p>
-                   <p className="text-[18px] md:text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Grammatical Range & Accuracy</p>
+                   <p className="text-[18px] md:text-[20px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{bottleneckCrit.name}</p>
                 </div>
               </div>
             </div>
