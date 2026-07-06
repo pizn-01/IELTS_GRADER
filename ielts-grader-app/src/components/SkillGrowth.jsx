@@ -40,27 +40,22 @@ const EmptyChartState = ({ title, description, onStartPractice }) => (
 const SkillGrowth = ({
   hasData = true,
   defaultTask = 'Academic Task 2',
-  controlledTask = null,
-  hideTaskSelector = false,
   isLoading: parentLoading = false,
   targetBand = null,
   onStartPractice,
 }) => {
-  const [internalTask, setInternalTask] = useState(
+  const [activeTask, setActiveTask] = useState(
     TASK_OPTIONS.includes(defaultTask) ? defaultTask : 'Academic Task 2'
   );
-  const activeTask = controlledTask && TASK_OPTIONS.includes(controlledTask)
-    ? controlledTask
-    : internalTask;
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [taskDropdownOpen, setTaskDropdownOpen] = useState(false);
 
   useEffect(() => {
-    if (!controlledTask && TASK_OPTIONS.includes(defaultTask)) {
-      setInternalTask(defaultTask);
+    if (TASK_OPTIONS.includes(defaultTask)) {
+      setActiveTask(defaultTask);
     }
-  }, [defaultTask, controlledTask]);
+  }, [defaultTask]);
 
   useEffect(() => {
     if (parentLoading) return;
@@ -82,7 +77,7 @@ const SkillGrowth = ({
   }, [activeTask, parentLoading]);
 
   const handleTaskChange = (task) => {
-    setInternalTask(task);
+    setActiveTask(task);
     setTaskDropdownOpen(false);
   };
 
@@ -126,7 +121,7 @@ const SkillGrowth = ({
           </p>
         </div>
       </div>
-      {!hideTaskSelector && taskDropdown}
+      {taskDropdown}
     </div>
   );
 
