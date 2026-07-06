@@ -1,5 +1,6 @@
 import React from 'react';
 import { Download, Loader2, Lock, Sparkles, BookOpen, CheckCircle2 } from 'lucide-react';
+import LearningEditionSnapshot from './LearningEditionSnapshot';
 
 const CRITERIA_LABELS = {
   'Task Response': 'TR',
@@ -137,68 +138,79 @@ export default function LearningEditionPanel({
           )}
         </div>
 
-        {/* Right: CTA */}
-        <div className="p-5 md:p-6 flex flex-col justify-center gap-4">
-          <p className="text-[13px] text-[#667085] leading-relaxed">
-            {locked
-              ? 'Every 5 graded exams unlocks a tailored PDF from your real errors and band scores.'
-              : 'A teacher-style guide built from all 5 exams — every task type and your most frequent mistakes.'}
-          </p>
+        {/* Right: snapshot + CTA */}
+        <div className="p-5 md:p-6 flex flex-col gap-4 min-h-[280px]">
+          <LearningEditionSnapshot
+            preview={preview}
+            status={status}
+            examRange={examRange}
+            locked={locked}
+          />
 
-          {errorMessage && (
-            <p className="text-[12px] text-red-600">{errorMessage}</p>
-          )}
+          <div className="mt-auto pt-2 border-t border-gray-100 space-y-3">
+            <p className="text-[12px] text-[#667085] leading-relaxed">
+              {locked
+                ? 'Every 5 graded exams unlocks a tailored PDF from your real errors and band scores.'
+                : isReady
+                  ? 'Download your personalized guide — every frequent mistake and task type covered.'
+                  : 'A teacher-style guide built from all 5 exams in this edition.'}
+            </p>
 
-          {!locked && (
-            <div className="flex flex-wrap gap-3">
-              {canGenerate && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onPurchase(edition.editionNumber)}
-                  className="flex items-center gap-2 bg-[#2C3E50] hover:bg-[#1D2939] text-white font-bold text-[13px] px-5 py-2.5 rounded-xl disabled:opacity-60"
-                >
-                  {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                  {freeAccess ? 'Generate PDF' : `Get PDF — $${(priceCents / 100).toFixed(0)}`}
-                </button>
-              )}
-              {isReady && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onDownload(edition.editionNumber)}
-                  className="flex items-center gap-2 border border-[#1A96F3] text-[#1A96F3] font-bold text-[13px] px-5 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-60"
-                >
-                  <Download size={15} />
-                  Download PDF
-                </button>
-              )}
-              {canRetry && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onRetry(edition.editionNumber)}
-                  className="flex items-center gap-2 bg-[#2C3E50] text-white font-bold text-[13px] px-5 py-2.5 rounded-xl disabled:opacity-60"
-                >
-                  {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                  Retry generation
-                </button>
-              )}
-              {isWorking && (
-                <span className="flex items-center gap-2 text-[12px] text-amber-600">
-                  <Loader2 size={13} className="animate-spin" />
-                  Preparing your guide…
-                </span>
-              )}
-            </div>
-          )}
+            {errorMessage && (
+              <p className="text-[12px] text-red-600">{errorMessage}</p>
+            )}
 
-          {!locked && !freeAccess && canGenerate && (
-            <p className="text-[11px] text-gray-400">One-time ${(priceCents / 100).toFixed(0)} per edition · PDF generated after payment</p>
-          )}
-          {!locked && freeAccess && canGenerate && (
-            <p className="text-[11px] text-[#1A96F3] font-medium">Free admin access — click Generate to start</p>
-          )}
+            {!locked && (
+              <div className="flex flex-wrap gap-3">
+                {canGenerate && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onPurchase(edition.editionNumber)}
+                    className="flex items-center gap-2 bg-[#2C3E50] hover:bg-[#1D2939] text-white font-bold text-[13px] px-5 py-2.5 rounded-xl disabled:opacity-60"
+                  >
+                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                    {freeAccess ? 'Generate PDF' : `Get PDF — $${(priceCents / 100).toFixed(0)}`}
+                  </button>
+                )}
+                {isReady && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onDownload(edition.editionNumber)}
+                    className="flex items-center gap-2 border border-[#1A96F3] text-[#1A96F3] font-bold text-[13px] px-5 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-60"
+                  >
+                    <Download size={15} />
+                    Download PDF
+                  </button>
+                )}
+                {canRetry && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onRetry(edition.editionNumber)}
+                    className="flex items-center gap-2 bg-[#2C3E50] text-white font-bold text-[13px] px-5 py-2.5 rounded-xl disabled:opacity-60"
+                  >
+                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                    Retry generation
+                  </button>
+                )}
+                {isWorking && (
+                  <span className="flex items-center gap-2 text-[12px] text-amber-600">
+                    <Loader2 size={13} className="animate-spin" />
+                    Preparing your guide…
+                  </span>
+                )}
+              </div>
+            )}
+
+            {!locked && !freeAccess && canGenerate && (
+              <p className="text-[11px] text-gray-400">One-time ${(priceCents / 100).toFixed(0)} per edition · PDF generated after payment</p>
+            )}
+            {!locked && freeAccess && canGenerate && (
+              <p className="text-[11px] text-[#1A96F3] font-medium">Free admin access — click Generate to start</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
