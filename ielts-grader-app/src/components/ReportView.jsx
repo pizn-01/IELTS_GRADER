@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import TargetBandPrompt from './TargetBandPrompt';
 
 function resolveTaskVariant(examType, taskType) {
   if (taskType === 'Task 1') {
@@ -218,6 +219,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
   const profileRef = useRef(null);
 
   const { user } = useAuth();
+  const [showTargetPrompt, setShowTargetPrompt] = useState(false);
   const userInitials = user?.full_name
     ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
@@ -245,6 +247,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
     document.addEventListener('open-exam-sidebar', handleOpenSidebar);
     return () => document.removeEventListener('open-exam-sidebar', handleOpenSidebar);
   }, []);
+
+  useEffect(() => {
+    if (!user || user.target_band_confirmed) return;
+    if (data?.overall_band == null) return;
+    setShowTargetPrompt(true);
+  }, [user, data?.overall_band]);
 
   // Use provided data or fallback to defaults
   const essayContent = data?.essay || "Some people argue that imposing longer prison sentences is the most effective way to reduce crime, while others believe that alternative measures can achieve better results. Although stricter punishments may deter certain offenders, I believe that addressing the root causes of crime is a more sustainable and effective solution.";
@@ -1735,6 +1743,13 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
           </div>
         )}
       </div>
+
+      <TargetBandPrompt
+        isOpen={showTargetPrompt}
+        onClose={() => setShowTargetPrompt(false)}
+        score={data?.overall_band != null ? parseFloat(data.overall_band).toFixed(1) : null}
+        title="What's your target band?"
+      />
     </div>
   );
 };

@@ -12,6 +12,7 @@ import Settings from '../components/Settings';
 import { motion } from 'framer-motion';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
@@ -96,7 +97,7 @@ function DashboardApp() {
   };
 
   const candidateFirstName = user?.full_name?.split(' ')[0] || 'Candidate';
-  const targetBand = user?.target_band || '7.5';
+  const targetBand = user?.target_band || DEFAULT_TARGET_BAND;
   const creditsRemaining = user?.credits_remaining ?? 4;
 
   const defaultChartTask = useMemo(() => {
@@ -120,7 +121,7 @@ function DashboardApp() {
               Welcome back, {candidateFirstName}
             </h1>
             <p className="text-gray-500 font-medium tracking-tight text-sm md:text-base">
-              You're on track for Band {targetBand} — {creditsRemaining} evaluation credits remaining.
+              You're on track for Band {Number(targetBand).toFixed(1)} — {creditsRemaining} evaluation credits remaining.
             </p>
           </motion.div>
 

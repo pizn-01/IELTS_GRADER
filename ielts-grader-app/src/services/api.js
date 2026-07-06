@@ -36,6 +36,7 @@ const offlineFallbacks = {
     email: 'candidate@ielts.org',
     full_name: 'John Candidate',
     target_band: 7.5,
+    target_band_confirmed: true,
     credits_remaining: 4,
     profile_image_url: null,
   },

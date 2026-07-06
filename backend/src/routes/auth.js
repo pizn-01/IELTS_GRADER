@@ -22,7 +22,7 @@ async function fetchProfile(userId) {
   const [{ data, error }, { count: paymentCount }] = await Promise.all([
     supabaseAdmin
       .from('profiles')
-      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
+      .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
       .eq('id', userId)
       .single(),
     supabaseAdmin
@@ -99,7 +99,7 @@ router.post('/register', async (req, res) => {
       await new Promise(r => setTimeout(r, 400));
       const { data: p } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
+        .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
         .eq('id', data.user.id)
         .single();
       if (p) { profile = p; break; }
@@ -109,10 +109,10 @@ router.post('/register', async (req, res) => {
       const { data: inserted, error: insErr } = await supabaseAdmin
         .from('profiles')
         .insert({ id: data.user.id, full_name: name, credits_remaining: 1 })
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
+        .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
         .single();
       if (insErr) console.error('[auth/register] Profile fallback insert error:', insErr.message);
-      profile = inserted || { full_name: name, target_band: 7.5, credits_remaining: 1, profile_image_url: null, email_verified: false };
+      profile = inserted || { full_name: name, target_band: 7.5, target_band_confirmed: false, credits_remaining: 1, profile_image_url: null, email_verified: false };
     }
 
     // Enforce 1 free trial credit, set email_verified = false, generate verification token
@@ -349,7 +349,7 @@ router.post('/reset-password', async (req, res) => {
 
 // ─── PATCH /api/auth/profile ──────────────────────────────────────────────────
 router.patch('/profile', authenticateToken, async (req, res) => {
-  const { full_name, target_band, profile_image_url } = req.body;
+  const { full_name, target_band, target_band_confirmed, profile_image_url } = req.body;
   const userId = req.user.userId;
 
   const updates = {};
@@ -361,6 +361,10 @@ router.patch('/profile', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'target_band must be between 1.0 and 9.0.' });
     }
     updates.target_band = Math.round(band * 2) / 2;
+    updates.target_band_confirmed = true;
+  }
+  if (target_band_confirmed !== undefined && target_band === undefined) {
+    updates.target_band_confirmed = Boolean(target_band_confirmed);
   }
   updates.updated_at = new Date().toISOString();
 
@@ -373,7 +377,7 @@ router.patch('/profile', authenticateToken, async (req, res) => {
       .from('profiles')
       .update(updates)
       .eq('id', userId)
-      .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
+      .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
       .single();
 
     if (error) throw error;
@@ -444,7 +448,7 @@ router.post('/google', async (req, res) => {
     for (let attempt = 0; attempt < 4; attempt++) {
       const { data: p } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
+        .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
         .eq('id', user.id)
         .single();
       if (p) { profile = p; break; }
@@ -468,12 +472,13 @@ router.post('/google', async (req, res) => {
           credits_remaining: 1,
           email_verified: true,  // Google accounts are already verified
         })
-        .select('full_name, target_band, credits_remaining, profile_image_url, is_admin, email_verified')
+        .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
         .single();
 
       profile = inserted || {
         full_name: fullName,
         target_band: 7.5,
+        target_band_confirmed: false,
         credits_remaining: 1,
         profile_image_url: avatarUrl,
         email_verified: true,

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReportView from './ReportView';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { ArrowLeft, ChevronDown, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, Search, Calendar, FileText, ChevronRight, Download, Eye, AlertTriangle, TrendingDown, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PerformanceOverviewDashboard from './PerformanceOverviewDashboard';
@@ -10,6 +12,8 @@ import PerformanceOverviewDashboard from './PerformanceOverviewDashboard';
 
 const ReportsOverview = ({ onBack }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const targetBand = parseFloat(user?.target_band) || DEFAULT_TARGET_BAND;
   const [isDetailView, setIsDetailView] = useState(false);
   const [activeTask, setActiveTask] = useState("Academic Task 1");
   const [activeTab, setActiveTab] = useState("Overview");
@@ -498,10 +502,10 @@ const ReportsOverview = ({ onBack }) => {
               </div>
             </div>
 
-            {/* Pathway to Band 7.5 */}
+            {/* Pathway to target band */}
             <div className="space-y-4 pt-4">
               <div className="space-y-4">
-                <h3 className="text-[18px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Pathway to Band 7.5</h3>
+                <h3 className="text-[18px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Pathway to Band {targetBand.toFixed(1)}</h3>
                 <p className="text-[16px] font-normal text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '140%' }}>
                   If you raise one criterion by the shown delta (while others stay stable), your mean should cross the IELTS rounding threshold and your overall band can round up.
                 </p>

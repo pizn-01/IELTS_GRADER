@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Camera, Eye, EyeOff, X, CheckCircle2, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { DEFAULT_TARGET_BAND, IELTS_BAND_OPTIONS } from '../constants/ieltsBands';
 import { api } from '../services/api';
 
 const Settings = ({ profileImage, setProfileImage }) => {
@@ -25,12 +26,21 @@ const Settings = ({ profileImage, setProfileImage }) => {
     if (tab) setActiveTab(tab === 'Security' ? 'Change Password' : tab);
   }, [location.state]);
 
+  useEffect(() => {
+    if (!user) return;
+    setProfileForm({
+      firstName: user.full_name?.split(' ')[0] || '',
+      lastName: user.full_name?.split(' ').slice(1).join(' ') || '',
+      targetBand: user.target_band || DEFAULT_TARGET_BAND,
+    });
+  }, [user?.full_name, user?.target_band]);
+
 
   // Profile form state — pre-populated from auth context
   const [profileForm, setProfileForm] = useState({
     firstName: user?.full_name?.split(' ')[0] || '',
     lastName:  user?.full_name?.split(' ').slice(1).join(' ') || '',
-    targetBand: user?.target_band || 7.5,
+    targetBand: user?.target_band || DEFAULT_TARGET_BAND,
   });
 
   // Derive initials and display name from live user data
@@ -59,8 +69,16 @@ const Settings = ({ profileImage, setProfileImage }) => {
     setProfileSaving(true);
     setProfileMsg(null);
     try {
-      const updated = await api.updateProfile({ full_name, target_band: profileForm.targetBand });
-      updateUser({ full_name: updated.full_name, target_band: updated.target_band });
+      const updated = await api.updateProfile({
+        full_name,
+        target_band: profileForm.targetBand,
+        target_band_confirmed: true,
+      });
+      updateUser({
+        full_name: updated.full_name,
+        target_band: updated.target_band,
+        target_band_confirmed: updated.target_band_confirmed,
+      });
       setProfileMsg({ type: 'success', text: 'Profile saved successfully.' });
     } catch (err) {
       setProfileMsg({ type: 'error', text: err.message || 'Save failed.' });
@@ -243,6 +261,24 @@ const Settings = ({ profileImage, setProfileImage }) => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <label className="text-[14px] font-bold text-[#101828]">Target IELTS Band</label>
+                  <div className="relative">
+                    <select
+                      value={profileForm.targetBand}
+                      onChange={e => setProfileForm(p => ({ ...p, targetBand: parseFloat(e.target.value) }))}
+                      className="w-full h-[52px] px-5 bg-white border border-[#D0D5DD] rounded-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#1A96F3]/20 focus:border-[#1A96F3] transition-all appearance-none"
+                    >
+                      {IELTS_BAND_OPTIONS.map(band => (
+                        <option key={band} value={band}>{band.toFixed(1)}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
+                  <p className="text-[12px] text-gray-400">Used for your performance pathway and dashboard goals.</p>
+                </div>
+                <div className="space-y-2">
                   <label className="text-[14px] font-bold text-[#101828]">Phone</label>
                   <input 
                     type="tel" 
@@ -298,7 +334,7 @@ const Settings = ({ profileImage, setProfileImage }) => {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
                 <button
-                  onClick={() => setProfileForm({ firstName: user?.full_name?.split(' ')[0] || '', lastName: user?.full_name?.split(' ').slice(1).join(' ') || '', targetBand: user?.target_band || 7.5 })}
+                  onClick={() => setProfileForm({ firstName: user?.full_name?.split(' ')[0] || '', lastName: user?.full_name?.split(' ').slice(1).join(' ') || '', targetBand: user?.target_band || DEFAULT_TARGET_BAND })}
                   className="px-10 h-[48px] bg-white border border-gray-200 rounded-[10px] text-[14px] font-medium text-[#101828] hover:bg-gray-50 transition-all"
                 >
                   Cancel

@@ -3,10 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PerformanceOverviewDashboard from '../components/PerformanceOverviewDashboard';
+import TargetBandPrompt from '../components/TargetBandPrompt';
+import { useAuth } from '../context/AuthContext';
+import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { api } from '../services/api';
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showTargetPrompt, setShowTargetPrompt] = useState(false);
+  const targetBand = parseFloat(user?.target_band) || DEFAULT_TARGET_BAND;
   const [searchParams] = useSearchParams();
   // Pre-select task from URL query param (?task=Academic+Task+2)
   const VALID_TASKS = ['Academic Task 1', 'Academic Task 2', 'General Task 1', 'General Task 2'];
@@ -127,6 +133,20 @@ const PerformanceOverviewPage = ({ onBack }) => {
         }}></div>
 
         <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-12 relative z-10">
+          {!user?.target_band_confirmed && latestBand != null && (
+            <div className="mb-6 bg-[#EFF8FF] border border-[#B2DDFF] rounded-[12px] px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-[14px] text-[#175CD3]">
+                Set your target band to personalize your pathway and progress insights.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowTargetPrompt(true)}
+                className="shrink-0 h-[38px] px-4 rounded-[8px] bg-[#175CD3] text-white text-[13px] font-semibold hover:bg-[#1349a8] transition-colors"
+              >
+                Set target band
+              </button>
+            </div>
+          )}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
             <div className="flex items-center gap-3">
               <button
@@ -277,10 +297,10 @@ const PerformanceOverviewPage = ({ onBack }) => {
               )}
             </div>
 
-            {/* Pathway to Band 7.5 */}
+            {/* Pathway to target band */}
             <div className="space-y-4 pt-2 border-t border-[#F2F4F7]">
               <div className="pt-4">
-                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Pathway to Band 7.5</h3>
+                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Pathway to Band {targetBand.toFixed(1)}</h3>
                 <p className="text-[14px] text-[#475467] leading-relaxed mt-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>
                   If you raise one criterion by the shown delta (while others stay stable), your mean should cross the IELTS rounding threshold and your overall band can round up.
                 </p>
@@ -290,7 +310,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">
                   <p className="text-[11px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
                   <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    {latestBand != null ? (latestBand >= 7.5 ? 'Target Reached' : `+${(7.5 - latestBand).toFixed(1)}`) : '—'}
+                    {latestBand != null ? (latestBand >= targetBand ? 'Target Reached' : `+${(targetBand - latestBand).toFixed(1)}`) : '—'}
                   </p>
                 </div>
                 <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">
@@ -540,6 +560,12 @@ const PerformanceOverviewPage = ({ onBack }) => {
           </div>
         }
       </div>
+
+      <TargetBandPrompt
+        isOpen={showTargetPrompt}
+        onClose={() => setShowTargetPrompt(false)}
+        score={latestBand != null ? parseFloat(latestBand).toFixed(1) : null}
+      />
     </div>
   );
 };
