@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PerformanceOverviewDashboard from '../components/PerformanceOverviewDashboard';
+import FourteenDaySprint from '../components/FourteenDaySprint';
 import TargetBandPrompt from '../components/TargetBandPrompt';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
@@ -451,112 +452,17 @@ const PerformanceOverviewPage = ({ onBack }) => {
             </div>
             </div>
           </div>
-        : activeTab === "14-Day sprint" ? 
-          <div className="bg-white rounded-[24px] p-10 shadow-sm border border-gray-100 space-y-10">
-            <div>
-               <h3 className="text-[18px] font-bold text-[#101828] mb-4">Two-Week Hyper-Growth Sprint</h3>
-               <div className="space-y-1.5">
-                 <p className="text-[14px] text-[#101828]"><span className="font-bold">Pacing:</span> <span className="text-[#475467]">4 essays/week, 6 drills/week.</span></p>
-                 <p className="text-[14px] text-[#101828]"><span className="font-bold">Review:</span> <span className="text-[#475467]">Every 7th day: compare top error counts and adjust priorities.</span></p>
-               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {[
-                 {
-                   day: "Day 1: Set Up & Baseline",
-                   tasks: [
-                     "Let's look at your biggest score-killer right now: 'Repetition of Basic Lexis. Open your most recent essay and highlight every time you made this mistake",
-                     "Pick 3 sentences where this happened and rewrite them so they are perfect",
-                     "Write down a simple 3 step checklist on a sticky note to help you avoid this mistake next time."
-                   ],
-                   outcome: "3 perfectly rewritten sentences that prove you know how to avoid 'Repetition of Basic Lexis'."
-                 },
-                 {
-                   day: "Day 2: Deep Dive: Repetition of Basic Lexis",
-                   tasks: [
-                     "Today is all about fixing 'Repetition of Basic Lexis'. Find a past essay where you scored lowest in Grammatical Range & Accuracy.",
-                     "Spend 15 minutes editing \"only\" for 'Repetition of Basic Lexis' in that essay. Don't worry about anything else",
-                     "Read your corrected sentences out loud to make sure they sound natural."
-                   ],
-                   outcome: "A clean, upgraded version of one body paragraph completely free of \"Repetition of Basic Lexis."
-                 },
-                 {
-                   day: "Day 3: Targeting: Imprecise Word Choice",
-                   tasks: [
-                     "Your second biggest roadblock is 'Imprecise Word Choice'. Let's fix it today.",
-                     "Write a brand new introduction and one body paragraph for any IELTS topic.",
-                     "Before you consider it finished, spend 5 strict minutes checking specifically for 'Imprecise Word Choice'."
-                   ],
-                   outcome: "1 Intro and 1 body paragraph with zero \"Imprecise Word Choice mistakes."
-                 },
-                 {
-                   day: "Day 4: Targeting: ideas Underdeveloped",
-                   tasks: [
-                     "Let's switch gears to 'Ideas Underdeveloped, which is also holding your score back.",
-                     "Take a prompt you've struggled with before and build a quick outline (Main Idea -> Because -> Example).",
-                     "Draft just one body paragraph from that outline, making sure you completely avoid making a 'Ideas Underdeveloped mistake."
-                   ],
-                   outcome: "A bulletproof body paragraph that nails the structure without 'Ideas Underdeveloped."
-                 },
-                 {
-                   day: "Day 5: Combine and Conquer",
-                   tasks: [
-                     "Write two body paragraphs today. Your goal is tough: avoid 'Repetition of Basic Lexis' AND 'Imprecise Word Choice'.",
-                     "Do not worry about the 40-minute time limit today. Focus entirely on quality, accuracy, and applying your new rules.",
-                     "Use the templates provided in this report to structure your topic sentences clearly."
-                   ],
-                   outcome: "Two high-quality body paragraphs checking both of your top errors."
-                 },
-                 {
-                   day: "Day 6: Full Timed Mock Test",
-                   tasks: [
-                     "Sit down in a quiet room and write a full Task 2 essay in exactly 40 minutes.",
-                     "Save exactly 4 minutes at the end to proofread specifically for 'Repetition of Basic Lexis' and 'Imprecise Word Choice",
-                     "Do not use any dictionary, notes, or grammar checkers. Treat this exactly like the real exam."
-                   ],
-                   outcome: "1 completed Task 2 essay written under strict exam conditions."
-                 },
-                 {
-                   day: "Day 7: Review & Next Steps",
-                   tasks: [
-                     "Be your own examiner. Grade the essay you wrote yesterday using the checklist you made on Day 1.",
-                     "Did you repeat the 'Repetition of Basic Lexis' mistake? If yes, write that specific sentence 3 times correctly to build muscle memory.",
-                     "Rest and recharge. Consistent, focused practice is better than burning out."
-                   ],
-                   outcome: "A graded essay and a clear mind for next week."
-                 },
-                 {
-                   day: "Day 8: Set Up & Baseline",
-                   tasks: [
-                     "Let's look at your biggest score-killer right now: 'Repetition of Basic Lexis Open your most recent essay and highlight every time you made this mistake.",
-                     "Pick 3 sentences where this happened and rewrite them so they are perfect",
-                     "Write down a simple 3 step checklist on a sticky note to help you avoid this mistake next time."
-                   ],
-                   outcome: "3 perfectly rewritten sentences that prove you know how to avoid 'Repetition of Basic Lexis'"
-                 }
-               ].map((card, idx) => (
-                 <div key={idx} className="w-full bg-white border border-[#E5E7EB] rounded-[16px] flex flex-col overflow-hidden hover:shadow-md transition-all">
-                    <div className="p-8 pb-0 flex flex-col">
-                       <h4 className="text-[15px] font-bold text-[#101828] mb-5">{card.day}</h4>
-                       <ul className="space-y-4 flex-1">
-                          {card.tasks.map((task, tidx) => (
-                            <li key={tidx} className="flex items-start gap-4">
-                               <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-1.5 shrink-0"></div>
-                               <p className="text-[14px] text-[#101828] leading-relaxed font-semibold">{task}</p>
-                            </li>
-                          ))}
-                       </ul>
-                    </div>
-                    <div className="px-8 pt-1 pb-8 bg-white">
-                       <p className="text-[13px] font-semibold text-[#00C9B1] leading-relaxed">
-                         {card.outcome}
-                       </p>
-                    </div>
-                 </div>
-               ))}
-            </div>
-          </div>
+        : activeTab === "14-Day sprint" ?
+          <FourteenDaySprint
+            loading={loading}
+            frequentErrors={frequentErrors}
+            strongestCrit={strongestCrit}
+            bottleneckCrit={bottleneckCrit}
+            latestBand={latestBand}
+            targetBand={targetBand}
+            activeTask={activeTask}
+            examCount={examCount}
+          />
         :
           <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
              <div className="text-center space-y-4">
