@@ -11,6 +11,7 @@ const {
 } = require('../services/learningDossier');
 const { generateEditionPdf } = require('../services/learningGenerator');
 const { hasLearningFreeAccess } = require('../services/learningAccess');
+const { reconcileEdition } = require('../services/learningReconcile');
 
 const router = express.Router();
 
@@ -34,6 +35,7 @@ async function buildEditionStatus(userId, editionNumber, submissions, freeAccess
   let row = null;
   if (unlocked) {
     row = await getOrCreateEditionRow(userId, editionNumber, submissionIds);
+    row = await reconcileEdition(userId, editionNumber, freeAccess) || row;
   }
 
   const preview = unlocked ? await buildPreviewStats(submissionIds) : null;
@@ -47,6 +49,7 @@ async function buildEditionStatus(userId, editionNumber, submissions, freeAccess
     status: row?.status || (unlocked ? 'preview' : 'locked'),
     paidAt: row?.paid_at || null,
     generatedAt: row?.generated_at || null,
+    errorMessage: row?.error_message || null,
     preview,
     priceCents: freeAccess ? 0 : LEARNING_PRICE_CENTS,
     freeAccess,
@@ -90,6 +93,24 @@ router.get('/status', authenticateToken, async (req, res) => {
   }
 });
 
+async function startFreeGeneration(userId, editionNumber, rowId) {
+  await supabaseAdmin
+    .from('personalized_learning_editions')
+    .update({
+      status: 'generating',
+      paid_at: new Date().toISOString(),
+      stripe_session_id: null,
+      error_message: null,
+    })
+    .eq('id', rowId);
+
+  generateEditionPdf(userId, editionNumber).catch((err) => {
+    console.error('[learning/checkout] free generation failed:', err.message);
+  });
+
+  return { status: 'generating', free: true };
+}
+
 // ─── POST /api/learning/checkout ─────────────────────────────────────────────
 router.post('/checkout', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
@@ -114,26 +135,44 @@ router.post('/checkout', authenticateToken, async (req, res) => {
     if (row.status === 'ready') {
       return res.status(400).json({ error: 'This edition is already purchased and ready to download.' });
     }
-    if (row.status === 'generating' || row.status === 'pending_payment') {
+
+    const freeAccess = await hasLearningFreeAccess(userId);
+
+    if (row.status === 'generating') {
       return res.status(400).json({ error: 'This edition is already being processed.' });
     }
 
-    const freeAccess = await hasLearningFreeAccess(userId);
+    if (row.status === 'pending_payment') {
+      if (freeAccess) {
+        return res.json(await startFreeGeneration(userId, editionNumber, row.id));
+      }
+      const reconciled = await reconcileEdition(userId, editionNumber, false);
+      if (reconciled?.status === 'generating') {
+        return res.json({ status: 'generating' });
+      }
+      if (reconciled?.status === 'preview' || reconciled?.status === 'failed') {
+        row = reconciled;
+      } else {
+        return res.status(400).json({ error: 'Payment is still processing. Refresh in a moment.' });
+      }
+    }
+
+    if (row.status === 'failed') {
+      if (freeAccess) {
+        return res.json(await startFreeGeneration(userId, editionNumber, row.id));
+      }
+      if (!row.paid_at) {
+        // fall through to new Stripe checkout
+      } else {
+        generateEditionPdf(userId, editionNumber).catch((err) => {
+          console.error('[learning/retry] failed edition retry:', err.message);
+        });
+        return res.json({ status: 'generating' });
+      }
+    }
+
     if (freeAccess) {
-      await supabaseAdmin
-        .from('personalized_learning_editions')
-        .update({
-          status: 'generating',
-          paid_at: new Date().toISOString(),
-          stripe_session_id: null,
-        })
-        .eq('id', row.id);
-
-      generateEditionPdf(userId, editionNumber).catch((err) => {
-        console.error('[learning/checkout] admin free generation failed:', err.message);
-      });
-
-      return res.json({ status: 'generating', free: true });
+      return res.json(await startFreeGeneration(userId, editionNumber, row.id));
     }
 
     const stripe = getStripe();

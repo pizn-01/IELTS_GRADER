@@ -36,8 +36,8 @@ function EditionCard({
   onRetry,
   busy,
 }) {
-  const { editionNumber, examRange, status, preview, examsNeeded, priceCents, freeAccess } = edition;
-  const canBuy = status === 'preview' || status === 'failed';
+  const { editionNumber, examRange, status, preview, examsNeeded, priceCents, freeAccess, errorMessage } = edition;
+  const canBuy = status === 'preview';
   const isReady = status === 'ready';
   const isWorking = status === 'generating' || status === 'pending_payment';
 
@@ -130,14 +130,20 @@ function EditionCard({
           </button>
         )}
         {status === 'failed' && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onRetry(editionNumber)}
-            className="text-[13px] text-gray-500 underline"
-          >
-            Retry generation
-          </button>
+          <>
+            {errorMessage && (
+              <p className="text-[13px] text-red-600">{errorMessage}</p>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onRetry(editionNumber)}
+              className="flex items-center gap-2 bg-[#1A96F3] hover:bg-[#1585d8] text-white font-bold text-[14px] px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60"
+            >
+              {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {freeAccess ? 'Retry generation' : 'Retry'}
+            </button>
+          </>
         )}
         {isWorking && (
           <span className="flex items-center gap-2 text-[13px] text-amber-600">
@@ -221,8 +227,12 @@ export default function PersonalizedLearningPage() {
   const handleRetry = async (editionNumber) => {
     setBusyEdition(editionNumber);
     try {
-      await api.retryLearningGeneration(editionNumber);
-      await loadStatus();
+      const result = await api.createLearningCheckout(editionNumber);
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        await loadStatus();
+      }
     } catch (err) {
       setError(err.message);
     } finally {
