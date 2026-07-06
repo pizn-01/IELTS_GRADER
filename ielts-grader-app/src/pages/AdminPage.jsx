@@ -247,10 +247,32 @@ const DateRangeBar = ({ days, setDays }) => (
   </div>
 );
 
+const CHART_LEVELS = [
+  { id: 'daily', label: 'Daily' },
+  { id: 'weekly', label: 'Weekly' },
+  { id: 'monthly', label: 'Monthly' },
+  { id: 'yearly', label: 'Yearly' },
+];
+
+const formatTimeseriesLabel = (date, level) => {
+  if (!date) return '';
+  if (level === 'yearly') return date;
+  if (level === 'monthly') {
+    const [y, m] = date.split('-');
+    const month = new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'short' });
+    return `${month} '${String(y).slice(2)}`;
+  }
+  if (level === 'weekly') return date.slice(5);
+  return date.slice(5);
+};
+
 const AcquisitionTab = () => {
   const [days, setDays] = useState(7);
+  const [chartLevel, setChartLevel] = useState('daily');
+  const [chartSpanLabel, setChartSpanLabel] = useState('Last 30 days');
   const [overview, setOverview] = useState(null);
   const [timeseries, setTimeseries] = useState([]);
+  const [timeseriesLoading, setTimeseriesLoading] = useState(false);
   const [byChannel, setByChannel] = useState([]);
   const [byCountry, setByCountry] = useState([]);
   const [byHour, setByHour] = useState([]);
@@ -267,9 +289,8 @@ const AcquisitionTab = () => {
       const visitorParams = { days, page: visitorPage, per_page: 20, converted: 'false' };
       if (visitorChannel) visitorParams.channel = visitorChannel;
 
-      const [ov, ts, ch, co, hr, vis] = await Promise.all([
+      const [ov, ch, co, hr, vis] = await Promise.all([
         api.admin.getAcquisitionOverview(params),
-        api.admin.getAcquisitionTimeseries(params),
         api.admin.getAcquisitionByChannel(params),
         api.admin.getAcquisitionByCountry(params),
         api.admin.getAcquisitionByHour(params),
@@ -277,7 +298,6 @@ const AcquisitionTab = () => {
       ]);
 
       setOverview(ov);
-      setTimeseries(ts.data || []);
       setByChannel(ch.data || []);
       setByCountry(co.data || []);
       setByHour(hr.data || []);
@@ -290,7 +310,21 @@ const AcquisitionTab = () => {
     }
   }, [days, visitorPage, visitorChannel]);
 
+  const loadTimeseries = useCallback(async () => {
+    setTimeseriesLoading(true);
+    try {
+      const ts = await api.admin.getAcquisitionTimeseries({ level: chartLevel });
+      setTimeseries(ts.data || []);
+      setChartSpanLabel(ts.label || 'Last 30 days');
+    } catch {
+      // keep prior chart data on error
+    } finally {
+      setTimeseriesLoading(false);
+    }
+  }, [chartLevel]);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadTimeseries(); }, [loadTimeseries]);
 
   if (loading && !overview) {
     return <p className="text-gray-400 text-[14px] p-8">Loading acquisition data…</p>;
@@ -326,17 +360,42 @@ const AcquisitionTab = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
-          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
-          <p className="text-[11px] text-gray-400 mb-4">
-            Daily totals in Toronto time. {timeseriesSessionTotal} sessions in chart ({overview?.total_sessions ?? 0} in period).
-          </p>
-          <div className="h-[240px]">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
+              <p className="text-[11px] text-gray-400">
+                {chartSpanLabel} · Toronto time · {timeseriesSessionTotal} sessions in chart
+              </p>
+            </div>
+            <div className="flex gap-1.5 flex-shrink-0">
+              {CHART_LEVELS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setChartLevel(id)}
+                  className={`px-3 h-[32px] rounded-[8px] text-[11px] font-bold border transition-all ${chartLevel === id ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-[240px] relative">
+            {timeseriesLoading && (
+              <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center text-[12px] text-gray-400">
+                Updating…
+              </div>
+            )}
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={timeseries}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5, 10)} interval={days > 14 ? 4 : 0} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={v => formatTimeseriesLabel(v, chartLevel)}
+                  interval={chartLevel === 'daily' ? (timeseries.length > 14 ? 4 : 0) : 0}
+                />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
+                <Tooltip labelFormatter={v => formatTimeseriesLabel(v, chartLevel)} />
                 <Bar dataKey="sessions" fill="#2C3E50" name="Sessions" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="signups" fill="#3B82F6" name="Signups" radius={[4, 4, 0, 0]} />
               </BarChart>
