@@ -150,7 +150,7 @@ export default function PersonalizedLearningPage() {
       </div>
 
       {/* Main canvas */}
-      <div className="flex-1 max-w-[1440px] mx-auto w-full px-4 md:px-6 py-4 md:py-5">
+      <div className="flex-1 flex flex-col max-w-[1440px] mx-auto w-full px-4 md:px-6 py-4 md:py-5 min-h-0">
         {error && (
           <div className="mb-4 flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-2.5 text-[13px]">
             <AlertCircle size={16} />
@@ -169,7 +169,7 @@ export default function PersonalizedLearningPage() {
             <p className="text-gray-400 text-[13px] mt-1">All task types count toward your progress.</p>
           </div>
         ) : (
-          <div className="bg-[#F4F6F8] rounded-[24px] border border-[#E5E7EB]/80 p-4 md:p-5 flex flex-col gap-4 min-h-0">
+          <div className="bg-[#F4F6F8] rounded-[24px] border border-[#E5E7EB]/80 p-4 md:p-5 flex flex-col flex-1 gap-4 min-h-[calc(100vh-56px-12rem)]">
             {/* Edition pills */}
             <div className="flex flex-wrap gap-2">
               {unlockedEditions.map((ed) => (
@@ -192,6 +192,7 @@ export default function PersonalizedLearningPage() {
             </div>
 
             <LearningEditionPanel
+              className="flex-1 min-h-[360px]"
               edition={activeEdition}
               freeAccess={data?.freeAccess}
               priceCents={data?.priceCents}

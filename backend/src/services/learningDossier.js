@@ -3,7 +3,7 @@ const { resolveTaskVariant } = require('../utils/taskVariant');
 
 const SEVERITY_ORDER = { Major: 1, High: 2, Medium: 3, Low: 4 };
 const GRA_CRITERIA = ['Grammatical Range and Accuracy', 'Grammar'];
-const CONTENT_VERSION = 2;
+const CONTENT_VERSION = 3;
 const ESSAY_EXCERPT_LEN = 2500;
 
 function norm(s) {
@@ -38,7 +38,39 @@ function buildTeacherDossier(dossier) {
   };
   const subCategoryAcc = {};
 
+  const errorsByTask = {};
+  const tasksInEdition = [];
+  const deepAnalysisByTask = {};
+
   exams.forEach((exam) => {
+    const taskLabel = `${exam.exam_type} ${exam.task_type}`.trim();
+    if (!tasksInEdition.find((t) => t.label === taskLabel)) {
+      tasksInEdition.push({
+        label: taskLabel,
+        exam_indices: [exam.exam_index],
+        task_variant: exam.task_variant,
+      });
+    } else {
+      const t = tasksInEdition.find((x) => x.label === taskLabel);
+      if (t && !t.exam_indices.includes(exam.exam_index)) t.exam_indices.push(exam.exam_index);
+    }
+
+    if (!errorsByTask[taskLabel]) errorsByTask[taskLabel] = [];
+
+    const deepEntry = {
+      exam_index: exam.exam_index,
+      task_label: taskLabel,
+      argumentation_analysis: exam.argumentation_analysis || null,
+      letter_structure_analysis: exam.letter_structure_analysis || null,
+      data_structure_analysis: exam.data_structure_analysis || null,
+      flow_logic_analysis: exam.flow_logic_analysis || null,
+    };
+    if (deepEntry.argumentation_analysis || deepEntry.letter_structure_analysis
+        || deepEntry.data_structure_analysis || deepEntry.flow_logic_analysis) {
+      if (!deepAnalysisByTask[taskLabel]) deepAnalysisByTask[taskLabel] = [];
+      deepAnalysisByTask[taskLabel].push(deepEntry);
+    }
+
     (exam.errors || []).forEach((err) => {
       const crit = err.criteria || 'Other';
       if (!byCriteria[crit]) byCriteria[crit] = {};
@@ -51,16 +83,25 @@ function buildTeacherDossier(dossier) {
           severity: err.severity,
           count: 0,
           instances: [],
+          task_labels: [],
         };
       }
       errorMap[key].count += 1;
-      errorMap[key].instances.push({
+      const instance = {
         exam_index: exam.exam_index,
+        task_label: taskLabel,
+        exam_type: exam.exam_type,
+        task_type: exam.task_type,
         original_text: err.original_text,
         correction_text: err.correction_text,
         explanation: err.explanation,
         location_text: err.location_text,
-      });
+      };
+      errorMap[key].instances.push(instance);
+      if (!errorMap[key].task_labels.includes(taskLabel)) {
+        errorMap[key].task_labels.push(taskLabel);
+      }
+      errorsByTask[taskLabel].push({ ...errorMap[key], instance });
       if (!byCriteria[crit][key]) byCriteria[crit][key] = errorMap[key];
 
       if (GRA_CRITERIA.some((g) => crit.includes(g) || g.includes(crit))) {
@@ -79,7 +120,7 @@ function buildTeacherDossier(dossier) {
             improved: sug.improved || sug.example_context || '',
             explanation: sug.explanation || sug.benefit || '',
           };
-      enrichmentCandidates.push({ exam_index: exam.exam_index, ...item });
+    enrichmentCandidates.push({ exam_index: exam.exam_index, task_label: taskLabel, ...item });
     });
 
     const va = exam.vocabulary_analysis || {};
@@ -87,6 +128,7 @@ function buildTeacherDossier(dossier) {
       (cat.words || []).forEach((w) => {
         lexicalItems.push({
           exam_index: exam.exam_index,
+          task_label: taskLabel,
           category: cat.name,
           word: w.word,
           definition: w.definition,
@@ -95,9 +137,9 @@ function buildTeacherDossier(dossier) {
       });
     });
 
-    taskResponse.weaknesses.push(...(exam.weaknesses || []).map((w) => ({ exam_index: exam.exam_index, text: w })));
-    taskResponse.high_impact_fixes.push(...(exam.high_impact_fixes || []).map((w) => ({ exam_index: exam.exam_index, text: w })));
-    taskResponse.strengths.push(...(exam.strengths || []).map((w) => ({ exam_index: exam.exam_index, text: w })));
+    taskResponse.weaknesses.push(...(exam.weaknesses || []).map((w) => ({ exam_index: exam.exam_index, task_label: taskLabel, text: w })));
+    taskResponse.high_impact_fixes.push(...(exam.high_impact_fixes || []).map((w) => ({ exam_index: exam.exam_index, task_label: taskLabel, text: w })));
+    taskResponse.strengths.push(...(exam.strengths || []).map((w) => ({ exam_index: exam.exam_index, task_label: taskLabel, text: w })));
 
     const deepBlocks = [
       exam.argumentation_analysis,
@@ -106,7 +148,7 @@ function buildTeacherDossier(dossier) {
       exam.flow_logic_analysis,
     ].filter(Boolean);
     deepBlocks.forEach((block) => {
-      taskResponse.deep_snippets.push({ exam_index: exam.exam_index, content: block });
+      taskResponse.deep_snippets.push({ exam_index: exam.exam_index, task_label: taskLabel, content: block });
     });
 
     const subs = exam.sub_category_scores || {};
@@ -126,9 +168,24 @@ function buildTeacherDossier(dossier) {
   const recurring_errors = Object.values(errorMap)
     .sort((a, b) => b.count - a.count);
 
+  const frequent_errors = recurring_errors.filter((e) => e.count >= 2);
+  const mandatory_error_titles = frequent_errors.map((e) => e.title);
+
+  const by_criteria_mandatory = {};
   const by_criteria = {};
   Object.entries(byCriteria).forEach(([crit, map]) => {
-    by_criteria[crit] = Object.values(map).sort((a, b) => b.count - a.count);
+    const sorted = Object.values(map).sort((a, b) => b.count - a.count);
+    by_criteria[crit] = sorted;
+    by_criteria_mandatory[crit] = sorted
+      .filter((e) => e.count >= 2)
+      .map((e) => e.title);
+  });
+
+  // Dedupe grammar errors by key
+  const grammarByKey = {};
+  grammarErrors.forEach((e) => {
+    const k = `${e.title}::${e.sub_category || ''}`;
+    grammarByKey[k] = e;
   });
 
   const enrichmentCounts = {};
@@ -164,18 +221,23 @@ function buildTeacherDossier(dossier) {
 
   return {
     content_version: CONTENT_VERSION,
-    recurring_errors: recurring_errors.slice(0, 40),
+    tasks_in_edition: tasksInEdition,
+    errors_by_task: errorsByTask,
+    deep_analysis_by_task: deepAnalysisByTask,
+    recurring_errors: recurring_errors.slice(0, 50),
+    frequent_errors,
+    mandatory_error_titles,
     by_criteria,
+    by_criteria_mandatory,
     grammar: {
-      recurring_errors: grammarErrors
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 15),
+      recurring_errors: Object.values(grammarByKey)
+        .sort((a, b) => b.count - a.count),
       structures_used: [...structuresUsedSet].filter(Boolean),
       unused_enrichments,
-      all_enrichment_suggestions: enrichmentCandidates.slice(0, 20),
+      all_enrichment_suggestions: enrichmentCandidates,
     },
     lexical: {
-      weak_vocabulary: lexicalItems.slice(0, 30),
+      weak_vocabulary: lexicalItems,
     },
     task_response: taskResponse,
     sub_category_scores,

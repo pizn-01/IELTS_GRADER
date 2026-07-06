@@ -27,6 +27,40 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "").strip().lower())
 
 
+def _errors_for_criteria(agg: Dict[str, Any], criteria: str) -> List[Dict]:
+    aliases = CRIT_ALIASES.get(criteria, [criteria])
+    errors: List[Dict] = []
+    by_crit = agg.get("by_criteria") or {}
+    for alias in aliases:
+        errors.extend(by_crit.get(alias, []))
+    return errors
+
+
+def get_mandatory_titles_for_criteria(agg: Dict[str, Any], criteria: str) -> List[str]:
+    mandatory_map = agg.get("by_criteria_mandatory") or {}
+    aliases = CRIT_ALIASES.get(criteria, [criteria])
+    titles: List[str] = []
+    for alias in aliases:
+        titles.extend(mandatory_map.get(alias, []))
+    # Dedupe preserving order
+    seen: Set[str] = set()
+    out: List[str] = []
+    for t in titles:
+        n = _norm(t)
+        if n and n not in seen:
+            seen.add(n)
+            out.append(t)
+    if not out:
+        for err in _errors_for_criteria(agg, criteria):
+            if (err.get("count") or 0) >= 2:
+                t = err.get("title") or ""
+                n = _norm(t)
+                if n and n not in seen:
+                    seen.add(n)
+                    out.append(t)
+    return out
+
+
 def build_source_index(dossier: Dict[str, Any]) -> Dict[str, Any]:
     errors_by_key: Dict[str, Dict] = {}
     error_titles: Set[str] = set()
@@ -65,6 +99,34 @@ def build_source_index(dossier: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _chapter_source_titles(chapter: Dict[str, Any]) -> Set[str]:
+    titles: Set[str] = set()
+    for section in chapter.get("sections") or []:
+        for ref in section.get("source_refs") or []:
+            if isinstance(ref, dict):
+                t = ref.get("error_title") or ref.get("title") or ""
+                if t:
+                    titles.add(_norm(t))
+        for ex in section.get("student_examples") or []:
+            t = ex.get("error_title") or ""
+            if t:
+                titles.add(_norm(t))
+    return titles
+
+
+def validate_mandatory_coverage(chapter: Dict[str, Any], dossier: Dict[str, Any], expected_crit: str) -> Tuple[bool, List[str]]:
+    agg = dossier.get("aggregated") or {}
+    mandatory = get_mandatory_titles_for_criteria(agg, expected_crit)
+    if not mandatory:
+        return True, []
+
+    covered = _chapter_source_titles(chapter)
+    missing = [t for t in mandatory if _norm(t) not in covered]
+    if missing:
+        return False, [f"Missing mandatory errors: {', '.join(missing[:8])}" + ("..." if len(missing) > 8 else "")]
+    return True, []
+
+
 def validate_chapter(chapter: Dict[str, Any], dossier: Dict[str, Any], expected_crit: str) -> Tuple[bool, List[str]]:
     issues: List[str] = []
     index = build_source_index(dossier)
@@ -84,6 +146,10 @@ def validate_chapter(chapter: Dict[str, Any], dossier: Dict[str, Any], expected_
         for ref in refs:
             if not _ref_valid(ref, index, dossier):
                 issues.append(f"Invalid source_ref: {ref}")
+
+    ok_mandatory, mandatory_issues = validate_mandatory_coverage(chapter, dossier, expected_crit)
+    if not ok_mandatory:
+        issues.extend(mandatory_issues)
 
     if expected_crit == "Grammatical Range and Accuracy":
         for lesson in chapter.get("micro_lessons") or []:

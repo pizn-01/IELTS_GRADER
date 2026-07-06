@@ -20,7 +20,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from learning_validate import CRITERIA_CHAPTERS, CRIT_ALIASES, validate_chapter, validate_learning_content  # noqa: E402
+from learning_validate import (  # noqa: E402
+    CRITERIA_CHAPTERS,
+    CRIT_ALIASES,
+    get_mandatory_titles_for_criteria,
+    validate_chapter,
+    validate_learning_content,
+)
 
 MODEL = os.environ.get("LEARNING_MODEL", "gpt-5.2")
 TEMPERATURE = 0.2
@@ -73,12 +79,52 @@ async def _call_json(client, system: str, user: str, model: str = MODEL) -> Dict
     return json.loads(raw)
 
 
+def select_errors_for_chapter(agg: Dict[str, Any], criteria: str, min_count: int = 2) -> List[Dict[str, Any]]:
+    """Include all frequent errors for criterion + singles needed to cover each task type."""
+    aliases = CRIT_ALIASES.get(criteria, [criteria])
+    by_crit = agg.get("by_criteria") or {}
+    errors: List[Dict[str, Any]] = []
+    seen_keys: set = set()
+
+    for alias in aliases:
+        for err in by_crit.get(alias, []):
+            key = f"{err.get('title')}::{err.get('sub_category') or ''}"
+            if key not in seen_keys:
+                seen_keys.add(key)
+                errors.append(err)
+
+    frequent = [e for e in errors if (e.get("count") or 0) >= min_count]
+    singles = [e for e in errors if (e.get("count") or 0) < min_count]
+
+    tasks_in_edition = agg.get("tasks_in_edition") or []
+    task_labels = [t.get("label") for t in tasks_in_edition if t.get("label")]
+
+    covered_tasks: set = set()
+    for err in frequent:
+        for tl in err.get("task_labels") or []:
+            covered_tasks.add(tl)
+
+    extras: List[Dict[str, Any]] = []
+    for tl in task_labels:
+        if tl in covered_tasks:
+            continue
+        for err in singles:
+            if tl in (err.get("task_labels") or []):
+                extras.append(err)
+                covered_tasks.add(tl)
+                break
+
+    selected = frequent + extras
+    return selected if selected else errors
+
+
 def build_chapter_input(dossier: Dict[str, Any], criteria: str) -> Dict[str, Any]:
     agg = dossier.get("aggregated") or {}
-    aliases = CRIT_ALIASES.get(criteria, [criteria])
-    errors = []
-    for alias in aliases:
-        errors.extend((agg.get("by_criteria") or {}).get(alias, []))
+    errors = select_errors_for_chapter(agg, criteria)
+    mandatory_errors = get_mandatory_titles_for_criteria(agg, criteria)
+    tasks_in_edition = agg.get("tasks_in_edition") or []
+    errors_by_task = agg.get("errors_by_task") or {}
+    deep_analysis_by_task = agg.get("deep_analysis_by_task") or {}
 
     payload: Dict[str, Any] = {
         "criteria": criteria,
@@ -86,23 +132,45 @@ def build_chapter_input(dossier: Dict[str, Any], criteria: str) -> Dict[str, Any
         "target_band": dossier.get("target_band"),
         "edition_number": dossier.get("edition_number"),
         "exam_range": dossier.get("exam_range"),
-        "recurring_errors": errors[:12],
+        "tasks_in_edition": tasks_in_edition,
+        "errors_by_task": {
+            k: [{"title": e.get("title"), "count": e.get("count"), "criteria": e.get("criteria")}
+                for e in v[:20]]
+            for k, v in errors_by_task.items()
+        },
+        "recurring_errors": errors,
+        "mandatory_errors": mandatory_errors,
         "sub_category_scores": agg.get("sub_category_scores") or {},
     }
 
     if criteria == "Task Response":
         tr = agg.get("task_response") or {}
-        payload["weaknesses"] = tr.get("weaknesses", [])[:10]
-        payload["high_impact_fixes"] = tr.get("high_impact_fixes", [])[:10]
-        payload["strengths"] = tr.get("strengths", [])[:6]
-        payload["deep_analysis"] = tr.get("deep_snippets", [])[:5]
+        payload["weaknesses"] = tr.get("weaknesses", [])
+        payload["high_impact_fixes"] = tr.get("high_impact_fixes", [])
+        payload["strengths"] = tr.get("strengths", [])
+        payload["deep_analysis"] = tr.get("deep_snippets", [])
+        payload["deep_analysis_by_task"] = deep_analysis_by_task
+        for exam in dossier.get("exams", []):
+            task_label = f"{exam.get('exam_type')} {exam.get('task_type')}".strip()
+            for field in ("argumentation_analysis", "data_structure_analysis", "letter_structure_analysis"):
+                val = exam.get(field)
+                if val:
+                    payload.setdefault("task_specific_analysis", []).append({
+                        "exam_index": exam.get("exam_index"),
+                        "task_label": task_label,
+                        "type": field.replace("_analysis", ""),
+                        "analysis": val,
+                    })
 
     if criteria == "Coherence and Cohesion":
+        payload["deep_analysis_by_task"] = deep_analysis_by_task
         for exam in dossier.get("exams", []):
             fl = exam.get("flow_logic_analysis")
             if fl:
+                task_label = f"{exam.get('exam_type')} {exam.get('task_type')}".strip()
                 payload.setdefault("flow_logic", []).append({
                     "exam_index": exam.get("exam_index"),
+                    "task_label": task_label,
                     "analysis": fl,
                 })
 
@@ -111,9 +179,11 @@ def build_chapter_input(dossier: Dict[str, Any], criteria: str) -> Dict[str, Any
         for exam in dossier.get("exams", []):
             va = exam.get("vocabulary_analysis")
             if va:
+                task_label = f"{exam.get('exam_type')} {exam.get('task_type')}".strip()
                 payload.setdefault("vocabulary_by_exam", []).append({
                     "exam_index": exam.get("exam_index"),
-                    "categories": (va.get("categories") or [])[:4],
+                    "task_label": task_label,
+                    "categories": va.get("categories") or [],
                 })
 
     if criteria == "Grammatical Range and Accuracy":
@@ -144,9 +214,11 @@ Output JSON:
   "sections": [
     {
       "heading": string,
-      "body": string (3-5 paragraphs with specific examples; use line breaks \\n\\n between paragraphs),
+      "body": string (2-4 paragraphs with specific examples; use line breaks \\n\\n between paragraphs),
+      "error_count": number (optional, from recurring_errors count),
+      "task_label": string (optional, e.g. "Academic Task 1"),
       "student_examples": [
-        {"exam_index": number, "original": string, "correction": string, "error_title": string}
+        {"exam_index": number, "original": string, "correction": string, "error_title": string, "task_label": string}
       ],
       "source_refs": [{"exam_index": number, "error_title": string}]
     }
@@ -155,9 +227,13 @@ Output JSON:
 }
 
 Rules:
-- 3-5 sections targeting the highest-frequency errors for this criterion.
+- This edition includes exams listed in tasks_in_edition. You MUST address mistakes from EACH task type that has errors in recurring_errors or errors_by_task. Label examples with task type (e.g. "Academic Task 1, Exam 12").
+- Do not focus only on one task type.
+- Every error in mandatory_errors MUST appear in exactly one section with a quoted student example and a matching source_ref error_title. Do not skip any mandatory error.
+- Create one section per mandatory error (group only if errors are nearly identical). For non-mandatory errors, add sections as needed for task coverage.
 - Each section MUST include at least one student_examples entry from recurring_errors instances.
 - Name specific error patterns from the data; never invent essay content.
+- Include error_count and task_label on each section when available from the data.
 - Tone: direct, teacher-like, actionable.
 - For Grammar chapter: leave micro_lessons empty (added in a separate pass)."""
 
@@ -249,13 +325,32 @@ async def generate_overview(client, dossier: Dict[str, Any], chapters: List[Dict
 def template_chapter(dossier: Dict[str, Any], criteria: str) -> Dict[str, Any]:
     templates = load_templates()
     agg = dossier.get("aggregated") or {}
-    aliases = CRIT_ALIASES.get(criteria, [criteria])
-    errors = []
-    for alias in aliases:
-        errors.extend((agg.get("by_criteria") or {}).get(alias, []))
+    errors = select_errors_for_chapter(agg, criteria)
+    mandatory = get_mandatory_titles_for_criteria(agg, criteria)
+
+    def _norm_title(t: str) -> str:
+        return re.sub(r"\s+", " ", (t or "").strip().lower())
+
+    mandatory_norm = {_norm_title(t) for t in mandatory}
+
+    # Cover mandatory errors first, then others
+    ordered = []
+    seen = set()
+    for err in errors:
+        title = err.get("title") or ""
+        n = _norm_title(title)
+        if n in mandatory_norm and n not in seen:
+            ordered.append(err)
+            seen.add(n)
+    for err in errors:
+        title = err.get("title") or ""
+        n = _norm_title(title)
+        if n not in seen:
+            ordered.append(err)
+            seen.add(n)
 
     sections = []
-    for err in errors[:5]:
+    for err in ordered:
         inst = (err.get("instances") or [{}])[0]
         slug = slugify(err.get("title") or "")
         tpl = templates.get(slug)
@@ -263,14 +358,18 @@ def template_chapter(dossier: Dict[str, Any], criteria: str) -> Dict[str, Any]:
             f"{err.get('explanation') or err.get('title')}. "
             f"Appeared {err.get('count', 1)} times across your exams."
         )
+        task_label = inst.get("task_label") or ((err.get("task_labels") or [None])[0])
         sections.append({
             "heading": err.get("title") or "Focus area",
             "body": body,
+            "error_count": err.get("count"),
+            "task_label": task_label,
             "student_examples": [{
                 "exam_index": inst.get("exam_index"),
                 "original": inst.get("original_text") or "",
                 "correction": inst.get("correction_text") or "",
                 "error_title": err.get("title"),
+                "task_label": task_label,
             }] if inst.get("original_text") else [],
             "source_refs": [{"exam_index": inst.get("exam_index"), "error_title": err.get("title")}],
         })
@@ -322,8 +421,16 @@ async def main_async(dossier_path: str, output_path: str) -> Dict[str, Any]:
         ok, issues = validate_chapter(ch, dossier, crit)
         if not ok:
             print(f"[generate_learning_material] {crit} validation failed, retrying: {issues}", file=sys.stderr)
+            agg = dossier.get("aggregated") or {}
+            mandatory = get_mandatory_titles_for_criteria(agg, crit)
+            extra = ""
+            if mandatory:
+                extra = f"\n\nYou MUST include these mandatory errors: {json.dumps(mandatory)}"
             try:
-                ch = await generate_chapter(client, dossier, crit, retry_feedback="; ".join(issues))
+                ch = await generate_chapter(
+                    client, dossier, crit,
+                    retry_feedback="; ".join(issues) + extra,
+                )
                 ok, issues = validate_chapter(ch, dossier, crit)
             except Exception as exc:
                 print(f"[generate_learning_material] {crit} retry failed: {exc}", file=sys.stderr)
@@ -377,17 +484,25 @@ async def main_async(dossier_path: str, output_path: str) -> Dict[str, Any]:
         "pdf_path": output_path,
         "page_count": page_count,
         "used_fallback": used_fallback,
-        "content_version": dossier.get("content_version", 2),
+        "content_version": dossier.get("content_version", 3),
     }
 
 
 def render_pdf(content: Dict[str, Any], dossier: Dict[str, Any], output_path: str) -> int:
-    from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import cm
-    from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
+    from reportlab.platypus import SimpleDocTemplate
+
+    from learning_pdf_theme import (
+        build_body_story,
+        build_cover_story,
+        build_styles,
+        make_page_callbacks,
+    )
+
+    overview = content.get("overview") or {}
+    styles = build_styles()
+    on_first_page, on_page = make_page_callbacks(overview)
 
     doc = SimpleDocTemplate(
         output_path,
@@ -398,95 +513,17 @@ def render_pdf(content: Dict[str, Any], dossier: Dict[str, Any], output_path: st
         bottomMargin=2 * cm,
     )
 
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle("BookTitle", parent=styles["Title"], fontSize=20, leading=26,
-                                   alignment=TA_CENTER, spaceAfter=14, textColor=colors.HexColor("#1a365d"))
-    h1 = ParagraphStyle("H1", parent=styles["Heading1"], fontSize=15, leading=19, spaceBefore=14, spaceAfter=8,
-                        textColor=colors.HexColor("#2c5282"))
-    h2 = ParagraphStyle("H2", parent=styles["Heading2"], fontSize=12, leading=15, spaceBefore=10, spaceAfter=5,
-                        textColor=colors.HexColor("#2d3748"))
-    body = ParagraphStyle("Body", parent=styles["BodyText"], fontSize=10, leading=14, alignment=TA_JUSTIFY, spaceAfter=6)
-    meta = ParagraphStyle("Meta", parent=styles["Normal"], fontSize=9, textColor=colors.grey, alignment=TA_CENTER)
-    callout = ParagraphStyle("Callout", parent=styles["Normal"], fontSize=9.5, leading=13, leftIndent=12,
-                             backColor=colors.HexColor("#f7fafc"), borderPadding=6, spaceAfter=6)
-    callout_label = ParagraphStyle("CalloutLabel", parent=callout, fontName="Helvetica-Bold", textColor=colors.HexColor("#c53030"))
-    callout_fix = ParagraphStyle("CalloutFix", parent=callout, textColor=colors.HexColor("#276749"))
-
     story = []
-    overview = content.get("overview") or {}
+    story.extend(build_cover_story(overview, dossier, styles))
+    story.extend(build_body_story(content, dossier, styles))
 
-    story.append(Spacer(1, 1.5 * cm))
-    story.append(Paragraph(overview.get("title") or "Personalized Learning Guide", title_style))
-    story.append(Paragraph(
-        f"{overview.get('candidate_name', 'Candidate')} · Exams {overview.get('exam_range', {}).get('start')}–"
-        f"{overview.get('exam_range', {}).get('end')}",
-        meta,
-    ))
-    story.append(Spacer(1, 0.4 * cm))
-    story.append(Paragraph((overview.get("summary") or "").replace("\n", "<br/>"), body))
+    doc.build(story, onFirstPage=on_first_page, onLaterPages=on_page)
 
-    for focus in overview.get("priority_focus") or []:
-        story.append(Paragraph(f"• {focus}", body))
-
-    preview = dossier.get("preview") or {}
-    bands = preview.get("avgBands") or {}
-    if bands.get("overall") is not None:
-        parts = [f"Overall {bands['overall']:.1f}"]
-        for k, label in [("response", "TR"), ("coherence", "CC"), ("vocabulary", "LR"), ("grammar", "GRA")]:
-            if bands.get(k) is not None:
-                parts.append(f"{label} {bands[k]:.1f}")
-        story.append(Paragraph(" · ".join(parts), meta))
-
-    story.append(PageBreak())
-
-    for ch in content.get("chapters") or []:
-        story.append(Paragraph(ch.get("criteria") or "Chapter", h1))
-
-        for sec in ch.get("sections") or []:
-            story.append(Paragraph(sec.get("heading") or "Section", h2))
-            story.append(Paragraph((sec.get("body") or "").replace("\n", "<br/>"), body))
-
-            for ex in sec.get("student_examples") or []:
-                if ex.get("original"):
-                    story.append(Paragraph("Your writing:", callout_label))
-                    story.append(Paragraph(ex.get("original", "").replace("\n", " "), callout))
-                if ex.get("correction"):
-                    story.append(Paragraph("Better version:", callout_fix))
-                    story.append(Paragraph(ex.get("correction", "").replace("\n", " "), callout))
-
-        for lesson in ch.get("micro_lessons") or []:
-            story.append(Paragraph(lesson.get("title") or "Micro-lesson", h2))
-            if lesson.get("rule"):
-                story.append(Paragraph(f"<b>Rule:</b> {lesson['rule']}", body))
-            for item in lesson.get("when_to_use") or []:
-                story.append(Paragraph(f"• {item}", body))
-            for mistake in lesson.get("your_mistakes") or []:
-                story.append(Paragraph(
-                    f"<b>Exam {mistake.get('exam_index')}:</b> {mistake.get('original', '')} → {mistake.get('fix', '')}",
-                    callout,
-                ))
-            for ex in lesson.get("example_sentences") or []:
-                if ex:
-                    story.append(Paragraph(f"Example: {ex}", callout))
-            story.append(Paragraph("<b>Practice:</b>", body))
-            for ex in lesson.get("mini_exercises") or []:
-                story.append(Paragraph(f"• {ex}", body))
-
-        story.append(PageBreak())
-
-    story.append(Paragraph("Practice Plan", h1))
-    plan = content.get("practice_plan") or {}
-    for i, step in enumerate(plan.get("steps") or [], 1):
-        story.append(Paragraph(f"{i}. {step}", body))
-
-    story.append(Spacer(1, 0.8 * cm))
-    story.append(Paragraph(
-        f"Generated {datetime.utcnow().strftime('%Y-%m-%d')} · IELTS Grader · Edition {overview.get('edition_number', '')}",
-        meta,
-    ))
-
-    doc.build(story)
-    return max(14, min(22, 6 + sum(len(ch.get("sections") or []) + len(ch.get("micro_lessons") or []) for ch in content.get("chapters") or [])))
+    section_count = sum(
+        len(ch.get("sections") or []) + len(ch.get("micro_lessons") or [])
+        for ch in content.get("chapters") or []
+    )
+    return max(14, min(40, 8 + section_count))
 
 
 def main():

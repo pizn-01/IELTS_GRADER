@@ -3,7 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const { spawn } = require('child_process');
 const { supabaseAdmin } = require('./supabase');
-const { buildFullDossier } = require('./learningDossier');
+const { buildFullDossier, CONTENT_VERSION } = require('./learningDossier');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
 
@@ -79,7 +79,7 @@ async function generateEditionPdf(userId, editionNumber) {
       || !dossier.exams
       || dossier.exams.length < 5
       || !dossier.aggregated
-      || dossier.content_version < 2;
+      || dossier.content_version < CONTENT_VERSION;
     if (needsRebuild) {
       dossier = await buildFullDossier(userId, editionNumber);
       await supabaseAdmin

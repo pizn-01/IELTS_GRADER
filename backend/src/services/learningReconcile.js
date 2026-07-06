@@ -1,9 +1,8 @@
 const { supabaseAdmin } = require('./supabase');
 const { generateEditionPdf } = require('./learningGenerator');
-const { hasLearningFreeAccess } = require('./learningAccess');
 
 const STALE_MS = 12 * 60 * 1000;
-const PENDING_RESET_MS = 3 * 60 * 1000; // abandoned Stripe checkout
+const PENDING_RESET_MS = 3 * 60 * 1000;
 
 let _stripe = null;
 function getStripe() {
@@ -21,9 +20,9 @@ function isStale(updatedAt, createdAt) {
 
 /**
  * Recover editions stuck in pending_payment / generating.
- * Called from GET /learning/status so the UI self-heals.
+ * Never starts LLM — only resets abandoned checkouts, verifies paid Stripe (webhook backup), or times out.
  */
-async function reconcileEdition(userId, editionNumber, freeAccess) {
+async function reconcileEdition(userId, editionNumber, _freeAccess) {
   const { data: row } = await supabaseAdmin
     .from('personalized_learning_editions')
     .select('*')
@@ -35,31 +34,16 @@ async function reconcileEdition(userId, editionNumber, freeAccess) {
     return row;
   }
 
-  // Admin: never wait on Stripe — start free generation immediately.
-  if (freeAccess && (row.status === 'pending_payment' || row.status === 'generating')) {
-    const stale = row.status === 'generating' && isStale(row.paid_at, row.created_at);
-    if (row.status === 'pending_payment' || stale) {
+  // Unpaid pending_payment — reset to preview so user must click Generate or complete Stripe.
+  if (row.status === 'pending_payment' && !row.paid_at) {
+    if (!row.stripe_session_id) {
       await supabaseAdmin
         .from('personalized_learning_editions')
-        .update({
-          status: 'generating',
-          paid_at: row.paid_at || new Date().toISOString(),
-          stripe_session_id: null,
-          error_message: null,
-        })
+        .update({ status: 'preview', stripe_session_id: null })
         .eq('id', row.id);
-
-      generateEditionPdf(userId, editionNumber).catch((err) => {
-        console.error('[learningReconcile] admin generation failed:', err.message);
-      });
-
-      return { ...row, status: 'generating', stripe_session_id: null };
+      return { ...row, status: 'preview', stripe_session_id: null };
     }
-    return row;
-  }
 
-  // Stripe: verify checkout session if we are waiting on payment.
-  if (row.status === 'pending_payment' && row.stripe_session_id) {
     try {
       const stripe = getStripe();
       const session = await stripe.checkout.sessions.retrieve(row.stripe_session_id);
@@ -80,7 +64,6 @@ async function reconcileEdition(userId, editionNumber, freeAccess) {
         return { ...row, status: 'generating' };
       }
 
-      // Abandoned / expired checkout — reset so user can try again.
       const ageMs = Date.now() - new Date(row.created_at || 0).getTime();
       const unpaid = session.payment_status !== 'paid';
       if (unpaid && (session.status === 'expired' || (session.status === 'open' && ageMs > PENDING_RESET_MS))) {
@@ -93,9 +76,10 @@ async function reconcileEdition(userId, editionNumber, freeAccess) {
     } catch (err) {
       console.error('[learningReconcile] stripe retrieve failed:', err.message);
     }
+
+    return row;
   }
 
-  // Generating for too long with no result — mark failed so retry works.
   if (row.status === 'generating' && isStale(row.paid_at, row.created_at)) {
     await supabaseAdmin
       .from('personalized_learning_editions')

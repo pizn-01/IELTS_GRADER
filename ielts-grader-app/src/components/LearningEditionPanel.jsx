@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Loader2, Lock, Sparkles } from 'lucide-react';
+import { Download, Loader2, Lock, Sparkles, BookOpen, CheckCircle2 } from 'lucide-react';
 
 const CRITERIA_LABELS = {
   'Task Response': 'TR',
@@ -7,6 +7,13 @@ const CRITERIA_LABELS = {
   'Lexical Resource': 'LR',
   'Grammatical Range and Accuracy': 'GRA',
 };
+
+const GUIDE_INCLUDES = [
+  'Task Response — coverage, development, task-specific feedback',
+  'Coherence & Cohesion — flow, linking, paragraph structure',
+  'Lexical Resource — word choice, repetition, upgrades',
+  'Grammar — your recurring errors + targeted micro-lessons',
+];
 
 function StatusBadge({ status }) {
   const map = {
@@ -33,10 +40,11 @@ export default function LearningEditionPanel({
   onPurchase,
   onDownload,
   onRetry,
+  className = '',
 }) {
   if (!edition) {
     return (
-      <div className="bg-white rounded-[20px] border border-[#E5E7EB] p-10 text-center text-gray-400 text-[14px]">
+      <div className={`bg-white rounded-[20px] border border-[#E5E7EB] p-10 text-center text-gray-400 text-[14px] flex-1 flex items-center justify-center ${className}`}>
         Select an edition above
       </div>
     );
@@ -50,10 +58,10 @@ export default function LearningEditionPanel({
   const canRetry = status === 'failed';
 
   return (
-    <div className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#E5E7EB]">
+    <div className={`bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden flex-1 flex flex-col min-h-[360px] ${className}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#E5E7EB] flex-1 lg:items-stretch">
         {/* Left: stats */}
-        <div className="p-5 md:p-6 space-y-4">
+        <div className="p-5 md:p-6 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[16px] font-bold text-[#101828]">
               Exams {examRange.start}–{examRange.end}
@@ -102,7 +110,7 @@ export default function LearningEditionPanel({
 
               {preview?.topErrors?.length > 0 && (
                 <ul className="text-[12px] text-gray-600 space-y-1">
-                  {preview.topErrors.slice(0, 4).map((e) => (
+                  {preview.topErrors.slice(0, 6).map((e) => (
                     <li key={e.label} className="flex justify-between gap-2">
                       <span className="truncate">{e.label}</span>
                       <span className="text-gray-400 shrink-0">×{e.count}</span>
@@ -110,6 +118,21 @@ export default function LearningEditionPanel({
                   ))}
                 </ul>
               )}
+
+              <div className="mt-auto pt-4 border-t border-gray-100">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <BookOpen size={12} />
+                  Your guide includes
+                </p>
+                <ul className="text-[12px] text-[#667085] space-y-1.5">
+                  {GUIDE_INCLUDES.map((line) => (
+                    <li key={line} className="flex items-start gap-2">
+                      <CheckCircle2 size={12} className="text-[#1A96F3] shrink-0 mt-0.5" />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </>
           )}
         </div>
@@ -119,7 +142,7 @@ export default function LearningEditionPanel({
           <p className="text-[13px] text-[#667085] leading-relaxed">
             {locked
               ? 'Every 5 graded exams unlocks a tailored PDF from your real errors and band scores.'
-              : 'A teacher-style guide covering Task Response, Coherence, Lexical Resource, and Grammar — built from these 5 exams.'}
+              : 'A teacher-style guide built from all 5 exams — every task type and your most frequent mistakes.'}
           </p>
 
           {errorMessage && (
@@ -171,10 +194,10 @@ export default function LearningEditionPanel({
           )}
 
           {!locked && !freeAccess && canGenerate && (
-            <p className="text-[11px] text-gray-400">One-time ${(priceCents / 100).toFixed(0)} per edition</p>
+            <p className="text-[11px] text-gray-400">One-time ${(priceCents / 100).toFixed(0)} per edition · PDF generated after payment</p>
           )}
-          {!locked && freeAccess && (
-            <p className="text-[11px] text-[#1A96F3] font-medium">Free admin access</p>
+          {!locked && freeAccess && canGenerate && (
+            <p className="text-[11px] text-[#1A96F3] font-medium">Free admin access — click Generate to start</p>
           )}
         </div>
       </div>
