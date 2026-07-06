@@ -150,6 +150,63 @@ router.post('/webhook', async (req, res) => {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
+
+    // Personalized Learning PDF — separate product, no credits
+    if (session.metadata?.type === 'learning_material') {
+      const userId = session.metadata.user_id || session.client_reference_id;
+      const editionNumber = parseInt(session.metadata.edition_number || '0', 10);
+
+      if (!userId || !editionNumber) {
+        console.error('[stripe/webhook] learning_material missing user_id or edition_number');
+        return res.json({ received: true });
+      }
+
+      try {
+        const { getGradedSubmissions, getOrCreateEditionRow, editionRange } = require('../services/learningDossier');
+
+        const { data: edition } = await supabaseAdmin
+          .from('personalized_learning_editions')
+          .select('id, status')
+          .eq('user_id', userId)
+          .eq('edition_number', editionNumber)
+          .maybeSingle();
+
+        if (edition?.status === 'ready') {
+          console.log('[stripe/webhook] learning_material already ready:', session.id);
+          return res.json({ received: true });
+        }
+
+        if (!edition) {
+          const submissions = await getGradedSubmissions(userId);
+          const { start, end } = editionRange(editionNumber);
+          const submissionIds = submissions.slice(start - 1, end).map((s) => s.id);
+          await getOrCreateEditionRow(userId, editionNumber, submissionIds);
+        }
+
+        await supabaseAdmin
+          .from('personalized_learning_editions')
+          .update({
+            status: 'generating',
+            stripe_session_id: session.id,
+            paid_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId)
+          .eq('edition_number', editionNumber);
+
+        const { generateEditionPdf } = require('../services/learningGenerator');
+        generateEditionPdf(userId, editionNumber).catch((err) => {
+          console.error('[stripe/webhook] learning PDF generation failed:', err.message);
+        });
+
+        console.log(`[stripe/webhook] learning_material paid — edition ${editionNumber} for ${userId}`);
+      } catch (err) {
+        console.error('[stripe/webhook] learning_material processing failed:', err.message);
+        return res.status(500).json({ error: 'Failed to process learning payment.' });
+      }
+
+      return res.json({ received: true });
+    }
+
     let userId = session.metadata?.user_id || session.client_reference_id;
     const creditsGranted = parseInt(session.metadata?.credits_granted || '0');
     const packName = session.metadata?.pack_name || 'Credit Pack';

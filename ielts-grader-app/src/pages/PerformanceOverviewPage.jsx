@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { formatGoalGap, goalStatusText } from '../utils/goalProgress';
 import { api } from '../services/api';
+import LearningMaterialPromo from '../components/LearningMaterialPromo';
 
 const PerformanceOverviewPage = ({ onBack }) => {
   const navigate = useNavigate();
@@ -404,6 +405,8 @@ const PerformanceOverviewPage = ({ onBack }) => {
           </div>
         }
       </div>
+
+      <LearningMaterialPromo />
 
       <TargetBandPrompt
         isOpen={showTargetPrompt}

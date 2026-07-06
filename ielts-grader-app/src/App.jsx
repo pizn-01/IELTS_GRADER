@@ -43,6 +43,7 @@ import MockExamPage from './pages/MockExamPage';
 import ReportPage from './pages/ReportPage';
 import AnalysisReadyPage from './pages/AnalysisReadyPage';
 import PerformanceOverviewPage from './pages/PerformanceOverviewPage';
+import PersonalizedLearningPage from './pages/PersonalizedLearningPage';
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 import DashboardApp from './dashboard/DashboardApp';
@@ -98,6 +99,7 @@ function App() {
   const handleProtectedNavigate = (target, label) => {
     if (target === 'dashboard') navigate('/dashboard');
     else if (target === 'reports') navigate('/performance');
+    else if (target === 'learning') navigate('/learning');
     else if (target === 'subscription') navigate('/subscription');
     else if (target === 'settings') navigate('/settings', { state: { activeTab: label } });
     else if (target === 'logout') {
@@ -205,6 +207,17 @@ function App() {
               profileImage={profileImage}
             >
               <PerformanceOverviewPage onBack={() => navigate('/dashboard')} />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/learning" element={
+          <ProtectedRoute>
+            <Layout
+              currentView="learning"
+              onNavigate={handleProtectedNavigate}
+              profileImage={profileImage}
+            >
+              <PersonalizedLearningPage />
             </Layout>
           </ProtectedRoute>
         } />

@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/admin');
 const { bootstrapRouter } = require('./routes/admin');
 const discountsRoutes = require('./routes/discounts');
 const stripeRoutes = require('./routes/stripe');
+const learningRoutes = require('./routes/learning');
 const trackingRoutes = require('./routes/tracking');
 
 const app = express();
@@ -143,6 +144,7 @@ app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_S
 app.use('/api/admin', adminRoutes);
 app.use('/api/discounts', discountsRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/learning', learningRoutes);
 app.use('/api/tracking', trackingLimiter, trackingRoutes);
 
 // Global error handler

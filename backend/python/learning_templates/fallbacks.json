@@ -1,0 +1,30 @@
+{
+  "ideas_underdeveloped": {
+    "title": "Developing Ideas Fully",
+    "body": "Underdeveloped ideas limit Task Response. For each main point, use a clear topic sentence, one concrete example, and a brief link back to the question. Aim for 2–3 sentences of explanation per supporting idea rather than listing points without depth."
+  },
+  "position_unclear_or_inconsistent": {
+    "title": "Maintaining a Clear Position",
+    "body": "Examiners expect a consistent stance throughout. State your position in the introduction, support it in body paragraphs, and restate it in the conclusion without contradicting earlier claims."
+  },
+  "repetition_basic_lexis": {
+    "title": "Upgrading Repeated Vocabulary",
+    "body": "When the same basic words recur (good, bad, important), build a small synonym set before writing: beneficial, detrimental, significant. Use each key term once, then paraphrase with precision rather than repetition."
+  },
+  "imprecise_word_choice": {
+    "title": "Choosing Precise Lexis",
+    "body": "Imprecise words weaken Lexical Resource. Replace vague verbs (do, get, make) with specific alternatives (conduct, obtain, generate). Check collocations: 'heavy rain' not 'big rain'."
+  },
+  "article_errors": {
+    "title": "Articles (a / an / the)",
+    "body": "Use 'a/an' for non-specific singular count nouns; 'the' when the reader knows which item you mean. Uncountable nouns (information, research) usually take no article."
+  },
+  "subject_verb_agreement": {
+    "title": "Subject–Verb Agreement",
+    "body": "The verb must agree with the grammatical subject, not a nearby noun. With 'the number of', use a singular verb; with 'a number of', use plural."
+  },
+  "run_on_comma_splice": {
+    "title": "Fixing Run-ons and Comma Splices",
+    "body": "Two independent clauses need a conjunction, semicolon, or full stop—not a comma alone. Example: 'Technology helps learners; it also distracts them.'"
+  }
+}

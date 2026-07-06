@@ -13,6 +13,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { dashboardGoalSubtitle } from '../utils/goalProgress';
+import LearningMaterialPromo from '../components/LearningMaterialPromo';
 
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
@@ -95,6 +96,7 @@ function DashboardApp() {
 
   const handleNavigate = (target, label) => {
     if (target === 'reports') { navigate('/performance'); }
+    else if (target === 'learning') { navigate('/learning'); }
     else if (target === 'dashboard') { navigate('/dashboard'); }
     else if (target === 'subscription') { navigate('/subscription'); }
     else if (target === 'settings') { navigate('/settings', { state: { activeTab: label } }); }
@@ -212,6 +214,8 @@ function DashboardApp() {
             />
           </div>
         </div>
+
+        <LearningMaterialPromo />
 
         <PracticeModal
           isOpen={showModal}

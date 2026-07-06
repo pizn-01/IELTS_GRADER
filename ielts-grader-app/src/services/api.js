@@ -570,4 +570,42 @@ export const api = {
     }
     return res.json();
   },
+
+  // ─── Personalized Learning ───────────────────────────────────────────────────
+  getLearningStatus: async () => {
+    const res = await fetch(`${BASE_URL}/learning/status`, { headers: getHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Failed to load learning status.');
+    return data;
+  },
+
+  createLearningCheckout: async (editionNumber) => {
+    const res = await fetch(`${BASE_URL}/learning/checkout`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ edition_number: editionNumber }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Checkout failed.');
+    return data;
+  },
+
+  getLearningDownloadUrl: async (editionNumber) => {
+    const res = await fetch(`${BASE_URL}/learning/download/${editionNumber}`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Download failed.');
+    return data;
+  },
+
+  retryLearningGeneration: async (editionNumber) => {
+    const res = await fetch(`${BASE_URL}/learning/retry/${editionNumber}`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Retry failed.');
+    return data;
+  },
 };
