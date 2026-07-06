@@ -9,29 +9,44 @@ const KpiCard = ({ label, value, loading }) => (
   </div>
 );
 
-const DashboardKpiStrip = ({ latestBand, targetBand, creditsRemaining, examsCount, loading }) => (
-  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-    <KpiCard
-      label="Latest Band"
-      value={latestBand != null ? Number(latestBand).toFixed(1) : '—'}
-      loading={loading}
-    />
-    <KpiCard
-      label="Target Band"
-      value={Number(targetBand).toFixed(1)}
-      loading={loading}
-    />
-    <KpiCard
-      label="Credits Left"
-      value={creditsRemaining}
-      loading={loading}
-    />
-    <KpiCard
-      label="Exams Done"
-      value={examsCount ?? '—'}
-      loading={loading}
-    />
-  </div>
-);
+const DashboardKpiStrip = ({
+  latestBand,
+  targetBand,
+  creditsRemaining,
+  examsCount,
+  thirdLabel = 'Credits Left',
+  thirdValue,
+  fourthLabel = 'Exams Done',
+  fourthValue,
+  loading,
+}) => {
+  const resolvedThird = thirdValue !== undefined ? thirdValue : creditsRemaining;
+  const resolvedFourth = fourthValue !== undefined ? fourthValue : (examsCount ?? '—');
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <KpiCard
+        label="Latest Band"
+        value={latestBand != null ? Number(latestBand).toFixed(1) : '—'}
+        loading={loading}
+      />
+      <KpiCard
+        label="Target Band"
+        value={Number(targetBand).toFixed(1)}
+        loading={loading}
+      />
+      <KpiCard
+        label={thirdLabel}
+        value={resolvedThird}
+        loading={loading}
+      />
+      <KpiCard
+        label={fourthLabel}
+        value={resolvedFourth}
+        loading={loading}
+      />
+    </div>
+  );
+};
 
 export default DashboardKpiStrip;
