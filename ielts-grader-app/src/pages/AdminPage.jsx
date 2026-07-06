@@ -304,12 +304,18 @@ const AcquisitionTab = () => {
   const timeseriesSessionTotal = timeseries.reduce((sum, row) => sum + (row.sessions || 0), 0);
   const channelSessionTotal = byChannel.reduce((sum, row) => sum + (row.sessions || 0), 0);
 
+  const chartTickInterval = days <= 7 ? 0 : days <= 30 ? 4 : 13;
+  const formatChartDate = (date) => {
+    if (!date) return '';
+    const [, month, day] = date.split('-');
+    return `${month}/${day}`;
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <DateRangeBar days={days} setDays={d => { setDays(d); setVisitorPage(1); }} />
+      <div className="flex items-center justify-end">
         <button onClick={load} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50">
-          <RefreshCw size={16} className="text-gray-400" />
+          <RefreshCw size={16} className={`text-gray-400 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
@@ -324,22 +330,38 @@ const AcquisitionTab = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-[15px] font-bold text-[#101828]">Charts</h2>
+          <p className="text-[11px] text-gray-400 mt-0.5">Last {days} days · Toronto time · all charts update together</p>
+        </div>
+        <DateRangeBar days={days} setDays={d => { setDays(d); setVisitorPage(1); }} />
+      </div>
+
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4 transition-opacity ${loading ? 'opacity-60' : ''}`}>
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
           <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
           <p className="text-[11px] text-gray-400 mb-4">
-            Daily totals in Toronto time. {timeseriesSessionTotal} sessions in chart ({overview?.total_sessions ?? 0} in period).
+            Daily totals. {timeseriesSessionTotal} sessions in chart ({overview?.total_sessions ?? 0} in period).
           </p>
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={timeseries}>
+              <LineChart data={timeseries} margin={{ top: 8, right: 8, left: 0, bottom: days > 7 ? 8 : 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5, 10)} interval={days > 14 ? 4 : 0} />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="sessions" fill="#2C3E50" name="Sessions" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="signups" fill="#3B82F6" name="Signups" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10 }}
+                  tickFormatter={formatChartDate}
+                  interval={chartTickInterval}
+                  angle={days > 7 ? -40 : 0}
+                  textAnchor={days > 7 ? 'end' : 'middle'}
+                  height={days > 7 ? 52 : 30}
+                />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} width={32} />
+                <Tooltip labelFormatter={formatChartDate} />
+                <Line type="monotone" dataKey="sessions" stroke="#2C3E50" strokeWidth={2} dot={false} name="Sessions" />
+                <Line type="monotone" dataKey="signups" stroke="#3B82F6" strokeWidth={2} dot={false} name="Signups" />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
