@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/admin');
 const { bootstrapRouter } = require('./routes/admin');
 const discountsRoutes = require('./routes/discounts');
 const stripeRoutes = require('./routes/stripe');
+const trackingRoutes = require('./routes/tracking');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -96,6 +97,15 @@ const submissionsReadLimiter = rateLimit({
   message: { error: 'Too many requests. Please try again in a moment.' },
 });
 
+// Visitor tracking — generous for SPA route changes
+const trackingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many tracking requests. Please slow down.' },
+});
+
 app.use(globalLimiter);
 
 app.get('/health', (_req, res) =>
@@ -133,6 +143,7 @@ app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_S
 app.use('/api/admin', adminRoutes);
 app.use('/api/discounts', discountsRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/tracking', trackingLimiter, trackingRoutes);
 
 // Global error handler
 app.use((err, _req, res, _next) => {

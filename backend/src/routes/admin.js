@@ -10,6 +10,16 @@ const {
   normalizeBankItem,
   SUMMARY_COMBOS,
 } = require('../utils/taskBankFormat');
+const {
+  parseDays,
+  sinceIso,
+  computeOverview,
+  computeTimeseries,
+  computeByChannel,
+  computeByCountry,
+  computeByLanding,
+  computeByHour,
+} = require('../utils/acquisitionAnalytics');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
@@ -87,19 +97,23 @@ router.get('/stats', async (req, res) => {
 // ─── GET /api/admin/users ─────────────────────────────────────────────────────
 // List all users — profiles joined with auth email
 router.get('/users', async (req, res) => {
-  const { page = 1, per_page = 50, search = '' } = req.query;
+  const { page = 1, per_page = 50, search = '', channel = '' } = req.query;
   const perPage = Math.min(parseInt(per_page), 100);
 
   try {
     // Build profile query — push name search to DB to avoid pulling all records
     let profileQuery = supabaseAdmin
       .from('profiles')
-      .select('id, full_name, target_band, credits_remaining, is_admin, created_at')
+      .select('id, full_name, target_band, credits_remaining, is_admin, created_at, acquisition_channel, landing_path, acquisition_country, utm_campaign')
       .order('created_at', { ascending: false })
       .range((page - 1) * perPage, page * perPage - 1);
 
     if (search) {
       profileQuery = profileQuery.ilike('full_name', `%${search}%`);
+    }
+
+    if (channel) {
+      profileQuery = profileQuery.eq('acquisition_channel', channel);
     }
 
     const { data: profiles, error: profileError } = await profileQuery;
@@ -127,7 +141,7 @@ router.get('/users', async (req, res) => {
     if (extraEmailIds.length > 0) {
       const { data: extraProfiles } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, target_band, credits_remaining, is_admin, created_at')
+        .select('id, full_name, target_band, credits_remaining, is_admin, created_at, acquisition_channel, landing_path, acquisition_country, utm_campaign')
         .in('id', extraEmailIds);
       allProfiles = [...allProfiles, ...(extraProfiles || [])];
     }
@@ -1062,6 +1076,170 @@ router.get('/payments', async (req, res) => {
   } catch (err) {
     console.error('[admin/payments]', err.message);
     return res.status(500).json({ error: 'Failed to fetch payments.' });
+  }
+});
+
+// ─── Acquisition analytics helpers ─────────────────────────────────────────────
+async function fetchSessionsSince(since) {
+  return fetchAllRows(() =>
+    supabaseAdmin
+      .from('visitor_sessions')
+      .select('session_id, channel, country, landing_path, page_view_count, duration_seconds, is_bounce, converted_user_id, first_seen_at')
+      .gte('first_seen_at', since)
+      .order('first_seen_at', { ascending: false })
+  );
+}
+
+async function fetchPageViewsSince(since) {
+  return fetchAllRows(() =>
+    supabaseAdmin
+      .from('page_views')
+      .select('id, session_id, path, created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+  );
+}
+
+async function fetchSignupsSince(since) {
+  return fetchAllRows(() =>
+    supabaseAdmin
+      .from('profiles')
+      .select('id, created_at, acquisition_channel')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+  );
+}
+
+// ─── GET /api/admin/acquisition/overview ───────────────────────────────────────
+router.get('/acquisition/overview', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+
+  try {
+    const [sessions, pageViews, signups] = await Promise.all([
+      fetchSessionsSince(since),
+      fetchPageViewsSince(since),
+      fetchSignupsSince(since),
+    ]);
+
+    return res.json(computeOverview(sessions, pageViews, signups));
+  } catch (err) {
+    console.error('[admin/acquisition/overview]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch acquisition overview.' });
+  }
+});
+
+// ─── GET /api/admin/acquisition/timeseries ─────────────────────────────────────
+router.get('/acquisition/timeseries', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+  const granularity = req.query.granularity === 'hour' ? 'hour' : 'day';
+
+  try {
+    const [sessions, signups] = await Promise.all([
+      fetchSessionsSince(since),
+      fetchSignupsSince(since),
+    ]);
+
+    return res.json({ data: computeTimeseries(sessions, signups, granularity) });
+  } catch (err) {
+    console.error('[admin/acquisition/timeseries]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch acquisition timeseries.' });
+  }
+});
+
+// ─── GET /api/admin/acquisition/by-channel ─────────────────────────────────────
+router.get('/acquisition/by-channel', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+
+  try {
+    const sessions = await fetchSessionsSince(since);
+    return res.json({ data: computeByChannel(sessions) });
+  } catch (err) {
+    console.error('[admin/acquisition/by-channel]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch channel breakdown.' });
+  }
+});
+
+// ─── GET /api/admin/acquisition/by-country ─────────────────────────────────────
+router.get('/acquisition/by-country', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+
+  try {
+    const sessions = await fetchSessionsSince(since);
+    return res.json({ data: computeByCountry(sessions).slice(0, 20) });
+  } catch (err) {
+    console.error('[admin/acquisition/by-country]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch country breakdown.' });
+  }
+});
+
+// ─── GET /api/admin/acquisition/by-landing ─────────────────────────────────────
+router.get('/acquisition/by-landing', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+
+  try {
+    const sessions = await fetchSessionsSince(since);
+    return res.json({ data: computeByLanding(sessions).slice(0, 20) });
+  } catch (err) {
+    console.error('[admin/acquisition/by-landing]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch landing page breakdown.' });
+  }
+});
+
+// ─── GET /api/admin/acquisition/by-hour ────────────────────────────────────────
+router.get('/acquisition/by-hour', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+
+  try {
+    const sessions = await fetchSessionsSince(since);
+    return res.json({ data: computeByHour(sessions) });
+  } catch (err) {
+    console.error('[admin/acquisition/by-hour]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch hourly breakdown.' });
+  }
+});
+
+// ─── GET /api/admin/acquisition/visitors ─────────────────────────────────────
+router.get('/acquisition/visitors', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+  const { page = 1, per_page = 50, channel = '', converted = 'false' } = req.query;
+  const perPage = Math.min(parseInt(per_page), 100);
+  const showConverted = converted === 'true';
+
+  try {
+    let query = supabaseAdmin
+      .from('visitor_sessions')
+      .select('session_id, channel, landing_path, country, page_view_count, duration_seconds, device_type, browser, os, is_bounce, converted_user_id, first_seen_at, last_seen_at', { count: 'exact' })
+      .gte('first_seen_at', since)
+      .order('first_seen_at', { ascending: false })
+      .range((page - 1) * perPage, page * perPage - 1);
+
+    if (channel) query = query.eq('channel', channel);
+
+    if (showConverted) {
+      query = query.not('converted_user_id', 'is', null);
+    } else {
+      query = query.is('converted_user_id', null);
+    }
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    return res.json({
+      data: data || [],
+      page: parseInt(page),
+      per_page: perPage,
+      total: count || 0,
+    });
+  } catch (err) {
+    console.error('[admin/acquisition/visitors]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch visitors.' });
   }
 });
 

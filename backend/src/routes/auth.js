@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { supabaseAdmin, supabaseAuth } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/email');
+const { saveUserAttribution } = require('../utils/attribution');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -68,7 +69,7 @@ router.post('/login', async (req, res) => {
 
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
-  const { first_name, last_name, email, password, full_name } = req.body;
+  const { first_name, last_name, email, password, full_name, attribution, session_id } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
@@ -130,6 +131,10 @@ router.post('/register', async (req, res) => {
     // Send verification email — fire-and-forget so it doesn't block registration
     sendVerificationEmail(email, name, verificationToken).catch(err =>
       console.error('[auth/register] Verification email failed:', err.message)
+    );
+
+    await saveUserAttribution(supabaseAdmin, data.user.id, { attribution, session_id }).catch(err =>
+      console.error('[auth/register] Attribution save failed:', err.message)
     );
 
     const token = signToken(data.user.id, data.user.email);
@@ -422,7 +427,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
 
 // ─── POST /api/auth/google ────────────────────────────────────────────────────
 router.post('/google', async (req, res) => {
-  const { access_token } = req.body;
+  const { access_token, attribution, session_id } = req.body;
 
   if (!access_token) {
     return res.status(400).json({ error: 'access_token is required.' });
@@ -476,12 +481,18 @@ router.post('/google', async (req, res) => {
     }
 
     const userCreatedAt = new Date(user.created_at || 0).getTime();
-    if (Date.now() - userCreatedAt < 60000) {
+    const isNewUser = Date.now() - userCreatedAt < 60000;
+
+    if (isNewUser) {
       await supabaseAdmin.from('profiles').update({
         credits_remaining: 1,
         email_verified: true,
       }).eq('id', user.id);
       profile = { ...profile, credits_remaining: 1, email_verified: true };
+
+      await saveUserAttribution(supabaseAdmin, user.id, { attribution, session_id }).catch(err =>
+        console.error('[auth/google] Attribution save failed:', err.message)
+      );
     } else if (!profile.email_verified) {
       // Existing Google user — mark verified (Google guarantees it)
       await supabaseAdmin.from('profiles').update({ email_verified: true }).eq('id', user.id);

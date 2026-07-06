@@ -51,6 +51,8 @@ import ReportsOverview from './components/ReportsOverview';
 import Settings from './components/Settings';
 import { useAuth } from './context/AuthContext';
 
+import { useVisitorTracking } from './hooks/useVisitorTracking';
+
 // ── Landing Page Assembly ─────────────────────────────────────────────────────
 const LandingPage = () => (
   <>
@@ -83,6 +85,8 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
+
+  useVisitorTracking();
 
   // Shared navigation handler for protected routes
   const handleProtectedNavigate = (target, label) => {

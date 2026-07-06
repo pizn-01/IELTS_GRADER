@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { getSignupAttribution } from '../utils/attribution';
 import { supabase } from '../lib/supabase';
 import {
   getAuthToken,
@@ -56,7 +57,8 @@ export const AuthProvider = ({ children }) => {
    * New accounts default to remembered sessions.
    */
   const register = async (profile) => {
-    const { token: t, user: u } = await api.register(profile);
+    const { session_id, attribution } = getSignupAttribution();
+    const { token: t, user: u } = await api.register({ ...profile, session_id, attribution });
     setAuthToken(t, true);
     setToken(t);
     setUser(u);

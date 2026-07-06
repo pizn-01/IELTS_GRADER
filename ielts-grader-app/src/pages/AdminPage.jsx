@@ -4,7 +4,8 @@ import { api } from '../services/api';
 import ExamQuestionPanel from '../components/ExamQuestionPanel';
 import { buildPreviewQuestionText } from '../utils/buildPreviewQuestionText';
 import { extractFileText } from '../utils/extractFileText';
-import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson, Image as ImageIcon } from 'lucide-react';
+import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson, Image as ImageIcon, Globe } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const readAsDataURL = (file) =>
   new Promise((resolve, reject) => {
@@ -14,7 +15,26 @@ const readAsDataURL = (file) =>
     reader.readAsDataURL(file);
   });
 
-const TABS = ['Overview', 'Users', 'Submissions', 'Tasks', 'Assignments', 'Discounts', 'Support'];
+const TABS = ['Overview', 'Users', 'Acquisition', 'Submissions', 'Tasks', 'Assignments', 'Discounts', 'Support'];
+
+const CHANNEL_OPTIONS = [
+  '', 'direct', 'google_organic', 'google_ads', 'facebook', 'instagram', 'reddit', 'quora',
+  'twitter', 'linkedin', 'tiktok', 'youtube', 'email', 'referral',
+];
+
+const channelColor = (ch) => {
+  const map = {
+    google_ads: 'blue', google_organic: 'blue', facebook: 'blue', instagram: 'yellow',
+    reddit: 'red', quora: 'green', twitter: 'blue', direct: 'gray', email: 'green', referral: 'yellow',
+  };
+  return map[ch] || 'gray';
+};
+
+const formatDuration = (seconds) => {
+  if (!seconds) return '—';
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+};
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 const Pill = ({ label, color }) => {
@@ -63,14 +83,17 @@ const OverviewTab = () => {
 const UsersTab = () => {
   const [users, setUsers]   = useState([]);
   const [search, setSearch] = useState('');
+  const [channel, setChannel] = useState('');
   const [page, setPage]     = useState(1);
   const [editing, setEditing]   = useState(null); // { id, credits_remaining, target_band, is_admin }
   const [deleting, setDeleting] = useState(null); // user object pending confirmation
   const [saving, setSaving]     = useState(false);
 
   const load = useCallback(() => {
-    api.admin.getUsers({ page, per_page: 20, search }).then(r => setUsers(r.data || [])).catch(() => {});
-  }, [page, search]);
+    const params = { page, per_page: 20, search };
+    if (channel) params.channel = channel;
+    api.admin.getUsers(params).then(r => setUsers(r.data || [])).catch(() => {});
+  }, [page, search, channel]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -96,33 +119,51 @@ const UsersTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-3 items-center">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex gap-3 items-center flex-wrap">
+        <div className="relative flex-1 max-w-sm min-w-[200px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search name or email…" className="w-full pl-9 pr-4 h-[40px] border border-gray-200 rounded-[10px] text-[13px] outline-none focus:border-blue-400" />
         </div>
+        <select
+          value={channel}
+          onChange={e => { setChannel(e.target.value); setPage(1); }}
+          className="h-[40px] border border-gray-200 rounded-[10px] px-3 text-[13px] text-gray-600 outline-none focus:border-blue-400"
+        >
+          <option value="">All channels</option>
+          {CHANNEL_OPTIONS.filter(Boolean).map(ch => (
+            <option key={ch} value={ch}>{ch.replace(/_/g, ' ')}</option>
+          ))}
+        </select>
         <button onClick={load} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50"><RefreshCw size={16} className="text-gray-400" /></button>
       </div>
 
       <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
-        <table className="w-full text-[13px] min-w-[600px]">
+        <table className="w-full text-[13px] min-w-[900px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>
-              {['Name', 'Email', 'Credits', 'Target', 'Exams', 'Admin', 'Actions'].map(h => (
-                <th key={h} className="px-5 py-3 text-left">{h}</th>
+              {['Name', 'Email', 'Channel', 'Landing', 'Country', 'Campaign', 'Credits', 'Target', 'Exams', 'Admin', 'Actions'].map(h => (
+                <th key={h} className="px-4 py-3 text-left">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {users.map(u => (
               <tr key={u.id} className="hover:bg-gray-50/50">
-                <td className="px-5 py-3 font-medium text-[#101828]">{u.full_name || '—'}</td>
-                <td className="px-5 py-3 text-gray-500">{u.email}</td>
-                <td className="px-5 py-3 font-bold text-[#101828]">{u.credits_remaining}</td>
-                <td className="px-5 py-3 text-gray-500">{u.target_band}</td>
-                <td className="px-5 py-3 text-gray-500">{u.submission_count}</td>
-                <td className="px-5 py-3">{u.is_admin ? <Pill label="Admin" color="blue" /> : <Pill label="User" color="gray" />}</td>
-                <td className="px-5 py-3">
+                <td className="px-4 py-3 font-medium text-[#101828]">{u.full_name || '—'}</td>
+                <td className="px-4 py-3 text-gray-500">{u.email}</td>
+                <td className="px-4 py-3">
+                  {u.acquisition_channel
+                    ? <Pill label={u.acquisition_channel.replace(/_/g, ' ')} color={channelColor(u.acquisition_channel)} />
+                    : <span className="text-gray-400">—</span>}
+                </td>
+                <td className="px-4 py-3 text-gray-500 max-w-[120px] truncate" title={u.landing_path}>{u.landing_path || '—'}</td>
+                <td className="px-4 py-3 text-gray-500">{u.acquisition_country || '—'}</td>
+                <td className="px-4 py-3 text-gray-500 max-w-[100px] truncate" title={u.utm_campaign}>{u.utm_campaign || '—'}</td>
+                <td className="px-4 py-3 font-bold text-[#101828]">{u.credits_remaining}</td>
+                <td className="px-4 py-3 text-gray-500">{u.target_band}</td>
+                <td className="px-4 py-3 text-gray-500">{u.submission_count}</td>
+                <td className="px-4 py-3">{u.is_admin ? <Pill label="Admin" color="blue" /> : <Pill label="User" color="gray" />}</td>
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <button onClick={() => setEditing({ ...u })} className="text-[12px] font-bold text-blue-600 hover:underline">Edit</button>
                     <button onClick={() => setDeleting(u)} className="text-[12px] font-bold text-red-500 hover:text-red-700 hover:underline">Delete</button>
@@ -130,7 +171,7 @@ const UsersTab = () => {
                 </td>
               </tr>
             ))}
-            {users.length === 0 && <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No users found.</td></tr>}
+            {users.length === 0 && <tr><td colSpan={11} className="px-5 py-8 text-center text-gray-400">No users found.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -187,6 +228,213 @@ const UsersTab = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// ── Acquisition Tab ───────────────────────────────────────────────────────────
+const DateRangeBar = ({ days, setDays }) => (
+  <div className="flex gap-2">
+    {[7, 30, 90].map(d => (
+      <button
+        key={d}
+        onClick={() => setDays(d)}
+        className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+      >
+        {d}d
+      </button>
+    ))}
+  </div>
+);
+
+const AcquisitionTab = () => {
+  const [days, setDays] = useState(30);
+  const [overview, setOverview] = useState(null);
+  const [timeseries, setTimeseries] = useState([]);
+  const [byChannel, setByChannel] = useState([]);
+  const [byCountry, setByCountry] = useState([]);
+  const [byHour, setByHour] = useState([]);
+  const [visitors, setVisitors] = useState([]);
+  const [visitorPage, setVisitorPage] = useState(1);
+  const [visitorChannel, setVisitorChannel] = useState('');
+  const [visitorTotal, setVisitorTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { days };
+      const visitorParams = { days, page: visitorPage, per_page: 20, converted: 'false' };
+      if (visitorChannel) visitorParams.channel = visitorChannel;
+
+      const [ov, ts, ch, co, hr, vis] = await Promise.all([
+        api.admin.getAcquisitionOverview(params),
+        api.admin.getAcquisitionTimeseries(params),
+        api.admin.getAcquisitionByChannel(params),
+        api.admin.getAcquisitionByCountry(params),
+        api.admin.getAcquisitionByHour(params),
+        api.admin.getAcquisitionVisitors(visitorParams),
+      ]);
+
+      setOverview(ov);
+      setTimeseries(ts.data || []);
+      setByChannel(ch.data || []);
+      setByCountry(co.data || []);
+      setByHour(hr.data || []);
+      setVisitors(vis.data || []);
+      setVisitorTotal(vis.total || 0);
+    } catch {
+      // keep prior data on error
+    } finally {
+      setLoading(false);
+    }
+  }, [days, visitorPage, visitorChannel]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading && !overview) {
+    return <p className="text-gray-400 text-[14px] p-8">Loading acquisition data…</p>;
+  }
+
+  const hourChartData = byHour.map(h => ({
+    label: `${h.hour}:00`,
+    sessions: h.sessions,
+  }));
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <DateRangeBar days={days} setDays={d => { setDays(d); setVisitorPage(1); }} />
+        <button onClick={load} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50">
+          <RefreshCw size={16} className="text-gray-400" />
+        </button>
+      </div>
+
+      {overview && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Stat label="Sessions" value={overview.total_sessions} />
+          <Stat label="Pageviews" value={overview.total_pageviews} />
+          <Stat label="Bounce Rate" value={`${overview.bounce_rate}%`} />
+          <Stat label="Avg Pages" value={overview.avg_pages_per_session} />
+          <Stat label="Conversion" value={`${overview.conversion_rate}%`} sub={`${overview.signup_count} signups`} />
+          <Stat label="Top Channel" value={(overview.top_channel || '—').replace(/_/g, ' ')} />
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Visits vs Signups</p>
+          <div className="h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timeseries}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5)} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="visits" stroke="#2C3E50" strokeWidth={2} dot={false} name="Visits" />
+                <Line type="monotone" dataKey="signups" stroke="#3B82F6" strokeWidth={2} dot={false} name="Signups" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Sessions by Channel</p>
+          <div className="h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={byChannel.slice(0, 8)} layout="vertical" margin={{ left: 80 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                <YAxis type="category" dataKey="channel" tick={{ fontSize: 11 }} width={75} tickFormatter={v => v.replace(/_/g, ' ')} />
+                <Tooltip />
+                <Bar dataKey="sessions" fill="#2C3E50" name="Sessions" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Top Countries</p>
+          <div className="h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={byCountry.slice(0, 10)} layout="vertical" margin={{ left: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                <YAxis type="category" dataKey="country" tick={{ fontSize: 11 }} width={35} />
+                <Tooltip />
+                <Bar dataKey="sessions" fill="#3B82F6" name="Sessions" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Visits by Hour (UTC)</p>
+          <div className="h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={hourChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={2} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="sessions" fill="#6366F1" name="Sessions" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-[15px] font-bold text-[#101828]">Anonymous Visitors</h2>
+          <select
+            value={visitorChannel}
+            onChange={e => { setVisitorChannel(e.target.value); setVisitorPage(1); }}
+            className="h-[36px] border border-gray-200 rounded-[8px] px-3 text-[12px] text-gray-600 outline-none"
+          >
+            <option value="">All channels</option>
+            {CHANNEL_OPTIONS.filter(Boolean).map(ch => (
+              <option key={ch} value={ch}>{ch.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
+          <table className="w-full text-[13px] min-w-[800px]">
+            <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
+              <tr>
+                {['First Seen', 'Channel', 'Landing', 'Country', 'Pages', 'Duration', 'Device'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {visitors.map(v => (
+                <tr key={v.session_id} className="hover:bg-gray-50/50">
+                  <td className="px-4 py-3 text-gray-500">{new Date(v.first_seen_at).toLocaleString()}</td>
+                  <td className="px-4 py-3">
+                    <Pill label={(v.channel || 'direct').replace(/_/g, ' ')} color={channelColor(v.channel)} />
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 max-w-[140px] truncate" title={v.landing_path}>{v.landing_path || '/'}</td>
+                  <td className="px-4 py-3 text-gray-500">{v.country || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">{v.page_view_count}</td>
+                  <td className="px-4 py-3 text-gray-500">{formatDuration(v.duration_seconds)}</td>
+                  <td className="px-4 py-3 text-gray-500 capitalize">{v.device_type || '—'}</td>
+                </tr>
+              ))}
+              {visitors.length === 0 && (
+                <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No visitor sessions in this period.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button onClick={() => setVisitorPage(p => Math.max(1, p - 1))} disabled={visitorPage === 1} className="p-2 border border-gray-200 rounded-[8px] disabled:opacity-40"><ChevronLeft size={16} /></button>
+          <span className="text-[13px] text-gray-500">Page {visitorPage} · {visitorTotal} total</span>
+          <button onClick={() => setVisitorPage(p => p + 1)} disabled={visitors.length < 20} className="p-2 border border-gray-200 rounded-[8px] disabled:opacity-40"><ChevronRight size={16} /></button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1533,7 +1781,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState('Overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const tabIcon = { Overview: BarChart2, Users, Submissions: FileText, Tasks: BookOpen, Assignments: ClipboardList, Discounts: Tag, Support: MessageSquare };
+  const tabIcon = { Overview: BarChart2, Users, Acquisition: Globe, Submissions: FileText, Tasks: BookOpen, Assignments: ClipboardList, Discounts: Tag, Support: MessageSquare };
 
   const switchTab = (t) => { setTab(t); setSidebarOpen(false); };
 
@@ -1596,6 +1844,7 @@ export default function AdminPage() {
         <h1 className="text-[20px] md:text-[22px] font-black text-[#101828] mb-5 md:mb-6">{tab}</h1>
         {tab === 'Overview'     && <OverviewTab />}
         {tab === 'Users'        && <UsersTab />}
+        {tab === 'Acquisition'  && <AcquisitionTab />}
         {tab === 'Submissions'  && <SubmissionsTab />}
         {tab === 'Tasks'        && <TasksTab />}
         {tab === 'Assignments'  && <AssignmentsTab />}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { getSignupAttribution } from '../utils/attribution';
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -24,7 +25,8 @@ const OAuthCallbackPage = () => {
         }
 
         // Exchange Supabase token for our custom backend JWT
-        const { token, user } = await api.googleAuth(session.access_token);
+        const { session_id, attribution } = getSignupAttribution();
+        const { token, user } = await api.googleAuth(session.access_token, { session_id, attribution });
 
         if (cancelled) return;
 

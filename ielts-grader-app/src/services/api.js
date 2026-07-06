@@ -50,6 +50,19 @@ const offlineFallbacks = {
 const isNetworkError = (err) => err instanceof TypeError || err.name === 'TypeError';
 
 export const api = {
+  // ─── POST /api/tracking/pageview ─────────────────────────────────────────────
+  trackPageView: async (payload) => {
+    try {
+      await fetch(`${BASE_URL}/tracking/pageview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      // Non-blocking — tracking must not break the app
+    }
+  },
+
   // ─── POST /api/auth/login ───────────────────────────────────────────────────
   login: async (credentials) => {
     let serverReachable = false;
@@ -311,11 +324,11 @@ export const api = {
 
   // ─── POST /api/auth/google ───────────────────────────────────────────────────
   // Exchange Supabase OAuth access_token for our custom JWT
-  googleAuth: async (access_token) => {
+  googleAuth: async (access_token, extra = {}) => {
     const res = await fetch(`${BASE_URL}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token }),
+      body: JSON.stringify({ access_token, ...extra }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -506,6 +519,34 @@ export const api = {
     getPayments: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return fetch(`${BASE_URL}/admin/payments?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getAcquisitionOverview: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/overview?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getAcquisitionTimeseries: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/timeseries?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getAcquisitionByChannel: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/by-channel?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getAcquisitionByCountry: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/by-country?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getAcquisitionByLanding: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/by-landing?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getAcquisitionByHour: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/by-hour?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getAcquisitionVisitors: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/visitors?${q}`, { headers: getHeaders() }).then(r => r.json());
     },
   },
 
