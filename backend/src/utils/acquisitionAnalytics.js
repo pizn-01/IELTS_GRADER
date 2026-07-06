@@ -85,7 +85,18 @@ function computeOverview(sessions, pageViews, signups) {
   };
 }
 
-function computeTimeseries(sessions, signups, granularity = 'day') {
+function eachTorontoDayKeys(days) {
+  const keys = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    keys.push(torontoDateKey(d.toISOString()));
+  }
+  return keys;
+}
+
+function computeTimeseries(sessions, signups, granularity = 'day', days = 30) {
   const sessionMap = {};
   const signupMap = {};
 
@@ -99,7 +110,10 @@ function computeTimeseries(sessions, signups, granularity = 'day') {
     signupMap[bucket] = (signupMap[bucket] || 0) + 1;
   }
 
-  const keys = [...new Set([...Object.keys(sessionMap), ...Object.keys(signupMap)])].sort();
+  const keys = granularity === 'day'
+    ? eachTorontoDayKeys(parseDays(days))
+    : [...new Set([...Object.keys(sessionMap), ...Object.keys(signupMap)])].sort();
+
   return keys.map((date) => ({
     date,
     sessions: sessionMap[date] || 0,

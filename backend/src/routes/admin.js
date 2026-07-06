@@ -1141,7 +1141,7 @@ router.get('/acquisition/timeseries', async (req, res) => {
       fetchSignupsSince(since),
     ]);
 
-    return res.json({ data: computeTimeseries(sessions, signups, granularity) });
+    return res.json({ data: computeTimeseries(sessions, signups, granularity, days) });
   } catch (err) {
     console.error('[admin/acquisition/timeseries]', err.message);
     return res.status(500).json({ error: 'Failed to fetch acquisition timeseries.' });

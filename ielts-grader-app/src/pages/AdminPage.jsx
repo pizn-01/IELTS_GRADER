@@ -248,7 +248,7 @@ const DateRangeBar = ({ days, setDays }) => (
 );
 
 const AcquisitionTab = () => {
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState(7);
   const [overview, setOverview] = useState(null);
   const [timeseries, setTimeseries] = useState([]);
   const [byChannel, setByChannel] = useState([]);
@@ -301,6 +301,7 @@ const AcquisitionTab = () => {
     sessions: h.sessions,
   }));
 
+  const timeseriesSessionTotal = timeseries.reduce((sum, row) => sum + (row.sessions || 0), 0);
   const channelSessionTotal = byChannel.reduce((sum, row) => sum + (row.sessions || 0), 0);
 
   return (
@@ -326,17 +327,19 @@ const AcquisitionTab = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
           <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
-          <p className="text-[11px] text-gray-400 mb-4">Daily totals in Toronto time. Sessions = browser visits; signups = new accounts.</p>
+          <p className="text-[11px] text-gray-400 mb-4">
+            Daily totals in Toronto time. {timeseriesSessionTotal} sessions in chart ({overview?.total_sessions ?? 0} in period).
+          </p>
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timeseries}>
+              <BarChart data={timeseries}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5, 10)} />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5, 10)} interval={days > 14 ? 4 : 0} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip />
-                <Line type="monotone" dataKey="sessions" stroke="#2C3E50" strokeWidth={2} dot={false} name="Sessions" />
-                <Line type="monotone" dataKey="signups" stroke="#3B82F6" strokeWidth={2} dot={false} name="Signups" />
-              </LineChart>
+                <Bar dataKey="sessions" fill="#2C3E50" name="Sessions" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="signups" fill="#3B82F6" name="Signups" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
