@@ -10,6 +10,7 @@ const {
   LEARNING_PRICE_CENTS,
 } = require('../services/learningDossier');
 const { generateEditionPdf } = require('../services/learningGenerator');
+const { hasLearningFreeAccess } = require('../services/learningAccess');
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ const getStripe = () => {
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app';
 
-async function buildEditionStatus(userId, editionNumber, submissions) {
+async function buildEditionStatus(userId, editionNumber, submissions, freeAccess = false) {
   const { start, end } = editionRange(editionNumber);
   const slice = submissions.slice(start - 1, end);
   const unlocked = slice.length >= EXAMS_PER_EDITION;
@@ -47,7 +48,8 @@ async function buildEditionStatus(userId, editionNumber, submissions) {
     paidAt: row?.paid_at || null,
     generatedAt: row?.generated_at || null,
     preview,
-    priceCents: LEARNING_PRICE_CENTS,
+    priceCents: freeAccess ? 0 : LEARNING_PRICE_CENTS,
+    freeAccess,
   };
 }
 
@@ -56,13 +58,14 @@ router.get('/status', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    const freeAccess = await hasLearningFreeAccess(userId);
     const submissions = await getGradedSubmissions(userId);
     const totalGraded = submissions.length;
     const maxEdition = Math.floor(totalGraded / EXAMS_PER_EDITION);
 
     const editions = [];
     for (let n = 1; n <= Math.max(maxEdition, 1); n += 1) {
-      editions.push(await buildEditionStatus(userId, n, submissions));
+      editions.push(await buildEditionStatus(userId, n, submissions, freeAccess));
     }
 
     const nextEdition = maxEdition + 1;
@@ -71,7 +74,8 @@ router.get('/status', authenticateToken, async (req, res) => {
     return res.json({
       totalGraded,
       examsPerEdition: EXAMS_PER_EDITION,
-      priceCents: LEARNING_PRICE_CENTS,
+      priceCents: freeAccess ? 0 : LEARNING_PRICE_CENTS,
+      freeAccess,
       maxUnlockedEdition: maxEdition,
       progressToNextEdition: {
         editionNumber: nextEdition,
@@ -112,6 +116,24 @@ router.post('/checkout', authenticateToken, async (req, res) => {
     }
     if (row.status === 'generating' || row.status === 'pending_payment') {
       return res.status(400).json({ error: 'This edition is already being processed.' });
+    }
+
+    const freeAccess = await hasLearningFreeAccess(userId);
+    if (freeAccess) {
+      await supabaseAdmin
+        .from('personalized_learning_editions')
+        .update({
+          status: 'generating',
+          paid_at: new Date().toISOString(),
+          stripe_session_id: null,
+        })
+        .eq('id', row.id);
+
+      generateEditionPdf(userId, editionNumber).catch((err) => {
+        console.error('[learning/checkout] admin free generation failed:', err.message);
+      });
+
+      return res.json({ status: 'generating', free: true });
     }
 
     const stripe = getStripe();
@@ -195,6 +217,7 @@ router.post('/retry/:editionNumber', authenticateToken, async (req, res) => {
   const editionNumber = parseInt(req.params.editionNumber, 10);
 
   try {
+    const freeAccess = await hasLearningFreeAccess(userId);
     const { data: row } = await supabaseAdmin
       .from('personalized_learning_editions')
       .select('status, paid_at')
@@ -202,7 +225,10 @@ router.post('/retry/:editionNumber', authenticateToken, async (req, res) => {
       .eq('edition_number', editionNumber)
       .single();
 
-    if (!row || !row.paid_at) {
+    if (!row) {
+      return res.status(404).json({ error: 'Edition not found.' });
+    }
+    if (!freeAccess && !row.paid_at) {
       return res.status(400).json({ error: 'Edition must be paid before regeneration.' });
     }
     if (row.status === 'generating') {

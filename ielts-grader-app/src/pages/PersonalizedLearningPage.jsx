@@ -36,7 +36,7 @@ function EditionCard({
   onRetry,
   busy,
 }) {
-  const { editionNumber, examRange, status, preview, examsNeeded, priceCents } = edition;
+  const { editionNumber, examRange, status, preview, examsNeeded, priceCents, freeAccess } = edition;
   const canBuy = status === 'preview' || status === 'failed';
   const isReady = status === 'ready';
   const isWorking = status === 'generating' || status === 'pending_payment';
@@ -115,7 +115,7 @@ function EditionCard({
             className="flex items-center gap-2 bg-[#1A96F3] hover:bg-[#1585d8] text-white font-bold text-[14px] px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60"
           >
             {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            Get PDF — ${(priceCents / 100).toFixed(0)}
+            {freeAccess ? 'Generate PDF (Admin)' : `Get PDF — $${(priceCents / 100).toFixed(0)}`}
           </button>
         )}
         {isReady && (
@@ -193,8 +193,12 @@ export default function PersonalizedLearningPage() {
   const handlePurchase = async (editionNumber) => {
     setBusyEdition(editionNumber);
     try {
-      const { url } = await api.createLearningCheckout(editionNumber);
-      if (url) window.location.href = url;
+      const result = await api.createLearningCheckout(editionNumber);
+      if (result.url) {
+        window.location.href = result.url;
+      } else if (result.status === 'generating') {
+        await loadStatus();
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -278,7 +282,10 @@ export default function PersonalizedLearningPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-[14px] text-gray-500">
               <CheckCircle2 size={16} className="text-green-500" />
-              {data?.totalGraded || 0} graded exams · ${(data?.priceCents || 500) / 100} per edition
+              {data?.totalGraded || 0} graded exams
+              {data?.freeAccess
+                ? ' · Free admin access'
+                : ` · $${(data?.priceCents || 500) / 100} per edition`}
             </div>
 
             <div className="grid gap-5">
