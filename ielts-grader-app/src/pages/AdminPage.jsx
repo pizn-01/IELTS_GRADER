@@ -304,12 +304,21 @@ const AcquisitionTab = () => {
   const timeseriesSessionTotal = timeseries.reduce((sum, row) => sum + (row.sessions || 0), 0);
   const channelSessionTotal = byChannel.reduce((sum, row) => sum + (row.sessions || 0), 0);
 
-  const chartTickInterval = days <= 7 ? 0 : days <= 30 ? 4 : 13;
   const formatChartDate = (date) => {
     if (!date) return '';
     const [, month, day] = date.split('-');
     return `${month}/${day}`;
   };
+  const timeseriesXTicks = (() => {
+    if (!timeseries.length) return undefined;
+    const step = days <= 7 ? 1 : days <= 30 ? 5 : 13;
+    const ticks = [];
+    for (let i = 0; i < timeseries.length; i += step) ticks.push(timeseries[i].date);
+    const last = timeseries[timeseries.length - 1].date;
+    if (ticks[ticks.length - 1] !== last) ticks.push(last);
+    return ticks;
+  })();
+  const timeseriesXAngle = days > 14 ? -45 : 0;
 
   return (
     <div className="space-y-6">
@@ -344,23 +353,26 @@ const AcquisitionTab = () => {
           <p className="text-[11px] text-gray-400 mb-4">
             Daily totals. {timeseriesSessionTotal} sessions in chart ({overview?.total_sessions ?? 0} in period).
           </p>
-          <div className="h-[240px]">
+          <div className={days > 14 ? 'h-[280px]' : 'h-[240px]'}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timeseries} margin={{ top: 8, right: 8, left: 0, bottom: days > 7 ? 8 : 4 }}>
+              <LineChart
+                data={timeseries}
+                margin={{ top: 8, right: 12, left: 0, bottom: days > 14 ? 28 : 4 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="date"
+                  ticks={timeseriesXTicks}
                   tick={{ fontSize: 10 }}
                   tickFormatter={formatChartDate}
-                  interval={chartTickInterval}
-                  angle={days > 7 ? -40 : 0}
-                  textAnchor={days > 7 ? 'end' : 'middle'}
-                  height={days > 7 ? 52 : 30}
+                  angle={timeseriesXAngle}
+                  textAnchor={days > 14 ? 'end' : 'middle'}
+                  height={days > 14 ? 60 : 30}
                 />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} width={32} />
                 <Tooltip labelFormatter={formatChartDate} />
-                <Line type="monotone" dataKey="sessions" stroke="#2C3E50" strokeWidth={2} dot={false} name="Sessions" />
-                <Line type="monotone" dataKey="signups" stroke="#3B82F6" strokeWidth={2} dot={false} name="Signups" />
+                <Line type="monotone" dataKey="sessions" stroke="#2C3E50" strokeWidth={2} dot={false} activeDot={{ r: 4 }} name="Sessions" />
+                <Line type="monotone" dataKey="signups" stroke="#3B82F6" strokeWidth={2} dot={false} activeDot={{ r: 4 }} name="Signups" />
               </LineChart>
             </ResponsiveContainer>
           </div>
