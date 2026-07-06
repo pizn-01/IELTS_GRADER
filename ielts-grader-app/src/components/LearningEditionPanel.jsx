@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Loader2, Lock, Sparkles, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Download, Loader2, Lock, Sparkles } from 'lucide-react';
 import LearningEditionSnapshot from './LearningEditionSnapshot';
 
 const CRITERIA_LABELS = {
@@ -8,13 +8,6 @@ const CRITERIA_LABELS = {
   'Lexical Resource': 'LR',
   'Grammatical Range and Accuracy': 'GRA',
 };
-
-const GUIDE_INCLUDES = [
-  'Task Response — coverage, development, task-specific feedback',
-  'Coherence & Cohesion — flow, linking, paragraph structure',
-  'Lexical Resource — word choice, repetition, upgrades',
-  'Grammar — your recurring errors + targeted micro-lessons',
-];
 
 function StatusBadge({ status }) {
   const map = {
@@ -59,26 +52,26 @@ export default function LearningEditionPanel({
   const canRetry = status === 'failed';
 
   return (
-    <div className={`bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden flex-1 flex flex-col min-h-[360px] ${className}`}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#E5E7EB] flex-1 lg:items-stretch">
+    <div className={`bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 ${className}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#E5E7EB] flex-1 min-h-0 lg:grid-rows-1">
         {/* Left: stats */}
-        <div className="p-5 md:p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-[16px] font-bold text-[#101828]">
+        <div className="p-4 md:p-5 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+          <div className="flex items-center justify-between gap-2 shrink-0">
+            <h3 className="text-[15px] font-bold text-[#101828]">
               Exams {examRange.start}–{examRange.end}
             </h3>
             <StatusBadge status={status} />
           </div>
 
           {locked ? (
-            <p className="text-[13px] text-gray-400 flex items-center gap-2">
+            <p className="text-[12px] text-gray-400 flex items-center gap-2 flex-1">
               <Lock size={14} />
               Complete {examsNeeded} more exam{examsNeeded !== 1 ? 's' : ''} to unlock
             </p>
           ) : (
-            <>
+            <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-hidden">
               {preview?.avgBands && (
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-1.5 shrink-0">
                   {[
                     { k: 'overall', label: 'Overall' },
                     { k: 'response', label: 'TR' },
@@ -87,9 +80,9 @@ export default function LearningEditionPanel({
                     { k: 'grammar', label: 'GRA' },
                   ].map(({ k, label }) => (
                     preview.avgBands[k] != null && (
-                      <div key={k} className="bg-[#F8FAFC] rounded-lg px-2 py-2 text-center">
-                        <p className="text-[9px] text-gray-400 font-semibold">{label}</p>
-                        <p className="text-[14px] font-bold text-[#101828]">{preview.avgBands[k].toFixed(1)}</p>
+                      <div key={k} className="bg-[#F8FAFC] rounded-lg px-1.5 py-1.5 text-center">
+                        <p className="text-[8px] text-gray-400 font-semibold">{label}</p>
+                        <p className="text-[13px] font-bold text-[#101828]">{preview.avgBands[k].toFixed(1)}</p>
                       </div>
                     )
                   ))}
@@ -97,11 +90,11 @@ export default function LearningEditionPanel({
               )}
 
               {preview?.errorsByCriteria && Object.keys(preview.errorsByCriteria).length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1 shrink-0">
                   {Object.entries(preview.errorsByCriteria).map(([crit, count]) => (
                     <span
                       key={crit}
-                      className="text-[11px] bg-[#EFF6FF] text-[#1A96F3] px-2 py-0.5 rounded-full font-medium"
+                      className="text-[10px] bg-[#EFF6FF] text-[#1A96F3] px-2 py-0.5 rounded-full font-medium"
                     >
                       {CRITERIA_LABELS[crit] || crit}: {count}
                     </span>
@@ -110,8 +103,8 @@ export default function LearningEditionPanel({
               )}
 
               {preview?.topErrors?.length > 0 && (
-                <ul className="text-[12px] text-gray-600 space-y-1">
-                  {preview.topErrors.slice(0, 6).map((e) => (
+                <ul className="text-[11px] text-gray-600 space-y-1 flex-1 min-h-0 overflow-hidden">
+                  {preview.topErrors.slice(0, 5).map((e) => (
                     <li key={e.label} className="flex justify-between gap-2">
                       <span className="truncate">{e.label}</span>
                       <span className="text-gray-400 shrink-0">×{e.count}</span>
@@ -119,57 +112,25 @@ export default function LearningEditionPanel({
                   ))}
                 </ul>
               )}
-
-              <div className="mt-auto pt-4 border-t border-gray-100">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <BookOpen size={12} />
-                  Your guide includes
-                </p>
-                <ul className="text-[12px] text-[#667085] space-y-1.5">
-                  {GUIDE_INCLUDES.map((line) => (
-                    <li key={line} className="flex items-start gap-2">
-                      <CheckCircle2 size={12} className="text-[#1A96F3] shrink-0 mt-0.5" />
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
+            </div>
           )}
         </div>
 
         {/* Right: snapshot + CTA */}
-        <div className="p-5 md:p-6 flex flex-col gap-4 min-h-[280px]">
-          <LearningEditionSnapshot
-            preview={preview}
-            status={status}
-            examRange={examRange}
-            locked={locked}
-          />
+        <div className="p-4 md:p-5 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+          <LearningEditionSnapshot preview={preview} locked={locked} />
 
-          <div className="mt-auto pt-2 border-t border-gray-100 space-y-3">
-            <p className="text-[12px] text-[#667085] leading-relaxed">
-              {locked
-                ? 'Every 5 graded exams unlocks a tailored PDF from your real errors and band scores.'
-                : isReady
-                  ? 'Download your personalized guide — every frequent mistake and task type covered.'
-                  : 'A teacher-style guide built from all 5 exams in this edition.'}
-            </p>
-
-            {errorMessage && (
-              <p className="text-[12px] text-red-600">{errorMessage}</p>
-            )}
-
+          <div className="shrink-0 pt-2 border-t border-gray-100 space-y-2">
             {!locked && (
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 {canGenerate && (
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => onPurchase(edition.editionNumber)}
-                    className="flex items-center gap-2 bg-[#2C3E50] hover:bg-[#1D2939] text-white font-bold text-[13px] px-5 py-2.5 rounded-xl disabled:opacity-60"
+                    className="flex items-center gap-2 bg-[#2C3E50] hover:bg-[#1D2939] text-white font-bold text-[12px] px-4 py-2 rounded-xl disabled:opacity-60"
                   >
-                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                    {busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                     {freeAccess ? 'Generate PDF' : `Get PDF — $${(priceCents / 100).toFixed(0)}`}
                   </button>
                 )}
@@ -178,9 +139,9 @@ export default function LearningEditionPanel({
                     type="button"
                     disabled={busy}
                     onClick={() => onDownload(edition.editionNumber)}
-                    className="flex items-center gap-2 border border-[#1A96F3] text-[#1A96F3] font-bold text-[13px] px-5 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-60"
+                    className="flex items-center gap-2 border border-[#1A96F3] text-[#1A96F3] font-bold text-[12px] px-4 py-2 rounded-xl hover:bg-blue-50 disabled:opacity-60"
                   >
-                    <Download size={15} />
+                    <Download size={14} />
                     Download PDF
                   </button>
                 )}
@@ -189,26 +150,29 @@ export default function LearningEditionPanel({
                     type="button"
                     disabled={busy}
                     onClick={() => onRetry(edition.editionNumber)}
-                    className="flex items-center gap-2 bg-[#2C3E50] text-white font-bold text-[13px] px-5 py-2.5 rounded-xl disabled:opacity-60"
+                    className="flex items-center gap-2 bg-[#2C3E50] text-white font-bold text-[12px] px-4 py-2 rounded-xl disabled:opacity-60"
                   >
-                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                    Retry generation
+                    {busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    Retry
                   </button>
                 )}
                 {isWorking && (
-                  <span className="flex items-center gap-2 text-[12px] text-amber-600">
-                    <Loader2 size={13} className="animate-spin" />
-                    Preparing your guide…
+                  <span className="flex items-center gap-1.5 text-[11px] text-amber-600">
+                    <Loader2 size={12} className="animate-spin" />
+                    Preparing…
                   </span>
+                )}
+                {!freeAccess && canGenerate && (
+                  <span className="text-[10px] text-gray-400">${(priceCents / 100).toFixed(0)} one-time</span>
+                )}
+                {freeAccess && canGenerate && (
+                  <span className="text-[10px] text-[#1A96F3] font-medium">Free admin access</span>
                 )}
               </div>
             )}
 
-            {!locked && !freeAccess && canGenerate && (
-              <p className="text-[11px] text-gray-400">One-time ${(priceCents / 100).toFixed(0)} per edition · PDF generated after payment</p>
-            )}
-            {!locked && freeAccess && canGenerate && (
-              <p className="text-[11px] text-[#1A96F3] font-medium">Free admin access — click Generate to start</p>
+            {errorMessage && (
+              <p className="text-[11px] text-red-600">{errorMessage}</p>
             )}
           </div>
         </div>
