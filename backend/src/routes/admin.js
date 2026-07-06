@@ -1133,6 +1133,7 @@ router.get('/acquisition/overview', async (req, res) => {
 router.get('/acquisition/timeseries', async (req, res) => {
   const days = parseDays(req.query.days);
   const since = sinceIso(days);
+  const granularity = req.query.granularity === 'hour' ? 'hour' : 'day';
 
   try {
     const [sessions, signups] = await Promise.all([
@@ -1140,7 +1141,7 @@ router.get('/acquisition/timeseries', async (req, res) => {
       fetchSignupsSince(since),
     ]);
 
-    return res.json({ data: computeTimeseries(sessions, signups, days) });
+    return res.json({ data: computeTimeseries(sessions, signups, granularity, days) });
   } catch (err) {
     console.error('[admin/acquisition/timeseries]', err.message);
     return res.status(500).json({ error: 'Failed to fetch acquisition timeseries.' });

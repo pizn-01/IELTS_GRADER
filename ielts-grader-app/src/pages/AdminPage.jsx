@@ -233,16 +233,13 @@ const UsersTab = () => {
 };
 
 // ── Acquisition Tab ───────────────────────────────────────────────────────────
-const CHART_DAY_OPTIONS = [7, 30, 90];
-
-const ChartDateRangeBar = ({ days, setDays }) => (
-  <div className="flex gap-1.5 flex-shrink-0">
-    {CHART_DAY_OPTIONS.map(d => (
+const DateRangeBar = ({ days, setDays }) => (
+  <div className="flex gap-2">
+    {[7, 30, 90].map(d => (
       <button
         key={d}
-        type="button"
         onClick={() => setDays(d)}
-        className={`px-3 h-[32px] rounded-[8px] text-[11px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+        className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
       >
         {d}d
       </button>
@@ -250,18 +247,10 @@ const ChartDateRangeBar = ({ days, setDays }) => (
   </div>
 );
 
-const formatChartDate = (date) => {
-  if (!date) return '';
-  const [, month, day] = date.split('-');
-  return `${month}/${day}`;
-};
-
 const AcquisitionTab = () => {
-  const days = 30;
-  const [chartDays, setChartDays] = useState(30);
+  const [days, setDays] = useState(7);
   const [overview, setOverview] = useState(null);
   const [timeseries, setTimeseries] = useState([]);
-  const [timeseriesLoading, setTimeseriesLoading] = useState(false);
   const [byChannel, setByChannel] = useState([]);
   const [byCountry, setByCountry] = useState([]);
   const [byHour, setByHour] = useState([]);
@@ -278,8 +267,9 @@ const AcquisitionTab = () => {
       const visitorParams = { days, page: visitorPage, per_page: 20, converted: 'false' };
       if (visitorChannel) visitorParams.channel = visitorChannel;
 
-      const [ov, ch, co, hr, vis] = await Promise.all([
+      const [ov, ts, ch, co, hr, vis] = await Promise.all([
         api.admin.getAcquisitionOverview(params),
+        api.admin.getAcquisitionTimeseries(params),
         api.admin.getAcquisitionByChannel(params),
         api.admin.getAcquisitionByCountry(params),
         api.admin.getAcquisitionByHour(params),
@@ -287,6 +277,7 @@ const AcquisitionTab = () => {
       ]);
 
       setOverview(ov);
+      setTimeseries(ts.data || []);
       setByChannel(ch.data || []);
       setByCountry(co.data || []);
       setByHour(hr.data || []);
@@ -299,20 +290,7 @@ const AcquisitionTab = () => {
     }
   }, [days, visitorPage, visitorChannel]);
 
-  const loadTimeseries = useCallback(async () => {
-    setTimeseriesLoading(true);
-    try {
-      const ts = await api.admin.getAcquisitionTimeseries({ days: chartDays });
-      setTimeseries(ts.data || []);
-    } catch {
-      // keep prior chart data on error
-    } finally {
-      setTimeseriesLoading(false);
-    }
-  }, [chartDays]);
-
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { loadTimeseries(); }, [loadTimeseries]);
 
   if (loading && !overview) {
     return <p className="text-gray-400 text-[14px] p-8">Loading acquisition data…</p>;
@@ -325,12 +303,12 @@ const AcquisitionTab = () => {
 
   const timeseriesSessionTotal = timeseries.reduce((sum, row) => sum + (row.sessions || 0), 0);
   const channelSessionTotal = byChannel.reduce((sum, row) => sum + (row.sessions || 0), 0);
-  const chartTickInterval = chartDays <= 7 ? 0 : chartDays <= 30 ? 4 : 13;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <button onClick={() => { load(); loadTimeseries(); }} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <DateRangeBar days={days} setDays={d => { setDays(d); setVisitorPage(1); }} />
+        <button onClick={load} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50">
           <RefreshCw size={16} className="text-gray-400" />
         </button>
       </div>
@@ -348,35 +326,17 @@ const AcquisitionTab = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-            <div>
-              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
-              <p className="text-[11px] text-gray-400">
-                Daily totals · Toronto time · {timeseriesSessionTotal} sessions in chart
-              </p>
-            </div>
-            <ChartDateRangeBar days={chartDays} setDays={setChartDays} />
-          </div>
-          <div className="h-[280px] relative">
-            {timeseriesLoading && (
-              <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center text-[12px] text-gray-400">
-                Updating…
-              </div>
-            )}
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
+          <p className="text-[11px] text-gray-400 mb-4">
+            Daily totals in Toronto time. {timeseriesSessionTotal} sessions in chart ({overview?.total_sessions ?? 0} in period).
+          </p>
+          <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={timeseries} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+              <BarChart data={timeseries}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10 }}
-                  tickFormatter={formatChartDate}
-                  interval={chartTickInterval}
-                  angle={chartDays > 7 ? -40 : 0}
-                  textAnchor={chartDays > 7 ? 'end' : 'middle'}
-                  height={chartDays > 7 ? 52 : 30}
-                />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} width={32} />
-                <Tooltip labelFormatter={formatChartDate} />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5, 10)} interval={days > 14 ? 4 : 0} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
                 <Bar dataKey="sessions" fill="#2C3E50" name="Sessions" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="signups" fill="#3B82F6" name="Signups" radius={[4, 4, 0, 0]} />
               </BarChart>

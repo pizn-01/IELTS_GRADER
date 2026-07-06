@@ -13,7 +13,7 @@ function sinceIso(days) {
   return d.toISOString();
 }
 
-function torontoDateParts(iso) {
+function torontoDateKey(iso) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: REPORT_TIMEZONE,
     year: 'numeric',
@@ -22,16 +22,7 @@ function torontoDateParts(iso) {
   }).formatToParts(new Date(iso));
 
   const get = (type) => parts.find((p) => p.type === type)?.value || '';
-  return {
-    year: parseInt(get('year'), 10),
-    month: parseInt(get('month'), 10),
-    day: parseInt(get('day'), 10),
-  };
-}
-
-function torontoDateKey(iso) {
-  const { year, month, day } = torontoDateParts(iso);
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
 function torontoHour(iso) {
@@ -43,6 +34,15 @@ function torontoHour(iso) {
 
   const parsed = parseInt(hour, 10);
   return Number.isFinite(parsed) ? parsed % 24 : 0;
+}
+
+function bucketDate(iso, granularity = 'day') {
+  if (granularity === 'hour') {
+    const date = torontoDateKey(iso);
+    const hour = String(torontoHour(iso)).padStart(2, '0');
+    return `${date}T${hour}:00`;
+  }
+  return torontoDateKey(iso);
 }
 
 function aggregateByKey(rows, keyFn, valueFn = () => 1) {
@@ -96,21 +96,23 @@ function eachTorontoDayKeys(days) {
   return keys;
 }
 
-function computeTimeseries(sessions, signups, days = 30) {
+function computeTimeseries(sessions, signups, granularity = 'day', days = 30) {
   const sessionMap = {};
   const signupMap = {};
 
   for (const s of sessions) {
-    const bucket = torontoDateKey(s.first_seen_at);
+    const bucket = bucketDate(s.first_seen_at, granularity);
     sessionMap[bucket] = (sessionMap[bucket] || 0) + 1;
   }
 
   for (const u of signups) {
-    const bucket = torontoDateKey(u.created_at);
+    const bucket = bucketDate(u.created_at, granularity);
     signupMap[bucket] = (signupMap[bucket] || 0) + 1;
   }
 
-  const keys = eachTorontoDayKeys(parseDays(days));
+  const keys = granularity === 'day'
+    ? eachTorontoDayKeys(parseDays(days))
+    : [...new Set([...Object.keys(sessionMap), ...Object.keys(signupMap)])].sort();
 
   return keys.map((date) => ({
     date,
