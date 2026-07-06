@@ -151,7 +151,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => onBack ? onBack() : navigate('/reports')}
+                onClick={() => onBack ? onBack() : navigate('/dashboard')}
                 className="w-6 h-6 rounded-full border border-[#101828] flex items-center justify-center text-[#101828] hover:bg-black/5 transition-all bg-transparent"
               >
                 <ArrowLeft size={14} strokeWidth={2} />

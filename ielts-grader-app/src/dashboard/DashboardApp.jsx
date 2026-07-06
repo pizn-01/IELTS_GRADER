@@ -89,12 +89,12 @@ function DashboardApp() {
       const report = await api.getReport(submissionId);
       navigate('/report', { state: { reportData: report } });
     } catch {
-      navigate('/reports');
+      navigate('/performance');
     }
   };
 
   const handleNavigate = (target, label) => {
-    if (target === 'reports') { navigate('/reports'); }
+    if (target === 'reports') { navigate('/performance'); }
     else if (target === 'dashboard') { navigate('/dashboard'); }
     else if (target === 'subscription') { navigate('/subscription'); }
     else if (target === 'settings') { navigate('/settings', { state: { activeTab: label } }); }
@@ -241,10 +241,10 @@ function DashboardApp() {
                 const report = await api.getReport(submissionId);
                 navigate('/report', { state: { reportData: report } });
               } catch {
-                navigate('/reports');
+                navigate('/performance');
               }
             } else {
-              navigate('/reports');
+              navigate('/performance');
             }
           }}
         />

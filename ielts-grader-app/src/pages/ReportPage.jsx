@@ -8,7 +8,7 @@ const ReportPage = () => {
   const reportData = location.state?.reportData;
 
   if (!reportData) {
-    return <Navigate to="/reports" replace />;
+    return <Navigate to="/performance" replace />;
   }
 
   return (
@@ -16,7 +16,7 @@ const ReportPage = () => {
       <ReportView
         data={reportData}
         showHeader={false}
-        onBack={() => navigate('/reports')}
+        onBack={() => navigate('/performance')}
       />
     </div>
   );

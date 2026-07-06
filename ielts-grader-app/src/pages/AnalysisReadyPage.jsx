@@ -62,12 +62,12 @@ const AnalysisReadyPage = () => {
         } catch (err) {
           console.error('Failed to submit attempt:', err.message);
           setGradingStatus('completed');
-          navigate('/reports');
+          navigate('/performance');
           return;
         }
       } else {
         setGradingStatus('completed');
-        navigate('/reports');
+        navigate('/performance');
         return;
       }
     }
@@ -93,13 +93,13 @@ const AnalysisReadyPage = () => {
         } else if (status === 'failed' || attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           setGradingStatus('completed');
-          navigate('/reports');
+          navigate('/performance');
         }
       } catch {
         if (attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           setGradingStatus('completed');
-          navigate('/reports');
+          navigate('/performance');
         }
       }
     }, 3000);

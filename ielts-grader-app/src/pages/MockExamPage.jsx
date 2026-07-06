@@ -28,7 +28,7 @@ const MockExamPage = () => {
         const report = await api.getReport(data.submissionId);
         navigate('/report', { state: { reportData: report } });
       } catch {
-        navigate('/reports');
+        navigate('/performance');
       }
     } else {
       navigate('/dashboard');

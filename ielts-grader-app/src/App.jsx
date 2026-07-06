@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Lenis from 'lenis';
 
 // ── Context ──────────────────────────────────────────────────────────────────
@@ -47,7 +47,6 @@ import PerformanceOverviewPage from './pages/PerformanceOverviewPage';
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 import DashboardApp from './dashboard/DashboardApp';
 import Layout from './components/Layout';
-import ReportsOverview from './components/ReportsOverview';
 import Settings from './components/Settings';
 import { useAuth } from './context/AuthContext';
 
@@ -68,6 +67,13 @@ const LandingPage = () => (
     <Footer />
   </>
 );
+
+// Legacy /reports URLs → overall performance page
+const ReportsRedirect = () => {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.toString();
+  return <Navigate to={query ? `/performance?${query}` : '/performance'} replace />;
+};
 
 // ── Home Route — redirects authenticated users to dashboard ───────────────────
 const HomeRoute = () => {
@@ -91,7 +97,7 @@ function App() {
   // Shared navigation handler for protected routes
   const handleProtectedNavigate = (target, label) => {
     if (target === 'dashboard') navigate('/dashboard');
-    else if (target === 'reports') navigate('/reports');
+    else if (target === 'reports') navigate('/performance');
     else if (target === 'subscription') navigate('/subscription');
     else if (target === 'settings') navigate('/settings', { state: { activeTab: label } });
     else if (target === 'logout') {
@@ -189,15 +195,7 @@ function App() {
           <ProtectedRoute><AnalysisReadyPage /></ProtectedRoute>
         } />
         <Route path="/reports" element={
-          <ProtectedRoute>
-            <Layout 
-              currentView="reports" 
-              onNavigate={handleProtectedNavigate} 
-              profileImage={profileImage}
-            >
-              <ReportsOverview onBack={() => navigate('/dashboard')} />
-            </Layout>
-          </ProtectedRoute>
+          <ProtectedRoute><ReportsRedirect /></ProtectedRoute>
         } />
         <Route path="/performance" element={
           <ProtectedRoute>
@@ -206,7 +204,7 @@ function App() {
               onNavigate={handleProtectedNavigate} 
               profileImage={profileImage}
             >
-              <PerformanceOverviewPage onBack={() => navigate('/reports')} />
+              <PerformanceOverviewPage onBack={() => navigate('/dashboard')} />
             </Layout>
           </ProtectedRoute>
         } />
