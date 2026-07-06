@@ -1,11 +1,18 @@
 import React from 'react';
 
 const CRITERIA = [
-  { key: 'response', label: 'TR', color: '#2563EB' },
-  { key: 'coherence', label: 'CC', color: '#7C3AED' },
-  { key: 'vocabulary', label: 'LR', color: '#059669' },
-  { key: 'grammar', label: 'GRA', color: '#DC2626' },
+  { key: 'response', label: 'TR', full: 'Task Response', color: '#2563EB' },
+  { key: 'coherence', label: 'CC', full: 'Coherence', color: '#7C3AED' },
+  { key: 'vocabulary', label: 'LR', full: 'Lexical', color: '#059669' },
+  { key: 'grammar', label: 'GRA', full: 'Grammar', color: '#DC2626' },
 ];
+
+const CRITERIA_SHORT = {
+  'Task Response': { label: 'TR', color: '#2563EB' },
+  'Coherence and Cohesion': { label: 'CC', color: '#7C3AED' },
+  'Lexical Resource': { label: 'LR', color: '#059669' },
+  'Grammatical Range and Accuracy': { label: 'GRA', color: '#DC2626' },
+};
 
 function bandColor(score) {
   if (score >= 7) return '#00C9B1';
@@ -13,156 +20,138 @@ function bandColor(score) {
   return '#EF4444';
 }
 
-function OverallGauge({ score }) {
-  const pct = score != null ? Math.min(score / 9, 1) : 0;
-  const circumference = 2 * Math.PI * 38;
+export function BandSnapshot({ avgBands }) {
+  if (!avgBands || avgBands.overall == null) return null;
+
+  const pct = Math.min(avgBands.overall / 9, 1);
+  const circumference = 2 * Math.PI * 44;
   const offset = circumference * (1 - pct);
 
   return (
-    <div className="relative w-[76px] h-[76px] shrink-0">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
-        <circle cx="44" cy="44" r="38" fill="none" stroke="#EEF2F6" strokeWidth="6" />
-        <circle
-          cx="44"
-          cy="44"
-          r="38"
-          fill="none"
-          stroke={score != null ? bandColor(score) : '#CBD5E1'}
-          strokeWidth="6"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[18px] font-bold text-[#101828] leading-none">
-          {score != null ? score.toFixed(1) : '—'}
-        </span>
-        <span className="text-[8px] text-gray-400 font-semibold mt-0.5">Overall</span>
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFBFC] p-4 flex-1 flex flex-col justify-center min-h-[160px]">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">
+        Average bands · this edition
+      </p>
+      <div className="flex items-center gap-5">
+        <div className="relative w-[96px] h-[96px] shrink-0">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#EEF2F6" strokeWidth="7" />
+            <circle
+              cx="50"
+              cy="50"
+              r="44"
+              fill="none"
+              stroke={bandColor(avgBands.overall)}
+              strokeWidth="7"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[22px] font-bold text-[#101828] leading-none">
+              {avgBands.overall.toFixed(1)}
+            </span>
+            <span className="text-[9px] text-gray-400 font-semibold mt-0.5">Overall</span>
+          </div>
+        </div>
+        <div className="flex-1 space-y-2.5 min-w-0">
+          {CRITERIA.filter((c) => avgBands[c.key] != null).map(({ key, label, color }) => {
+            const val = avgBands[key];
+            const width = Math.min((val / 9) * 100, 100);
+            return (
+              <div key={key} className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-400 w-7 shrink-0">{label}</span>
+                <div className="flex-1 h-[7px] bg-[#EEF2F6] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${width}%`, backgroundColor: color }} />
+                </div>
+                <span className="text-[11px] font-bold text-[#101828] w-6 text-right shrink-0">
+                  {val.toFixed(1)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-function CriteriaBars({ avgBands }) {
-  const rows = CRITERIA.filter((c) => avgBands?.[c.key] != null);
-  if (!rows.length) return null;
+export function ErrorsByAreaChart({ errorsByCriteria }) {
+  if (!errorsByCriteria || !Object.keys(errorsByCriteria).length) return null;
+
+  const items = Object.entries(errorsByCriteria)
+    .sort((a, b) => b[1] - a[1])
+    .map(([crit, count]) => {
+      const meta = CRITERIA_SHORT[crit] || { label: crit.slice(0, 3), color: '#64748B' };
+      return { crit, count, ...meta };
+    });
+  const max = items.reduce((m, e) => Math.max(m, e.count), 1);
 
   return (
-    <div className="flex-1 space-y-1.5 min-w-0">
-      {rows.map(({ key, label, color }) => {
-        const val = avgBands[key];
-        const pct = Math.min((val / 9) * 100, 100);
-        return (
-          <div key={key} className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-gray-400 w-6 shrink-0">{label}</span>
-            <div className="flex-1 h-[6px] bg-[#EEF2F6] rounded-full overflow-hidden">
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFBFC] p-4 flex-1 flex flex-col min-h-[140px]">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">
+        Errors by criterion
+      </p>
+      <div className="flex-1 flex flex-col justify-center space-y-3">
+        {items.map((e) => (
+          <div key={e.crit} className="flex items-center gap-3">
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white w-8 text-center shrink-0"
+              style={{ backgroundColor: e.color }}
+            >
+              {e.label}
+            </span>
+            <div className="flex-1 h-[8px] bg-[#EEF2F6] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${pct}%`, backgroundColor: color }}
+                style={{ width: `${(e.count / max) * 100}%`, backgroundColor: e.color }}
               />
             </div>
-            <span className="text-[10px] font-bold text-[#101828] w-5 text-right shrink-0">
-              {val.toFixed(1)}
+            <span className="text-[11px] font-semibold text-[#101828] w-6 text-right shrink-0">
+              {e.count}
             </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ErrorFocusChart({ topErrors, errorsByCriteria }) {
-  const items = (topErrors || []).slice(0, 4);
-  const maxCount = items.reduce((m, e) => Math.max(m, e.count || 0), 1);
-
-  if (!items.length && errorsByCriteria) {
-    const critItems = Object.entries(errorsByCriteria)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
-      .map(([crit, count]) => ({
-        label: crit.replace('Grammatical Range and Accuracy', 'Grammar').replace('Coherence and Cohesion', 'Coherence'),
-        count,
-      }));
-    const max = critItems.reduce((m, e) => Math.max(m, e.count), 1);
-    return (
-      <div className="space-y-1.5">
-        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Errors by area</p>
-        {critItems.map((e) => (
-          <div key={e.label} className="flex items-center gap-2">
-            <span className="text-[10px] text-[#667085] w-[64px] shrink-0 truncate">{e.label}</span>
-            <div className="flex-1 h-[5px] bg-[#EEF2F6] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-[#1A96F3]"
-                style={{ width: `${(e.count / max) * 100}%` }}
-              />
-            </div>
-            <span className="text-[9px] font-semibold text-gray-400 w-4 text-right">{e.count}</span>
           </div>
         ))}
       </div>
-    );
-  }
-
-  if (!items.length) return null;
-
-  return (
-    <div className="space-y-1.5">
-      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Most frequent mistakes</p>
-      {items.map((e) => (
-        <div key={e.label} className="flex items-center gap-2">
-          <span className="text-[10px] text-[#667085] flex-1 min-w-0 truncate" title={e.label}>
-            {e.label}
-          </span>
-          <div className="w-[64px] h-[5px] bg-[#EEF2F6] rounded-full overflow-hidden shrink-0">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#1A96F3] to-[#38BDF8]"
-              style={{ width: `${((e.count || 1) / maxCount) * 100}%` }}
-            />
-          </div>
-          <span className="text-[9px] font-semibold text-gray-400 w-4 text-right shrink-0">×{e.count}</span>
-        </div>
-      ))}
     </div>
   );
 }
 
-export default function LearningEditionSnapshot({ preview, locked }) {
-  if (locked) {
+export function TopMistakesList({ topErrors }) {
+  if (!topErrors?.length) {
     return (
-      <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-4 py-6 text-center">
-        <p className="text-[12px] text-[#667085] leading-relaxed max-w-[220px]">
-          Complete 5 graded exams to unlock band trends and error insights for this edition.
-        </p>
-      </div>
+      <p className="text-[12px] text-gray-400 flex-1 flex items-center">
+        No recurring mistakes flagged in this edition yet.
+      </p>
     );
   }
 
-  const avgBands = preview?.avgBands;
-  const hasBands = avgBands?.overall != null;
-
   return (
-    <div className="flex flex-col gap-3 flex-1 min-h-0">
-      {hasBands && (
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-3 shrink-0">
-          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide mb-2">
-            Edition band snapshot
-          </p>
-          <div className="flex items-center gap-3">
-            <OverallGauge score={avgBands.overall} />
-            <CriteriaBars avgBands={avgBands} />
-          </div>
-        </div>
-      )}
-
-      {(preview?.topErrors?.length > 0 || preview?.errorsByCriteria) && (
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-3 flex-1 min-h-0">
-          <ErrorFocusChart
-            topErrors={preview?.topErrors}
-            errorsByCriteria={preview?.errorsByCriteria}
-          />
-        </div>
-      )}
-    </div>
+    <ul className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
+      {topErrors.slice(0, 8).map((e, i) => {
+        const meta = CRITERIA_SHORT[e.criteria] || { label: '—', color: '#94A3B8' };
+        return (
+          <li
+            key={e.label}
+            className="flex items-start gap-2.5 rounded-lg bg-[#F8FAFC] border border-[#EEF2F6] px-3 py-2.5"
+          >
+            <span className="text-[10px] font-bold text-gray-300 w-4 shrink-0 pt-0.5">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] text-[#101828] font-medium leading-snug">{e.label}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span
+                  className="text-[8px] font-bold px-1.5 py-0.5 rounded text-white"
+                  style={{ backgroundColor: meta.color }}
+                >
+                  {meta.label}
+                </span>
+                <span className="text-[10px] text-gray-400">×{e.count} across exams</span>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

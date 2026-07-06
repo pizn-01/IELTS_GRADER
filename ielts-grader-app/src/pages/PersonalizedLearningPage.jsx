@@ -192,7 +192,7 @@ export default function PersonalizedLearningPage() {
             </div>
 
             <LearningEditionPanel
-              className="flex-1 min-h-0"
+              className="flex-1 min-h-[400px]"
               edition={activeEdition}
               freeAccess={data?.freeAccess}
               priceCents={data?.priceCents}
