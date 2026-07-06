@@ -1,7 +1,15 @@
-import React, { useMemo } from 'react';
-import { CalendarDays, Clock, Target, ClipboardList } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { CalendarDays, Clock, Target, ClipboardList, Play, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { buildSprintPlan } from '../utils/buildSprintPlan';
+import {
+  loadSprint,
+  startSprint,
+  clearSprint,
+  sprintDayNumber,
+  isSprintActive,
+  isSprintComplete,
+} from '../utils/sprintStorage';
 
 const PHASE_STYLES = {
   Audit: 'bg-[#EFF8FF] text-[#175CD3] border-[#B2DDFF]',
@@ -22,7 +30,7 @@ function impactChipClass(error) {
   return 'bg-[#F2F4F7] text-[#475467] border-[#E4E7EC]';
 }
 
-function DayCard({ dayPlan, index }) {
+function DayCard({ dayPlan, index, isCurrentDay }) {
   const phaseClass = PHASE_STYLES[dayPlan.phase] || PHASE_STYLES.Drill;
 
   return (
@@ -30,17 +38,30 @@ function DayCard({ dayPlan, index }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
-      className="bg-white rounded-[16px] border border-[#E5E7EB] overflow-hidden hover:border-[#B2DDFF] hover:shadow-sm transition-all flex flex-col"
+      className={`bg-white rounded-[16px] border overflow-hidden hover:shadow-sm transition-all flex flex-col ${
+        isCurrentDay
+          ? 'border-[#1A96F3] ring-2 ring-[#1A96F3]/20 shadow-sm'
+          : 'border-[#E5E7EB] hover:border-[#B2DDFF]'
+      }`}
     >
       <div className="px-5 pt-5 pb-4 border-b border-[#F2F4F7] flex flex-wrap items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] flex items-center justify-center shrink-0">
-          <span className="text-[14px] font-bold text-[#101828]">{dayPlan.day}</span>
+        <div
+          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+            isCurrentDay ? 'bg-[#1A96F3] border-[#1A96F3] text-white' : 'bg-[#F8FAFC] border-[#E5E7EB] text-[#101828]'
+          }`}
+        >
+          <span className="text-[14px] font-bold">{dayPlan.day}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${phaseClass}`}>
               {dayPlan.phase}
             </span>
+            {isCurrentDay && (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#EFF8FF] text-[#175CD3] border border-[#B2DDFF]">
+                Today
+              </span>
+            )}
             <span className="text-[10px] font-medium text-[#667085] flex items-center gap-1">
               <Clock size={11} />
               {dayPlan.duration}
@@ -74,6 +95,7 @@ function DayCard({ dayPlan, index }) {
 
 export default function FourteenDaySprint({
   loading = false,
+  userId,
   frequentErrors = [],
   strongestCrit,
   bottleneckCrit,
@@ -82,7 +104,10 @@ export default function FourteenDaySprint({
   activeTask = '',
   examCount = 0,
 }) {
-  const plan = useMemo(
+  const taskKey = activeTask || 'all';
+  const [sprintRecord, setSprintRecord] = useState(null);
+
+  const freshPlan = useMemo(
     () => buildSprintPlan({
       frequentErrors,
       strongestCrit,
@@ -95,6 +120,26 @@ export default function FourteenDaySprint({
     [frequentErrors, strongestCrit, bottleneckCrit, latestBand, targetBand, activeTask, examCount],
   );
 
+  useEffect(() => {
+    setSprintRecord(loadSprint(userId, taskKey));
+  }, [userId, taskKey]);
+
+  const active = sprintRecord && isSprintActive(sprintRecord);
+  const complete = sprintRecord && isSprintComplete(sprintRecord);
+  const currentDay = active ? Math.min(14, sprintDayNumber(sprintRecord.startedAt)) : null;
+  const plan = active ? sprintRecord.plan : freshPlan;
+
+  const handleStart = () => {
+    if (freshPlan.empty) return;
+    const record = startSprint(userId, taskKey, freshPlan);
+    setSprintRecord(record);
+  };
+
+  const handleRestart = () => {
+    clearSprint(userId, taskKey);
+    setSprintRecord(null);
+  };
+
   if (loading) {
     return (
       <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB] p-8 md:p-12 flex flex-col items-center justify-center min-h-[320px]">
@@ -104,7 +149,7 @@ export default function FourteenDaySprint({
     );
   }
 
-  if (plan.empty) {
+  if (freshPlan.empty) {
     return (
       <div className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden">
         <div className="min-h-[320px] flex flex-col items-center justify-center text-center gap-4 px-6 py-12">
@@ -113,7 +158,7 @@ export default function FourteenDaySprint({
           </div>
           <div className="max-w-md">
             <p className="text-[17px] font-bold text-[#101828] mb-2">Two-Week Hyper-Growth Sprint</p>
-            <p className="text-[14px] text-[#667085] leading-relaxed">{plan.reason}</p>
+            <p className="text-[14px] text-[#667085] leading-relaxed">{freshPlan.reason}</p>
           </div>
         </div>
       </div>
@@ -122,6 +167,59 @@ export default function FourteenDaySprint({
 
   return (
     <div className="space-y-6">
+      {/* Status banner */}
+      {!active && !complete && (
+        <div className="bg-[#EFF8FF] border border-[#B2DDFF] rounded-[16px] px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-[14px] font-bold text-[#101828]">Your plan is ready</p>
+            <p className="text-[13px] text-[#667085] mt-0.5">
+              Start when you&apos;re ready. The same 14 days will stay fixed so you can follow one clear path.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleStart}
+            className="shrink-0 h-[44px] px-5 rounded-[12px] bg-[#2C3E50] text-white text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-colors"
+          >
+            <Play size={16} fill="currentColor" />
+            Start 14-day sprint
+          </button>
+        </div>
+      )}
+
+      {active && (
+        <div className="bg-[#F0FDF9] border border-[#CCFBEF] rounded-[16px] px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-[14px] font-bold text-[#101828]">
+              Day {currentDay} of 14
+              <span className="font-medium text-[#667085]"> — follow today&apos;s card below</span>
+            </p>
+            <p className="text-[13px] text-[#667085] mt-0.5">
+              Your sprint plan is locked until Day 14. Strategy & Fix Cards refresh when you practice.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {complete && (
+        <div className="bg-[#FFFAEB] border border-[#FEF0C7] rounded-[16px] px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-[14px] font-bold text-[#101828]">Sprint complete</p>
+            <p className="text-[13px] text-[#667085] mt-0.5">
+              Start a new sprint to get an updated plan from your latest Fix Cards.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleStart}
+            className="shrink-0 h-[44px] px-5 rounded-[12px] bg-[#2C3E50] text-white text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-colors"
+          >
+            <RotateCcw size={16} />
+            Start next sprint
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden">
         <div className="px-6 md:px-8 pt-6 pb-5 border-b border-[#F2F4F7]">
@@ -133,7 +231,7 @@ export default function FourteenDaySprint({
               <div>
                 <h3 className="text-[18px] font-bold text-[#101828]">Two-Week Hyper-Growth Sprint</h3>
                 <p className="text-[13px] text-[#667085] mt-1 max-w-xl leading-relaxed">
-                  Personalized from your Fix Cards and Strategic Roadmap.
+                  Built from your Fix Cards and Strategic Roadmap.
                   {plan.goalGap !== '—' && (
                     <span>
                       {' '}Latest {plan.latestBand} → goal {plan.targetBand}
@@ -144,7 +242,7 @@ export default function FourteenDaySprint({
               </div>
             </div>
             <div className="flex flex-wrap gap-2 shrink-0">
-              {plan.focusErrors.map((err) => (
+              {plan.focusErrors?.map((err) => (
                 <span
                   key={err.label}
                   className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${impactChipClass(err)}`}
@@ -165,11 +263,20 @@ export default function FourteenDaySprint({
             <Target size={14} className="text-[#30C3A9]" />
             {plan.reviewCadence}
           </span>
+          {complete && (
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="text-[12px] font-medium text-[#667085] hover:text-[#101828] underline"
+            >
+              Clear sprint
+            </button>
+          )}
         </div>
       </div>
 
       {/* Weeks */}
-      {plan.weeks.map((week) => (
+      {plan.weeks?.map((week) => (
         <div key={week.label} className="space-y-4">
           <div className="px-1">
             <h4 className="text-[15px] font-bold text-[#101828]">{week.label}</h4>
@@ -177,7 +284,12 @@ export default function FourteenDaySprint({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
             {week.days.map((dayPlan, idx) => (
-              <DayCard key={dayPlan.day} dayPlan={dayPlan} index={idx} />
+              <DayCard
+                key={dayPlan.day}
+                dayPlan={dayPlan}
+                index={idx}
+                isCurrentDay={active && dayPlan.day === currentDay}
+              />
             ))}
           </div>
         </div>

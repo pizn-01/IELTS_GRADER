@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PerformanceOverviewDashboard from '../components/PerformanceOverviewDashboard';
 import FourteenDaySprint from '../components/FourteenDaySprint';
+import StrategyRoadmap from '../components/StrategyRoadmap';
 import TargetBandPrompt from '../components/TargetBandPrompt';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
@@ -28,7 +29,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchPerformanceData = useCallback(() => {
     setLoading(true);
     const analyticsArgs = activeTask ? { taskType: activeTask } : undefined;
     const submissionsArgs = activeTask ? { limit: 100, taskType: activeTask } : { limit: 100 };
@@ -45,6 +46,18 @@ const PerformanceOverviewPage = ({ onBack }) => {
       setSubmissions([]);
     }).finally(() => setLoading(false));
   }, [activeTask]);
+
+  useEffect(() => {
+    fetchPerformanceData();
+  }, [fetchPerformanceData]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchPerformanceData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [fetchPerformanceData]);
 
   // Derived stats from real chart data
   const overallScores = chartData.map(d => d.overall).filter(Boolean);
@@ -361,100 +374,16 @@ const PerformanceOverviewPage = ({ onBack }) => {
             </div>
           </div>
         : activeTab === "Strategy" ?
-          <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-10 py-6 border-b border-[#E5E7EB]">
-              <h3 className="text-[18px] font-bold text-[#101828]">Strategic Roadmap</h3>
-            </div>
-            <div className="p-10 space-y-12">
-            {/* Strongest Area & Primary Bottleneck */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[12px] p-6">
-                <span className="text-[14px] font-bold text-[#00C9B1] block mb-2">Strongest Area</span>
-                <p className="text-[16px] font-medium text-[#101828]">{strongestCrit.name}</p>
-              </div>
-              <div className="bg-[#FFF5F5] border border-[#FED7D7] rounded-[12px] p-6">
-                <span className="text-[14px] font-bold text-[#EA4335] block mb-2">Primary Bottleneck</span>
-                <p className="text-[16px] font-medium text-[#101828]">{bottleneckCrit.name}</p>
-              </div>
-            </div>
-
-            <div className="space-y-10">
-              <h3 className="text-[16px] font-bold text-[#101828]">Recommended Workflow</h3>
-              
-              <div className="space-y-10">
-                <div>
-                  <h4 className="text-[14px] font-bold text-[#101828] mb-5">Drafting Phase</h4>
-                  <ul className="space-y-4 font-sans">
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Plan 4 minutes: Position + 2 body ideas + examples.</p>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Write 30 minutes: Keep paragraphs balances; 1 example per body paragraph minimum.</p>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Check 6 minutes: Run your checklist (top 2 errors + referencing + articles + repetition).</p>
-                    </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="text-[14px] font-bold text-[#101828] mb-5">Rewrite Recipe</h4>
-                  <ul className="space-y-4 font-sans">
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Step 1: Fix task response (answer all parts; clear position).</p>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Step 2: Expand ideas (because + example).</p>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Step 3: Upgrade lexis (precise verbs/nouns; remove repetition).</p>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Step 4: Tighten cohesion (referencing; logical links).</p>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1 h-1 rounded-full bg-[#101828] shrink-0"></div>
-                      <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Step 5: Grammar sweep (SVA, articles, punctuation).</p>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Immediate Action Items */}
-              <div className="bg-[#F0F9FF] border border-[#B9E6FE] rounded-[12px] p-10 mt-12">
-                <h4 className="text-[15px] font-bold text-[#101828] mb-6">Immediate Action Items</h4>
-                <ul className="space-y-5 font-sans">
-                  <li className="flex items-start gap-3">
-                    <div className="w-1 h-1 rounded-full bg-[#101828] mt-2 shrink-0"></div>
-                     <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>
-                       Focus on the top {Math.min(2, frequentErrors.length)} error target{frequentErrors.length !== 1 ? 's' : ''} for 7 days
-                       {frequentErrors[0] ? <span>: <strong>{frequentErrors[0].label}</strong></span> : null}
-                       {frequentErrors[1] ? <span>, <strong>{frequentErrors[1].label}</strong></span> : null}.
-                     </p>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-1 h-1 rounded-full bg-[#101828] mt-2 shrink-0"></div>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>In every body paragraph, add one mechanism sentence + one concrete example.</p>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-1 h-1 rounded-full bg-[#101828] mt-2 shrink-0"></div>
-                    <p className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Do a 6 minute checklist pass before submitting every essay.</p>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            </div>
-          </div>
+          <StrategyRoadmap
+            strongestCrit={strongestCrit}
+            bottleneckCrit={bottleneckCrit}
+            frequentErrors={frequentErrors}
+            examCount={examCount}
+          />
         : activeTab === "14-Day sprint" ?
           <FourteenDaySprint
             loading={loading}
+            userId={user?.id}
             frequentErrors={frequentErrors}
             strongestCrit={strongestCrit}
             bottleneckCrit={bottleneckCrit}
