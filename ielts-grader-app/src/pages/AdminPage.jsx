@@ -297,9 +297,11 @@ const AcquisitionTab = () => {
   }
 
   const hourChartData = byHour.map(h => ({
-    label: `${h.hour}:00`,
+    label: h.label || `${h.hour}:00`,
     sessions: h.sessions,
   }));
+
+  const channelSessionTotal = byChannel.reduce((sum, row) => sum + (row.sessions || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -312,26 +314,27 @@ const AcquisitionTab = () => {
 
       {overview && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Stat label="Sessions" value={overview.total_sessions} />
-          <Stat label="Pageviews" value={overview.total_pageviews} />
+          <Stat label="Sessions" value={overview.total_sessions} sub={`${overview.anonymous_sessions ?? 0} anonymous`} />
+          <Stat label="Pageviews" value={overview.total_pageviews} sub="total page loads" />
           <Stat label="Bounce Rate" value={`${overview.bounce_rate}%`} />
-          <Stat label="Avg Pages" value={overview.avg_pages_per_session} />
-          <Stat label="Conversion" value={`${overview.conversion_rate}%`} sub={`${overview.signup_count} signups`} />
+          <Stat label="Avg Pages" value={overview.avg_pages_per_session} sub="per session" />
+          <Stat label="Signups" value={overview.signup_count} sub={`${overview.converted_sessions ?? 0} linked to session`} />
           <Stat label="Top Channel" value={(overview.top_channel || '—').replace(/_/g, ' ')} />
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
-          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Visits vs Signups</p>
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
+          <p className="text-[11px] text-gray-400 mb-4">Daily totals in Toronto time. Sessions = browser visits; signups = new accounts.</p>
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={timeseries}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5)} />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={v => v.slice(5, 10)} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip />
-                <Line type="monotone" dataKey="visits" stroke="#2C3E50" strokeWidth={2} dot={false} name="Visits" />
+                <Line type="monotone" dataKey="sessions" stroke="#2C3E50" strokeWidth={2} dot={false} name="Sessions" />
                 <Line type="monotone" dataKey="signups" stroke="#3B82F6" strokeWidth={2} dot={false} name="Signups" />
               </LineChart>
             </ResponsiveContainer>
@@ -339,7 +342,8 @@ const AcquisitionTab = () => {
         </div>
 
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
-          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Sessions by Channel</p>
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions by Channel</p>
+          <p className="text-[11px] text-gray-400 mb-4">{channelSessionTotal} sessions total (same as KPI above)</p>
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byChannel.slice(0, 8)} layout="vertical" margin={{ left: 80 }}>
@@ -369,7 +373,7 @@ const AcquisitionTab = () => {
         </div>
 
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
-          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Visits by Hour (UTC)</p>
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Sessions by Hour (Toronto)</p>
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={hourChartData}>
@@ -386,7 +390,10 @@ const AcquisitionTab = () => {
 
       <div className="space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-[15px] font-bold text-[#101828]">Anonymous Visitors</h2>
+          <div>
+            <h2 className="text-[15px] font-bold text-[#101828]">Anonymous Visitors</h2>
+            <p className="text-[11px] text-gray-400 mt-0.5">Excludes sessions that signed up ({overview?.converted_sessions ?? 0} converted)</p>
+          </div>
           <select
             value={visitorChannel}
             onChange={e => { setVisitorChannel(e.target.value); setVisitorPage(1); }}

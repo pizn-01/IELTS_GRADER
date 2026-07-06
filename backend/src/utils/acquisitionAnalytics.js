@@ -1,3 +1,5 @@
+const REPORT_TIMEZONE = 'America/Toronto';
+
 function parseDays(days, defaultDays = 30) {
   const n = parseInt(days, 10);
   if (!Number.isFinite(n) || n < 1) return defaultDays;
@@ -11,12 +13,36 @@ function sinceIso(days) {
   return d.toISOString();
 }
 
+function torontoDateKey(iso) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: REPORT_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(iso));
+
+  const get = (type) => parts.find((p) => p.type === type)?.value || '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+function torontoHour(iso) {
+  const hour = new Intl.DateTimeFormat('en-US', {
+    timeZone: REPORT_TIMEZONE,
+    hour: 'numeric',
+    hour12: false,
+  }).format(new Date(iso));
+
+  const parsed = parseInt(hour, 10);
+  return Number.isFinite(parsed) ? parsed % 24 : 0;
+}
+
 function bucketDate(iso, granularity = 'day') {
-  const d = new Date(iso);
   if (granularity === 'hour') {
-    return d.toISOString().slice(0, 13) + ':00:00.000Z';
+    const date = torontoDateKey(iso);
+    const hour = String(torontoHour(iso)).padStart(2, '0');
+    return `${date}T${hour}:00`;
   }
-  return d.toISOString().slice(0, 10);
+  return torontoDateKey(iso);
 }
 
 function aggregateByKey(rows, keyFn, valueFn = () => 1) {
@@ -33,35 +59,39 @@ function aggregateByKey(rows, keyFn, valueFn = () => 1) {
 
 function computeOverview(sessions, pageViews, signups) {
   const totalSessions = sessions.length;
+  const anonymousSessions = sessions.filter((s) => !s.converted_user_id).length;
+  const convertedSessions = sessions.filter((s) => s.converted_user_id).length;
   const totalPageviews = pageViews.length;
-  const bounced = sessions.filter(s => s.is_bounce).length;
+  const bounced = sessions.filter((s) => s.is_bounce).length;
   const totalPages = sessions.reduce((sum, s) => sum + (s.page_view_count || 0), 0);
   const totalDuration = sessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
-  const conversions = sessions.filter(s => s.converted_user_id).length;
 
-  const channelCounts = aggregateByKey(sessions, s => s.channel);
+  const channelCounts = aggregateByKey(sessions, (s) => s.channel);
   const topChannel = channelCounts[0]?.key || '—';
 
   return {
     total_sessions: totalSessions,
+    anonymous_sessions: anonymousSessions,
+    converted_sessions: convertedSessions,
     unique_visitors: totalSessions,
     total_pageviews: totalPageviews,
     bounce_rate: totalSessions ? Math.round((bounced / totalSessions) * 100) : 0,
     avg_pages_per_session: totalSessions ? Math.round((totalPages / totalSessions) * 10) / 10 : 0,
     avg_duration_seconds: totalSessions ? Math.round(totalDuration / totalSessions) : 0,
     signup_count: signups.length,
-    conversion_rate: totalSessions ? Math.round((conversions / totalSessions) * 1000) / 10 : 0,
+    conversion_rate: totalSessions ? Math.round((convertedSessions / totalSessions) * 1000) / 10 : 0,
     top_channel: topChannel,
+    timezone: REPORT_TIMEZONE,
   };
 }
 
 function computeTimeseries(sessions, signups, granularity = 'day') {
-  const visitMap = {};
+  const sessionMap = {};
   const signupMap = {};
 
   for (const s of sessions) {
     const bucket = bucketDate(s.first_seen_at, granularity);
-    visitMap[bucket] = (visitMap[bucket] || 0) + 1;
+    sessionMap[bucket] = (sessionMap[bucket] || 0) + 1;
   }
 
   for (const u of signups) {
@@ -69,10 +99,10 @@ function computeTimeseries(sessions, signups, granularity = 'day') {
     signupMap[bucket] = (signupMap[bucket] || 0) + 1;
   }
 
-  const keys = [...new Set([...Object.keys(visitMap), ...Object.keys(signupMap)])].sort();
-  return keys.map(date => ({
+  const keys = [...new Set([...Object.keys(sessionMap), ...Object.keys(signupMap)])].sort();
+  return keys.map((date) => ({
     date,
-    visits: visitMap[date] || 0,
+    sessions: sessionMap[date] || 0,
     signups: signupMap[date] || 0,
   }));
 }
@@ -86,7 +116,7 @@ function computeByChannel(sessions) {
     if (s.converted_user_id) channelMap[ch].conversions += 1;
   }
   return Object.values(channelMap)
-    .map(row => ({
+    .map((row) => ({
       ...row,
       conversion_rate: row.sessions ? Math.round((row.conversions / row.sessions) * 1000) / 10 : 0,
     }))
@@ -94,25 +124,39 @@ function computeByChannel(sessions) {
 }
 
 function computeByCountry(sessions) {
-  return aggregateByKey(sessions, s => s.country || 'Unknown')
+  return aggregateByKey(sessions, (s) => s.country || 'Unknown')
     .map(({ key, count }) => ({ country: key, sessions: count }));
 }
 
 function computeByLanding(sessions) {
-  return aggregateByKey(sessions, s => s.landing_path || '/')
+  return aggregateByKey(sessions, (s) => s.landing_path || '/')
     .map(({ key, count }) => ({ path: key, sessions: count }));
 }
 
 function computeByHour(sessions) {
-  const hourMap = Array.from({ length: 24 }, (_, i) => ({ hour: i, sessions: 0 }));
+  const hourMap = Array.from({ length: 24 }, (_, i) => ({
+    hour: i,
+    label: formatHourLabel(i),
+    sessions: 0,
+  }));
+
   for (const s of sessions) {
-    const hour = new Date(s.first_seen_at).getUTCHours();
+    const hour = torontoHour(s.first_seen_at);
     hourMap[hour].sessions += 1;
   }
+
   return hourMap;
 }
 
+function formatHourLabel(hour) {
+  if (hour === 0) return '12am';
+  if (hour < 12) return `${hour}am`;
+  if (hour === 12) return '12pm';
+  return `${hour - 12}pm`;
+}
+
 module.exports = {
+  REPORT_TIMEZONE,
   parseDays,
   sinceIso,
   computeOverview,
