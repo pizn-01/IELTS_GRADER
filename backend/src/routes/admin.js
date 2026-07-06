@@ -15,9 +15,6 @@ const {
   sinceIso,
   computeOverview,
   computeTimeseries,
-  getChartLevelMeta,
-  sinceIsoForLevel,
-  parseChartLevel,
   computeByChannel,
   computeByCountry,
   computeByLanding,
@@ -1134,8 +1131,8 @@ router.get('/acquisition/overview', async (req, res) => {
 
 // ─── GET /api/admin/acquisition/timeseries ─────────────────────────────────────
 router.get('/acquisition/timeseries', async (req, res) => {
-  const level = parseChartLevel(req.query.level);
-  const since = sinceIsoForLevel(level);
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
 
   try {
     const [sessions, signups] = await Promise.all([
@@ -1143,10 +1140,7 @@ router.get('/acquisition/timeseries', async (req, res) => {
       fetchSignupsSince(since),
     ]);
 
-    return res.json({
-      ...getChartLevelMeta(level),
-      data: computeTimeseries(sessions, signups, level),
-    });
+    return res.json({ data: computeTimeseries(sessions, signups, days) });
   } catch (err) {
     console.error('[admin/acquisition/timeseries]', err.message);
     return res.status(500).json({ error: 'Failed to fetch acquisition timeseries.' });

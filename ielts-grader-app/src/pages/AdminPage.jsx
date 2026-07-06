@@ -233,13 +233,16 @@ const UsersTab = () => {
 };
 
 // ── Acquisition Tab ───────────────────────────────────────────────────────────
-const DateRangeBar = ({ days, setDays }) => (
-  <div className="flex gap-2">
-    {[7, 30, 90].map(d => (
+const CHART_DAY_OPTIONS = [7, 30, 90];
+
+const ChartDateRangeBar = ({ days, setDays }) => (
+  <div className="flex gap-1.5 flex-shrink-0">
+    {CHART_DAY_OPTIONS.map(d => (
       <button
         key={d}
+        type="button"
         onClick={() => setDays(d)}
-        className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+        className={`px-3 h-[32px] rounded-[8px] text-[11px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
       >
         {d}d
       </button>
@@ -247,29 +250,15 @@ const DateRangeBar = ({ days, setDays }) => (
   </div>
 );
 
-const CHART_LEVELS = [
-  { id: 'daily', label: 'Daily' },
-  { id: 'weekly', label: 'Weekly' },
-  { id: 'monthly', label: 'Monthly' },
-  { id: 'yearly', label: 'Yearly' },
-];
-
-const formatTimeseriesLabel = (date, level) => {
+const formatChartDate = (date) => {
   if (!date) return '';
-  if (level === 'yearly') return date;
-  if (level === 'monthly') {
-    const [y, m] = date.split('-');
-    const month = new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'short' });
-    return `${month} '${String(y).slice(2)}`;
-  }
-  if (level === 'weekly') return date.slice(5);
-  return date.slice(5);
+  const [, month, day] = date.split('-');
+  return `${month}/${day}`;
 };
 
 const AcquisitionTab = () => {
-  const [days, setDays] = useState(7);
-  const [chartLevel, setChartLevel] = useState('daily');
-  const [chartSpanLabel, setChartSpanLabel] = useState('Last 30 days');
+  const days = 30;
+  const [chartDays, setChartDays] = useState(30);
   const [overview, setOverview] = useState(null);
   const [timeseries, setTimeseries] = useState([]);
   const [timeseriesLoading, setTimeseriesLoading] = useState(false);
@@ -313,15 +302,14 @@ const AcquisitionTab = () => {
   const loadTimeseries = useCallback(async () => {
     setTimeseriesLoading(true);
     try {
-      const ts = await api.admin.getAcquisitionTimeseries({ level: chartLevel });
+      const ts = await api.admin.getAcquisitionTimeseries({ days: chartDays });
       setTimeseries(ts.data || []);
-      setChartSpanLabel(ts.label || 'Last 30 days');
     } catch {
       // keep prior chart data on error
     } finally {
       setTimeseriesLoading(false);
     }
-  }, [chartLevel]);
+  }, [chartDays]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { loadTimeseries(); }, [loadTimeseries]);
@@ -337,12 +325,12 @@ const AcquisitionTab = () => {
 
   const timeseriesSessionTotal = timeseries.reduce((sum, row) => sum + (row.sessions || 0), 0);
   const channelSessionTotal = byChannel.reduce((sum, row) => sum + (row.sessions || 0), 0);
+  const chartTickInterval = chartDays <= 7 ? 0 : chartDays <= 30 ? 4 : 13;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <DateRangeBar days={days} setDays={d => { setDays(d); setVisitorPage(1); }} />
-        <button onClick={load} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50">
+      <div className="flex items-center justify-end">
+        <button onClick={() => { load(); loadTimeseries(); }} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50">
           <RefreshCw size={16} className="text-gray-400" />
         </button>
       </div>
@@ -364,38 +352,31 @@ const AcquisitionTab = () => {
             <div>
               <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
               <p className="text-[11px] text-gray-400">
-                {chartSpanLabel} · Toronto time · {timeseriesSessionTotal} sessions in chart
+                Daily totals · Toronto time · {timeseriesSessionTotal} sessions in chart
               </p>
             </div>
-            <div className="flex gap-1.5 flex-shrink-0">
-              {CHART_LEVELS.map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setChartLevel(id)}
-                  className={`px-3 h-[32px] rounded-[8px] text-[11px] font-bold border transition-all ${chartLevel === id ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <ChartDateRangeBar days={chartDays} setDays={setChartDays} />
           </div>
-          <div className="h-[240px] relative">
+          <div className="h-[280px] relative">
             {timeseriesLoading && (
               <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center text-[12px] text-gray-400">
                 Updating…
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={timeseries}>
+              <BarChart data={timeseries} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={v => formatTimeseriesLabel(v, chartLevel)}
-                  interval={chartLevel === 'daily' ? (timeseries.length > 14 ? 4 : 0) : 0}
+                  tick={{ fontSize: 10 }}
+                  tickFormatter={formatChartDate}
+                  interval={chartTickInterval}
+                  angle={chartDays > 7 ? -40 : 0}
+                  textAnchor={chartDays > 7 ? 'end' : 'middle'}
+                  height={chartDays > 7 ? 52 : 30}
                 />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip labelFormatter={v => formatTimeseriesLabel(v, chartLevel)} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} width={32} />
+                <Tooltip labelFormatter={formatChartDate} />
                 <Bar dataKey="sessions" fill="#2C3E50" name="Sessions" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="signups" fill="#3B82F6" name="Signups" radius={[4, 4, 0, 0]} />
               </BarChart>
