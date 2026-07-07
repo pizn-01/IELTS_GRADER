@@ -82,7 +82,9 @@ export const api = {
       serverReachable = true;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Invalid email or password.');
+        const err = new Error(data.error || 'Invalid email or password.');
+        err.status = res.status;
+        throw err;
       }
       return await res.json();
     } catch (err) {
@@ -128,7 +130,8 @@ export const api = {
     try {
       const res = await fetch(`${BASE_URL}/auth/me`, { headers: getHeaders() });
       if (!res.ok) {
-        const err = new Error(`Session invalid (${res.status}).`);
+        const data = await res.json().catch(() => ({}));
+        const err = new Error(data.error || `Session invalid (${res.status}).`);
         err.status = res.status;
         throw err;
       }

@@ -20,10 +20,17 @@ const trackingRoutes = require('./routes/tracking');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ── Trust the first proxy hop (Vercel / Fly.io edge) ──────────────────────────
-// Without this, req.ip is the shared proxy IP and ALL users hit the same
-// rate-limit bucket, causing 429s after just a few requests across the whole app.
-app.set('trust proxy', 1);
+// Fly/Vercel forward the real client IP — use it so one user isn't bucketed with everyone.
+function clientIpKey(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const forwardedIp = typeof forwarded === 'string'
+    ? forwarded.split(',')[0].trim()
+    : null;
+  return req.headers['fly-client-ip'] || forwardedIp || req.ip || 'unknown';
+}
+
+// ── Trust proxy hops (Fly.io / Vercel edge) ───────────────────────────────────
+app.set('trust proxy', true);
 
 // Allow all origins — security is enforced via JWT on protected routes
 app.use(cors());
@@ -55,27 +62,30 @@ app.use((req, res, next) => {
 // Global catch-all — generous, real enforcement is per-route below
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 600,
+  max: 1500,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
   message: { error: 'Too many requests. Please try again later.' },
 });
 
-// Auth WRITE (POST /login, /register) — brute-force protection, strict
+// Auth WRITE (POST /login, /register, /google) — brute-force protection
 const authWriteLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 15,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
   message: { error: 'Too many authentication attempts. Please wait 15 minutes.' },
 });
 
 // Auth READ (GET /me) — very permissive, just prevents scraping
 const authReadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 400,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
   message: { error: 'Too many requests. Please slow down.' },
 });
 
@@ -85,6 +95,7 @@ const submissionsWriteLimiter = rateLimit({
   max: 15,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
   message: { error: 'Submission rate limit exceeded. Please wait before submitting again.' },
 });
 
@@ -95,6 +106,7 @@ const submissionsReadLimiter = rateLimit({
   max: 600,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
   message: { error: 'Too many requests. Please try again in a moment.' },
 });
 
@@ -104,20 +116,22 @@ const trackingLimiter = rateLimit({
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
   message: { error: 'Too many tracking requests. Please slow down.' },
 });
-
-app.use(globalLimiter);
 
 app.get('/health', (_req, res) =>
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 );
 
+app.use(globalLimiter);
+
 // ── Auth routes — differentiated write vs read limits ─────────────────────────
 app.use('/api/auth/login', authWriteLimiter);
 app.use('/api/auth/register', authWriteLimiter);
+app.use('/api/auth/google', authWriteLimiter);
 app.use('/api/auth', (req, res, next) => {
-  if (req.path === '/login' || req.path === '/register') {
+  if (req.path === '/login' || req.path === '/register' || req.path === '/google') {
     return next();
   }
   authReadLimiter(req, res, next);

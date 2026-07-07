@@ -29,10 +29,12 @@ export const AuthProvider = ({ children }) => {
         const userData = await api.getMe();
         setUser(userData);
         setToken(storedToken);
-      } catch {
-        // Token invalid or expired — clear it out
-        clearAuthToken();
-        setToken(null);
+      } catch (err) {
+        // Only clear session on auth failures — not on temporary rate limits (429)
+        if (err?.status === 401 || err?.status === 403) {
+          clearAuthToken();
+          setToken(null);
+        }
       } finally {
         setIsLoading(false);
       }
