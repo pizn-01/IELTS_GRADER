@@ -148,7 +148,7 @@ router.post('/register', async (req, res) => {
       console.error('[auth/register] Verification email failed:', err.message)
     );
 
-    await saveUserAttribution(supabaseAdmin, data.user.id, { attribution, session_id }).catch(err =>
+    await saveUserAttribution(supabaseAdmin, data.user.id, { attribution, session_id, req }).catch(err =>
       console.error('[auth/register] Attribution save failed:', err.message)
     );
 
@@ -521,7 +521,7 @@ router.post('/google', async (req, res) => {
       }).eq('id', user.id);
       profile = { ...profile, credits_remaining: 1, email_verified: true };
 
-      await saveUserAttribution(supabaseAdmin, user.id, { attribution, session_id }).catch(err =>
+      await saveUserAttribution(supabaseAdmin, user.id, { attribution, session_id, req }).catch(err =>
         console.error('[auth/google] Attribution save failed:', err.message)
       );
     } else if (!profile.email_verified) {

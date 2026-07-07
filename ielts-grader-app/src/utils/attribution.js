@@ -1,6 +1,33 @@
 const SESSION_KEY = 'ig_session_id';
 const FIRST_TOUCH_KEY = 'ig_first_touch';
 
+const INTERNAL_PATH_PREFIXES = [
+  '/admin',
+  '/dashboard',
+  '/subscription',
+  '/settings',
+  '/reports',
+  '/learning',
+  '/mock-exam',
+  '/auth',
+  '/checkout',
+  '/performance',
+  '/analysis',
+  '/selection',
+];
+
+function isInternalPath(path) {
+  if (!path || path === '/') return false;
+  return INTERNAL_PATH_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
+  );
+}
+
+function publicLandingPath(path) {
+  if (!path || isInternalPath(path)) return '/';
+  return path;
+}
+
 function generateId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -43,9 +70,11 @@ function readUtmParams() {
 export function captureFirstTouch() {
   try {
     if (localStorage.getItem(FIRST_TOUCH_KEY)) return;
+    const path = window.location.pathname;
+    if (isInternalPath(path)) return;
     const utm = readUtmParams();
     const payload = {
-      landing_path: window.location.pathname,
+      landing_path: path,
       referrer: document.referrer || null,
       ...utm,
       captured_at: new Date().toISOString(),
@@ -92,20 +121,29 @@ export function getAttributionPayload(path = window.location.pathname) {
 export function getSignupAttribution() {
   const firstTouch = getFirstTouch();
   const session_id = getOrCreateSessionId();
+  const signupPath = window.location.pathname;
+
   if (!firstTouch) {
     return {
       session_id,
       attribution: {
-        landing_path: window.location.pathname,
+        signup_path: signupPath,
+        landing_path: publicLandingPath(signupPath),
         referrer: document.referrer || null,
         ...readUtmParams(),
       },
     };
   }
+
+  const landingPath = isInternalPath(firstTouch.landing_path)
+    ? publicLandingPath(signupPath)
+    : firstTouch.landing_path;
+
   return {
     session_id,
     attribution: {
-      landing_path: firstTouch.landing_path,
+      signup_path: signupPath,
+      landing_path: landingPath,
       referrer: firstTouch.referrer,
       utm_source: firstTouch.utm_source,
       utm_medium: firstTouch.utm_medium,
