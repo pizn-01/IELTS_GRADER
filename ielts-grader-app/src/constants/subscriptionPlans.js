@@ -2,18 +2,18 @@ export const SUBSCRIPTION_PLANS = {
   weekly: {
     key: 'weekly',
     name: 'Weekly Sprint',
-    price: '$1.00',
+    price: '$9.99',
     period: '/week',
     credits: 20,
-    label: '$1.00/week',
+    label: '$9.99/week',
   },
   monthly: {
     key: 'monthly',
     name: 'Monthly Mastery',
-    price: '$1.50',
+    price: '$24.99',
     period: '/month',
     credits: 100,
-    label: '$1.50/month',
+    label: '$24.99/month',
     recommended: true,
   },
 };

@@ -140,7 +140,11 @@ const SubscriptionPage = () => {
         </div>
       ) : (
         <section className="bg-white rounded-2xl border border-[#D0D5DD] shadow-sm overflow-hidden">
-          <div className="px-5 sm:px-6 py-4 sm:py-5 flex flex-wrap items-start justify-between gap-3 border-b border-[#F2F4F7]">
+          <div
+            className={`px-5 sm:px-6 py-4 sm:py-5 flex flex-wrap items-start justify-between gap-3 border-b border-[#F2F4F7] ${
+              !isSubscribed ? 'bg-gradient-to-r from-[#FAFBFC] to-white' : ''
+            }`}
+          >
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-[18px] font-bold text-[#101828]">{planLabel}</h2>
@@ -161,7 +165,8 @@ const SubscriptionPage = () => {
             </p>
           </div>
 
-          <div className="px-5 sm:px-6 py-4 border-b border-[#F2F4F7]">
+          <div className={`px-5 sm:px-6 border-b border-[#F2F4F7] ${!isSubscribed ? 'py-5' : 'py-4'}`}>
+            <div className={!isSubscribed ? 'rounded-xl border border-[#F2F4F7] bg-[#FAFBFC] p-4' : ''}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[14px] font-bold text-[#101828]">
                 {remaining} / {allowance} credits
@@ -198,9 +203,14 @@ const SubscriptionPage = () => {
                 {statusMessage}
               </p>
             </div>
+            </div>
           </div>
 
-          <div className="px-5 sm:px-6 py-4 border-b border-[#F2F4F7] grid sm:grid-cols-2 gap-5 sm:gap-6">
+          <div
+            className={`px-5 sm:px-6 border-b border-[#F2F4F7] grid sm:grid-cols-2 ${
+              !isSubscribed ? 'py-5 sm:py-6 gap-4 sm:gap-5' : 'py-4 gap-5 sm:gap-6'
+            }`}
+          >
             {isSubscribed ? (
               <>
                 <div>
@@ -254,8 +264,8 @@ const SubscriptionPage = () => {
               </>
             ) : (
               <>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-2">
+                <div className="rounded-xl border border-[#E4E7EC] bg-[#FAFBFC] p-4 h-full">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-2.5">
                     Free trial
                   </p>
                   <p className="text-[13px] text-[#667085] leading-relaxed">
@@ -263,23 +273,23 @@ const SubscriptionPage = () => {
                     No card required to sign up. Full band report on your first essay.
                   </p>
                 </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-2">
+                <div className="rounded-xl border border-[#E4E7EC] bg-white p-4 h-full">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-3">
                     Paid plans
                   </p>
-                  <div className="space-y-2">
-                    <div className="rounded-lg border border-[#E4E7EC] px-3 py-2">
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-[#E4E7EC] bg-[#FAFBFC] px-3.5 py-3">
                       <p className="text-[12px] font-bold text-[#101828]">{SUBSCRIPTION_PLANS.weekly.name}</p>
-                      <p className="text-[11px] text-[#667085]">
+                      <p className="text-[11px] text-[#667085] mt-0.5">
                         {SUBSCRIPTION_PLANS.weekly.label} · {SUBSCRIPTION_PLANS.weekly.credits} evals
                       </p>
                     </div>
-                    <div className="rounded-lg border border-[#B2DDFF] bg-[#F0F9FF] px-3 py-2">
+                    <div className="rounded-lg border border-[#B2DDFF] bg-[#F0F9FF] px-3.5 py-3 shadow-sm">
                       <p className="text-[12px] font-bold text-[#101828]">
                         {SUBSCRIPTION_PLANS.monthly.name}
                         <span className="ml-1.5 text-[9px] font-bold text-[#1A96F3] uppercase">Best value</span>
                       </p>
-                      <p className="text-[11px] text-[#667085]">
+                      <p className="text-[11px] text-[#667085] mt-0.5">
                         {SUBSCRIPTION_PLANS.monthly.label} · {SUBSCRIPTION_PLANS.monthly.credits} evals
                       </p>
                     </div>
@@ -289,7 +299,11 @@ const SubscriptionPage = () => {
             )}
           </div>
 
-          <div className="px-5 sm:px-6 py-3 border-b border-[#F2F4F7] bg-[#FAFBFC]">
+          <div
+            className={`px-5 sm:px-6 border-b border-[#F2F4F7] ${
+              isSubscribed ? 'py-3 bg-[#FAFBFC]' : 'py-4 bg-[#F9FAFB] rounded-none'
+            }`}
+          >
             {isSubscribed ? (
               <div className="text-[12px] text-[#667085] leading-relaxed space-y-1.5">
                 <p>
@@ -309,7 +323,7 @@ const SubscriptionPage = () => {
                 )}
               </div>
             ) : (
-              <p className="text-[12px] text-[#667085] leading-relaxed">
+              <p className="text-[12px] text-[#667085] leading-relaxed px-1">
                 {isExhausted
                   ? 'Your free credit is used. View Plans to choose Weekly or Monthly and continue grading.'
                   : 'When you need more practice, View Plans lets you pick Weekly or Monthly — checkout is on the next screen.'}
@@ -317,7 +331,7 @@ const SubscriptionPage = () => {
             )}
           </div>
 
-          <div className="px-5 sm:px-6 py-4">
+          <div className={`px-5 sm:px-6 ${!isSubscribed ? 'py-5 bg-[#FAFBFC]' : 'py-4'}`}>
             {isSubscribed ? (
               <div className="flex justify-end">
                 <button
