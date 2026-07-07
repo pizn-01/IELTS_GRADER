@@ -6,15 +6,15 @@ const SUBSCRIPTION_PLANS = {
     key: 'weekly',
     name: 'Weekly Sprint',
     credits: 20,
-    label: '$9.99/week',
-    amountCents: 999,
+    label: '$1.00/week',
+    amountCents: 100,
   },
   monthly: {
     key: 'monthly',
     name: 'Monthly Mastery',
     credits: 100,
-    label: '$24.99/month',
-    amountCents: 2499,
+    label: '$1.50/month',
+    amountCents: 150,
   },
 };
 

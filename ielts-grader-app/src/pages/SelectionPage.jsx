@@ -5,7 +5,7 @@ import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
 import PremiumConfirmationModal from '../marketing/PremiumConfirmationModal';
-import { SUBSCRIPTION_FEATURES, planKeyFromSelection } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -343,7 +343,7 @@ const SelectionPage = () => {
                 }`}
               >
                 <p className="text-[10px] sm:text-[11px] font-semibold text-[#6B7280] mb-1 sm:mb-1.5 leading-tight">Weekly Sprint</p>
-                <p className="text-[15px] sm:text-[18px] font-extrabold text-[#1a1f36] leading-tight tracking-tight">$9.99/Week</p>
+                <p className="text-[15px] sm:text-[18px] font-extrabold text-[#1a1f36] leading-tight tracking-tight">{SUBSCRIPTION_PLANS.weekly.price}{SUBSCRIPTION_PLANS.weekly.period}</p>
               </div>
               <div
                 onClick={() => setSelectedPlan('Monthly')}
@@ -354,7 +354,7 @@ const SelectionPage = () => {
                 }`}
               >
                 <p className="text-[10px] sm:text-[11px] font-semibold text-[#6B7280] mb-1 sm:mb-1.5 leading-tight">Monthly Mastery</p>
-                <p className="text-[15px] sm:text-[18px] font-extrabold text-[#1a1f36] leading-tight tracking-tight">$24.99/Month</p>
+                <p className="text-[15px] sm:text-[18px] font-extrabold text-[#1a1f36] leading-tight tracking-tight">{SUBSCRIPTION_PLANS.monthly.price}{SUBSCRIPTION_PLANS.monthly.period}</p>
               </div>
             </div>
 
@@ -374,7 +374,7 @@ const SelectionPage = () => {
                 onClick={handlePremiumClick}
                 className="w-full bg-[#313E50] text-white py-[14px] rounded-[8px] font-semibold text-[13px] mb-3 hover:bg-[#252f3d] active:bg-[#1a1f36] transition-all"
               >
-                Subscribe — from $9.99/week
+                Subscribe — from {SUBSCRIPTION_PLANS.weekly.label}
               </button>
               {premiumError && (
                 <p className="text-[13px] text-red-500 font-medium text-center mb-2">{premiumError}</p>
@@ -399,7 +399,7 @@ const SelectionPage = () => {
         onClose={() => setShowPremiumModal(false)}
         onConfirm={handleConfirmPremium}
         planName={selectedPlan === 'Weekly' ? 'Weekly Sprint' : 'Monthly Mastery'}
-        price={selectedPlan === 'Weekly' ? '9.99/week' : '24.99/month'}
+        price={selectedPlan === 'Weekly' ? SUBSCRIPTION_PLANS.weekly.label : SUBSCRIPTION_PLANS.monthly.label}
       />
     </div>
   );

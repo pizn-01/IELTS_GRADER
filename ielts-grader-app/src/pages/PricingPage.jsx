@@ -3,6 +3,9 @@ import { Check, Sparkles, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
+import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+
+const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
 const PricingPage = () => {
   const navigate = useNavigate();
@@ -25,8 +28,8 @@ const PricingPage = () => {
     },
     {
       name: "Weekly Sprint",
-      price: "$9.99",
-      period: "/week",
+      price: WEEKLY.price,
+      period: WEEKLY.period,
       description: "Intensive practice for fast results.",
       features: [
         "20 evaluations per week",
@@ -39,8 +42,8 @@ const PricingPage = () => {
     },
     {
       name: "Monthly Mastery",
-      price: "$24.99",
-      period: "/month",
+      price: MONTHLY.price,
+      period: MONTHLY.period,
       description: "Best value for serious prep.",
       features: [
         "100 evaluations per month",
@@ -149,7 +152,7 @@ const PricingPage = () => {
             
             <h2 className="text-[22px] font-bold text-[#1a1f36] mb-2">Subscribe to Premium</h2>
             <p className="text-[14px] text-[#6B7280] mb-8 leading-relaxed">
-              Weekly Sprint ($9.99 — 20 exams) or Monthly Mastery ($24.99 — 100 exams). Cancel anytime.
+              Weekly Sprint ({WEEKLY.label} — {WEEKLY.credits} exams) or Monthly Mastery ({MONTHLY.label} — {MONTHLY.credits} exams). Cancel anytime.
             </p>
 
             <button 

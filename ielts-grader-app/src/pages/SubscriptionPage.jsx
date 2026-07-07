@@ -1,17 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 
 function formatDate(iso) {
-  if (!iso) return '—';
+  if (!iso) return null;
   return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
+    month: 'long',
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+function StatusBadge({ active, label }) {
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold ${
+        active
+          ? 'bg-[#ECFDF5] text-[#027A48]'
+          : 'bg-[#F2F4F7] text-[#475467]'
+      }`}
+    >
+      {label}
+    </span>
+  );
 }
 
 const SubscriptionPage = () => {
@@ -63,165 +75,142 @@ const SubscriptionPage = () => {
   const currentPlan = status?.subscription_plan;
   const isWeekly = isSubscribed && currentPlan === 'weekly';
 
+  const used = Math.max(0, allowance - remaining);
   const barPct = allowance > 0 ? Math.min(100, Math.round((remaining / allowance) * 100)) : 0;
-  const barColor = remaining === 0
-    ? 'bg-[#EA4335]'
-    : remaining <= Math.max(2, Math.floor(allowance * 0.15))
-    ? 'bg-[#F59E0B]'
-    : 'bg-[#10B981]';
 
-  const planLabel = isSubscribed
-    ? (status?.plan_name || 'Subscription')
-    : 'Free Trial';
-  const renewalLabel = isSubscribed ? formatDate(status?.subscription_period_end) : '—';
-  const billingLabel = isSubscribed
-    ? (status?.billing_label || '—')
-    : '1 free evaluation included';
+  const planName = isSubscribed ? (status?.plan_name || 'Subscription') : 'Free Trial';
+  const billingAmount = isSubscribed ? (status?.billing_label || '—') : 'Free';
+  const renewalDate = isSubscribed ? formatDate(status?.subscription_period_end) : null;
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-[50px] py-10 relative text-[#101828]">
-      <h1 className="text-[32px] font-bold text-[#101828] mb-8">Your Subscription</h1>
+    <div className="w-full max-w-[720px] mx-auto px-6 py-10 md:py-14 text-[#101828]">
+      <header className="mb-8">
+        <h1 className="text-[28px] font-bold text-[#101828] tracking-tight">Billing</h1>
+        <p className="text-[15px] text-[#667085] mt-1">
+          Manage your plan, usage, and payment details.
+        </p>
+      </header>
 
       {error && (
-        <div className="mb-6 text-[13px] font-medium text-[#EA4335] bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+        <div className="mb-6 text-[13px] font-medium text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-lg px-4 py-3">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="text-[14px] text-gray-400">Loading subscription…</div>
+        <div className="bg-white border border-[#E4E7EC] rounded-xl p-8">
+          <p className="text-[14px] text-[#98A2B3]">Loading billing details…</p>
+        </div>
       ) : (
-        <div className="space-y-8 animate-in fade-in duration-500">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1fr] gap-8">
-            <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col justify-between">
-              <div className="space-y-[30px]">
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-bold text-[#101828]">Current Plan</span>
-                  <span className="text-[14px] font-medium text-gray-500">{planLabel}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-bold text-[#101828]">Renewal Date</span>
-                  <span className="text-[14px] font-medium text-gray-500">{renewalLabel}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-bold text-[#101828]">Billing</span>
-                  <span className="text-[14px] font-medium text-gray-500">{billingLabel}</span>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-[#101828]">
-                      {remaining} {remaining === 1 ? 'credit' : 'credits'} remaining
-                    </span>
-                    <span className={`text-[14px] font-bold ${remaining === 0 ? 'text-[#EA4335]' : remaining <= 2 ? 'text-[#F59E0B]' : 'text-[#10B981]'}`}>
-                      {remaining === 0 ? 'All used' : `${barPct}%`}
-                    </span>
-                  </div>
-                  <div className="h-[8px] bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
-                      style={{ width: `${barPct}%` }}
-                    />
-                  </div>
-                  <p className="text-[12px] text-gray-400">
-                    {isSubscribed
-                      ? `${allowance} evaluations per billing period`
-                      : 'Subscribe for 20/week or 100/month'}
-                  </p>
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Current plan */}
+          <section className="bg-white border border-[#E4E7EC] rounded-xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-[#E4E7EC] flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-1">
+                  Current plan
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h2 className="text-[20px] font-bold text-[#101828]">{planName}</h2>
+                  <StatusBadge
+                    active={isSubscribed}
+                    label={isSubscribed ? 'Active' : 'Free'}
+                  />
                 </div>
               </div>
+              <p className="text-[18px] font-bold text-[#101828] shrink-0">{billingAmount}</p>
+            </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-12 mt-12 border-t border-[#D0D5DD]">
-                {isSubscribed ? (
-                  <>
+            <div className="px-6 py-5 space-y-5">
+              {/* Usage */}
+              <div>
+                <div className="flex items-baseline justify-between mb-2">
+                  <p className="text-[14px] font-medium text-[#344054]">Evaluations remaining</p>
+                  <p className="text-[14px] text-[#667085]">
+                    <span className="font-bold text-[#101828]">{remaining}</span>
+                    <span className="text-[#98A2B3]"> / {allowance}</span>
+                  </p>
+                </div>
+                <div className="h-2 bg-[#F2F4F7] rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${
+                      remaining === 0 ? 'bg-[#F04438]' : 'bg-[#12B76A]'
+                    }`}
+                    style={{ width: `${barPct}%` }}
+                  />
+                </div>
+                <p className="text-[13px] text-[#98A2B3] mt-2">
+                  {remaining === 0
+                    ? isSubscribed
+                      ? 'Resets on your next renewal date.'
+                      : 'Subscribe to continue grading essays.'
+                    : `${used} used this period`}
+                </p>
+              </div>
+
+              {/* Billing details */}
+              {isSubscribed && renewalDate && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div className="rounded-lg bg-[#F9FAFB] border border-[#F2F4F7] px-4 py-3">
+                    <p className="text-[12px] font-medium text-[#98A2B3] mb-0.5">Next renewal</p>
+                    <p className="text-[14px] font-semibold text-[#344054]">{renewalDate}</p>
+                  </div>
+                  <div className="rounded-lg bg-[#F9FAFB] border border-[#F2F4F7] px-4 py-3">
+                    <p className="text-[12px] font-medium text-[#98A2B3] mb-0.5">Allowance</p>
+                    <p className="text-[14px] font-semibold text-[#344054]">
+                      {allowance} evaluations / period
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!isSubscribed && (
+                <div className="rounded-lg bg-[#F9FAFB] border border-[#F2F4F7] px-4 py-3">
+                  <p className="text-[12px] font-medium text-[#98A2B3] mb-0.5">Included</p>
+                  <p className="text-[14px] font-semibold text-[#344054]">1 free evaluation — no card required</p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-4 bg-[#F9FAFB] border-t border-[#E4E7EC] flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+              {isSubscribed ? (
+                <>
+                  {isWeekly && (
                     <button
                       type="button"
-                      onClick={() => openBillingPortal()}
+                      onClick={() => openBillingPortal('subscription_update')}
                       disabled={billingLoading || upgradeLoading}
-                      className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
+                      className="w-full sm:w-auto order-2 sm:order-1 px-5 h-[40px] bg-white border border-[#D0D5DD] rounded-lg text-[14px] font-semibold text-[#344054] hover:bg-[#F9FAFB] transition-colors disabled:opacity-60"
                     >
-                      {billingLoading ? 'Opening…' : 'Manage Subscription'}
+                      {upgradeLoading ? 'Opening…' : 'Upgrade to Monthly'}
                     </button>
-                    {isWeekly && (
-                      <button
-                        type="button"
-                        onClick={() => openBillingPortal('subscription_update')}
-                        disabled={billingLoading || upgradeLoading}
-                        className="w-full sm:w-auto px-8 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[13px] font-bold text-[#101828] hover:bg-gray-50 transition-all disabled:opacity-60"
-                      >
-                        {upgradeLoading ? 'Opening…' : 'Upgrade to Monthly'}
-                      </button>
-                    )}
-                  </>
-                ) : (
+                  )}
                   <button
                     type="button"
-                    onClick={() => navigate('/upgrade')}
-                    className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
+                    onClick={() => openBillingPortal()}
+                    disabled={billingLoading || upgradeLoading}
+                    className="w-full sm:w-auto order-1 sm:order-2 px-5 h-[40px] bg-[#101828] text-white rounded-lg text-[14px] font-semibold hover:bg-[#1D2939] transition-colors disabled:opacity-60"
                   >
-                    View Plans
+                    {billingLoading ? 'Opening…' : 'Manage Subscription'}
                   </button>
-                )}
-              </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate('/upgrade')}
+                  className="w-full sm:w-auto px-5 h-[40px] bg-[#101828] text-white rounded-lg text-[14px] font-semibold hover:bg-[#1D2939] transition-colors"
+                >
+                  View Plans
+                </button>
+              )}
             </div>
+          </section>
 
-            {isSubscribed ? (
-              <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col justify-center">
-                <div className="w-[52px] h-[52px] bg-[#E0F2FE] rounded-[12px] flex items-center justify-center text-[#1A96F3] mb-6">
-                  <CreditCard size={24} />
-                </div>
-                <h3 className="text-[20px] font-bold text-[#101828] mb-4">Manage Subscription</h3>
-                <p className="text-[14px] text-gray-400 leading-relaxed">
-                  Use <span className="font-semibold text-[#344054]">Manage Subscription</span> to:
-                </p>
-                <ul className="mt-4 space-y-2 text-[14px] text-[#667085]">
-                  <li>Cancel your subscription</li>
-                  <li>Switch between weekly and monthly</li>
-                  <li>Update your payment method</li>
-                  <li>View invoices and billing history</li>
-                </ul>
-              </div>
-            ) : (
-              <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col justify-center">
-                <div className="w-[52px] h-[52px] bg-[#ECFDF5] rounded-[12px] flex items-center justify-center text-[#10B981] mb-6">
-                  <CreditCard size={24} />
-                </div>
-                <h3 className="text-[20px] font-bold text-[#101828] mb-4">Available Plans</h3>
-                <ul className="space-y-4 text-[14px] text-[#667085]">
-                  <li>
-                    <span className="font-bold text-[#101828]">{SUBSCRIPTION_PLANS.weekly.name}</span>
-                    <br />
-                    {SUBSCRIPTION_PLANS.weekly.price}{SUBSCRIPTION_PLANS.weekly.period} — {SUBSCRIPTION_PLANS.weekly.credits} evaluations
-                  </li>
-                  <li>
-                    <span className="font-bold text-[#101828]">{SUBSCRIPTION_PLANS.monthly.name}</span>
-                    <span className="ml-2 text-[11px] font-semibold text-[#1A96F3] bg-[#EFF8FF] px-2 py-0.5 rounded-full">Best value</span>
-                    <br />
-                    {SUBSCRIPTION_PLANS.monthly.price}{SUBSCRIPTION_PLANS.monthly.period} — {SUBSCRIPTION_PLANS.monthly.credits} evaluations
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {remaining <= 2 && (
-            <div className="bg-[#FFFBEB] border border-[#FEF3C7] rounded-[12px] p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#F59E0B] shrink-0">
-                  <AlertTriangle size={20} />
-                </div>
-                <div>
-                  <h4 className="text-[14px] font-bold text-[#F59E0B]">Low Credits Warning</h4>
-                  <p className="text-[14px] text-gray-500 font-medium mt-0.5">
-                    {remaining === 0
-                      ? isSubscribed
-                        ? 'You have used all credits for this billing period. Credits reset on your renewal date.'
-                        : 'You have used your free evaluation. Choose a plan above to keep practicing.'
-                      : `Only ${remaining} credit${remaining === 1 ? '' : 's'} left this period.`}
-                  </p>
-                </div>
-              </div>
-            </div>
+          {isSubscribed && (
+            <p className="text-[13px] text-[#98A2B3] text-center">
+              Cancel, change plan, or update your payment method in Manage Subscription.
+            </p>
           )}
         </div>
       )}

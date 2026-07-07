@@ -53,6 +53,10 @@ export const VerifyEmailModal = ({ isOpen, onClose }) => {
   );
 };
 
+import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+
+const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
+
 export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
   const navigate = useNavigate();
   // Only show when explicitly open and when credits are low or exhausted
@@ -60,8 +64,8 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
   if (credits !== null && credits > 2) return null; // hide when user has enough credits
 
   const message = credits === 0
-    ? "You've used all your evaluation credits. Subscribe to keep practicing — Weekly $9.99 (20 exams) or Monthly $24.99 (100 exams)."
-    : `Only ${credits} evaluation credit${credits === 1 ? '' : 's'} remaining. Subscribe to Monthly Mastery for 100 exams/month.`;
+    ? `You've used all your evaluation credits. Subscribe to keep practicing — Weekly ${WEEKLY.label} (${WEEKLY.credits} exams) or Monthly ${MONTHLY.label} (${MONTHLY.credits} exams).`
+    : `Only ${credits} evaluation credit${credits === 1 ? '' : 's'} remaining. Subscribe to Monthly Mastery for ${MONTHLY.credits} exams/month.`;
 
   return (
     <div className="bg-[#EFF8FF]/80 border border-[#B2DDFF] rounded-[16px] px-4 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">

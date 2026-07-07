@@ -7,7 +7,7 @@ import { api } from '../services/api';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
-import { SUBSCRIPTION_FEATURES, planKeyFromSelection } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
@@ -284,7 +284,7 @@ const AnalysisReadyPage = () => {
                   }`}
                 >
                   <p className="text-[11px] font-semibold text-[#6B7280] mb-1.5">Weekly Sprint</p>
-                  <p className="text-[18px] font-extrabold text-[#1a1f36]">$9.99/Week</p>
+                  <p className="text-[18px] font-extrabold text-[#1a1f36]">{SUBSCRIPTION_PLANS.weekly.price}{SUBSCRIPTION_PLANS.weekly.period}</p>
                 </div>
 
                 {/* Monthly Plan */}
@@ -297,7 +297,7 @@ const AnalysisReadyPage = () => {
                   }`}
                 >
                   <p className="text-[11px] font-semibold text-[#6B7280] mb-1.5">Monthly Mastery</p>
-                  <p className="text-[18px] font-extrabold text-[#1a1f36]">$24.99/Month</p>
+                  <p className="text-[18px] font-extrabold text-[#1a1f36]">{SUBSCRIPTION_PLANS.monthly.price}{SUBSCRIPTION_PLANS.monthly.period}</p>
                 </div>
               </div>
 
