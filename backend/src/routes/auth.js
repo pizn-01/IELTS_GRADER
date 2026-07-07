@@ -22,7 +22,11 @@ async function fetchProfile(userId) {
   const [{ data, error }, { count: paymentCount }] = await Promise.all([
     supabaseAdmin
       .from('profiles')
-      .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
+      .select(`
+        full_name, target_band, target_band_confirmed, credits_remaining, credits_allowance,
+        profile_image_url, is_admin, email_verified,
+        subscription_plan, subscription_status, subscription_period_end
+      `)
       .eq('id', userId)
       .single(),
     supabaseAdmin
@@ -32,7 +36,12 @@ async function fetchProfile(userId) {
       .eq('status', 'completed'),
   ]);
   if (error) throw new Error(`Profile fetch failed: ${error.message}`);
-  return { ...data, has_paid: (paymentCount ?? 0) > 0 };
+  const isSubscribed = data.subscription_status === 'active';
+  return {
+    ...data,
+    has_paid: isSubscribed || (paymentCount ?? 0) > 0,
+    is_subscribed: isSubscribed,
+  };
 }
 
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────

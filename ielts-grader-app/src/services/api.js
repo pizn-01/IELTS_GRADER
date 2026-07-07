@@ -430,20 +430,6 @@ export const api = {
   },
 
   // ─── Stripe API ───────────────────────────────────────────────────────────────
-  createCheckoutSession: async (price_id) => {
-    const res = await fetch(`${BASE_URL}/stripe/create-checkout-session`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ price_id }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to create checkout session.');
-    }
-    return res.json();
-  },
-
-  // ─── POST /api/stripe/create-upgrade-checkout ─────────────────────────────
   // plan: 'weekly' | 'monthly'
   createSubscriptionCheckout: async (plan) => {
     const res = await fetch(`${BASE_URL}/stripe/create-upgrade-checkout`, {
@@ -470,15 +456,11 @@ export const api = {
     return res.json();
   },
 
-  createPublicCheckoutSession: async (price_id) => {
-    const res = await fetch(`${BASE_URL}/stripe/create-public-checkout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ price_id }),
-    });
+  getSubscriptionStatus: async () => {
+    const res = await fetch(`${BASE_URL}/subscriptions/status`, { headers: getHeaders() });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to create checkout session.');
+      throw new Error(data.error || 'Failed to load subscription status.');
     }
     return res.json();
   },

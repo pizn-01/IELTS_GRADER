@@ -7,6 +7,7 @@ import { api } from '../services/api';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
+import { SUBSCRIPTION_FEATURES, planKeyFromSelection } from '../constants/subscriptionPlans';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
@@ -16,11 +17,6 @@ const AnalysisReadyPage = () => {
   const [selectedPlan, setSelectedPlan] = useState('Monthly');
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeError, setSubscribeError] = useState('');
-
-  const PLAN_PRICE_IDS = {
-    Weekly: 'price_1TcqK9FDM9NsOfLRmmYyoSTh',
-    Monthly: 'price_1TcqPbFDM9NsOfLRquDNOJpA',
-  };
 
   const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData } = useGrade();
   const pollRef = useRef(null);
@@ -113,18 +109,13 @@ const AnalysisReadyPage = () => {
   const isOutOfCredits = forceOutOfCredits || (user && user.credits_remaining <= 0);
   const hasCredits = !forceOutOfCredits && user && user.credits_remaining > 0;
 
-  const features = [
-    "Unlimited Essay Evaluations",
-    "Limit 20 exams per week and 100 exams per month",
-    "Detailed Fix Cards & Grammar Analysis",
-    "Priority Support"
-  ];
+  const features = SUBSCRIPTION_FEATURES;
 
   const handleSubscribe = async () => {
     setSubscribeLoading(true);
     setSubscribeError('');
     try {
-      const { url } = await api.createCheckoutSession(PLAN_PRICE_IDS[selectedPlan]);
+      const { url } = await api.createSubscriptionCheckout(planKeyFromSelection(selectedPlan));
       window.location.href = url;
     } catch (err) {
       setSubscribeError(err.message || 'Something went wrong. Please try again.');

@@ -15,40 +15,38 @@ const PricingPage = () => {
       price: "$0",
       description: "Get started with your first evaluation.",
       features: [
-        "1 Free Evaluation",
-        "Basic Band Score",
-        "Limited Feedback",
-        "24-hour Support"
+        "1 free full evaluation",
+        "Band score breakdown",
+        "Fix cards & feedback",
+        "No card required"
       ],
       buttonText: "Start Free",
       isPremium: false
     },
     {
       name: "Weekly Sprint",
-      price: "$19",
+      price: "$9.99",
       period: "/week",
       description: "Intensive practice for fast results.",
       features: [
-        "5 Evaluations per week",
-        "Detailed Fix Cards",
-        "Criteria Breakdown",
-        "Priority Support",
-        "Interactive Dashboard"
+        "20 evaluations per week",
+        "Detailed fix cards",
+        "All task types",
+        "Priority support"
       ],
       buttonText: "Get Sprint",
       isPremium: true
     },
     {
       name: "Monthly Mastery",
-      price: "$49",
+      price: "$24.99",
       period: "/month",
-      description: "Master every aspect of IELTS writing.",
+      description: "Best value for serious prep.",
       features: [
-        "Unlimited Evaluations",
-        "Comprehensive Report",
-        "Progressive Learning Plan",
-        "Expert AI Review",
-        "All Premium Features"
+        "100 evaluations per month",
+        "Comprehensive reports",
+        "Personalized learning guides",
+        "50% less per exam vs weekly"
       ],
       buttonText: "Get Monthly",
       isPremium: true,
@@ -149,16 +147,16 @@ const PricingPage = () => {
               <Sparkles className="w-8 h-8 text-[#3B82F6]" />
             </div>
             
-            <h2 className="text-[22px] font-bold text-[#1a1f36] mb-2">Upgrade to Premium</h2>
+            <h2 className="text-[22px] font-bold text-[#1a1f36] mb-2">Subscribe to Premium</h2>
             <p className="text-[14px] text-[#6B7280] mb-8 leading-relaxed">
-              Unlock unlimited evaluations, expert-level feedback, and our full suite of study tools.
+              Weekly Sprint ($9.99 — 20 exams) or Monthly Mastery ($24.99 — 100 exams). Cancel anytime.
             </p>
 
             <button 
-              onClick={() => navigate('/checkout')}
+              onClick={() => navigate('/upgrade')}
               className="w-full bg-[#1a1f36] text-white py-[14px] rounded-[10px] font-bold text-[15px] mb-3 hover:bg-[#2a2f46] transition-all"
             >
-              Continue to Payment
+              Continue to Plans
             </button>
             <button 
               onClick={() => setShowPremiumModal(false)}

@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
 import { Check } from 'lucide-react';
 import { api } from '../services/api';
+import { SUBSCRIPTION_PLANS, SUBSCRIPTION_FEATURES } from '../constants/subscriptionPlans';
 
-// Plan keys map to UPGRADE_PLANS in backend/src/routes/stripe.js
-// Backend resolves keys → real Stripe price IDs via env vars
-const PLANS = [
-  { key: 'weekly',  name: 'Weekly Sprint',   price: '$9.99',  period: '/Week'  },
-  { key: 'monthly', name: 'Monthly Mastery', price: '$24.99', period: '/Month', recommended: true },
-];
-
-const FEATURES = [
-  'Unlimited Essay Evaluations',
-  'Limit 20 exams per week and 100 exams per month',
-  'Detailed Fix Cards & Grammar Analysis',
-  'Priority Support',
-];
+const PLANS = [SUBSCRIPTION_PLANS.weekly, SUBSCRIPTION_PLANS.monthly];
 
 const UpgradePage = () => {
   const [examType, setExamType] = useState('Academic');
@@ -85,13 +74,14 @@ const UpgradePage = () => {
                   {plan.price}
                   <span className="text-[14px] font-semibold text-[#667085]">{plan.period}</span>
                 </p>
+                <p className="text-[11px] text-[#667085] mt-1">{plan.credits} evaluations</p>
               </button>
             ))}
           </div>
 
           {/* Feature List */}
           <div className="space-y-3 mb-8">
-            {FEATURES.map((feature, i) => (
+            {SUBSCRIPTION_FEATURES.map((feature, i) => (
               <div key={i} className="flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-[#12B76A] flex items-center justify-center shrink-0 mt-0.5">
                   <Check className="w-3 h-3 text-white" strokeWidth={3} />
@@ -116,7 +106,7 @@ const UpgradePage = () => {
           >
             {loading
               ? 'Redirecting to Stripe…'
-              : `Subscribe & Unlock Unlimited Practice — ${selectedPlan.price}${selectedPlan.period}`}
+              : `Subscribe — ${selectedPlan.price}${selectedPlan.period}`}
           </button>
 
           <p className="text-center text-[13px] text-[#667085]">

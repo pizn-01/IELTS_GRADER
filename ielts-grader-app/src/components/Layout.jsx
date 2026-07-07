@@ -38,6 +38,10 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
   ];
 
   const creditsRemaining = user?.credits_remaining ?? 0;
+  const creditsAllowance = user?.credits_allowance ?? 1;
+  const isSubscribed = user?.subscription_status === 'active' || user?.is_subscribed;
+  const creditsLabel = isSubscribed ? 'Plan' : 'Free Trial';
+  const creditProgress = creditsAllowance > 0 ? Math.min(creditsRemaining / creditsAllowance, 1) : 0;
   const learningNavBadge = useLearningNavBadge();
 
   return (
@@ -94,15 +98,15 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                       cx="10" cy="10" r="7"
                       stroke="#1A96F3" strokeWidth="2"
                       strokeDasharray={2 * Math.PI * 7}
-                      strokeDashoffset={2 * Math.PI * 7 * (1 - Math.min(creditsRemaining, 1))}
+                      strokeDashoffset={2 * Math.PI * 7 * (1 - creditProgress)}
                       strokeLinecap="round" fill="transparent"
                       style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                     />
                   </svg>
                 </div>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-[9px] font-semibold text-[#101828] whitespace-nowrap">Free Trial</span>
-                  <span className="text-[9px] font-bold text-[#101828] whitespace-nowrap">Credits: {creditsRemaining}/1</span>
+                  <span className="text-[9px] font-semibold text-[#101828] whitespace-nowrap">{creditsLabel}</span>
+                  <span className="text-[9px] font-bold text-[#101828] whitespace-nowrap">Credits: {creditsRemaining}/{creditsAllowance}</span>
                 </div>
               </div>
 
@@ -125,15 +129,15 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                         cx="14" cy="14" r="11"
                         stroke="#1A96F3" strokeWidth="3"
                         strokeDasharray={2 * Math.PI * 11}
-                        strokeDashoffset={2 * Math.PI * 11 * (1 - Math.min(creditsRemaining, 1))}
+                        strokeDashoffset={2 * Math.PI * 11 * (1 - creditProgress)}
                         strokeLinecap="round" fill="transparent"
                         style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                       />
                     </svg>
                   </div>
                   <div className="flex flex-col leading-tight">
-                    <span className="text-[12px] font-semibold text-[#101828]">Free Trial</span>
-                    <span className="text-[12px] font-bold text-[#101828]">Credits: {creditsRemaining}/1 Remaining</span>
+                    <span className="text-[12px] font-semibold text-[#101828]">{creditsLabel}</span>
+                    <span className="text-[12px] font-bold text-[#101828]">Credits: {creditsRemaining}/{creditsAllowance} Remaining</span>
                   </div>
                 </div>
 
@@ -220,15 +224,15 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                     cx="20" cy="20" r="16"
                     stroke="#1A96F3" strokeWidth="3.5"
                     strokeDasharray={2 * Math.PI * 16}
-                    strokeDashoffset={2 * Math.PI * 16 * (1 - Math.min(creditsRemaining, 1))}
+                    strokeDashoffset={2 * Math.PI * 16 * (1 - creditProgress)}
                     strokeLinecap="round" fill="transparent"
                     style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                   />
                 </svg>
               </div>
               <div className="flex flex-col leading-tight">
-                <span className="text-[13px] font-semibold text-[#101828]">Free Trial</span>
-                <span className="text-[13px] font-bold text-[#1A96F3]">Credits: {creditsRemaining}/1 Remaining</span>
+                <span className="text-[13px] font-semibold text-[#101828]">{creditsLabel}</span>
+                <span className="text-[13px] font-bold text-[#1A96F3]">Credits: {creditsRemaining}/{creditsAllowance} Remaining</span>
               </div>
             </div>
 

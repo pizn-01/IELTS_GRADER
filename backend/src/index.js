@@ -144,6 +144,7 @@ app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_S
 app.use('/api/admin', adminRoutes);
 app.use('/api/discounts', discountsRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/learning', learningRoutes);
 app.use('/api/tracking', trackingLimiter, trackingRoutes);
 

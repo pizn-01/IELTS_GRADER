@@ -32,7 +32,14 @@ const CheckoutSuccessPage = () => {
           // Refresh user credits in AuthContext so header updates
           try {
             const fresh = await api.getMe();
-            updateUser({ credits_remaining: fresh.credits_remaining, has_paid: fresh.has_paid });
+            updateUser({
+              credits_remaining: fresh.credits_remaining,
+              credits_allowance: fresh.credits_allowance,
+              subscription_plan: fresh.subscription_plan,
+              subscription_status: fresh.subscription_status,
+              is_subscribed: fresh.is_subscribed,
+              has_paid: fresh.has_paid,
+            });
           } catch {}
 
           setTimeout(() => navigate('/dashboard'), 3000);
@@ -71,7 +78,7 @@ const CheckoutSuccessPage = () => {
             </div>
             <h1 className="text-[28px] font-bold text-[#1a1f36] mb-2">Payment successful!</h1>
             <p className="text-[15px] text-[#4B5563] mb-1">
-              <span className="font-bold text-[#1a1f36]">{creditsGranted} credits</span> from <span className="font-semibold">{packName}</span> have been added to your account.
+              <span className="font-bold text-[#1a1f36]">{creditsGranted} credits</span> on <span className="font-semibold">{packName}</span> are now active.
             </p>
             <p className="text-[13px] text-[#9CA3AF] mt-4">Redirecting you to the dashboard…</p>
           </>

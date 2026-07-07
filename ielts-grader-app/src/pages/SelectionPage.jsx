@@ -5,6 +5,7 @@ import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
 import PremiumConfirmationModal from '../marketing/PremiumConfirmationModal';
+import { SUBSCRIPTION_FEATURES, planKeyFromSelection } from '../constants/subscriptionPlans';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -160,20 +161,14 @@ const SelectionPage = () => {
     setShowPremiumModal(true);
   };
 
-  const SUBSCRIPTION_PRICE_IDS = {
-    Weekly: 'price_1TcqK9FDM9NsOfLRmmYyoSTh',   // Weekly Sprint
-    Monthly: 'price_1TcqPbFDM9NsOfLRquDNOJpA',  // Monthly Mastery
-  };
-
   const handleConfirmPremium = async () => {
     setShowPremiumModal(false);
-    const priceId = SUBSCRIPTION_PRICE_IDS[selectedPlan];
     setIsLoading(true);
     try {
       if (!user) {
         await register({ first_name: firstName, last_name: lastName, email, password });
       }
-      const { url } = await api.createCheckoutSession(priceId);
+      const { url } = await api.createSubscriptionCheckout(planKeyFromSelection(selectedPlan));
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Failed to start checkout. Please try again.');
@@ -364,12 +359,7 @@ const SelectionPage = () => {
             </div>
 
             <div className="space-y-3 mb-8">
-              {[
-                'Unlimited Essay Evaluations',
-                'Limit 20 exams per week and 100 exams per month',
-                'Detailed Fix Cards & Grammar Analysis',
-                'Priority Support',
-              ].map((feature, i) => (
+              {SUBSCRIPTION_FEATURES.map((feature, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-[18px] h-[18px] rounded-full bg-[#00D09C] flex items-center justify-center shrink-0">
                     <Check className="w-[12px] h-[12px] text-white" strokeWidth={3} />
@@ -384,7 +374,7 @@ const SelectionPage = () => {
                 onClick={handlePremiumClick}
                 className="w-full bg-[#313E50] text-white py-[14px] rounded-[8px] font-semibold text-[13px] mb-3 hover:bg-[#252f3d] active:bg-[#1a1f36] transition-all"
               >
-                Subscribe & Unlock Unlimited Practice
+                Subscribe — from $9.99/week
               </button>
               {premiumError && (
                 <p className="text-[13px] text-red-500 font-medium text-center mb-2">{premiumError}</p>

@@ -416,6 +416,11 @@ const Hero = () => {
                 >
                   {isSubmitting ? 'Analyzing…' : 'Analyze My Essay'}
                 </button>
+                {!user && (
+                  <p className="text-[12px] text-[#6B7280] text-center mt-3">
+                    Sign up free — includes 1 full evaluation. No card required.
+                  </p>
+                )}
               </div>
             )}
           </div>
