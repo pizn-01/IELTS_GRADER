@@ -59,6 +59,7 @@ const UPGRADE_PLANS = {
 router.post('/create-billing-portal-session', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   const email = req.user.email;
+  const flow = req.body?.flow === 'subscription_update' ? 'subscription_update' : 'manage';
 
   if (!email) {
     return res.status(400).json({ error: 'Account email is required to manage billing.' });
@@ -67,10 +68,32 @@ router.post('/create-billing-portal-session', authenticateToken, async (req, res
   try {
     const stripe = getStripe();
     const customerId = await resolveStripeCustomerId(stripe, userId, email);
-    const session = await stripe.billingPortal.sessions.create({
+
+    const sessionParams = {
       customer: customerId,
       return_url: `${FRONTEND_URL}/subscription`,
-    });
+    };
+
+    if (flow === 'subscription_update') {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('stripe_subscription_id, subscription_status')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!profile?.stripe_subscription_id || profile.subscription_status !== 'active') {
+        return res.status(400).json({ error: 'No active subscription found to update.' });
+      }
+
+      sessionParams.flow_data = {
+        type: 'subscription_update',
+        subscription_update: {
+          subscription: profile.stripe_subscription_id,
+        },
+      };
+    }
+
+    const session = await stripe.billingPortal.sessions.create(sessionParams);
     return res.json({ url: session.url });
   } catch (err) {
     console.error('[stripe/create-billing-portal-session]', err.message);

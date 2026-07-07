@@ -444,10 +444,11 @@ export const api = {
     return res.json();
   },
 
-  createBillingPortalSession: async () => {
+  createBillingPortalSession: async ({ flow } = {}) => {
     const res = await fetch(`${BASE_URL}/stripe/create-billing-portal-session`, {
       method: 'POST',
       headers: getHeaders(),
+      body: JSON.stringify(flow ? { flow } : {}),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

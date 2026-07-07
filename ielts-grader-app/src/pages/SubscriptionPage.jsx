@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CreditCard, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -20,7 +21,7 @@ const SubscriptionPage = () => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [billingLoading, setBillingLoading] = useState(false);
-  const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -39,33 +40,29 @@ const SubscriptionPage = () => {
       .finally(() => setLoading(false));
   }, [updateUser]);
 
-  const openBillingPortal = async () => {
-    setBillingLoading(true);
+  const openBillingPortal = async (flow) => {
+    const isUpgrade = flow === 'subscription_update';
+    if (isUpgrade) setUpgradeLoading(true);
+    else setBillingLoading(true);
     setError('');
     try {
-      const { url } = await api.createBillingPortalSession();
+      const { url } = await api.createBillingPortalSession(
+        isUpgrade ? { flow: 'subscription_update' } : {}
+      );
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Failed to open billing portal.');
-      setBillingLoading(false);
-    }
-  };
-
-  const handleSubscribe = async () => {
-    setSubscribeLoading(true);
-    setError('');
-    try {
-      const { url } = await api.createSubscriptionCheckout('monthly');
-      window.location.href = url;
-    } catch (err) {
-      setError(err.message || 'Failed to start checkout.');
-      setSubscribeLoading(false);
+      if (isUpgrade) setUpgradeLoading(false);
+      else setBillingLoading(false);
     }
   };
 
   const remaining = status?.credits_remaining ?? user?.credits_remaining ?? 0;
   const allowance = status?.credits_allowance ?? user?.credits_allowance ?? 1;
   const isSubscribed = status?.is_subscribed;
+  const currentPlan = status?.subscription_plan;
+  const isWeekly = isSubscribed && currentPlan === 'weekly';
+
   const barPct = allowance > 0 ? Math.min(100, Math.round((remaining / allowance) * 100)) : 0;
   const barColor = remaining === 0
     ? 'bg-[#EA4335]'
@@ -139,73 +136,76 @@ const SubscriptionPage = () => {
                   <>
                     <button
                       type="button"
-                      onClick={openBillingPortal}
-                      disabled={billingLoading}
-                      className="w-full sm:w-auto px-8 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[13px] font-bold text-[#101828] hover:bg-gray-50 transition-all disabled:opacity-60"
+                      onClick={() => openBillingPortal()}
+                      disabled={billingLoading || upgradeLoading}
+                      className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
                     >
-                      {billingLoading ? 'Opening…' : 'Cancel Subscription'}
+                      {billingLoading ? 'Opening…' : 'Manage Subscription'}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => navigate('/upgrade')}
-                      className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
-                    >
-                      Change Plan
-                    </button>
+                    {isWeekly && (
+                      <button
+                        type="button"
+                        onClick={() => openBillingPortal('subscription_update')}
+                        disabled={billingLoading || upgradeLoading}
+                        className="w-full sm:w-auto px-8 h-[44px] bg-white border border-gray-200 rounded-[10px] text-[13px] font-bold text-[#101828] hover:bg-gray-50 transition-all disabled:opacity-60"
+                      >
+                        {upgradeLoading ? 'Opening…' : 'Upgrade to Monthly'}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <button
                     type="button"
-                    onClick={handleSubscribe}
-                    disabled={subscribeLoading}
-                    className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
+                    onClick={() => navigate('/upgrade')}
+                    className="w-full sm:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
                   >
-                    {subscribeLoading ? 'Redirecting…' : 'Subscribe — from $9.99/week'}
+                    View Plans
                   </button>
                 )}
               </div>
             </div>
 
             {isSubscribed ? (
-            <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col items-center justify-center text-center">
-              <div className="w-[52px] h-[52px] bg-[#E0F2FE] rounded-[12px] flex items-center justify-center text-[#1A96F3] mb-6">
-                <CreditCard size={24} />
+              <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col justify-center">
+                <div className="w-[52px] h-[52px] bg-[#E0F2FE] rounded-[12px] flex items-center justify-center text-[#1A96F3] mb-6">
+                  <CreditCard size={24} />
+                </div>
+                <h3 className="text-[20px] font-bold text-[#101828] mb-4">Manage Subscription</h3>
+                <p className="text-[14px] text-gray-400 leading-relaxed">
+                  Use <span className="font-semibold text-[#344054]">Manage Subscription</span> to:
+                </p>
+                <ul className="mt-4 space-y-2 text-[14px] text-[#667085]">
+                  <li>Cancel your subscription</li>
+                  <li>Switch between weekly and monthly</li>
+                  <li>Update your payment method</li>
+                  <li>View invoices and billing history</li>
+                </ul>
               </div>
-              <h3 className="text-[20px] font-bold text-[#101828] mb-4">Manage Your Billing</h3>
-              <p className="text-[14px] text-gray-400 leading-relaxed mb-8 max-w-[280px]">
-                Update your payment method, switch plans, cancel your subscription, or view invoices.
-              </p>
-              <button
-                type="button"
-                onClick={openBillingPortal}
-                disabled={billingLoading}
-                className="w-full max-w-[180px] h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
-              >
-                {billingLoading ? 'Opening…' : 'Manage Billing'}
-              </button>
-            </div>
             ) : (
-            <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col items-center justify-center text-center">
-              <div className="w-[52px] h-[52px] bg-[#ECFDF5] rounded-[12px] flex items-center justify-center text-[#10B981] mb-6">
-                <CreditCard size={24} />
+              <div className="bg-white rounded-[20px] border border-[#D0D5DD] shadow-sm p-6 md:p-12 flex flex-col justify-center">
+                <div className="w-[52px] h-[52px] bg-[#ECFDF5] rounded-[12px] flex items-center justify-center text-[#10B981] mb-6">
+                  <CreditCard size={24} />
+                </div>
+                <h3 className="text-[20px] font-bold text-[#101828] mb-4">Available Plans</h3>
+                <ul className="space-y-4 text-[14px] text-[#667085]">
+                  <li>
+                    <span className="font-bold text-[#101828]">{SUBSCRIPTION_PLANS.weekly.name}</span>
+                    <br />
+                    {SUBSCRIPTION_PLANS.weekly.price}{SUBSCRIPTION_PLANS.weekly.period} — {SUBSCRIPTION_PLANS.weekly.credits} evaluations
+                  </li>
+                  <li>
+                    <span className="font-bold text-[#101828]">{SUBSCRIPTION_PLANS.monthly.name}</span>
+                    <span className="ml-2 text-[11px] font-semibold text-[#1A96F3] bg-[#EFF8FF] px-2 py-0.5 rounded-full">Best value</span>
+                    <br />
+                    {SUBSCRIPTION_PLANS.monthly.price}{SUBSCRIPTION_PLANS.monthly.period} — {SUBSCRIPTION_PLANS.monthly.credits} evaluations
+                  </li>
+                </ul>
               </div>
-              <h3 className="text-[20px] font-bold text-[#101828] mb-4">Ready to upgrade?</h3>
-              <p className="text-[14px] text-gray-400 leading-relaxed mb-8 max-w-[280px]">
-                Weekly Sprint — 20 exams for $9.99/week. Monthly Mastery — 100 exams for $24.99/month.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate('/upgrade')}
-                className="w-full max-w-[180px] h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
-              >
-                View Plans
-              </button>
-            </div>
             )}
           </div>
 
           {remaining <= 2 && (
-            <div className="bg-[#FFFBEB] border border-[#FEF3C7] rounded-[12px] p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+            <div className="bg-[#FFFBEB] border border-[#FEF3C7] rounded-[12px] p-6 shadow-sm">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#F59E0B] shrink-0">
                   <AlertTriangle size={20} />
@@ -214,20 +214,13 @@ const SubscriptionPage = () => {
                   <h4 className="text-[14px] font-bold text-[#F59E0B]">Low Credits Warning</h4>
                   <p className="text-[14px] text-gray-500 font-medium mt-0.5">
                     {remaining === 0
-                      ? 'Subscribe to keep practicing — Weekly $9.99 (20 exams) or Monthly $24.99 (100 exams).'
+                      ? isSubscribed
+                        ? 'You have used all credits for this billing period. Credits reset on your renewal date.'
+                        : 'You have used your free evaluation. Choose a plan above to keep practicing.'
                       : `Only ${remaining} credit${remaining === 1 ? '' : 's'} left this period.`}
                   </p>
                 </div>
               </div>
-              {!isSubscribed && (
-                <button
-                  type="button"
-                  onClick={() => navigate('/upgrade')}
-                  className="w-full md:w-auto px-8 h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
-                >
-                  View Plans
-                </button>
-              )}
             </div>
           )}
         </div>
