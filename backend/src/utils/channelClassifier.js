@@ -21,6 +21,28 @@ function normalizeHost(referrer) {
   }
 }
 
+function getOwnSiteHosts() {
+  const hosts = new Set(['ieltsgrader.com', 'localhost', '127.0.0.1']);
+  const frontend = process.env.FRONTEND_URL;
+  if (frontend) {
+    try {
+      hosts.add(new URL(frontend).hostname.replace(/^www\./, '').toLowerCase());
+    } catch {
+      // ignore invalid FRONTEND_URL
+    }
+  }
+  return hosts;
+}
+
+function isOwnSiteReferrer(referrer) {
+  const host = normalizeHost(referrer);
+  if (!host) return false;
+  if (getOwnSiteHosts().has(host)) return true;
+  // Vercel preview / staging for this project
+  if (host.endsWith('.vercel.app') && host.includes('ielts-grader')) return true;
+  return false;
+}
+
 function hasUtm(utm) {
   return Boolean(
     utm?.utm_source || utm?.utm_medium || utm?.utm_campaign ||
@@ -65,6 +87,9 @@ function classifyChannel({ referrer, utm_source, utm_medium, gclid } = {}) {
 
   const host = normalizeHost(referrer);
   if (host) {
+    if (isOwnSiteReferrer(referrer)) {
+      return 'direct';
+    }
     if (host.includes('google.')) return 'google_organic';
     for (const { channel, patterns } of REFERRER_CHANNELS) {
       if (patterns.some(p => host === p || host.endsWith('.' + p))) {
@@ -81,4 +106,4 @@ function classifyChannel({ referrer, utm_source, utm_medium, gclid } = {}) {
   return 'referral';
 }
 
-module.exports = { classifyChannel };
+module.exports = { classifyChannel, isOwnSiteReferrer, normalizeHost };
