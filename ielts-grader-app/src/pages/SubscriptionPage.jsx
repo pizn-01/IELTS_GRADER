@@ -118,10 +118,17 @@ const SubscriptionPage = () => {
   })();
 
   const statusTone = cancelAtPeriodEnd || (isExhausted && !isSubscribed) || isLow ? 'amber' : 'neutral';
+  const isFreeView = !loading && !isSubscribed;
 
   return (
-    <div className="w-full max-w-[800px] mx-auto px-4 sm:px-6 py-8 sm:py-10 text-[#101828]">
-      <header className="mb-5">
+    <div
+      className={`w-full mx-auto px-4 sm:px-6 text-[#101828] ${
+        isFreeView
+          ? 'max-w-[920px] min-h-[calc(100dvh-56px)] flex flex-col justify-center py-3 sm:py-4'
+          : 'max-w-[800px] py-8 sm:py-10'
+      }`}
+    >
+      <header className={isFreeView ? 'mb-3 shrink-0' : 'mb-5'}>
         <h1 className="text-[26px] sm:text-[28px] font-bold text-[#101828]">Your Subscription</h1>
         <p className="text-[14px] text-[#667085] mt-1">
           Plan, usage, and billing in one place.
@@ -139,10 +146,10 @@ const SubscriptionPage = () => {
           <p className="text-[14px] text-[#98A2B3]">Loading subscription details…</p>
         </div>
       ) : (
-        <section className="bg-white rounded-2xl border border-[#D0D5DD] shadow-sm overflow-hidden">
+        <section className={`bg-white rounded-2xl border border-[#D0D5DD] shadow-sm overflow-hidden ${isFreeView ? 'shrink-0' : ''}`}>
           <div
-            className={`px-5 sm:px-6 py-4 sm:py-5 flex flex-wrap items-start justify-between gap-3 border-b border-[#F2F4F7] ${
-              !isSubscribed ? 'bg-gradient-to-r from-[#FAFBFC] to-white' : ''
+            className={`px-5 sm:px-6 flex flex-wrap items-start justify-between gap-3 border-b border-[#F2F4F7] ${
+              !isSubscribed ? 'py-3 sm:py-3.5 bg-gradient-to-r from-[#FAFBFC] to-white' : 'py-4 sm:py-5'
             }`}
           >
             <div>
@@ -165,8 +172,8 @@ const SubscriptionPage = () => {
             </p>
           </div>
 
-          <div className={`px-5 sm:px-6 border-b border-[#F2F4F7] ${!isSubscribed ? 'py-5' : 'py-4'}`}>
-            <div className={!isSubscribed ? 'rounded-xl border border-[#F2F4F7] bg-[#FAFBFC] p-4' : ''}>
+          <div className={`px-5 sm:px-6 border-b border-[#F2F4F7] ${!isSubscribed ? 'py-3' : 'py-4'}`}>
+            <div className={!isSubscribed ? 'rounded-xl border border-[#F2F4F7] bg-[#FAFBFC] p-3' : ''}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[14px] font-bold text-[#101828]">
                 {remaining} / {allowance} credits
@@ -182,7 +189,9 @@ const SubscriptionPage = () => {
               />
             </div>
             <div
-              className={`mt-3 rounded-lg px-3 py-2 flex gap-2 ${
+              className={`rounded-lg px-3 py-2 flex gap-2 ${
+                !isSubscribed ? 'mt-2' : 'mt-3'
+              } ${
                 statusTone === 'amber'
                   ? 'bg-[#FFFBEB] border border-[#FEF3C7]'
                   : 'bg-[#F9FAFB] border border-[#F2F4F7]'
@@ -208,7 +217,7 @@ const SubscriptionPage = () => {
 
           <div
             className={`px-5 sm:px-6 border-b border-[#F2F4F7] grid sm:grid-cols-2 ${
-              !isSubscribed ? 'py-5 sm:py-6 gap-4 sm:gap-5' : 'py-4 gap-5 sm:gap-6'
+              !isSubscribed ? 'py-3 sm:py-4 gap-3 sm:gap-4' : 'py-4 gap-5 sm:gap-6'
             }`}
           >
             {isSubscribed ? (
@@ -264,8 +273,8 @@ const SubscriptionPage = () => {
               </>
             ) : (
               <>
-                <div className="rounded-xl border border-[#E4E7EC] bg-[#FAFBFC] p-4 h-full">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-2.5">
+                <div className="rounded-xl border border-[#E4E7EC] bg-[#FAFBFC] p-3 h-full">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-2">
                     Free trial
                   </p>
                   <p className="text-[13px] text-[#667085] leading-relaxed">
@@ -273,18 +282,18 @@ const SubscriptionPage = () => {
                     No card required to sign up. Full band report on your first essay.
                   </p>
                 </div>
-                <div className="rounded-xl border border-[#E4E7EC] bg-white p-4 h-full">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-3">
+                <div className="rounded-xl border border-[#E4E7EC] bg-white p-3 h-full">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3] mb-2">
                     Paid plans
                   </p>
-                  <div className="space-y-3">
-                    <div className="rounded-lg border border-[#E4E7EC] bg-[#FAFBFC] px-3.5 py-3">
+                  <div className="space-y-2">
+                    <div className="rounded-lg border border-[#E4E7EC] bg-[#FAFBFC] px-3 py-2.5">
                       <p className="text-[12px] font-bold text-[#101828]">{SUBSCRIPTION_PLANS.weekly.name}</p>
                       <p className="text-[11px] text-[#667085] mt-0.5">
                         {SUBSCRIPTION_PLANS.weekly.label} · {SUBSCRIPTION_PLANS.weekly.credits} evals
                       </p>
                     </div>
-                    <div className="rounded-lg border border-[#B2DDFF] bg-[#F0F9FF] px-3.5 py-3 shadow-sm">
+                    <div className="rounded-lg border border-[#B2DDFF] bg-[#F0F9FF] px-3 py-2.5 shadow-sm">
                       <p className="text-[12px] font-bold text-[#101828]">
                         {SUBSCRIPTION_PLANS.monthly.name}
                         <span className="ml-1.5 text-[9px] font-bold text-[#1A96F3] uppercase">Best value</span>
@@ -301,7 +310,7 @@ const SubscriptionPage = () => {
 
           <div
             className={`px-5 sm:px-6 border-b border-[#F2F4F7] ${
-              isSubscribed ? 'py-3 bg-[#FAFBFC]' : 'py-4 bg-[#F9FAFB] rounded-none'
+              isSubscribed ? 'py-3 bg-[#FAFBFC]' : 'py-2.5 bg-[#F9FAFB] rounded-none'
             }`}
           >
             {isSubscribed ? (
@@ -331,7 +340,7 @@ const SubscriptionPage = () => {
             )}
           </div>
 
-          <div className={`px-5 sm:px-6 ${!isSubscribed ? 'py-5 bg-[#FAFBFC]' : 'py-4'}`}>
+          <div className={`px-5 sm:px-6 ${!isSubscribed ? 'py-3 bg-[#FAFBFC]' : 'py-4'}`}>
             {isSubscribed ? (
               <div className="flex justify-end">
                 <button
