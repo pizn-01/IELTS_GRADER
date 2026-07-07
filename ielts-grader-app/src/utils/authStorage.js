@@ -1,5 +1,6 @@
 const TOKEN_KEY = 'token';
 const REMEMBER_KEY = 'remember_me';
+const SAVED_EMAIL_KEY = 'saved_login_email';
 
 /**
  * Persist JWT. remember=true → localStorage (survives browser restart).
@@ -15,6 +16,19 @@ export function setAuthToken(token, remember = true) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.setItem(REMEMBER_KEY, '0');
   }
+}
+
+export function setRememberedEmail(email, remember = true) {
+  if (remember && email) {
+    localStorage.setItem(SAVED_EMAIL_KEY, email);
+  } else {
+    localStorage.removeItem(SAVED_EMAIL_KEY);
+  }
+}
+
+export function getRememberedEmail() {
+  if (!getRememberMePreference()) return '';
+  return localStorage.getItem(SAVED_EMAIL_KEY) || '';
 }
 
 export function getAuthToken() {

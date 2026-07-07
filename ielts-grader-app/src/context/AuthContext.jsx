@@ -7,6 +7,7 @@ import {
   setAuthToken,
   clearAuthToken,
   getRememberMePreference,
+  setRememberedEmail,
 } from '../utils/authStorage';
 
 const AuthContext = createContext(null);
@@ -44,9 +45,10 @@ export const AuthProvider = ({ children }) => {
    * credentials.rememberMe controls localStorage vs sessionStorage.
    */
   const login = async (credentials) => {
-    const { rememberMe = true, ...rest } = credentials || {};
-    const { token: t, user: u } = await api.login(rest);
+    const { rememberMe = true, email, ...rest } = credentials || {};
+    const { token: t, user: u } = await api.login({ ...rest, email, remember_me: rememberMe });
     setAuthToken(t, !!rememberMe);
+    setRememberedEmail(email, !!rememberMe);
     setToken(t);
     setUser(u);
     return u;

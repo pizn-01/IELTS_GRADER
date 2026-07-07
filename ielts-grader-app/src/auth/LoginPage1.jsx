@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
+import { getRememberedEmail } from '../utils/authStorage';
 
 const LoginPage1 = () => {
-  const { login, signInWithGoogle, rememberMePreference } = useAuth();
+  const { login, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => getRememberedEmail());
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(rememberMePreference ?? true);
   const [error, setError] = useState('');
@@ -17,6 +18,12 @@ const LoginPage1 = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, from]);
 
   const handleGoogleSignIn = async () => {
     setError('');
@@ -70,6 +77,8 @@ const LoginPage1 = () => {
             <label style={formStyles.label}>Email</label>
             <input
               type="email"
+              name="email"
+              autoComplete="username"
               placeholder="Enter Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -85,6 +94,8 @@ const LoginPage1 = () => {
             <div style={{ position: 'relative' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="current-password"
                 placeholder="Enter Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

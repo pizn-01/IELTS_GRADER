@@ -10,8 +10,8 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-function signToken(userId, email) {
-  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '7d' });
+function signToken(userId, email, remember = true) {
+  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: remember ? '30d' : '1d' });
 }
 
 function generateToken(bytes = 32) {
@@ -37,7 +37,7 @@ async function fetchProfile(userId) {
 
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, remember_me: rememberMe = true } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
     }
 
     const profile = await fetchProfile(data.user.id);
-    const token = signToken(data.user.id, data.user.email);
+    const token = signToken(data.user.id, data.user.email, rememberMe !== false);
 
     return res.json({
       token,
