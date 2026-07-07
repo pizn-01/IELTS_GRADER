@@ -1,16 +1,9 @@
-const { supabaseAdmin } = require('./supabase');
-
 /**
- * Admins get Personalized Learning PDFs without Stripe payment.
+ * Personalized Learning PDFs are free for all users.
+ * Generation still requires an explicit click to avoid unnecessary LLM cost.
  */
-async function hasLearningFreeAccess(userId) {
-  const { data } = await supabaseAdmin
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', userId)
-    .single();
-
-  return Boolean(data?.is_admin);
+async function hasLearningFreeAccess(_userId) {
+  return true;
 }
 
 module.exports = { hasLearningFreeAccess };

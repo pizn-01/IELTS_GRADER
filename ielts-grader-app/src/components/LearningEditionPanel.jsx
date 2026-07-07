@@ -132,7 +132,7 @@ export default function LearningEditionPanel({
                   <span className="text-[10px] text-gray-400">${(priceCents / 100).toFixed(0)} one-time</span>
                 )}
                 {freeAccess && canGenerate && (
-                  <span className="text-[10px] text-[#1A96F3] font-medium">Free admin access</span>
+                  <span className="text-[10px] text-[#1A96F3] font-medium">Free — click to generate</span>
                 )}
               </div>
             )}

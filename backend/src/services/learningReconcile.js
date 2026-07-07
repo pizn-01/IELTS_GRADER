@@ -22,7 +22,7 @@ function isStale(updatedAt, createdAt) {
  * Recover editions stuck in pending_payment / generating.
  * Never starts LLM — only resets abandoned checkouts, verifies paid Stripe (webhook backup), or times out.
  */
-async function reconcileEdition(userId, editionNumber, _freeAccess) {
+async function reconcileEdition(userId, editionNumber, freeAccess) {
   const { data: row } = await supabaseAdmin
     .from('personalized_learning_editions')
     .select('*')
@@ -36,6 +36,14 @@ async function reconcileEdition(userId, editionNumber, _freeAccess) {
 
   // Unpaid pending_payment — reset to preview so user must click Generate or complete Stripe.
   if (row.status === 'pending_payment' && !row.paid_at) {
+    if (freeAccess) {
+      await supabaseAdmin
+        .from('personalized_learning_editions')
+        .update({ status: 'preview', stripe_session_id: null })
+        .eq('id', row.id);
+      return { ...row, status: 'preview', stripe_session_id: null };
+    }
+
     if (!row.stripe_session_id) {
       await supabaseAdmin
         .from('personalized_learning_editions')

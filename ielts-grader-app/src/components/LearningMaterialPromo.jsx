@@ -24,14 +24,14 @@ export default function LearningMaterialPromo() {
 
   if (dismissed || !status) return null;
 
-  const { maxUnlockedEdition, progressToNextEdition, priceCents } = status;
+  const { maxUnlockedEdition, progressToNextEdition } = status;
   const hasUnlocked = maxUnlockedEdition > 0;
   const nearUnlock = progressToNextEdition?.completed >= 3;
 
   if (!hasUnlocked && !nearUnlock) return null;
 
   const message = hasUnlocked
-    ? `Edition ${maxUnlockedEdition} is ready — preview your error patterns and get a personalized PDF for $${(priceCents / 100).toFixed(0)}.`
+    ? `Edition ${maxUnlockedEdition} is ready — preview your error patterns and generate your free personalized PDF.`
     : `${progressToNextEdition.completed} of 5 exams done — unlock your first Personalized Learning guide soon.`;
 
   return (

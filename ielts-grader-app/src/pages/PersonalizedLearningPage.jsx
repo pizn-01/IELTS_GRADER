@@ -128,7 +128,7 @@ export default function PersonalizedLearningPage() {
               </h1>
               <p className="text-[#667085] text-[12px] mt-0.5">
                 {data?.totalGraded || 0} graded exams
-                {data?.freeAccess ? ' · Free admin access' : ` · $${(data?.priceCents || 500) / 100} per edition`}
+                {data?.freeAccess ? ' · Free' : ` · $${(data?.priceCents || 500) / 100} per edition`}
               </p>
             </div>
             {progress && (
