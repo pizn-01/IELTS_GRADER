@@ -458,6 +458,18 @@ export const api = {
     return res.json();
   },
 
+  createBillingPortalSession: async () => {
+    const res = await fetch(`${BASE_URL}/stripe/create-billing-portal-session`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to open billing portal.');
+    }
+    return res.json();
+  },
+
   createPublicCheckoutSession: async (price_id) => {
     const res = await fetch(`${BASE_URL}/stripe/create-public-checkout`, {
       method: 'POST',

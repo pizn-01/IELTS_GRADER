@@ -16,6 +16,8 @@ const SubscriptionPage = () => {
   const [successType, setSuccessType] = useState('subscription');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState('');
 
   const packs = [
     { name: 'Starter Top Up',   credits: '10', price: '$12', desc: 'Best for short practice sprints',    priceId: 'price_1TcqK9FDM9NsOfLRmmYyoSTh' },
@@ -34,6 +36,18 @@ const SubscriptionPage = () => {
     } catch (err) {
       setCheckoutError(err.message || 'Failed to start checkout. Please try again.');
       setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setBillingLoading(true);
+    setBillingError('');
+    try {
+      const { url } = await api.createBillingPortalSession();
+      window.location.href = url;
+    } catch (err) {
+      setBillingError(err.message || 'Failed to open billing portal. Please try again.');
+      setBillingLoading(false);
     }
   };
 
@@ -114,11 +128,19 @@ const SubscriptionPage = () => {
               <CreditCard size={24} />
             </div>
             <h3 className="text-[20px] font-bold text-[#101828] mb-4">Manage Your Billing</h3>
-            <p className="text-[14px] text-gray-400 leading-relaxed mb-8 max-w-[280px]">
+            <p className="text-[14px] text-gray-400 leading-relaxed mb-4 max-w-[280px]">
               Click the button below to change your plan, payment method, cancel subscription or view your invoices.
             </p>
-            <button className="w-full max-w-[180px] h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm">
-              Manage Billing
+            {billingError && (
+              <p className="text-[13px] font-medium text-[#EA4335] mb-4 max-w-[280px]">{billingError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleManageBilling}
+              disabled={billingLoading}
+              className="w-full max-w-[180px] h-[44px] bg-[#344054] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
+            >
+              {billingLoading ? 'Opening…' : 'Manage Billing'}
             </button>
           </div>
         </div>

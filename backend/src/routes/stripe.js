@@ -21,6 +21,19 @@ const getStripe = () => {
   return _stripe;
 };
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app';
+
+async function resolveStripeCustomerId(stripe, userId, email) {
+  const { data: customers } = await stripe.customers.list({ email, limit: 1 });
+  if (customers[0]?.id) return customers[0].id;
+
+  const customer = await stripe.customers.create({
+    email,
+    metadata: { user_id: userId },
+  });
+  return customer.id;
+}
+
 // ── Subscription plans — allowed for public (unauthenticated) checkout ───────
 const SUBSCRIPTION_PLANS = {
   'price_1TcqK9FDM9NsOfLRmmYyoSTh': { name: 'Weekly Sprint',    credits: 10 },
@@ -33,6 +46,30 @@ const UPGRADE_PLANS = {
   weekly:  { name: 'Weekly Sprint',   label: '$9.99/week',   get priceId() { return process.env.STRIPE_PRICE_WEEKLY_SPRINT;  } },
   monthly: { name: 'Monthly Mastery', label: '$24.99/month', get priceId() { return process.env.STRIPE_PRICE_MONTHLY_MASTERY; } },
 };
+
+// ─── POST /api/stripe/create-billing-portal-session ─────────────────────────
+// Redirects the user to Stripe Customer Portal to manage plan, payment method, invoices.
+router.post('/create-billing-portal-session', authenticateToken, async (req, res) => {
+  const userId = req.user.userId;
+  const email = req.user.email;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Account email is required to manage billing.' });
+  }
+
+  try {
+    const stripe = getStripe();
+    const customerId = await resolveStripeCustomerId(stripe, userId, email);
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${FRONTEND_URL}/subscription`,
+    });
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error('[stripe/create-billing-portal-session]', err.message);
+    return res.status(500).json({ error: 'Failed to open billing portal. Please try again.' });
+  }
+});
 
 // ─── POST /api/stripe/create-public-checkout ──────────────────────────────
 // No auth — unauthenticated users go straight to Stripe.
