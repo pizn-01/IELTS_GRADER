@@ -26,8 +26,7 @@ async function fetchProfile(userId) {
       .select(`
         full_name, target_band, target_band_confirmed, credits_remaining, credits_allowance,
         profile_image_url, is_admin, email_verified,
-        subscription_plan, subscription_status, subscription_period_end,
-        subscription_cancel_at_period_end
+        subscription_plan, subscription_status, subscription_period_end
       `)
       .eq('id', userId)
       .single(),
@@ -47,7 +46,7 @@ async function fetchProfile(userId) {
     credits_allowance: periodEnded ? 1 : (data.credits_allowance ?? 1),
     has_paid: isSubscribed || (paymentCount ?? 0) > 0,
     is_subscribed: isSubscribed,
-    cancel_at_period_end: !!data.subscription_cancel_at_period_end && isSubscribed,
+    cancel_at_period_end: false,
   };
 }
 
@@ -173,12 +172,21 @@ router.post('/register', async (req, res) => {
 // ─── GET /api/auth/me ─────────────────────────────────────────────────────────
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    await reconcileUserSubscription(req.user.userId);
+    const reconciled = await reconcileUserSubscription(req.user.userId);
     const profile = await fetchProfile(req.user.userId);
     return res.json({
       id: req.user.userId,
       email: req.user.email,
       ...profile,
+      credits_remaining: reconciled?.credits_remaining ?? profile.credits_remaining,
+      credits_allowance: reconciled?.credits_allowance ?? profile.credits_allowance,
+      subscription_plan: reconciled?.subscription_plan ?? profile.subscription_plan,
+      subscription_status: reconciled?.subscription_status ?? profile.subscription_status,
+      is_subscribed: reconciled
+        ? reconciled.subscription_status === 'active'
+          && !(reconciled.subscription_period_end && new Date(reconciled.subscription_period_end) <= new Date())
+        : profile.is_subscribed,
+      cancel_at_period_end: reconciled?.cancel_at_period_end ?? false,
     });
   } catch (err) {
     console.error('[auth/me]', err.message);

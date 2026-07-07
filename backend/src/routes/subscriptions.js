@@ -25,7 +25,6 @@ router.get('/status', authenticateToken, async (req, res) => {
           subscription_plan,
           subscription_status,
           subscription_period_end,
-          subscription_cancel_at_period_end,
           stripe_subscription_id
         `)
         .eq('id', userId)
@@ -43,13 +42,13 @@ router.get('/status', authenticateToken, async (req, res) => {
 
     const payload = buildSubscriptionStatusPayload({
       ...profile,
+      ...reconciled,
       has_paid: (paymentCount ?? 0) > 0,
     });
 
     return res.json({
       ...payload,
       plans: getAllPlans(),
-      reconciled: !!reconciled,
     });
   } catch (err) {
     console.error('[subscriptions/status]', err.message);

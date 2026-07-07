@@ -30,7 +30,6 @@ async function expireSubscriptionAccess(userId) {
       credits_remaining: 0,
       credits_allowance: 1,
       subscription_plan: null,
-      subscription_cancel_at_period_end: false,
       updated_at: new Date().toISOString(),
     })
     .eq('id', userId);
@@ -86,7 +85,6 @@ async function syncSubscriptionRecord(userId, subscription) {
     stripe_customer_id: customerId || null,
     subscription_status: effectiveStatus,
     subscription_period_end: periodEnd,
-    subscription_cancel_at_period_end: cancelAtPeriodEnd && effectiveStatus === 'active',
     updated_at: new Date().toISOString(),
   };
 
@@ -97,7 +95,6 @@ async function syncSubscriptionRecord(userId, subscription) {
     updates.credits_remaining = 0;
     updates.credits_allowance = 1;
     updates.subscription_plan = null;
-    updates.subscription_cancel_at_period_end = false;
   }
 
   await supabaseAdmin.from('profiles').update(updates).eq('id', userId);
@@ -191,13 +188,14 @@ async function reconcileUserSubscription(userId) {
       credits_allowance,
       subscription_status,
       subscription_plan,
-      subscription_period_end,
-      subscription_cancel_at_period_end
+      subscription_period_end
     `)
     .eq('id', userId)
     .maybeSingle();
 
   if (error || !profile) return null;
+
+  let cancelAtPeriodEnd = false;
 
   if (
     isPeriodEnded(profile.subscription_period_end)
@@ -212,17 +210,16 @@ async function reconcileUserSubscription(userId) {
         subscription_plan,
         subscription_status,
         subscription_period_end,
-        subscription_cancel_at_period_end,
         stripe_subscription_id
       `)
       .eq('id', userId)
       .single();
-    return refreshed;
+    return { ...refreshed, cancel_at_period_end: false };
   }
 
   const stripe = getStripe();
   if (!stripe || !profile.stripe_subscription_id) {
-    return profile;
+    return { ...profile, cancel_at_period_end: false };
   }
 
   try {
@@ -230,6 +227,7 @@ async function reconcileUserSubscription(userId) {
       expand: ['latest_invoice'],
     });
 
+    cancelAtPeriodEnd = !!subscription.cancel_at_period_end;
     await syncSubscriptionRecord(userId, subscription);
 
     if (subscription.status === 'active' || subscription.status === 'trialing') {
@@ -251,13 +249,12 @@ async function reconcileUserSubscription(userId) {
       subscription_plan,
       subscription_status,
       subscription_period_end,
-      subscription_cancel_at_period_end,
       stripe_subscription_id
     `)
     .eq('id', userId)
     .single();
 
-  return refreshed;
+  return { ...refreshed, cancel_at_period_end: cancelAtPeriodEnd };
 }
 
 function buildSubscriptionStatusPayload(profile) {
@@ -265,7 +262,7 @@ function buildSubscriptionStatusPayload(profile) {
   const plan = profile.subscription_plan ? getPlanByKey(profile.subscription_plan) : null;
   const periodEnded = isPeriodEnded(profile.subscription_period_end);
   const isActive = profile.subscription_status === 'active' && !periodEnded;
-  const cancelAtPeriodEnd = !!profile.subscription_cancel_at_period_end && isActive;
+  const cancelAtPeriodEnd = !!profile.cancel_at_period_end && isActive;
 
   return {
     subscription_plan: profile.subscription_plan || null,
