@@ -36,6 +36,18 @@ const formatDuration = (seconds) => {
   return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 };
 
+const formatReferrerLabel = (referrer) => {
+  if (!referrer) return null;
+  try {
+    const url = new URL(referrer);
+    const host = url.hostname.replace(/^www\./, '');
+    const path = url.pathname && url.pathname !== '/' ? url.pathname : '';
+    return `${host}${path}`;
+  } catch {
+    return referrer;
+  }
+};
+
 // ── Shared helpers ────────────────────────────────────────────────────────────
 const Pill = ({ label, color }) => {
   const map = {
@@ -444,30 +456,53 @@ const AcquisitionTab = () => {
         </div>
 
         <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
-          <table className="w-full text-[13px] min-w-[800px]">
-            <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
+          <table className="w-full text-[12px] min-w-[1080px]">
+            <thead className="bg-gray-50 text-[10px] uppercase tracking-wider text-gray-400 font-bold">
               <tr>
-                {['First Seen', 'Channel', 'Landing', 'Country', 'Pages', 'Duration', 'Device'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left">{h}</th>
+                {[
+                  { label: 'First Seen', className: 'px-3 py-3 min-w-[130px]' },
+                  { label: 'Channel', className: 'px-3 py-3' },
+                  { label: 'Landing', className: 'px-3 py-3 max-w-[100px]' },
+                  { label: 'Referrer', className: 'px-3 py-3 max-w-[120px]', title: 'External URL the visitor came from' },
+                  { label: 'UTM Src', className: 'px-3 py-3 max-w-[72px]', title: 'utm_source' },
+                  { label: 'UTM Med', className: 'px-3 py-3 max-w-[72px]', title: 'utm_medium' },
+                  { label: 'Country', className: 'px-3 py-3' },
+                  { label: 'Pages', className: 'px-3 py-3' },
+                  { label: 'Duration', className: 'px-3 py-3' },
+                  { label: 'Device', className: 'px-3 py-3' },
+                ].map((h) => (
+                  <th key={h.label} className={`text-left ${h.className}`} title={h.title}>{h.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {visitors.map(v => (
                 <tr key={v.session_id} className="hover:bg-gray-50/50">
-                  <td className="px-4 py-3 text-gray-500">{new Date(v.first_seen_at).toLocaleString()}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3 text-gray-500 whitespace-nowrap">{new Date(v.first_seen_at).toLocaleString()}</td>
+                  <td className="px-3 py-3">
                     <Pill label={(v.channel || 'direct').replace(/_/g, ' ')} color={channelColor(v.channel)} />
                   </td>
-                  <td className="px-4 py-3 text-gray-500 max-w-[140px] truncate" title={v.landing_path}>{v.landing_path || '/'}</td>
-                  <td className="px-4 py-3 text-gray-500">{v.country || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{v.page_view_count}</td>
-                  <td className="px-4 py-3 text-gray-500">{formatDuration(v.duration_seconds)}</td>
-                  <td className="px-4 py-3 text-gray-500 capitalize">{v.device_type || '—'}</td>
+                  <td className="px-3 py-3 text-gray-500 max-w-[100px] truncate" title={v.landing_path}>{v.landing_path || '/'}</td>
+                  <td
+                    className="px-3 py-3 text-gray-500 max-w-[120px] truncate"
+                    title={v.referrer || undefined}
+                  >
+                    {formatReferrerLabel(v.referrer) || '—'}
+                  </td>
+                  <td className="px-3 py-3 text-gray-500 max-w-[72px] truncate" title={v.utm_source || undefined}>
+                    {v.utm_source || '—'}
+                  </td>
+                  <td className="px-3 py-3 text-gray-500 max-w-[72px] truncate" title={v.utm_medium || undefined}>
+                    {v.utm_medium || '—'}
+                  </td>
+                  <td className="px-3 py-3 text-gray-500">{v.country || '—'}</td>
+                  <td className="px-3 py-3 text-gray-500">{v.page_view_count}</td>
+                  <td className="px-3 py-3 text-gray-500 whitespace-nowrap">{formatDuration(v.duration_seconds)}</td>
+                  <td className="px-3 py-3 text-gray-500 capitalize">{v.device_type || '—'}</td>
                 </tr>
               ))}
               {visitors.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No visitor sessions in this period.</td></tr>
+                <tr><td colSpan={10} className="px-5 py-8 text-center text-gray-400">No visitor sessions in this period.</td></tr>
               )}
             </tbody>
           </table>
