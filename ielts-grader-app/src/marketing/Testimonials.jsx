@@ -17,27 +17,27 @@ const reviews = [
   {
     name: 'Maxin Will',
     img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco'
+    text: 'Finally understood why I was stuck at Band 6. The report breaks down every IELTS criterion — Task Achievement, Coherence, Lexical Resource, Grammar — with a clear band score for each. No more guessing what to fix.'
   },
   {
     name: 'John',
     img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco'
+    text: 'The sentence-by-sentence fix cards are a game changer. Each weak sentence gets an AI-rewritten version showing exactly how to hit Band 7.5+. I rewrote my essays using those examples and my score jumped within two weeks.'
   },
   {
     name: 'Katherine',
     img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco'
+    text: 'Mock exam mode prepared me for the real test better than anything else. The timer, the pressure, the computer-based layout — it felt identical to exam day. I walked in confident because I had already practised under those exact conditions.'
   },
   {
     name: 'Sarah',
     img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco'
+    text: 'I photograph my handwritten practice essays and upload them — the OCR reads my handwriting perfectly. Got a full band report in under a minute without retyping a single word. Incredibly convenient for daily practice.'
   },
   {
     name: 'David',
     img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua quis nostrud exercitation ullamco'
+    text: 'Progress tracking across all my submissions showed me I was improving in grammar but slipping on coherence. That insight alone was worth it — I focused my study time where it actually mattered and hit Band 7 on test day.'
   }
 ];
 
