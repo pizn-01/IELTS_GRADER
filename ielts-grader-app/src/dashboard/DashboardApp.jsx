@@ -51,6 +51,11 @@ function DashboardApp() {
           target_band: freshUser.target_band,
           target_band_confirmed: freshUser.target_band_confirmed,
           credits_remaining: freshUser.credits_remaining,
+          credits_allowance: freshUser.credits_allowance,
+          subscription_plan: freshUser.subscription_plan,
+          subscription_status: freshUser.subscription_status,
+          is_subscribed: freshUser.is_subscribed,
+          cancel_at_period_end: freshUser.cancel_at_period_end,
           full_name: freshUser.full_name,
         });
       }

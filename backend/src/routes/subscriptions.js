@@ -1,7 +1,10 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { supabaseAdmin } = require('../services/supabase');
-const { buildSubscriptionStatusPayload } = require('../services/subscriptionSync');
+const {
+  buildSubscriptionStatusPayload,
+  reconcileUserSubscription,
+} = require('../services/subscriptionSync');
 const { getAllPlans } = require('../services/subscriptionPlans');
 
 const router = express.Router();
@@ -11,6 +14,8 @@ router.get('/status', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    const reconciled = await reconcileUserSubscription(userId);
+
     const [{ data: profile, error }, { count: paymentCount }] = await Promise.all([
       supabaseAdmin
         .from('profiles')
@@ -20,6 +25,7 @@ router.get('/status', authenticateToken, async (req, res) => {
           subscription_plan,
           subscription_status,
           subscription_period_end,
+          subscription_cancel_at_period_end,
           stripe_subscription_id
         `)
         .eq('id', userId)
@@ -43,6 +49,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     return res.json({
       ...payload,
       plans: getAllPlans(),
+      reconciled: !!reconciled,
     });
   } catch (err) {
     console.error('[subscriptions/status]', err.message);

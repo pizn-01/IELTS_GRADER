@@ -6,6 +6,7 @@ const {
   findUserIdForSubscription,
   syncSubscriptionRecord,
   grantSubscriptionPeriodCredits,
+  grantCreditsFromSubscription,
 } = require('../services/subscriptionSync');
 
 const router = express.Router();
@@ -260,8 +261,11 @@ router.post('/webhook', async (req, res) => {
         }
 
         try {
-          const subscription = await stripe.subscriptions.retrieve(session.subscription);
+          const subscription = await stripe.subscriptions.retrieve(session.subscription, {
+            expand: ['latest_invoice'],
+          });
           await syncSubscriptionRecord(userId, subscription);
+          await grantCreditsFromSubscription(subscription, userId, { sessionId: session.id });
           await supabaseAdmin
             .from('profiles')
             .update({
@@ -440,22 +444,19 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.mode === 'subscription' && session.client_reference_id === userId) {
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('subscription_status, subscription_plan, credits_remaining, credits_allowance')
-        .eq('id', userId)
-        .single();
+      const { reconcileUserSubscription } = require('../services/subscriptionSync');
+      const refreshed = await reconcileUserSubscription(userId);
 
-      const plan = profile?.subscription_plan ? getPlanByKey(profile.subscription_plan) : null;
-      const creditsReady = profile?.subscription_status === 'active'
+      const plan = refreshed?.subscription_plan ? getPlanByKey(refreshed.subscription_plan) : null;
+      const creditsReady = refreshed?.subscription_status === 'active'
         && plan
-        && profile.credits_allowance >= plan.credits
-        && profile.credits_remaining >= plan.credits;
+        && refreshed.credits_allowance >= plan.credits
+        && refreshed.credits_remaining >= plan.credits;
 
       if (creditsReady) {
         return res.json({
           status: 'completed',
-          credits_granted: profile.credits_remaining,
+          credits_granted: refreshed.credits_remaining,
           pack_name: plan.name,
         });
       }

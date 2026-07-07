@@ -2,6 +2,7 @@ const express = require('express');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { gradeEssayAsync } = require('../services/graderEngine');
+const { isPeriodEnded, expireSubscriptionAccess } = require('../services/subscriptionSync');
 
 const router = express.Router();
 
@@ -39,15 +40,22 @@ router.post('/', authenticateToken, async (req, res) => {
 
   const word_count = essay_content.trim().split(/\s+/).filter(Boolean).length;
 
-  // Fetch current credit balance
+  // Fetch current credit balance and subscription access
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('credits_remaining')
+    .select('credits_remaining, subscription_status, subscription_period_end')
     .eq('id', userId)
     .single();
 
   if (profileError || !profile) {
     return res.status(500).json({ error: 'Failed to retrieve user profile.' });
+  }
+
+  if (isPeriodEnded(profile.subscription_period_end)) {
+    if (profile.subscription_status === 'active' || profile.credits_remaining > 0) {
+      await expireSubscriptionAccess(userId);
+    }
+    return res.status(403).json({ error: 'Your subscription has ended. Subscribe to continue grading.' });
   }
 
   if (profile.credits_remaining <= 0) {

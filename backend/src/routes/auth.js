@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { supabaseAdmin, supabaseAuth } = require('../services/supabase');
+const { reconcileUserSubscription } = require('../services/subscriptionSync');
 const { authenticateToken } = require('../middleware/auth');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/email');
 const { saveUserAttribution } = require('../utils/attribution');
@@ -25,7 +26,8 @@ async function fetchProfile(userId) {
       .select(`
         full_name, target_band, target_band_confirmed, credits_remaining, credits_allowance,
         profile_image_url, is_admin, email_verified,
-        subscription_plan, subscription_status, subscription_period_end
+        subscription_plan, subscription_status, subscription_period_end,
+        subscription_cancel_at_period_end
       `)
       .eq('id', userId)
       .single(),
@@ -36,11 +38,16 @@ async function fetchProfile(userId) {
       .eq('status', 'completed'),
   ]);
   if (error) throw new Error(`Profile fetch failed: ${error.message}`);
-  const isSubscribed = data.subscription_status === 'active';
+  const periodEnded = data.subscription_period_end
+    && new Date(data.subscription_period_end) <= new Date();
+  const isSubscribed = data.subscription_status === 'active' && !periodEnded;
   return {
     ...data,
+    credits_remaining: periodEnded ? 0 : data.credits_remaining,
+    credits_allowance: periodEnded ? 1 : (data.credits_allowance ?? 1),
     has_paid: isSubscribed || (paymentCount ?? 0) > 0,
     is_subscribed: isSubscribed,
+    cancel_at_period_end: !!data.subscription_cancel_at_period_end && isSubscribed,
   };
 }
 
@@ -147,13 +154,14 @@ router.post('/register', async (req, res) => {
     );
 
     const token = signToken(data.user.id, data.user.email);
+    const fullProfile = await fetchProfile(data.user.id).catch(() => profile);
 
     return res.status(201).json({
       token,
       user: {
         id: data.user.id,
         email: data.user.email,
-        ...profile,
+        ...fullProfile,
       },
     });
   } catch (err) {
@@ -165,6 +173,7 @@ router.post('/register', async (req, res) => {
 // ─── GET /api/auth/me ─────────────────────────────────────────────────────────
 router.get('/me', authenticateToken, async (req, res) => {
   try {
+    await reconcileUserSubscription(req.user.userId);
     const profile = await fetchProfile(req.user.userId);
     return res.json({
       id: req.user.userId,
@@ -514,13 +523,14 @@ router.post('/google', async (req, res) => {
     }
 
     const token = signToken(user.id, user.email);
+    const fullProfile = await fetchProfile(user.id).catch(() => profile);
 
     return res.json({
       token,
       user: {
         id: user.id,
         email: user.email,
-        ...profile,
+        ...fullProfile,
       },
     });
   } catch (err) {

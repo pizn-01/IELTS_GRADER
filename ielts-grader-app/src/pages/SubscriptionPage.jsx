@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles,
-  ArrowUpRight,
   CheckCircle2,
   AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -19,7 +19,16 @@ function formatDate(iso) {
   });
 }
 
-function StatusBadge({ active }) {
+function StatusBadge({ active, canceling }) {
+  if (canceling) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-[#FFFAEB] text-[#B54708]">
+        <Clock className="w-3 h-3" />
+        Cancels soon
+      </span>
+    );
+  }
+
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
@@ -38,8 +47,6 @@ const SubscriptionPage = () => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [billingLoading, setBillingLoading] = useState(false);
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
-  const [cancelLoading, setCancelLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -52,31 +59,29 @@ const SubscriptionPage = () => {
           subscription_plan: data.subscription_plan,
           subscription_status: data.subscription_status,
           is_subscribed: data.is_subscribed,
+          cancel_at_period_end: data.cancel_at_period_end,
         });
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [updateUser]);
 
-  const openBillingPortal = async (flow, setLoader) => {
-    setLoader(true);
+  const openBillingPortal = async () => {
+    setBillingLoading(true);
     setError('');
     try {
-      const { url } = await api.createBillingPortalSession(
-        flow === 'subscription_update' ? { flow: 'subscription_update' } : {}
-      );
+      const { url } = await api.createBillingPortalSession();
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Failed to open billing portal.');
-      setLoader(false);
+      setBillingLoading(false);
     }
   };
 
   const remaining = status?.credits_remaining ?? user?.credits_remaining ?? 0;
   const allowance = status?.credits_allowance ?? user?.credits_allowance ?? 1;
   const isSubscribed = status?.is_subscribed;
-  const currentPlan = status?.subscription_plan;
-  const isWeekly = isSubscribed && currentPlan === 'weekly';
+  const cancelAtPeriodEnd = status?.cancel_at_period_end;
 
   const barPct = allowance > 0 ? Math.min(100, Math.round((remaining / allowance) * 100)) : 0;
   const isLow = remaining > 0 && remaining <= Math.max(2, Math.floor(allowance * 0.15));
@@ -86,12 +91,15 @@ const SubscriptionPage = () => {
   const pctColor = isExhausted ? 'text-[#F04438]' : isLow ? 'text-[#F59E0B]' : 'text-[#12B76A]';
 
   const planLabel = isSubscribed ? (status?.plan_name || 'Subscription') : 'Free Trial';
-  const renewalLabel = isSubscribed ? formatDate(status?.subscription_period_end) : '—';
+  const periodEndLabel = isSubscribed ? formatDate(status?.subscription_period_end) : '—';
   const billingLabel = isSubscribed
     ? (status?.billing_label || '—')
     : '1 free evaluation included';
 
   const statusMessage = (() => {
+    if (cancelAtPeriodEnd) {
+      return `Cancellation scheduled — you keep access and remaining credits until ${periodEndLabel}, then credits reset to 0.`;
+    }
     if (isSubscribed && isExhausted) {
       return 'All evaluations used this period — credits reset on renewal.';
     }
@@ -109,7 +117,7 @@ const SubscriptionPage = () => {
       : 'Subscribe for 20/week or 100/month after your free trial.';
   })();
 
-  const statusTone = isExhausted && !isSubscribed ? 'amber' : isExhausted ? 'neutral' : isLow ? 'amber' : 'neutral';
+  const statusTone = cancelAtPeriodEnd || (isExhausted && !isSubscribed) || isLow ? 'amber' : 'neutral';
 
   return (
     <div className="w-full max-w-[800px] mx-auto px-4 sm:px-6 py-8 sm:py-10 text-[#101828]">
@@ -132,16 +140,17 @@ const SubscriptionPage = () => {
         </div>
       ) : (
         <section className="bg-white rounded-2xl border border-[#D0D5DD] shadow-sm overflow-hidden">
-          {/* Plan summary */}
           <div className="px-5 sm:px-6 py-4 sm:py-5 flex flex-wrap items-start justify-between gap-3 border-b border-[#F2F4F7]">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-[18px] font-bold text-[#101828]">{planLabel}</h2>
-                <StatusBadge active={isSubscribed} />
+                <StatusBadge active={isSubscribed} canceling={cancelAtPeriodEnd} />
               </div>
               {isSubscribed ? (
                 <p className="text-[13px] text-[#667085] mt-1">
-                  Next renewal · {renewalLabel}
+                  {cancelAtPeriodEnd
+                    ? `Access ends · ${periodEndLabel}`
+                    : `Next renewal · ${periodEndLabel}`}
                 </p>
               ) : (
                 <p className="text-[13px] text-[#667085] mt-1">{billingLabel}</p>
@@ -152,7 +161,6 @@ const SubscriptionPage = () => {
             </p>
           </div>
 
-          {/* Usage */}
           <div className="px-5 sm:px-6 py-4 border-b border-[#F2F4F7]">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[14px] font-bold text-[#101828]">
@@ -192,7 +200,6 @@ const SubscriptionPage = () => {
             </div>
           </div>
 
-          {/* Details */}
           <div className="px-5 sm:px-6 py-4 border-b border-[#F2F4F7] grid sm:grid-cols-2 gap-5 sm:gap-6">
             {isSubscribed ? (
               <>
@@ -226,19 +233,21 @@ const SubscriptionPage = () => {
                   <dl className="space-y-1.5 text-[13px]">
                     <div className="flex justify-between gap-3">
                       <dt className="text-[#667085]">Status</dt>
-                      <dd className="font-semibold text-[#027A48]">Active</dd>
+                      <dd className={`font-semibold ${cancelAtPeriodEnd ? 'text-[#B54708]' : 'text-[#027A48]'}`}>
+                        {cancelAtPeriodEnd ? 'Canceling' : 'Active'}
+                      </dd>
                     </div>
                     <div className="flex justify-between gap-3">
-                      <dt className="text-[#667085]">Next charge</dt>
-                      <dd className="font-semibold text-[#344054]">{renewalLabel}</dd>
+                      <dt className="text-[#667085]">{cancelAtPeriodEnd ? 'Access ends' : 'Next charge'}</dt>
+                      <dd className="font-semibold text-[#344054]">{periodEndLabel}</dd>
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt className="text-[#667085]">Amount</dt>
                       <dd className="font-semibold text-[#344054]">{billingLabel}</dd>
                     </div>
                     <div className="flex justify-between gap-3">
-                      <dt className="text-[#667085]">Credits reset</dt>
-                      <dd className="font-semibold text-[#344054]">On renewal</dd>
+                      <dt className="text-[#667085]">After period ends</dt>
+                      <dd className="font-semibold text-[#344054]">Credits reset to 0</dd>
                     </div>
                   </dl>
                 </div>
@@ -280,13 +289,25 @@ const SubscriptionPage = () => {
             )}
           </div>
 
-          {/* Context note */}
           <div className="px-5 sm:px-6 py-3 border-b border-[#F2F4F7] bg-[#FAFBFC]">
             {isSubscribed ? (
-              <p className="text-[12px] text-[#667085] leading-relaxed">
-                Use <span className="font-semibold text-[#344054]">Manage Subscription</span> to update your card,
-                view invoices, switch plans, or cancel.
-              </p>
+              <div className="text-[12px] text-[#667085] leading-relaxed space-y-1.5">
+                <p>
+                  <span className="font-semibold text-[#344054]">Manage Subscription</span> opens Stripe
+                  where you can cancel, upgrade, update your card, or view invoices.
+                </p>
+                {cancelAtPeriodEnd ? (
+                  <p>
+                    Your cancellation is already confirmed for {periodEndLabel}. To keep your plan,
+                    choose <span className="font-semibold text-[#344054]">Don&apos;t cancel subscription</span> in Stripe.
+                  </p>
+                ) : (
+                  <p>
+                    To cancel: open Manage Subscription → select your plan →{' '}
+                    <span className="font-semibold text-[#344054]">Cancel plan</span>. You keep access until the period ends.
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="text-[12px] text-[#667085] leading-relaxed">
                 {isExhausted
@@ -296,45 +317,14 @@ const SubscriptionPage = () => {
             )}
           </div>
 
-          {isWeekly && (
-            <div className="px-5 sm:px-6 py-3 border-b border-[#F2F4F7] bg-gradient-to-r from-[#EFF8FF] to-[#F0F9FF] flex gap-2">
-              <ArrowUpRight className="w-4 h-4 text-[#1A96F3] shrink-0 mt-0.5" />
-              <p className="text-[13px] text-[#475467] leading-snug">
-                <span className="font-semibold text-[#101828]">Upgrade to Monthly</span>
-                {' — '}
-                {SUBSCRIPTION_PLANS.monthly.credits} evaluations for {SUBSCRIPTION_PLANS.monthly.label}
-                {' '}(~50% less per exam).
-              </p>
-            </div>
-          )}
-
-          {/* Actions */}
           <div className="px-5 sm:px-6 py-4">
             {isSubscribed ? (
-              <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:justify-end">
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => openBillingPortal(null, setCancelLoading)}
-                  disabled={billingLoading || upgradeLoading || cancelLoading}
-                  className="w-full sm:w-auto px-5 h-10 bg-white border border-[#D0D5DD] rounded-lg text-[13px] font-bold text-[#344054] hover:bg-[#F9FAFB] transition-all disabled:opacity-60"
-                >
-                  {cancelLoading ? 'Opening…' : 'Cancel Subscription'}
-                </button>
-                {isWeekly && (
-                  <button
-                    type="button"
-                    onClick={() => openBillingPortal('subscription_update', setUpgradeLoading)}
-                    disabled={billingLoading || upgradeLoading || cancelLoading}
-                    className="w-full sm:w-auto px-5 h-10 bg-white border border-[#1A96F3] text-[#1A96F3] rounded-lg text-[13px] font-bold hover:bg-[#EFF8FF] transition-all disabled:opacity-60"
-                  >
-                    {upgradeLoading ? 'Opening…' : 'Upgrade to Monthly'}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => openBillingPortal(null, setBillingLoading)}
-                  disabled={billingLoading || upgradeLoading || cancelLoading}
-                  className="w-full sm:w-auto px-5 h-10 bg-[#344054] text-white rounded-lg text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
+                  onClick={openBillingPortal}
+                  disabled={billingLoading}
+                  className="w-full sm:w-auto px-8 h-10 bg-[#344054] text-white rounded-lg text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60"
                 >
                   {billingLoading ? 'Opening…' : 'Manage Subscription'}
                 </button>
