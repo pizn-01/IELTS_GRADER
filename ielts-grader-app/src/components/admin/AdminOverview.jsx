@@ -363,7 +363,8 @@ export default function AdminOverview({ onNavigateTab }) {
           <StatRow label="Graded rate" value={`${stats.submissions?.grading_rate_in_period ?? 0}%`} />
           <StatRow label="Graded" value={stats.submissions?.graded_in_period ?? 0} />
           <StatRow label="Question assignments" value={stats.assignments?.in_period ?? 0} />
-          <StatRow label="Revenue" value={formatRevenue(stats.payments?.revenue_cents_in_period)} />
+          <StatRow label="Revenue" value={formatRevenue(stats.payments?.revenue_cents_in_period)} sub={`${periodShort} window`} />
+          <StatRow label="All-time revenue" value={formatRevenue(stats.payments?.revenue_cents_all_time)} />
           <StatRow
             label="Active discounts"
             value={stats.discounts?.active ?? 0}
