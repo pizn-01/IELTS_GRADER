@@ -142,6 +142,7 @@ export default function AdminOverview({ onNavigateTab }) {
 
   const acq = stats?.acquisition;
   const periodLabel = `Last ${days} days`;
+  const periodShort = `${days}d`;
 
   const formatChartDate = (date) => {
     if (!date) return '';
@@ -160,12 +161,12 @@ export default function AdminOverview({ onNavigateTab }) {
   })();
   const timeseriesXAngle = days > 14 ? -45 : 0;
 
-  const openTickets = stats?.support?.open ?? 0;
-  const inProgressTickets = stats?.support?.in_progress ?? 0;
-  const gradingQueue = stats?.submissions?.grading ?? 0;
+  const ticketsOpenedPeriod = stats?.support?.opened_in_period ?? 0;
+  const ticketsResolvedPeriod = stats?.support?.resolved_in_period ?? 0;
+  const gradingInPeriod = stats?.submissions?.grading_in_period ?? 0;
   const failedPeriod = stats?.submissions?.failed_in_period ?? 0;
   const needsAttention =
-    openTickets > 0 || inProgressTickets > 0 || gradingQueue > 0 || failedPeriod > 0;
+    ticketsOpenedPeriod > 0 || gradingInPeriod > 0 || failedPeriod > 0;
 
   if (loading && !stats) {
     return (
@@ -192,33 +193,33 @@ export default function AdminOverview({ onNavigateTab }) {
     {
       label: 'Revenue',
       value: formatRevenue(stats.payments?.revenue_cents_in_period),
-      sub: `${stats.payments?.count_in_period ?? 0} payments`,
+      sub: `${stats.payments?.count_in_period ?? 0} payments · ${periodShort}`,
     },
     {
-      label: 'Subscribers',
-      value: stats.subscriptions?.active ?? 0,
-      sub: `${stats.subscriptions?.canceled ?? 0} canceled`,
+      label: 'Paid subs',
+      value: stats.subscriptions?.new_in_period ?? 0,
+      sub: `${stats.subscriptions?.active ?? 0} active now`,
     },
     {
       label: 'Signups',
       value: acq?.signup_count ?? 0,
-      sub: `${acq?.conversion_rate ?? 0}% conversion`,
+      sub: `${acq?.conversion_rate ?? 0}% conversion · ${periodShort}`,
     },
     {
       label: 'Sessions',
       value: acq?.total_sessions ?? 0,
-      sub: `${acq?.anonymous_sessions ?? 0} anonymous`,
+      sub: `${acq?.anonymous_sessions ?? 0} anonymous · ${periodShort}`,
     },
   ];
 
   const exploreLinks = [
-    { tab: 'Users', label: 'Users', count: stats.users?.total },
+    { tab: 'Users', label: 'Users', count: stats.users?.new_in_period },
     { tab: 'Acquisition', label: 'Acquisition' },
-    { tab: 'Submissions', label: 'Submissions' },
+    { tab: 'Submissions', label: 'Submissions', count: stats.submissions?.total_in_period },
     { tab: 'Tasks', label: 'Tasks' },
-    { tab: 'Assignments', label: 'Assignments', count: stats.assignments?.total },
+    { tab: 'Assignments', label: 'Assignments', count: stats.assignments?.in_period },
     { tab: 'Discounts', label: 'Discounts' },
-    { tab: 'Support', label: 'Support' },
+    { tab: 'Support', label: 'Support', count: ticketsOpenedPeriod },
   ];
 
   const topCountry = byCountry[0]?.country || '—';
@@ -247,7 +248,7 @@ export default function AdminOverview({ onNavigateTab }) {
 
       <div className={`grid grid-cols-1 lg:grid-cols-3 gap-4 transition-opacity ${loading ? 'opacity-60' : ''}`}>
         <div className="lg:col-span-2">
-          <DashboardPanel title="Sessions vs signups">
+          <DashboardPanel title={`Sessions vs signups · ${periodShort}`}>
           <div className={days > 14 ? 'h-[260px]' : 'h-[220px]'}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
@@ -275,37 +276,37 @@ export default function AdminOverview({ onNavigateTab }) {
         </div>
 
         <div className="lg:col-span-1">
-          <DashboardPanel title="Needs attention">
+          <DashboardPanel title={`Needs attention · ${periodShort}`}>
             {!needsAttention ? (
-              <p className="text-[13px] text-gray-400 py-4">All clear — nothing needs attention.</p>
+              <p className="text-[13px] text-gray-400 py-4">All clear — nothing needs attention in this period.</p>
             ) : (
               <>
                 <AttentionRow
-                  label="Open support tickets"
-                  count={openTickets}
+                  label="Tickets opened"
+                  count={ticketsOpenedPeriod}
                   tab="Support"
                   onNavigate={onNavigateTab}
                   alertLevel="red"
                 />
                 <AttentionRow
-                  label="Grading in progress"
-                  count={gradingQueue}
+                  label="Grading in period"
+                  count={gradingInPeriod}
                   tab="Submissions"
                   onNavigate={onNavigateTab}
                   alwaysShow
                   alertLevel="amber"
                 />
                 <AttentionRow
-                  label="Failed exams (period)"
+                  label="Failed exams"
                   count={failedPeriod}
                   tab="Submissions"
                   onNavigate={onNavigateTab}
                   alertLevel="red"
                 />
                 <StatRow
-                  label="Support queue total"
-                  value={openTickets + inProgressTickets}
-                  sub={`${inProgressTickets} in progress`}
+                  label="Tickets resolved"
+                  value={ticketsResolvedPeriod}
+                  sub={`in ${periodShort}`}
                 />
               </>
             )}
@@ -315,7 +316,7 @@ export default function AdminOverview({ onNavigateTab }) {
 
       <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity ${loading ? 'opacity-60' : ''}`}>
         <DashboardPanel
-          title="Acquisition"
+          title={`Acquisition · ${periodShort}`}
           footer={<PanelLink label="View Acquisition →" onClick={() => onNavigateTab?.('Acquisition')} />}
         >
           <StatRow label="Pageviews" value={acq?.total_pageviews ?? 0} />
@@ -326,12 +327,12 @@ export default function AdminOverview({ onNavigateTab }) {
           <StatRow
             label="New users"
             value={stats.users?.new_in_period ?? 0}
-            sub={`+${stats.users?.new_this_week ?? 0} this week`}
+            sub={days === 7 ? `+${stats.users?.new_this_week ?? 0} this week` : undefined}
           />
         </DashboardPanel>
 
         <DashboardPanel
-          title="Product & ops"
+          title={`Product & ops · ${periodShort}`}
           footer={
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               <PanelLink label="View Submissions →" onClick={() => onNavigateTab?.('Submissions')} />
@@ -339,19 +340,21 @@ export default function AdminOverview({ onNavigateTab }) {
             </div>
           }
         >
-          <StatRow label="Total exams" value={stats.submissions?.total ?? 0} />
-          <StatRow label="Graded rate" value={`${stats.submissions?.grading_rate ?? 0}%`} />
-          <StatRow label="Graded this period" value={stats.submissions?.graded_in_period ?? 0} />
+          <StatRow label="Exams taken" value={stats.submissions?.total_in_period ?? 0} />
+          <StatRow label="Graded rate" value={`${stats.submissions?.grading_rate_in_period ?? 0}%`} />
+          <StatRow label="Graded" value={stats.submissions?.graded_in_period ?? 0} />
+          <StatRow label="Question assignments" value={stats.assignments?.in_period ?? 0} />
+          <StatRow label="Revenue" value={formatRevenue(stats.payments?.revenue_cents_in_period)} />
           <StatRow
-            label="Active question tasks"
-            value={`${stats.tasks?.active ?? 0} / ${stats.tasks?.total ?? 0}`}
+            label="Active discounts"
+            value={stats.discounts?.active ?? 0}
+            sub="current inventory"
           />
-          <StatRow label="Active discounts" value={stats.discounts?.active ?? 0} />
-          <StatRow label="All-time revenue" value={formatRevenue(stats.payments?.revenue_cents_all_time)} />
         </DashboardPanel>
       </div>
 
       <ExploreBar links={exploreLinks} onNavigate={onNavigateTab} />
+      <p className="text-[11px] text-gray-400">Explore counts reflect the selected {periodShort} window.</p>
     </div>
   );
 }
