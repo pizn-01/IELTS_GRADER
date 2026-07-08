@@ -68,6 +68,7 @@ function computeOverview(sessions, pageViews, signups) {
 
   const channelCounts = aggregateByKey(sessions, (s) => s.channel);
   const topChannel = channelCounts[0]?.key || '—';
+  const signupCount = signups.length;
 
   return {
     total_sessions: totalSessions,
@@ -78,8 +79,13 @@ function computeOverview(sessions, pageViews, signups) {
     bounce_rate: totalSessions ? Math.round((bounced / totalSessions) * 100) : 0,
     avg_pages_per_session: totalSessions ? Math.round((totalPages / totalSessions) * 10) / 10 : 0,
     avg_duration_seconds: totalSessions ? Math.round(totalDuration / totalSessions) : 0,
-    signup_count: signups.length,
+    signup_count: signupCount,
+    // Sessions that linked to a signup (converted_user_id set) / total sessions in period
+    session_conversion_rate: totalSessions ? Math.round((convertedSessions / totalSessions) * 1000) / 10 : 0,
+    // Legacy alias
     conversion_rate: totalSessions ? Math.round((convertedSessions / totalSessions) * 1000) / 10 : 0,
+    // New accounts / sessions in period (can exceed 100% when signups lack a tracked session)
+    signup_per_session: totalSessions ? Math.round((signupCount / totalSessions) * 1000) / 10 : 0,
     top_channel: topChannel,
     timezone: REPORT_TIMEZONE,
   };

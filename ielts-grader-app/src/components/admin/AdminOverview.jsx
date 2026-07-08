@@ -189,6 +189,11 @@ export default function AdminOverview({ onNavigateTab }) {
     return <p className="text-gray-400 text-[14px]">Failed to load dashboard.</p>;
   }
 
+  const sessionConversionRate = acq?.session_conversion_rate ?? acq?.conversion_rate ?? 0;
+  const convertedSessions = acq?.converted_sessions ?? 0;
+  const totalSessions = acq?.total_sessions ?? 0;
+  const signupCount = acq?.signup_count ?? 0;
+
   const northStarItems = [
     {
       label: 'Revenue',
@@ -198,16 +203,18 @@ export default function AdminOverview({ onNavigateTab }) {
     {
       label: 'Paid subs',
       value: stats.subscriptions?.new_in_period ?? 0,
-      sub: `${stats.subscriptions?.active ?? 0} active now`,
+      sub: `${stats.subscriptions?.active ?? 0} active now (live snapshot)`,
     },
     {
       label: 'Signups',
-      value: acq?.signup_count ?? 0,
-      sub: `${acq?.conversion_rate ?? 0}% conversion · ${periodShort}`,
+      value: signupCount,
+      sub: totalSessions
+        ? `${convertedSessions}/${totalSessions} sessions linked (${sessionConversionRate}%)`
+        : `no tracked sessions · ${periodShort}`,
     },
     {
       label: 'Sessions',
-      value: acq?.total_sessions ?? 0,
+      value: totalSessions,
       sub: `${acq?.anonymous_sessions ?? 0} anonymous · ${periodShort}`,
     },
   ];
@@ -245,6 +252,14 @@ export default function AdminOverview({ onNavigateTab }) {
       </div>
 
       <MetricStrip items={northStarItems} />
+
+      <p className="text-[11px] text-gray-400 leading-relaxed">
+        <span className="font-semibold text-gray-500">How to read these:</span>{' '}
+        Sessions and signups are counted inside the selected window. Signups are new accounts; sessions are tracked visits — signups can exceed sessions when users register without a tracked visit. Conversion % is sessions linked to a signup ({convertedSessions}/{totalSessions}), not signups ÷ sessions.
+        {signupCount > totalSessions && totalSessions > 0 && (
+          <span className="text-gray-500"> This period has more signups than sessions, which is expected when attribution is missing.</span>
+        )}
+      </p>
 
       <div className={`grid grid-cols-1 lg:grid-cols-3 gap-4 transition-opacity ${loading ? 'opacity-60' : ''}`}>
         <div className="lg:col-span-2">
@@ -322,6 +337,11 @@ export default function AdminOverview({ onNavigateTab }) {
           <StatRow label="Pageviews" value={acq?.total_pageviews ?? 0} />
           <StatRow label="Bounce rate" value={`${acq?.bounce_rate ?? 0}%`} />
           <StatRow label="Avg pages / session" value={acq?.avg_pages_per_session ?? 0} />
+          <StatRow
+            label="Sessions linked to signup"
+            value={`${convertedSessions} / ${totalSessions}`}
+            sub={`${sessionConversionRate}% of sessions`}
+          />
           <StatRow label="Top channel" value={(acq?.top_channel || '—').replace(/_/g, ' ')} />
           <StatRow label="Top country" value={topCountry} />
           <StatRow
