@@ -47,39 +47,107 @@ router.use(authenticateToken, requireAdmin);
 // Dashboard overview card counts
 router.get('/stats', async (req, res) => {
   try {
+    const days = parseDays(req.query.days, 7);
+    const since = sinceIso(days);
     const now = new Date();
     const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const [
       { count: totalUsers },
       { count: newUsersWeek },
+      { count: newUsersPeriod },
       { count: totalSubmissions },
       { count: gradedSubmissions },
       { count: failedSubmissions },
+      { count: gradingSubmissions },
+      { count: gradedInPeriod },
+      { count: failedInPeriod },
       { count: openSupport },
       { count: inProgressSupport },
       { count: resolvedSupport },
       { count: activeDiscounts },
+      { count: activeSubscriptions },
+      { count: canceledSubscriptions },
+      { count: activeTasks },
+      { count: totalTasks },
+      { count: totalAssignments },
+      { count: paymentsAllTime },
+      { count: paymentsInPeriod },
+      sessions,
+      pageViews,
+      signups,
+      completedPayments,
     ] = await Promise.all([
       supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
       supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
+      supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', since),
       supabaseAdmin.from('submissions').select('*', { count: 'exact', head: true }),
       supabaseAdmin.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'graded'),
       supabaseAdmin.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'failed'),
+      supabaseAdmin.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'grading'),
+      supabaseAdmin.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'graded').gte('created_at', since),
+      supabaseAdmin.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'failed').gte('created_at', since),
       supabaseAdmin.from('support_messages').select('*', { count: 'exact', head: true }).eq('status', 'open'),
       supabaseAdmin.from('support_messages').select('*', { count: 'exact', head: true }).eq('status', 'in_progress'),
       supabaseAdmin.from('support_messages').select('*', { count: 'exact', head: true }).eq('status', 'resolved'),
       supabaseAdmin.from('discount_codes').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).eq('subscription_status', 'active'),
+      supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).eq('subscription_status', 'canceled'),
+      supabaseAdmin.from('exam_tasks').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabaseAdmin.from('exam_tasks').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('user_question_assignments').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+      supabaseAdmin.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'completed').gte('created_at', since),
+      fetchSessionsSince(since),
+      fetchPageViewsSince(since),
+      fetchSignupsSince(since),
+      fetchAllRows(() =>
+        supabaseAdmin
+          .from('payments')
+          .select('amount_cents, created_at')
+          .eq('status', 'completed')
+      ),
     ]);
 
+    const revenueAllTime = (completedPayments || []).reduce((sum, p) => sum + (p.amount_cents || 0), 0);
+    const revenueInPeriod = (completedPayments || [])
+      .filter((p) => p.created_at >= since)
+      .reduce((sum, p) => sum + (p.amount_cents || 0), 0);
+
     return res.json({
-      users: { total: totalUsers || 0, new_this_week: newUsersWeek || 0 },
+      period_days: days,
+      users: {
+        total: totalUsers || 0,
+        new_this_week: newUsersWeek || 0,
+        new_in_period: newUsersPeriod || 0,
+      },
       submissions: {
         total: totalSubmissions || 0,
         graded: gradedSubmissions || 0,
         failed: failedSubmissions || 0,
+        grading: gradingSubmissions || 0,
+        graded_in_period: gradedInPeriod || 0,
+        failed_in_period: failedInPeriod || 0,
         grading_rate: totalSubmissions ? Math.round(((gradedSubmissions || 0) / totalSubmissions) * 100) : 0,
       },
+      subscriptions: {
+        active: activeSubscriptions || 0,
+        canceled: canceledSubscriptions || 0,
+      },
+      payments: {
+        count_all_time: paymentsAllTime || 0,
+        revenue_cents_all_time: revenueAllTime,
+        count_in_period: paymentsInPeriod || 0,
+        revenue_cents_in_period: revenueInPeriod,
+      },
+      tasks: {
+        active: activeTasks || 0,
+        total: totalTasks || 0,
+      },
+      assignments: {
+        total: totalAssignments || 0,
+      },
+      acquisition: computeOverview(sessions, pageViews, signups),
       support: {
         open: openSupport || 0,
         in_progress: inProgressSupport || 0,

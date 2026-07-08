@@ -477,7 +477,10 @@ export const api = {
 
   // ─── Admin API ───────────────────────────────────────────────────────────────
   admin: {
-    getStats: () => fetch(`${BASE_URL}/admin/stats`, { headers: getHeaders() }).then(r => r.json()),
+    getStats: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/stats${q ? `?${q}` : ''}`, { headers: getHeaders() }).then(r => r.json());
+    },
     getUsers: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return fetch(`${BASE_URL}/admin/users?${q}`, { headers: getHeaders() }).then(r => r.json());

@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import ExamQuestionPanel from '../components/ExamQuestionPanel';
 import { buildPreviewQuestionText } from '../utils/buildPreviewQuestionText';
 import { extractFileText } from '../utils/extractFileText';
-import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson, Image as ImageIcon, Globe } from 'lucide-react';
+import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson, Image as ImageIcon, Globe, DollarSign, TrendingUp, UserPlus, Activity, CreditCard, Layers, ArrowRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const readAsDataURL = (file) =>
@@ -68,24 +68,279 @@ const Stat = ({ label, value, sub }) => (
   </div>
 );
 
-// ── Overview Tab ──────────────────────────────────────────────────────────────
-const OverviewTab = () => {
-  const [stats, setStats] = useState(null);
-  useEffect(() => { api.admin.getStats().then(setStats).catch(() => {}); }, []);
+const KPI_ACCENTS = {
+  blue:    { border: 'border-l-blue-500',   bg: 'bg-blue-50',   text: 'text-blue-600' },
+  emerald: { border: 'border-l-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-600' },
+  violet:  { border: 'border-l-violet-500',  bg: 'bg-violet-50',  text: 'text-violet-600' },
+  amber:   { border: 'border-l-amber-500',   bg: 'bg-amber-50',   text: 'text-amber-600' },
+  rose:    { border: 'border-l-rose-500',    bg: 'bg-rose-50',    text: 'text-rose-600' },
+  slate:   { border: 'border-l-slate-500',   bg: 'bg-slate-100',  text: 'text-slate-600' },
+  indigo:  { border: 'border-l-indigo-500',  bg: 'bg-indigo-50',  text: 'text-indigo-600' },
+};
 
-  if (!stats) return <p className="text-gray-400 text-[14px] p-8">Loading…</p>;
+const KpiCard = ({ label, value, sub, icon: Icon, accent = 'slate', hero = false, onClick }) => {
+  const colors = KPI_ACCENTS[accent] || KPI_ACCENTS.slate;
+  const clickable = typeof onClick === 'function';
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat label="Total Users"     value={stats.users?.total}         sub={`+${stats.users?.new_this_week} this week`} />
-        <Stat label="Total Exams"     value={stats.submissions?.total}   sub={`${stats.submissions?.grading_rate}% graded`} />
-        <Stat label="Failed Grading"  value={stats.submissions?.failed}  />
-        <Stat label="Active Discounts" value={stats.discounts?.active}   />
+    <div
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+      className={`bg-white rounded-[16px] border border-gray-100 shadow-sm border-l-4 ${colors.border} ${hero ? 'p-7' : 'p-5'} ${clickable ? 'cursor-pointer hover:shadow-md hover:border-gray-200 transition-all' : ''}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">{label}</p>
+          <p className={`${hero ? 'text-[36px]' : 'text-[28px]'} font-black text-[#101828] leading-none truncate`}>{value ?? '—'}</p>
+          {sub && <p className="text-[12px] text-gray-400 mt-1.5">{sub}</p>}
+        </div>
+        {Icon && (
+          <div className={`shrink-0 w-10 h-10 rounded-[12px] flex items-center justify-center ${colors.bg}`}>
+            <Icon size={hero ? 20 : 18} className={colors.text} />
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        <Stat label="Open Tickets"       value={stats.support?.open}       />
-        <Stat label="In Progress"        value={stats.support?.in_progress}/>
-        <Stat label="Resolved Tickets"   value={stats.support?.resolved}   />
+    </div>
+  );
+};
+
+const SectionBlock = ({ title, description, children }) => (
+  <div className="space-y-3">
+    <div>
+      <h2 className="text-[13px] font-bold uppercase tracking-wider text-gray-400">{title}</h2>
+      {description && <p className="text-[12px] text-gray-400 mt-0.5">{description}</p>}
+    </div>
+    {children}
+  </div>
+);
+
+const DateRangeBar = ({ days, setDays }) => (
+  <div className="flex gap-2">
+    {[7, 30, 90].map(d => (
+      <button
+        key={d}
+        onClick={() => setDays(d)}
+        className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+      >
+        {d}d
+      </button>
+    ))}
+  </div>
+);
+
+const formatRevenue = (cents) => `$${((cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// ── Overview Tab ──────────────────────────────────────────────────────────────
+const OverviewTab = ({ onNavigateTab }) => {
+  const [days, setDays] = useState(7);
+  const [stats, setStats] = useState(null);
+  const [timeseries, setTimeseries] = useState([]);
+  const [byChannel, setByChannel] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [s, ts, ch] = await Promise.all([
+        api.admin.getStats({ days }),
+        api.admin.getAcquisitionTimeseries({ days }),
+        api.admin.getAcquisitionByChannel({ days }),
+      ]);
+      setStats(s);
+      setTimeseries(ts.data || []);
+      setByChannel(ch.data || []);
+    } catch {
+      // keep prior data on error
+    } finally {
+      setLoading(false);
+    }
+  }, [days]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const acq = stats?.acquisition;
+  const periodLabel = `last ${days}d`;
+
+  const formatChartDate = (date) => {
+    if (!date) return '';
+    const [, month, day] = date.split('-');
+    return `${month}/${day}`;
+  };
+
+  const timeseriesXTicks = (() => {
+    if (!timeseries.length) return undefined;
+    const step = days <= 7 ? 1 : days <= 30 ? 5 : 13;
+    const ticks = [];
+    for (let i = 0; i < timeseries.length; i += step) ticks.push(timeseries[i].date);
+    const last = timeseries[timeseries.length - 1].date;
+    if (ticks[ticks.length - 1] !== last) ticks.push(last);
+    return ticks;
+  })();
+  const timeseriesXAngle = days > 14 ? -45 : 0;
+
+  if (loading && !stats) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-[16px] border border-gray-100 p-7 h-[120px] animate-pulse bg-gray-50" />
+          ))}
+        </div>
+        <p className="text-gray-400 text-[14px]">Loading dashboard…</p>
+      </div>
+    );
+  }
+
+  if (!stats) return <p className="text-gray-400 text-[14px] p-8">Failed to load dashboard.</p>;
+
+  const FooterLink = ({ label, value, tab }) => (
+    <button
+      type="button"
+      onClick={() => onNavigateTab?.(tab)}
+      className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-[12px] border border-gray-100 shadow-sm hover:border-gray-200 hover:shadow-md transition-all text-left"
+    >
+      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{label}</span>
+      <span className="text-[15px] font-black text-[#101828]">{value}</span>
+      <ArrowRight size={14} className="text-gray-300 ml-auto" />
+    </button>
+  );
+
+  return (
+    <div className={`space-y-8 transition-opacity ${loading ? 'opacity-70' : ''}`}>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-[15px] font-bold text-[#101828]">Dashboard overview</p>
+          <p className="text-[12px] text-gray-400 mt-0.5">Toronto time · metrics for {periodLabel}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <DateRangeBar days={days} setDays={setDays} />
+          <button onClick={load} className="p-2 border border-gray-200 rounded-[10px] hover:bg-gray-50">
+            <RefreshCw size={16} className={`text-gray-400 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          hero
+          label="Sessions"
+          value={acq?.total_sessions ?? 0}
+          sub={`${acq?.anonymous_sessions ?? 0} anonymous · ${periodLabel}`}
+          icon={Globe}
+          accent="blue"
+          onClick={() => onNavigateTab?.('Acquisition')}
+        />
+        <KpiCard
+          hero
+          label="Signups"
+          value={acq?.signup_count ?? 0}
+          sub={`${acq?.conversion_rate ?? 0}% session conversion`}
+          icon={UserPlus}
+          accent="indigo"
+          onClick={() => onNavigateTab?.('Users')}
+        />
+        <KpiCard
+          hero
+          label="Active Subscribers"
+          value={stats.subscriptions?.active ?? 0}
+          sub={`${stats.subscriptions?.canceled ?? 0} canceled`}
+          icon={CreditCard}
+          accent="violet"
+          onClick={() => onNavigateTab?.('Users')}
+        />
+        <KpiCard
+          hero
+          label="Revenue"
+          value={formatRevenue(stats.payments?.revenue_cents_in_period)}
+          sub={`${stats.payments?.count_in_period ?? 0} payments · ${periodLabel}`}
+          icon={DollarSign}
+          accent="emerald"
+        />
+      </div>
+
+      <SectionBlock title="Growth & acquisition" description={`Traffic and signup metrics for ${periodLabel}`}>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <KpiCard label="Pageviews" value={acq?.total_pageviews ?? 0} sub="total page loads" icon={Activity} accent="blue" onClick={() => onNavigateTab?.('Acquisition')} />
+          <KpiCard label="Bounce Rate" value={`${acq?.bounce_rate ?? 0}%`} icon={TrendingUp} accent="amber" onClick={() => onNavigateTab?.('Acquisition')} />
+          <KpiCard label="Avg Pages" value={acq?.avg_pages_per_session ?? 0} sub="per session" icon={Layers} accent="slate" onClick={() => onNavigateTab?.('Acquisition')} />
+          <KpiCard label="Avg Duration" value={formatDuration(acq?.avg_duration_seconds ?? 0)} sub="per session" icon={Clock} accent="slate" onClick={() => onNavigateTab?.('Acquisition')} />
+          <KpiCard label="Top Channel" value={(acq?.top_channel || '—').replace(/_/g, ' ')} icon={Globe} accent="indigo" onClick={() => onNavigateTab?.('Acquisition')} />
+          <KpiCard label="New Users" value={stats.users?.new_in_period ?? 0} sub={`+${stats.users?.new_this_week ?? 0} this week`} icon={Users} accent="blue" onClick={() => onNavigateTab?.('Users')} />
+        </div>
+      </SectionBlock>
+
+      <SectionBlock title="Product usage" description="Exam submissions and grading health">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KpiCard label="Total Exams" value={stats.submissions?.total ?? 0} sub={`${stats.submissions?.grading_rate ?? 0}% graded`} icon={FileText} accent="blue" onClick={() => onNavigateTab?.('Submissions')} />
+          <KpiCard label="Graded" value={stats.submissions?.graded ?? 0} sub={`${stats.submissions?.graded_in_period ?? 0} in period`} icon={CheckCircle} accent="emerald" onClick={() => onNavigateTab?.('Submissions')} />
+          <KpiCard label="Grading Queue" value={stats.submissions?.grading ?? 0} sub="in progress now" icon={Clock} accent="amber" onClick={() => onNavigateTab?.('Submissions')} />
+          <KpiCard label="Failed" value={stats.submissions?.failed ?? 0} sub={`${stats.submissions?.failed_in_period ?? 0} in period`} icon={XCircle} accent="rose" onClick={() => onNavigateTab?.('Submissions')} />
+        </div>
+      </SectionBlock>
+
+      <SectionBlock title="Content & operations" description="Question bank, support queue, and promotions">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KpiCard label="Active Tasks" value={stats.tasks?.active ?? 0} sub={`${stats.tasks?.total ?? 0} total in bank`} icon={BookOpen} accent="violet" onClick={() => onNavigateTab?.('Tasks')} />
+          <KpiCard label="Open Tickets" value={stats.support?.open ?? 0} sub="needs response" icon={MessageSquare} accent="rose" onClick={() => onNavigateTab?.('Support')} />
+          <KpiCard label="In Progress" value={stats.support?.in_progress ?? 0} sub="being handled" icon={AlertCircle} accent="amber" onClick={() => onNavigateTab?.('Support')} />
+          <KpiCard label="Active Discounts" value={stats.discounts?.active ?? 0} icon={Tag} accent="emerald" onClick={() => onNavigateTab?.('Discounts')} />
+        </div>
+      </SectionBlock>
+
+      <SectionBlock title="Trends" description={`Sessions, signups, and channel mix · ${periodLabel}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4 transition-opacity ${loading ? 'opacity-60' : ''}`}>
+          <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions vs Signups</p>
+            <p className="text-[11px] text-gray-400 mb-4">Daily totals over {periodLabel}</p>
+            <div className={days > 14 ? 'h-[280px]' : 'h-[240px]'}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={timeseries}
+                  margin={{ top: 8, right: 12, left: 0, bottom: days > 14 ? 28 : 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="date"
+                    ticks={timeseriesXTicks}
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={formatChartDate}
+                    angle={timeseriesXAngle}
+                    textAnchor={days > 14 ? 'end' : 'middle'}
+                    height={days > 14 ? 60 : 30}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} width={32} />
+                  <Tooltip labelFormatter={formatChartDate} />
+                  <Line type="monotone" dataKey="sessions" stroke="#2C3E50" strokeWidth={2} dot={false} activeDot={{ r: 4 }} name="Sessions" />
+                  <Line type="monotone" dataKey="signups" stroke="#3B82F6" strokeWidth={2} dot={false} activeDot={{ r: 4 }} name="Signups" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Top Channels</p>
+            <p className="text-[11px] text-gray-400 mb-4">Session volume by acquisition channel</p>
+            <div className="h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={byChannel.slice(0, 5)} layout="vertical" margin={{ left: 80 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <YAxis type="category" dataKey="channel" tick={{ fontSize: 11 }} width={75} tickFormatter={v => v.replace(/_/g, ' ')} />
+                  <Tooltip />
+                  <Bar dataKey="sessions" fill="#2C3E50" name="Sessions" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </SectionBlock>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <FooterLink label="Total users" value={stats.users?.total ?? 0} tab="Users" />
+        <FooterLink label="Assignments" value={stats.assignments?.total ?? 0} tab="Assignments" />
+        <FooterLink label="Resolved tickets" value={stats.support?.resolved ?? 0} tab="Support" />
+        <FooterLink label="All-time revenue" value={formatRevenue(stats.payments?.revenue_cents_all_time)} tab="Users" />
       </div>
     </div>
   );
@@ -245,20 +500,6 @@ const UsersTab = () => {
 };
 
 // ── Acquisition Tab ───────────────────────────────────────────────────────────
-const DateRangeBar = ({ days, setDays }) => (
-  <div className="flex gap-2">
-    {[7, 30, 90].map(d => (
-      <button
-        key={d}
-        onClick={() => setDays(d)}
-        className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-      >
-        {d}d
-      </button>
-    ))}
-  </div>
-);
-
 const AcquisitionTab = () => {
   const [days, setDays] = useState(7);
   const [overview, setOverview] = useState(null);
@@ -1921,7 +2162,7 @@ export default function AdminPage() {
       {/* ── Main content ───────────────────────────────────────────────────── */}
       <div className="md:ml-[220px] pt-[56px] md:pt-0 p-4 md:p-8 min-h-screen">
         <h1 className="text-[20px] md:text-[22px] font-black text-[#101828] mb-5 md:mb-6">{tab}</h1>
-        {tab === 'Overview'     && <OverviewTab />}
+        {tab === 'Overview'     && <OverviewTab onNavigateTab={switchTab} />}
         {tab === 'Users'        && <UsersTab />}
         {tab === 'Acquisition'  && <AcquisitionTab />}
         {tab === 'Submissions'  && <SubmissionsTab />}
