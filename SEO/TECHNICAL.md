@@ -20,8 +20,8 @@ Google can render JavaScript, but a pure SPA shares one HTML shell. Mitigations 
 Post-build script: `ielts-grader-app/scripts/prerender.mjs` (runs via `npm run build`).
 
 ```bash
-cd ielts-grader-app && npm run build
-# Skip prerender locally: npm run build:no-prerender
+cd ielts-grader-app && npm run build              # Vercel / production (no Puppeteer)
+cd ielts-grader-app && npm run build:prerender    # local/CI with Chromium available
 ```
 
 Routes prerendered:

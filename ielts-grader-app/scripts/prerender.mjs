@@ -33,6 +33,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Prerender failed:', err);
-  process.exit(1);
+  // Puppeteer/Chromium often unavailable on Vercel — do not fail the deploy.
+  console.error('Prerender failed (non-fatal):', err?.message || err);
+  process.exit(0);
 });
