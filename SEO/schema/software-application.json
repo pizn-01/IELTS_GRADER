@@ -1,0 +1,22 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "IELTS AI Tutor by IELTSGRADER",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Web",
+  "url": "https://ieltsgrader.com/",
+  "description": "AI writing tutor for IELTS that grades essays in 60 seconds, explains mistakes, and builds personalized study plans for Task 1 and Task 2.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "description": "Free first evaluation"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "ratingCount": "2400",
+    "bestRating": "5",
+    "worstRating": "1"
+  }
+}

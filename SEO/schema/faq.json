@@ -1,0 +1,38 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is an IELTS AI Tutor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An IELTS AI Tutor is an AI-powered writing coach that grades your IELTS essays, explains mistakes criterion by criterion, and builds personalized study plans. IELTS AI Tutor by IELTSGRADER covers Task 1, Task 2, Academic and General Training."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How fast do I get my IELTS writing band score?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You receive your overall band score and detailed feedback in about 60 seconds after submitting your essay."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the first IELTS essay evaluation free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. New users get one free full evaluation with no credit card required."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does the AI tutor cover Task 1 and Task 2?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. The tutor evaluates Academic Task 1 reports, General Training letters, and Task 2 essays with feedback aligned to official IELTS band descriptors."
+      }
+    }
+  ]
+}

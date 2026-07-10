@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /report
+Disallow: /performance
+Disallow: /learning
+Disallow: /settings
+Disallow: /admin
+Disallow: /subscription
+Disallow: /upgrade
+Disallow: /analysis-ready
+Disallow: /selection
+
+Sitemap: https://ieltsgrader.com/sitemap.xml

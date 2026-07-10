@@ -1,0 +1,23 @@
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to check your IELTS essay with an AI tutor",
+  "description": "Get your IELTS writing band score and personalized feedback in 60 seconds using IELTS AI Tutor by IELTSGRADER.",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Paste your essay",
+      "text": "Enter your IELTS question and essay text, or upload a PDF, Word file, or photo of handwritten work."
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Submit for grading",
+      "text": "The AI tutor evaluates Task Response, Coherence, Lexical Resource, and Grammar against official band descriptors."
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Review your report",
+      "text": "Read your band score, fix cards, model answer, and personalized study plan to improve your next essay."
+    }
+  ]
+}

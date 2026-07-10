@@ -13,9 +13,15 @@ const Footer = () => {
         <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
           {/* Links */}
           <div className="flex flex-wrap gap-4 md:gap-5 justify-center">
-            {['FAQ', 'Terms', 'Privacy', 'Cookies'].map((link) => (
-              <a key={link} href="#" className="text-[13px] text-[#6B7280] no-underline hover:text-[#1a1f36] transition-colors">
-                {link}
+            {[
+              { label: 'Blog', href: '/blog' },
+              { label: 'FAQ', href: '/#faqs' },
+              { label: 'Terms', href: '/terms' },
+              { label: 'Privacy', href: '/privacy' },
+              { label: 'Cookies', href: '/cookies' },
+            ].map((link) => (
+              <a key={link.label} href={link.href} className="text-[13px] text-[#6B7280] no-underline hover:text-[#1a1f36] transition-colors">
+                {link.label}
               </a>
             ))}
           </div>

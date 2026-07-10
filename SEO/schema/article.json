@@ -1,0 +1,21 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "ARTICLE_TITLE",
+  "description": "ARTICLE_DESCRIPTION",
+  "author": {
+    "@type": "Organization",
+    "name": "IELTS AI Tutor by IELTSGRADER"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "IELTSGRADER",
+    "url": "https://ieltsgrader.com"
+  },
+  "datePublished": "YYYY-MM-DD",
+  "dateModified": "YYYY-MM-DD",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://ieltsgrader.com/blog/SLUG"
+  }
+}

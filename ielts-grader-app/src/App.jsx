@@ -53,6 +53,25 @@ import { useAuth } from './context/AuthContext';
 
 import { useVisitorTracking } from './hooks/useVisitorTracking';
 
+// ── SEO pages (additive — no marketing redesign) ─────────────────────────────
+import BlogListPage from './pages/BlogListPage';
+import BlogPostPage from './pages/BlogPostPage';
+import LegalPage from './pages/LegalPage';
+import ToolLandingPage from './seo/ToolLandingPage';
+import { toolPages } from './content/toolPagesData';
+
+const SEO_MARKETING_ROUTES = [
+  '/',
+  '/pricing',
+  '/checkout',
+  '/checkout/success',
+  '/blog',
+  '/terms',
+  '/privacy',
+  '/cookies',
+  ...toolPages.map((p) => p.path),
+];
+
 // ── Landing Page Assembly ─────────────────────────────────────────────────────
 const LandingPage = () => (
   <>
@@ -133,7 +152,9 @@ function App() {
   // Lenis smooth scroll for marketing pages
   useEffect(() => {
     // Only activate on landing page — dashboard/protected pages manage their own lenis instance
-    const isMarketingRoute = ['/', '/pricing', '/checkout', '/checkout/success'].includes(location.pathname);
+    const isMarketingRoute = SEO_MARKETING_ROUTES.includes(location.pathname)
+      || location.pathname.startsWith('/blog/')
+      || toolPages.some((p) => p.path === location.pathname);
     if (!isMarketingRoute) return;
 
     const lenis = new Lenis({
@@ -157,6 +178,17 @@ function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+
+        {/* ── SEO: tool landings, blog, legal (additive) ─── */}
+        {toolPages.map((page) => (
+          <Route key={page.slug} path={page.path} element={<ToolLandingPage page={page} />} />
+        ))}
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/terms" element={<LegalPage />} />
+        <Route path="/privacy" element={<LegalPage />} />
+        <Route path="/cookies" element={<LegalPage />} />
+
         <Route path="/upgrade" element={
           <ProtectedRoute>
             <Layout currentView="" onNavigate={handleProtectedNavigate} profileImage={profileImage}>

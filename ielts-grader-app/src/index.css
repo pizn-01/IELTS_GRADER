@@ -176,3 +176,74 @@ html.lenis body {
   max-height: 200px;
   opacity: 1;
 }
+
+/* --- SEO blog / legal markdown (additive) --- */
+.seo-markdown h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1f36;
+  margin: 1.5rem 0 1rem;
+}
+
+.seo-markdown h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1f36;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.seo-markdown h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1f36;
+  margin: 1rem 0 0.5rem;
+}
+
+.seo-markdown p {
+  margin: 0.75rem 0;
+}
+
+.seo-markdown ul,
+.seo-markdown ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.seo-markdown li {
+  margin: 0.35rem 0;
+}
+
+.seo-markdown a {
+  color: #3B82F6;
+  text-decoration: none;
+}
+
+.seo-markdown a:hover {
+  text-decoration: underline;
+}
+
+.seo-markdown blockquote {
+  border-left: 3px solid #E5E7EB;
+  padding-left: 1rem;
+  color: #6B7280;
+  margin: 1rem 0;
+}
+
+.seo-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.seo-markdown th,
+.seo-markdown td {
+  border: 1px solid #E5E7EB;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.seo-markdown th {
+  background: #F8FAFC;
+  font-weight: 600;
+}
