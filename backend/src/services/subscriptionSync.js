@@ -22,6 +22,24 @@ function isPeriodEnded(periodEndIso) {
   return Boolean(periodEndIso && new Date(periodEndIso) <= new Date());
 }
 
+/** Stripe API may put period bounds on the subscription or on its items. */
+function getSubscriptionPeriodEndUnix(subscription) {
+  if (subscription?.current_period_end) return subscription.current_period_end;
+  const itemEnd = subscription?.items?.data?.[0]?.current_period_end;
+  if (itemEnd) return itemEnd;
+  // Scheduled cancel timestamp is the access end when cancel_at is set.
+  if (subscription?.cancel_at) return subscription.cancel_at;
+  return null;
+}
+
+function isCancelScheduled(subscription) {
+  if (!subscription) return false;
+  if (subscription.cancel_at_period_end) return true;
+  const status = subscription.status;
+  if (subscription.cancel_at && (status === 'active' || status === 'trialing')) return true;
+  return false;
+}
+
 /**
  * End paid access after the subscription period.
  * Clears period_end so the user returns to free-trial rules:
@@ -73,15 +91,16 @@ async function syncSubscriptionRecord(userId, subscription) {
     ? subscription.customer
     : subscription.customer?.id;
 
-  const periodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000).toISOString()
+  const periodEndUnix = getSubscriptionPeriodEndUnix(subscription);
+  const periodEnd = periodEndUnix
+    ? new Date(periodEndUnix * 1000).toISOString()
     : null;
   const periodEnded = isPeriodEnded(periodEnd);
-  const cancelAtPeriodEnd = !!subscription.cancel_at_period_end;
+  const cancelAtPeriodEnd = isCancelScheduled(subscription);
   const mappedStatus = mapStripeSubscriptionStatus(subscription.status);
 
   // Access rules:
-  // - active/trialing (incl. cancel_at_period_end): keep credits until period ends
+  // - active/trialing (incl. cancel_at_period_end / cancel_at): keep credits until period ends
   // - past_due: keep remaining credits, surface past_due status
   // - canceled or period ended: credits → 0 (back to free-trial baseline)
   let effectiveStatus = mappedStatus;
@@ -249,7 +268,7 @@ async function reconcileUserSubscription(userId) {
       expand: ['latest_invoice'],
     });
 
-    cancelAtPeriodEnd = !!subscription.cancel_at_period_end;
+    cancelAtPeriodEnd = isCancelScheduled(subscription);
     await syncSubscriptionRecord(userId, subscription);
 
     if (subscription.status === 'active' || subscription.status === 'trialing') {
@@ -309,5 +328,7 @@ module.exports = {
   reconcileUserSubscription,
   expireSubscriptionAccess,
   isPeriodEnded,
+  getSubscriptionPeriodEndUnix,
+  isCancelScheduled,
   buildSubscriptionStatusPayload,
 };

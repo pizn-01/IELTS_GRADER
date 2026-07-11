@@ -56,8 +56,10 @@ const formatAdminDate = (value) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-const subscriptionStatusPill = (status) => {
+const subscriptionStatusPill = (status, cancelAtPeriodEnd) => {
   const normalized = (status || '').toLowerCase();
+  // cancel_at_period_end is optional; Active + period end still means access until that date
+  if (normalized === 'active' && cancelAtPeriodEnd) return <Pill label="Canceling" color="yellow" />;
   if (normalized === 'active') return <Pill label="Active" color="green" />;
   if (normalized === 'canceled' || normalized === 'cancelled') return <Pill label="Canceled" color="red" />;
   if (normalized === 'past_due') return <Pill label="Past due" color="yellow" />;
@@ -187,7 +189,7 @@ const UsersTab = () => {
                 <td className="px-4 py-3 text-gray-500 max-w-[100px] truncate" title={u.utm_campaign}>{u.utm_campaign || '—'}</td>
                 <td className="px-4 py-3 font-bold text-[#101828]">{u.credits_remaining}</td>
                 <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatPlanLabel(u.subscription_plan)}</td>
-                <td className="px-4 py-3">{subscriptionStatusPill(u.subscription_status)}</td>
+                <td className="px-4 py-3">{subscriptionStatusPill(u.subscription_status, u.cancel_at_period_end)}</td>
                 <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatAdminDate(u.subscription_period_end)}</td>
                 <td className="px-4 py-3 text-gray-500">{u.target_band}</td>
                 <td className="px-4 py-3 text-gray-500">{u.submission_count}</td>
