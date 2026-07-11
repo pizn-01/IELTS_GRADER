@@ -4,7 +4,6 @@ import ReportView from '../components/ReportView';
 import LearningEditionModal from '../components/LearningEditionModal';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 import { useAuth } from '../context/AuthContext';
-import { useAuth } from '../context/AuthContext';
 
 const ReportPage = () => {
   const navigate = useNavigate();
