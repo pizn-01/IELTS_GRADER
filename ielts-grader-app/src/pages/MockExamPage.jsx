@@ -41,12 +41,8 @@ const MockExamPage = () => {
         setAllowed(true);
       } catch {
         if (cancelled) return;
-        const remaining = Number(user?.credits_remaining) || 0;
-        if (remaining <= 0) {
-          navigate('/analysis-ready', { state: { outOfCredits: true }, replace: true });
-          return;
-        }
-        setAllowed(true);
+        // Fail closed if we cannot verify credits
+        navigate('/analysis-ready', { state: { outOfCredits: true }, replace: true });
       } finally {
         if (!cancelled) setCreditCheckDone(true);
       }

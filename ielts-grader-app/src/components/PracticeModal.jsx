@@ -145,12 +145,10 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
       }
       return false;
     } catch {
-      if ((Number(user?.credits_remaining) || 0) <= 0) {
-        onClose?.();
-        navigate('/analysis-ready', { state: { outOfCredits: true } });
-        return true;
-      }
-      return false;
+      // Fail closed — do not allow practice if credits cannot be verified
+      onClose?.();
+      navigate('/analysis-ready', { state: { outOfCredits: true } });
+      return true;
     }
   };
 

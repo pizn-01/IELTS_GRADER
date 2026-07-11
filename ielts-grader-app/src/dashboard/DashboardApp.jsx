@@ -171,12 +171,10 @@ function DashboardApp() {
         return;
       }
       setShowModal(true);
-    } catch {
-      if ((Number(user?.credits_remaining) || 0) <= 0) {
-        redirectOutOfCredits();
-        return;
-      }
-      setShowModal(true);
+    } catch (err) {
+      // Fail closed: never open practice if we cannot verify credits.
+      console.warn('Credit check failed:', err?.message);
+      redirectOutOfCredits();
     } finally {
       setPracticeStarting(false);
     }
@@ -299,11 +297,9 @@ function DashboardApp() {
                 return;
               }
             } catch {
-              if ((Number(user?.credits_remaining) || 0) <= 0) {
-                setShowModal(false);
-                navigate('/analysis-ready', { state: { outOfCredits: true } });
-                return;
-              }
+              setShowModal(false);
+              navigate('/analysis-ready', { state: { outOfCredits: true } });
+              return;
             }
             setShowModal(false);
             navigate('/mock-exam', { state: { examType: type, taskType: task } });
