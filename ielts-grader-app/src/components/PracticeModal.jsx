@@ -21,8 +21,8 @@ const isImageFile = (file) =>
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const hasCredits = (user?.credits_remaining ?? 0) > 0;
+  const { user, updateUser } = useAuth();
+  const hasCredits = (Number(user?.credits_remaining) || 0) > 0;
   const [step, setStep] = useState(1);
   const [examType, setExamType] = useState('');
   const [taskType, setTaskType] = useState('');
@@ -131,16 +131,32 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
     }
   };
 
-  const redirectIfNoCredits = () => {
-    if (hasCredits) return false;
-    onClose?.();
-    navigate('/analysis-ready', { state: { outOfCredits: true } });
-    return true;
+  const redirectIfNoCredits = async () => {
+    try {
+      const fresh = await api.getMe();
+      updateUser({
+        credits_remaining: fresh.credits_remaining,
+        credits_allowance: fresh.credits_allowance,
+      });
+      if ((Number(fresh.credits_remaining) || 0) <= 0) {
+        onClose?.();
+        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        return true;
+      }
+      return false;
+    } catch {
+      if ((Number(user?.credits_remaining) || 0) <= 0) {
+        onClose?.();
+        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        return true;
+      }
+      return false;
+    }
   };
 
   const handleAnalyzeEssay = async () => {
     if (wordCount < 10) return;
-    if (redirectIfNoCredits()) return;
+    if (await redirectIfNoCredits()) return;
 
     setStep(3);
     setGradingError('');
@@ -530,8 +546,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
 
                   <div className="mt-6 space-y-2">
                     <button 
-                      onClick={() => {
-                        if (redirectIfNoCredits()) return;
+                      onClick={async () => {
+                        if (await redirectIfNoCredits()) return;
                         if (selectedOption === 'mock') {
                           onStartMock(examType, taskType);
                         } else {

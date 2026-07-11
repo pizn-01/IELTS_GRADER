@@ -121,8 +121,9 @@ function DashboardApp() {
 
   const candidateFirstName = user?.full_name?.split(' ')[0] || 'Candidate';
   const targetBand = parseFloat(user?.target_band) || DEFAULT_TARGET_BAND;
-  const creditsRemaining = user?.credits_remaining ?? 0;
+  const creditsRemaining = Number(user?.credits_remaining) || 0;
   const hasCredits = creditsRemaining > 0;
+  const [practiceStarting, setPracticeStarting] = useState(false);
 
   const latestBand = useMemo(() => {
     const scores = analyticsSeries?.chartData?.map(d => d.overall).filter(v => v != null) ?? [];
@@ -146,12 +147,39 @@ function DashboardApp() {
     return `${recent.type} ${recent.task}`;
   }, [recentSubmissions]);
 
-  const handleStartPractice = () => {
-    if (!hasCredits) {
-      navigate('/analysis-ready', { state: { outOfCredits: true } });
-      return;
+  const redirectOutOfCredits = () => {
+    navigate('/analysis-ready', { state: { outOfCredits: true } });
+  };
+
+  const handleStartPractice = async () => {
+    if (practiceStarting) return;
+    setPracticeStarting(true);
+    try {
+      // Always re-fetch — cached AuthContext credits can be stale after the free exam.
+      const fresh = await api.getMe();
+      updateUser({
+        credits_remaining: fresh.credits_remaining,
+        credits_allowance: fresh.credits_allowance,
+        subscription_plan: fresh.subscription_plan,
+        subscription_status: fresh.subscription_status,
+        is_subscribed: fresh.is_subscribed,
+        cancel_at_period_end: fresh.cancel_at_period_end,
+      });
+      const remaining = Number(fresh.credits_remaining) || 0;
+      if (remaining <= 0) {
+        redirectOutOfCredits();
+        return;
+      }
+      setShowModal(true);
+    } catch {
+      if ((Number(user?.credits_remaining) || 0) <= 0) {
+        redirectOutOfCredits();
+        return;
+      }
+      setShowModal(true);
+    } finally {
+      setPracticeStarting(false);
     }
-    setShowModal(true);
   };
 
   return (
@@ -203,10 +231,11 @@ function DashboardApp() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleStartPractice}
-                  className="bg-[#2C3E50] text-white w-full sm:w-auto px-6 h-[48px] rounded-[14px] text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-all shadow-sm"
+                  disabled={practiceStarting}
+                  className="bg-[#2C3E50] text-white w-full sm:w-auto px-6 h-[48px] rounded-[14px] text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Play size={18} fill="currentColor" />
-                  Start New Practice
+                  {practiceStarting ? 'Checking…' : !hasCredits ? 'Upgrade to Practice' : 'Start New Practice'}
                 </motion.button>
               </motion.div>
             </div>
@@ -257,7 +286,25 @@ function DashboardApp() {
         <PracticeModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          onStartMock={(type, task) => {
+          onStartMock={async (type, task) => {
+            try {
+              const fresh = await api.getMe();
+              updateUser({
+                credits_remaining: fresh.credits_remaining,
+                credits_allowance: fresh.credits_allowance,
+              });
+              if ((Number(fresh.credits_remaining) || 0) <= 0) {
+                setShowModal(false);
+                navigate('/analysis-ready', { state: { outOfCredits: true } });
+                return;
+              }
+            } catch {
+              if ((Number(user?.credits_remaining) || 0) <= 0) {
+                setShowModal(false);
+                navigate('/analysis-ready', { state: { outOfCredits: true } });
+                return;
+              }
+            }
             setShowModal(false);
             navigate('/mock-exam', { state: { examType: type, taskType: task } });
           }}
