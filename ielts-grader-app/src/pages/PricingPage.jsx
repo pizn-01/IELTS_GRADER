@@ -3,6 +3,7 @@ import { Check, Sparkles, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
+import SeoHead from '../seo/SeoHead';
 import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
@@ -59,6 +60,11 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen bg-[#EFF6FF]">
+      <SeoHead
+        title="IELTS Writing Practice Plans & Pricing | IELTS AI Tutor"
+        description="Start free with one full IELTS writing evaluation. Upgrade to Weekly Sprint or Monthly Mastery for more AI tutor feedback, mock exams, and study plans."
+        path="/pricing"
+      />
       <Navbar />
       
       <main className="max-w-[1200px] mx-auto px-6 py-12 md:px-[60px] md:py-[80px]">

@@ -1,34 +1,43 @@
-# External SEO — Your Action Checklist
+# External SEO — Your Action Checklist (Phase 2)
 
-Agent work is complete. These items need **you** to execute (guides in `guides/`).
+Agent Phase 2 work upgrades design, legal, blog depth, tool pages, navbar Blog tab, and OG image.
+These items still need **you**.
 
-## This week (high priority)
+## After deploy (do first)
 
-- [ ] **GSC + Bing** — follow [GOOGLE_SEARCH_CONSOLE.md](guides/GOOGLE_SEARCH_CONSOLE.md) (tracker A11, A12, B6)
-- [ ] **Submit sitemap** after deploy: `https://ieltsgrader.com/sitemap.xml`
-- [ ] **Legal review** — approve `legal-drafts/` copy (tracker C2)
-- [ ] **Claims review** — verify 10k students / 4.9 rating in marketing (tracker D8)
+- [ ] Confirm https://www.ieltsgrader.com/blog shows card grid + Blog in navbar
+- [ ] Confirm /terms /privacy /cookies have no draft banner
+- [ ] Confirm a deep post loads (e.g. `/blog/how-ielts-writing-is-scored`)
+- [ ] Confirm `/og-image.png` loads
 
-## Ongoing (weekly)
+## This week — indexing
 
-- [ ] **GSC scorecard** — [MEASUREMENT.md](MEASUREMENT.md) + `python3 SEO/scripts/gsc_summarize.py`
-- [ ] **Reddit** — 3 helpful comments, no links — [REDDIT.md](guides/REDDIT.md)
-- [ ] **Publish new post** — follow [CONTENT_CALENDAR.md](CONTENT_CALENDAR.md)
+- [ ] **GSC** — verify `ieltsgrader.com` / `www.ieltsgrader.com` ([guides/GOOGLE_SEARCH_CONSOLE.md](guides/GOOGLE_SEARCH_CONSOLE.md))
+- [ ] **Bing** — import from GSC
+- [ ] **Submit sitemap:** `https://www.ieltsgrader.com/sitemap.xml`
+- [ ] **Request indexing** for `/`, `/ielts-ai-tutor`, `/ielts-essay-checker`, `/blog`, and 5 top posts
 
-## Hard tasks (when ready)
+## Trust & brand
 
-- [ ] **Product Hunt + AlternativeTo** — [BACKLINKS.md](guides/BACKLINKS.md) (G3)
-- [ ] **Backlink outreach** — templates in BACKLINKS.md (G4)
-- [ ] **YouTube Short** — first script in [YOUTUBE_SHORTS.md](guides/YOUTUBE_SHORTS.md) (G5)
-- [ ] **Partner/tutor outreach** — free credits (G6)
-- [ ] **Guest posts / HARO** (G7)
-- [ ] **Localized pages** — last (G8)
-- [ ] **Programmatic sample pages** — last (G9)
+- [ ] **Claims decision** — keep, soften, or replace “10k students / 4.9 rating” on landing
+- [ ] **Social URLs** — send real X / Instagram / YouTube / LinkedIn links for footer
+
+## Ongoing growth
+
+- [ ] Weekly GSC scorecard ([MEASUREMENT.md](MEASUREMENT.md))
+- [ ] Reddit value-first comments ([guides/REDDIT.md](guides/REDDIT.md))
+- [ ] Product Hunt + AlternativeTo ([guides/BACKLINKS.md](guides/BACKLINKS.md))
+- [ ] One YouTube Short ([guides/YOUTUBE_SHORTS.md](guides/YOUTUBE_SHORTS.md))
+
+## Hard / later
+
+- [ ] Partner/tutor outreach
+- [ ] Guest posts / HARO
+- [ ] Localized pages
+- [ ] Programmatic sample-essay pages (ask agent after 4 weeks of GSC data)
 
 ## Progress
 
 ```bash
 python3 SEO/scripts/tracker_status.py
 ```
-
-Update statuses in [TRACKER.md](TRACKER.md) as you complete external tasks.

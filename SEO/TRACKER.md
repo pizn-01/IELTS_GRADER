@@ -6,6 +6,21 @@ Update the **Status** column as work completes. Run `python3 SEO/scripts/tracker
 
 ---
 
+## Phase H — Phase 2 upgrades (design, depth, navbar)
+
+| ID | Task | Phase | Owner | Status | Notes |
+|----|------|-------|-------|--------|-------|
+| H1 | SEO design system (layout, CTA, FAQ, cards) | H | Agent | done | |
+| H2 | Blog tab in Navbar | H | Agent | done | |
+| H3 | Production legal copy + remove draft banners | H | Agent | done | |
+| H4 | Deepen 16 existing blog posts | H | Agent | done | |
+| H5 | Add 10 new product-inspired posts | H | Agent | done | 26 total |
+| H6 | Expand 6 tool pages + FAQ schema | H | Agent | done | |
+| H7 | OG image + Pricing SeoHead + footer resources | H | Agent | done | |
+| H8 | You: GSC/Bing/sitemap/claims/social/outreach | H | You | blocked_on_you | See EXTERNAL_CHECKLIST.md |
+
+---
+
 ## Phase A — Free / easy (workspace)
 
 | ID | Task | Phase | Owner | Status | Notes |

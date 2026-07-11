@@ -30,6 +30,10 @@ const Navbar = ({ showCredits }) => {
   };
 
   const handleNavClick = (e, link) => {
+    if (link === 'Blog') {
+      setIsMobileMenuOpen(false);
+      return;
+    }
     const targetId = link.toLowerCase().replace(/\s+/g, '-');
     const isHomePage = location.pathname === '/';
 
@@ -41,7 +45,8 @@ const Navbar = ({ showCredits }) => {
     setIsMobileMenuOpen(false);
   };
 
-  const navLinks = ['About', 'How it works', 'Sample Report', 'FAQS', 'Contact'];
+  const navLinks = ['About', 'How it works', 'Sample Report', 'Blog', 'FAQS', 'Contact'];
+  const isBlogActive = location.pathname === '/blog' || location.pathname.startsWith('/blog/');
 
   return (
     <nav className="h-[64px] md:h-[72px] sticky top-0 left-0 w-full bg-white z-[1000] border-b border-[#E5E7EB]">
@@ -57,17 +62,24 @@ const Navbar = ({ showCredits }) => {
 
           {/* Nav Links (Desktop) */}
           <ul className="hidden md:flex items-center gap-7 list-none m-0 p-0">
-            {navLinks.map((link) => (
-              <li key={link}>
-                <Link
-                  to={`/#${link.toLowerCase().replace(/\s+/g, '-')}`}
-                  onClick={(e) => handleNavClick(e, link)}
-                  className="text-[14px] font-semibold text-[#4B5563] no-underline hover:text-[#1a1f36] transition-colors"
-                >
-                  {link}
-                </Link>
-              </li>
-            ))}
+            {navLinks.map((link) => {
+              const isBlog = link === 'Blog';
+              const to = isBlog ? '/blog' : `/#${link.toLowerCase().replace(/\s+/g, '-')}`;
+              const active = isBlog && isBlogActive;
+              return (
+                <li key={link}>
+                  <Link
+                    to={to}
+                    onClick={(e) => handleNavClick(e, link)}
+                    className={`text-[14px] font-semibold no-underline transition-colors ${
+                      active ? 'text-[#1a1f36]' : 'text-[#4B5563] hover:text-[#1a1f36]'
+                    }`}
+                  >
+                    {link}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -193,16 +205,24 @@ const Navbar = ({ showCredits }) => {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-[64px] left-0 w-full bg-white border-b border-[#E5E7EB] shadow-lg animate-in slide-in-from-top-2">
           <div className="px-4 py-4 flex flex-col gap-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link}
-                to={`/#${link.toLowerCase().replace(/\s+/g, '-')}`}
-                onClick={(e) => handleNavClick(e, link)}
-                className="text-[15px] font-semibold text-[#4B5563] py-3 px-2 rounded-lg hover:bg-[#F9FAFB] hover:text-[#1a1f36] transition-colors"
-              >
-                {link}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isBlog = link === 'Blog';
+              const to = isBlog ? '/blog' : `/#${link.toLowerCase().replace(/\s+/g, '-')}`;
+              return (
+                <Link
+                  key={link}
+                  to={to}
+                  onClick={(e) => handleNavClick(e, link)}
+                  className={`text-[15px] font-semibold py-3 px-2 rounded-lg transition-colors ${
+                    isBlog && isBlogActive
+                      ? 'bg-[#F9FAFB] text-[#1a1f36]'
+                      : 'text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#1a1f36]'
+                  }`}
+                >
+                  {link}
+                </Link>
+              );
+            })}
             
             {showCredits && (
               <div className="flex items-center gap-2 px-3 py-2.5 mt-2 bg-[#EFF6FF] rounded-[8px] border border-[#DBEAFE] justify-center">

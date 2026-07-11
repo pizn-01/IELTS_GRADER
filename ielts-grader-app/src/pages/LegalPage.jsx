@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, Link } from 'react-router-dom';
 import SeoLayout from '../seo/SeoLayout';
 import SeoHead from '../seo/SeoHead';
 import { legalPages } from '../content/legalContent';
@@ -17,40 +17,75 @@ export default function LegalPage() {
   const path = `/${page}`;
 
   return (
-    <SeoLayout breadcrumbs={[{ href: '/', label: 'Home' }, { href: path, label: data.heading }]}>
+    <SeoLayout
+      wide
+      breadcrumbs={[
+        { href: '/', label: 'Home' },
+        { href: path, label: data.heading },
+      ]}
+      hero={{
+        eyebrow: 'IELTS AI Tutor by IELTSGRADER',
+        title: data.heading,
+        subtitle: data.description,
+        meta: data.updatedAt ? `Last updated: ${data.updatedAt}` : undefined,
+      }}
+    >
       <SeoHead title={data.title} description={data.description} path={path} />
 
-      {data.draft && (
-        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-6">
-          Draft — pending legal review. Do not rely on this for compliance until approved.
-        </p>
-      )}
-
-      <h1 className="text-3xl font-bold text-[#1a1f36] mb-8">{data.heading}</h1>
-
-      <div className="space-y-6 text-[#374151]">
-        {data.sections.map((section) => (
-          <section key={section.heading}>
-            <h2 className="text-lg font-bold text-[#1a1f36] mb-2">{section.heading}</h2>
-            {section.body && (
-              <p className={section.muted ? 'text-sm text-[#9CA3AF]' : ''}>{section.body}</p>
-            )}
-            {section.items && (
-              <ul className="list-disc pl-5 space-y-1">
-                {section.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            )}
-            {section.link && (
-              <p className="mt-2">
-                <a href={section.link.href} className="text-[#3B82F6] no-underline hover:underline">
-                  {section.link.label}
+      <div className="grid lg:grid-cols-[240px_1fr] gap-10 lg:gap-14">
+        <aside className="hidden lg:block">
+          <div className="sticky top-28 rounded-[16px] border border-[#E5E7EB] bg-[#F8FAFC] p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#9CA3AF] mb-3">On this page</p>
+            <nav className="flex flex-col gap-2">
+              {data.sections.map((section) => (
+                <a
+                  key={section.heading}
+                  href={`#${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}
+                  className="text-[13px] text-[#6B7280] no-underline hover:text-[#3B82F6] leading-snug"
+                >
+                  {section.heading}
                 </a>
-              </p>
-            )}
-          </section>
-        ))}
+              ))}
+            </nav>
+            <div className="mt-6 pt-4 border-t border-[#E5E7EB] flex flex-col gap-2">
+              <Link to="/terms" className="text-[13px] text-[#3B82F6] no-underline hover:underline">Terms</Link>
+              <Link to="/privacy" className="text-[13px] text-[#3B82F6] no-underline hover:underline">Privacy</Link>
+              <Link to="/cookies" className="text-[13px] text-[#3B82F6] no-underline hover:underline">Cookies</Link>
+            </div>
+          </div>
+        </aside>
+
+        <article className="max-w-3xl space-y-8">
+          {data.sections.map((section) => {
+            const id = section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            return (
+              <section key={section.heading} id={id} className="scroll-mt-28">
+                <h2 className="text-[20px] md:text-[22px] font-bold text-[#1a1f36] mb-3 font-['Nunito',_sans-serif]">
+                  {section.heading}
+                </h2>
+                {section.body && (
+                  <p className={`text-[15px] leading-relaxed ${section.muted ? 'text-[#9CA3AF]' : 'text-[#374151]'}`}>
+                    {section.body}
+                  </p>
+                )}
+                {section.items && (
+                  <ul className="mt-3 list-disc pl-5 space-y-2 text-[15px] text-[#374151] leading-relaxed">
+                    {section.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+                {section.link && (
+                  <p className="mt-3">
+                    <Link to={section.link.href} className="text-[#3B82F6] no-underline hover:underline font-medium">
+                      {section.link.label} →
+                    </Link>
+                  </p>
+                )}
+              </section>
+            );
+          })}
+        </article>
       </div>
     </SeoLayout>
   );

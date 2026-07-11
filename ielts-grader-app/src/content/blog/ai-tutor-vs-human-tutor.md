@@ -11,24 +11,146 @@ author: IELTS AI Tutor Team
 
 # AI Tutor vs Human Tutor for IELTS Writing
 
-| Factor | AI Tutor | Human Tutor |
-|--------|----------|-------------|
-| Speed | ~60 seconds | Hours to days |
-| Cost | Low / free tier | Higher per hour |
-| Availability | 24/7 | Scheduled |
-| Criterion detail | Consistent breakdown | Varies by tutor |
-| Motivation & nuance | Limited | Strong |
+Choosing between an **AI tutor** and a **human tutor** for IELTS Writing is not really an either/or decision for most candidates. The better question is: what does each do best, and how should you combine them before test day?
 
-## When AI wins
+This comparison from **IELTS AI Tutor by IELTSGRADER** is practical and honest. It does not claim AI replaces every teacher, and it does not pretend human lessons alone solve low practice volume.
 
-Daily practice, quick iteration, tracking progress over 10+ essays, mock exam follow-up.
+## Comparison table
 
-## When humans win
+| Factor | AI tutor (e.g. IELTS AI Tutor) | Human tutor |
+|--------|--------------------------------|-------------|
+| Feedback speed | Minutes | Hours to days (typical) |
+| Practice volume | High — many essays per week possible | Limited by booking time |
+| Criterion breakdown | Consistent four-criteria reports | Varies by tutor quality |
+| Personal rapport | Low | High |
+| Cost per essay cycle | Usually lower | Usually higher |
+| Speaking practice | Not the focus here | Often available |
+| Official score | Neither is official IELTS | Neither is official unless they are examiners |
+| Best at | Diagnosis, drills, rewrites, mocks | Nuance, motivation, live Q&A |
 
-Nuanced argument feedback, speaking practice, accountability, pre-test calibration.
+## Where AI tutors win
 
-## Best of both
+### 1. Frequency of feedback
 
-Many Band 7+ students use an **IELTS AI Tutor** for volume and a human tutor monthly for strategy.
+Writing improves with cycles: write → feedback → rewrite → new timed task. If you can only get human feedback twice a month, your loop is slow. An AI tutor supports the weekly rhythm many Band 6→7 candidates need.
 
-Start with a free check on [IELTS AI Tutor](/ielts-ai-tutor).
+Try that loop with the [essay checker](/ielts-essay-checker) or [Task 2 checker](/ielts-task-2-checker).
+
+### 2. Criterion-level consistency
+
+A strong AI tutoring product applies the same band-descriptor lens every time. That helps you track whether Coherence actually improved after a [14-day plan](/blog/coherence-cohesion-14-day-plan), rather than relying on different teachers’ styles.
+
+### 3. Mock-to-plan workflows
+
+Timed mocks plus structured next steps are easy to productise. See [mock writing practice guide](/blog/ielts-mock-writing-practice-guide) and [mock exam to 14-day sprint](/blog/mock-exam-to-14-day-sprint).
+
+### 4. Lower friction for shy or busy learners
+
+Some students delay booking lessons. Instant checking removes that barrier — useful if motivation dies between classes.
+
+## Where human tutors win
+
+### 1. Live clarification
+
+You can ask, “Why is this example irrelevant?” and get a conversation. AI feedback is strong at annotations; humans are strong at dialogue.
+
+### 2. Motivation and accountability
+
+A scheduled lesson can keep you honest. AI tools require self-discipline unless you set a routine.
+
+### 3. Broader exam coaching
+
+Many human tutors cover Speaking interviews, Listening strategies, and test-day nerves. IELTS AI Tutor by IELTSGRADER focuses on Writing tutoring depth.
+
+### 4. Local exam culture and personal context
+
+An experienced teacher may know your school system, common L1 interference patterns, or visa timeline pressures in a more personal way.
+
+## The hybrid model that works for most candidates
+
+**Weekly:** AI-checked timed writing (1–2 Task 2 essays, plus Task 1/letters as needed).  
+**Every 2–4 weeks:** Human review of one script + discussion of your AI reports.  
+**Final 2 weeks:** More mocks; human session for confidence and last-mile clarity.
+
+This hybrid uses AI for volume and humans for calibration. It also matches what we recommend in [is AI IELTS tutoring accurate?](/blog/is-ai-ielts-tutoring-accurate).
+
+## Cost and time: a realistic framing
+
+Instead of asking which is “cheaper,” ask:
+
+- How many feedback cycles can I complete per week?
+- What is my test date?
+- Is my bottleneck knowledge (need teaching) or implementation (need reps)?
+
+If you already understand the criteria but cannot get enough marked practice, AI tutoring is often the missing piece. If you do not understand why Task Response is failing, a human explanation plus AI drills is powerful.
+
+Review plan options on [pricing](/pricing) and educational tiers in [practice plans explained](/blog/ielts-writing-practice-plans-explained).
+
+## Quality checklist for both options
+
+### For an AI tutor
+
+- Four criteria, not only overall band  
+- Explanations / fix cards  
+- Support for your module (Academic Task 1 or GT letters)  
+- Clear statement that scores are for practice  
+- Path from report to study plan  
+
+Start at [IELTS AI Tutor](/ielts-ai-tutor).
+
+### For a human tutor
+
+- Can explain band descriptors with examples  
+- Marks Task Achievement/Response carefully (bullets, overview, opinion)  
+- Gives rewrite homework, not only praise  
+- Willing to work with your AI reports instead of dismissing them  
+- Transparent about not being an official examiner (unless they are)
+
+## Myths to ignore
+
+**“AI is always wrong.”**  
+Many candidates improve with descriptor-aligned AI feedback used correctly.
+
+**“Humans are always right.”**  
+Tutor quality varies widely. Untrained feedback can also mislead.
+
+**“Templates from either source guarantee Band 7.”**  
+Memorised essays that miss the question fail Task Response regardless of who taught the template.
+
+## Scenario guide
+
+| Your situation | Lean toward |
+|----------------|-------------|
+| Test in 8+ weeks, need lots of writing reps | AI-heavy hybrid |
+| Confused about criteria basics | Human first, then AI practice |
+| Stuck at 6.5 with repeating mistakes | AI pattern tracking + targeted human session |
+| Need Speaking too | Human (or separate Speaking tool) + AI for Writing |
+| Budget-constrained but consistent | AI tutor + free study partner swaps occasionally |
+
+Plateau help: [stuck at Band 6.5](/blog/stuck-at-band-6-5-plateau).
+
+## How IELTS AI Tutor fits the comparison
+
+IELTS AI Tutor by IELTSGRADER is built as a **Writing tutor**:
+
+- Criterion scoring and fix-oriented feedback  
+- Essay / Task 2 checking  
+- Mock writing practice  
+- Study-plan style follow-through  
+
+It is designed to complement teachers, not mock them. For trust details, read [dual AI grading explained](/blog/dual-ai-grading-explained).
+
+## A four-week experiment
+
+1. Week 1: two AI-checked essays; note weakest criterion.  
+2. Week 2: drill only that criterion; one rewrite + one new essay.  
+3. Week 3: one human lesson using your reports as the agenda.  
+4. Week 4: full [mock writing test](/ielts-mock-writing-test); compare to Week 1.
+
+You will learn which feedback channel moves your scores faster — with evidence, not opinions.
+
+## Next steps
+
+Use AI for frequent, structured Writing practice; use humans for conversation, accountability, and broad coaching. The combination beats loyalty to one camp.
+
+Try the [essay checker](/ielts-essay-checker), explore [IELTS AI Tutor](/ielts-ai-tutor), compare [pricing](/pricing), and [signup](/signup) to start a measurable practice loop this week.

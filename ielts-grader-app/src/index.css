@@ -179,43 +179,51 @@ html.lenis body {
 
 /* --- SEO blog / legal markdown (additive) --- */
 .seo-markdown h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-size: 1.85rem;
+  font-weight: 800;
   color: #1a1f36;
-  margin: 1.5rem 0 1rem;
+  margin: 1.75rem 0 1rem;
+  font-family: Nunito, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .seo-markdown h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
   color: #1a1f36;
-  margin: 1.25rem 0 0.75rem;
+  margin: 1.75rem 0 0.85rem;
+  font-family: Nunito, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .seo-markdown h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
   color: #1a1f36;
-  margin: 1rem 0 0.5rem;
+  margin: 1.25rem 0 0.6rem;
 }
 
 .seo-markdown p {
-  margin: 0.75rem 0;
+  margin: 0.85rem 0;
+  font-size: 1.02rem;
+  line-height: 1.75;
 }
 
 .seo-markdown ul,
 .seo-markdown ol {
-  margin: 0.75rem 0;
+  margin: 0.85rem 0;
   padding-left: 1.5rem;
 }
 
 .seo-markdown li {
-  margin: 0.35rem 0;
+  margin: 0.4rem 0;
+  line-height: 1.65;
 }
 
 .seo-markdown a {
   color: #3B82F6;
   text-decoration: none;
+  font-weight: 600;
 }
 
 .seo-markdown a:hover {
@@ -223,27 +231,37 @@ html.lenis body {
 }
 
 .seo-markdown blockquote {
-  border-left: 3px solid #E5E7EB;
-  padding-left: 1rem;
-  color: #6B7280;
-  margin: 1rem 0;
+  border-left: 3px solid #BFDBFE;
+  background: #F8FAFC;
+  padding: 1rem 1.15rem;
+  color: #4B5563;
+  margin: 1.25rem 0;
+  border-radius: 0 12px 12px 0;
 }
 
 .seo-markdown table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1rem 0;
-  font-size: 0.9rem;
+  margin: 1.25rem 0;
+  font-size: 0.95rem;
+  overflow-x: auto;
+  display: block;
 }
 
 .seo-markdown th,
 .seo-markdown td {
   border: 1px solid #E5E7EB;
-  padding: 0.5rem 0.75rem;
+  padding: 0.65rem 0.85rem;
   text-align: left;
 }
 
 .seo-markdown th {
   background: #F8FAFC;
-  font-weight: 600;
+  font-weight: 700;
+  color: #1a1f36;
+}
+
+.seo-markdown strong {
+  color: #1a1f36;
+  font-weight: 700;
 }
