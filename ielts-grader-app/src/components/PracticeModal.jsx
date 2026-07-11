@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Clock, Info, ChevronDown, Paperclip } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
 
@@ -20,6 +21,8 @@ const isImageFile = (file) =>
 
 const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasCredits = (user?.credits_remaining ?? 0) > 0;
   const [step, setStep] = useState(1);
   const [examType, setExamType] = useState('');
   const [taskType, setTaskType] = useState('');
@@ -128,8 +131,16 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
     }
   };
 
+  const redirectIfNoCredits = () => {
+    if (hasCredits) return false;
+    onClose?.();
+    navigate('/analysis-ready', { state: { outOfCredits: true } });
+    return true;
+  };
+
   const handleAnalyzeEssay = async () => {
     if (wordCount < 10) return;
+    if (redirectIfNoCredits()) return;
 
     setStep(3);
     setGradingError('');
@@ -520,6 +531,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                   <div className="mt-6 space-y-2">
                     <button 
                       onClick={() => {
+                        if (redirectIfNoCredits()) return;
                         if (selectedOption === 'mock') {
                           onStartMock(examType, taskType);
                         } else {

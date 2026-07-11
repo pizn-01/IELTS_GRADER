@@ -22,6 +22,12 @@ function isPeriodEnded(periodEndIso) {
   return Boolean(periodEndIso && new Date(periodEndIso) <= new Date());
 }
 
+/**
+ * End paid access after the subscription period.
+ * Clears period_end so the user returns to free-trial rules:
+ * credits_remaining=0 (must upgrade or receive admin credits),
+ * credits_allowance=1, and exam eligibility follows credits_remaining only.
+ */
 async function expireSubscriptionAccess(userId) {
   await supabaseAdmin
     .from('profiles')
@@ -30,6 +36,7 @@ async function expireSubscriptionAccess(userId) {
       credits_remaining: 0,
       credits_allowance: 1,
       subscription_plan: null,
+      subscription_period_end: null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', userId);
@@ -73,28 +80,39 @@ async function syncSubscriptionRecord(userId, subscription) {
   const cancelAtPeriodEnd = !!subscription.cancel_at_period_end;
   const mappedStatus = mapStripeSubscriptionStatus(subscription.status);
 
+  // Access rules:
+  // - active/trialing (incl. cancel_at_period_end): keep credits until period ends
+  // - past_due: keep remaining credits, surface past_due status
+  // - canceled or period ended: credits → 0 (back to free-trial baseline)
   let effectiveStatus = mappedStatus;
-  if (periodEnded || subscription.status === 'canceled') {
+  if (periodEnded) {
     effectiveStatus = 'canceled';
-  } else if (cancelAtPeriodEnd && subscription.status === 'active') {
+  } else if (subscription.status === 'canceled') {
+    effectiveStatus = 'canceled';
+  } else if (cancelAtPeriodEnd && (subscription.status === 'active' || subscription.status === 'trialing')) {
     effectiveStatus = 'active';
+  } else if (mappedStatus === 'past_due') {
+    effectiveStatus = 'past_due';
   }
 
   const updates = {
     stripe_subscription_id: subscription.id,
     stripe_customer_id: customerId || null,
     subscription_status: effectiveStatus,
-    subscription_period_end: periodEnd,
+    subscription_period_end: periodEnded ? null : periodEnd,
     updated_at: new Date().toISOString(),
   };
 
-  if (effectiveStatus === 'active') {
+  if (effectiveStatus === 'active' || effectiveStatus === 'past_due') {
     if (planKey) updates.subscription_plan = planKey;
     if (plan) updates.credits_allowance = plan.credits;
+    // Do NOT zero credits on past_due — user keeps remaining period credits.
   } else {
+    // Period ended / fully canceled: back to free-trial baseline (0 credits).
     updates.credits_remaining = 0;
     updates.credits_allowance = 1;
     updates.subscription_plan = null;
+    updates.subscription_period_end = null;
   }
 
   await supabaseAdmin.from('profiles').update(updates).eq('id', userId);
@@ -197,9 +215,13 @@ async function reconcileUserSubscription(userId) {
 
   let cancelAtPeriodEnd = false;
 
+  // Only expire paid access when a subscription period has actually ended.
+  // Free-trial users (no period_end) are untouched — they keep their 1 credit.
   if (
     isPeriodEnded(profile.subscription_period_end)
-    && (profile.subscription_status === 'active' || profile.credits_remaining > 0)
+    && (profile.subscription_status === 'active'
+      || profile.subscription_status === 'past_due'
+      || profile.stripe_subscription_id)
   ) {
     await expireSubscriptionAccess(userId);
     const { data: refreshed } = await supabaseAdmin

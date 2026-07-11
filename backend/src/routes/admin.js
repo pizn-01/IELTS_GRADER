@@ -323,6 +323,7 @@ router.patch('/users/:id', async (req, res) => {
     const c = parseInt(credits_remaining);
     if (isNaN(c) || c < 0) return res.status(400).json({ error: 'credits_remaining must be a non-negative integer.' });
     updates.credits_remaining = c;
+    updates.credits_allowance = Math.max(c, 1);
   }
   if (target_band !== undefined) {
     const b = parseFloat(target_band);
@@ -344,6 +345,25 @@ router.patch('/users/:id', async (req, res) => {
   }
 
   try {
+    // If granting credits after an expired period, clear period_end so exams are eligible.
+    // Do not clear an active (future) subscription period.
+    if (credits_remaining !== undefined) {
+      const { data: current } = await supabaseAdmin
+        .from('profiles')
+        .select('subscription_period_end, subscription_status')
+        .eq('id', id)
+        .maybeSingle();
+      const periodEnd = current?.subscription_period_end;
+      const ended = periodEnd && new Date(periodEnd) <= new Date();
+      if (ended || current?.subscription_status === 'canceled') {
+        updates.subscription_period_end = null;
+        if (parseInt(credits_remaining) === 0) {
+          updates.subscription_status = 'canceled';
+          updates.subscription_plan = null;
+        }
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .update(updates)
@@ -585,19 +605,31 @@ router.post('/users/:id/credits', async (req, res) => {
   try {
     const { data: profile, error: fetchError } = await supabaseAdmin
       .from('profiles')
-      .select('credits_remaining')
+      .select('credits_remaining, credits_allowance, subscription_period_end, subscription_status')
       .eq('id', id)
       .single();
 
     if (fetchError || !profile) return res.status(404).json({ error: 'User not found.' });
 
     const newBalance = Math.max(0, profile.credits_remaining + parseInt(amount));
+    const periodEnded = profile.subscription_period_end
+      && new Date(profile.subscription_period_end) <= new Date();
+
+    const creditUpdates = {
+      credits_remaining: newBalance,
+      credits_allowance: Math.max(newBalance, profile.credits_allowance ?? 1, 1),
+      updated_at: new Date().toISOString(),
+    };
+    // Only clear expired/canceled periods — keep active subscription period intact
+    if (periodEnded || profile.subscription_status === 'canceled') {
+      creditUpdates.subscription_period_end = null;
+    }
 
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .update({ credits_remaining: newBalance, updated_at: new Date().toISOString() })
+      .update(creditUpdates)
       .eq('id', id)
-      .select('id, full_name, credits_remaining')
+      .select('id, full_name, credits_remaining, credits_allowance')
       .single();
 
     if (error) throw error;
@@ -607,8 +639,10 @@ router.post('/users/:id/credits', async (req, res) => {
     return res.json({
       user_id: id,
       previous_balance: profile.credits_remaining,
-      new_balance: newBalance,
+      new_balance: data.credits_remaining,
+      credits_allowance: data.credits_allowance,
       adjustment: parseInt(amount),
+      reason: reason || null,
     });
   } catch (err) {
     console.error('[admin/users/:id/credits]', err.message);

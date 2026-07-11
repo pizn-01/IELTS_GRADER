@@ -65,6 +65,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
+    const reconciled = await reconcileUserSubscription(data.user.id);
     const profile = await fetchProfile(data.user.id);
     const token = signToken(data.user.id, data.user.email, rememberMe !== false);
 
@@ -74,6 +75,16 @@ router.post('/login', async (req, res) => {
         id: data.user.id,
         email: data.user.email,
         ...profile,
+        credits_remaining: reconciled?.credits_remaining ?? profile.credits_remaining,
+        credits_allowance: reconciled?.credits_allowance ?? profile.credits_allowance,
+        subscription_plan: reconciled?.subscription_plan ?? profile.subscription_plan,
+        subscription_status: reconciled?.subscription_status ?? profile.subscription_status,
+        subscription_period_end: reconciled?.subscription_period_end ?? profile.subscription_period_end,
+        cancel_at_period_end: reconciled?.cancel_at_period_end ?? false,
+        is_subscribed: reconciled
+          ? reconciled.subscription_status === 'active'
+            && !(reconciled.subscription_period_end && new Date(reconciled.subscription_period_end) <= new Date())
+          : profile.is_subscribed,
       },
     });
   } catch (err) {
@@ -515,11 +526,19 @@ router.post('/google', async (req, res) => {
     const isNewUser = Date.now() - userCreatedAt < 60000;
 
     if (isNewUser) {
-      await supabaseAdmin.from('profiles').update({
-        credits_remaining: 1,
-        email_verified: true,
-      }).eq('id', user.id);
-      profile = { ...profile, credits_remaining: 1, email_verified: true };
+      // Only force free-trial credit when the profile was just created (insert path).
+      // Do not reset credits on every Google login within the 60s window.
+      if (!profile.credits_remaining || profile.credits_remaining < 1) {
+        await supabaseAdmin.from('profiles').update({
+          credits_remaining: 1,
+          credits_allowance: 1,
+          email_verified: true,
+        }).eq('id', user.id);
+        profile = { ...profile, credits_remaining: 1, credits_allowance: 1, email_verified: true };
+      } else {
+        await supabaseAdmin.from('profiles').update({ email_verified: true }).eq('id', user.id);
+        profile = { ...profile, email_verified: true };
+      }
 
       await saveUserAttribution(supabaseAdmin, user.id, { attribution, session_id, req }).catch(err =>
         console.error('[auth/google] Attribution save failed:', err.message)
@@ -530,8 +549,9 @@ router.post('/google', async (req, res) => {
       profile = { ...profile, email_verified: true };
     }
 
-    const token = signToken(user.id, user.email);
+    const reconciled = await reconcileUserSubscription(user.id).catch(() => null);
     const fullProfile = await fetchProfile(user.id).catch(() => profile);
+    const token = signToken(user.id, user.email);
 
     return res.json({
       token,
@@ -539,6 +559,16 @@ router.post('/google', async (req, res) => {
         id: user.id,
         email: user.email,
         ...fullProfile,
+        credits_remaining: reconciled?.credits_remaining ?? fullProfile.credits_remaining,
+        credits_allowance: reconciled?.credits_allowance ?? fullProfile.credits_allowance,
+        subscription_plan: reconciled?.subscription_plan ?? fullProfile.subscription_plan,
+        subscription_status: reconciled?.subscription_status ?? fullProfile.subscription_status,
+        subscription_period_end: reconciled?.subscription_period_end ?? fullProfile.subscription_period_end,
+        cancel_at_period_end: reconciled?.cancel_at_period_end ?? false,
+        is_subscribed: reconciled
+          ? reconciled.subscription_status === 'active'
+            && !(reconciled.subscription_period_end && new Date(reconciled.subscription_period_end) <= new Date())
+          : fullProfile.is_subscribed,
       },
     });
   } catch (err) {

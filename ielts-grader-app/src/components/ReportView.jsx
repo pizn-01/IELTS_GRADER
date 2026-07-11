@@ -226,7 +226,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
   const userName = user?.full_name || 'User';
   const userEmail = user?.email || '';
   const creditsRem = user?.credits_remaining ?? 0;
-  const creditsMax = 1;
+  const creditsMax = Math.max(user?.credits_allowance ?? 1, 1);
   const creditsOffset = (75.4 * (1 - Math.min(creditsRem, creditsMax) / creditsMax)).toFixed(2);
   const reportDate = data?.created_at
     ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -249,10 +249,12 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
   }, []);
 
   useEffect(() => {
-    if (!user || user.target_band_confirmed) return;
-    if (data?.overall_band == null) return;
+    // Explicit !== true so missing/undefined still prompts (same as Performance CTA).
+    if (!user || user.target_band_confirmed === true) return;
+    const band = data?.overall_band ?? data?.overallBand;
+    if (band == null || Number.isNaN(parseFloat(band))) return;
     setShowTargetPrompt(true);
-  }, [user, data?.overall_band]);
+  }, [user, data?.overall_band, data?.overallBand]);
 
   // Use provided data or fallback to defaults
   const essayContent = data?.essay || "Some people argue that imposing longer prison sentences is the most effective way to reduce crime, while others believe that alternative measures can achieve better results. Although stricter punishments may deter certain offenders, I believe that addressing the root causes of crime is a more sustainable and effective solution.";

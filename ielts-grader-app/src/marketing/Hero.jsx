@@ -236,6 +236,10 @@ const Hero = () => {
                       navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
                       return;
                     }
+                    if ((user.credits_remaining ?? 0) <= 0) {
+                      navigate('/analysis-ready', { state: { outOfCredits: true } });
+                      return;
+                    }
                     navigate('/mock-exam');
                   }}
                   disabled={!essayData.examType || !essayData.taskType}

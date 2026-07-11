@@ -52,14 +52,23 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 
   if (isPeriodEnded(profile.subscription_period_end)) {
-    if (profile.subscription_status === 'active' || profile.credits_remaining > 0) {
+    // Paid period over → zero credits and clear period so free/admin credits can work again.
+    if (
+      profile.subscription_status === 'active'
+      || profile.subscription_status === 'past_due'
+      || profile.credits_remaining > 0
+    ) {
       await expireSubscriptionAccess(userId);
     }
-    return res.status(403).json({ error: 'Your subscription has ended. Subscribe to continue grading.' });
+    return res.status(403).json({
+      error: 'Your subscription has ended. Subscribe to continue grading.',
+    });
   }
 
   if (profile.credits_remaining <= 0) {
-    return res.status(403).json({ error: 'Insufficient evaluation credits. Please purchase more to continue.' });
+    return res.status(403).json({
+      error: 'Insufficient evaluation credits. Please purchase more to continue.',
+    });
   }
 
   // Deduct 1 credit atomically with optimistic lock — verify a row was actually updated

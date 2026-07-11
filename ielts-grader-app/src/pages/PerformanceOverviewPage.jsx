@@ -79,6 +79,15 @@ const PerformanceOverviewPage = ({ onBack }) => {
   const bestBand   = overallScores.length ? Math.max(...overallScores).toFixed(1) : null;
   const bandChange = (latestBand && firstBand) ? (latestBand - firstBand).toFixed(1) : null;
 
+  // Auto-open target band prompt after first grade if user hasn't confirmed yet.
+  // Performance is a common landing path when report navigation is skipped/fails.
+  useEffect(() => {
+    if (loading) return;
+    if (!user || user.target_band_confirmed === true) return;
+    if (latestBand == null) return;
+    setShowTargetPrompt(true);
+  }, [loading, user, latestBand]);
+
   // Activity profile — real submission data
   const examCount = submissions.length;
   const studyPeriod = (() => {
@@ -418,7 +427,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
       </div>
 
       <LearningEditionModal
-        isOpen={showLearningModal}
+        isOpen={showLearningModal && user?.target_band_confirmed === true}
         edition={modalEdition}
         priceCents={learningStatus?.priceCents}
         freeAccess={learningStatus?.freeAccess}

@@ -38,7 +38,7 @@ const TargetBandPrompt = ({
   const handleSkip = () => finish({ target_band_confirmed: true });
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
       <div className="bg-white rounded-[20px] shadow-xl border border-gray-100 w-full max-w-[480px] overflow-hidden">
         <div className="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">

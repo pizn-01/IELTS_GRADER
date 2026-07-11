@@ -121,7 +121,8 @@ function DashboardApp() {
 
   const candidateFirstName = user?.full_name?.split(' ')[0] || 'Candidate';
   const targetBand = parseFloat(user?.target_band) || DEFAULT_TARGET_BAND;
-  const creditsRemaining = user?.credits_remaining ?? 4;
+  const creditsRemaining = user?.credits_remaining ?? 0;
+  const hasCredits = creditsRemaining > 0;
 
   const latestBand = useMemo(() => {
     const scores = analyticsSeries?.chartData?.map(d => d.overall).filter(v => v != null) ?? [];
@@ -144,6 +145,14 @@ function DashboardApp() {
     if (!recent?.type || !recent?.task) return 'Academic Task 2';
     return `${recent.type} ${recent.task}`;
   }, [recentSubmissions]);
+
+  const handleStartPractice = () => {
+    if (!hasCredits) {
+      navigate('/analysis-ready', { state: { outOfCredits: true } });
+      return;
+    }
+    setShowModal(true);
+  };
 
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
@@ -193,7 +202,7 @@ function DashboardApp() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowModal(true)}
+                  onClick={handleStartPractice}
                   className="bg-[#2C3E50] text-white w-full sm:w-auto px-6 h-[48px] rounded-[14px] text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-all shadow-sm"
                 >
                   <Play size={18} fill="currentColor" />
@@ -225,13 +234,13 @@ function DashboardApp() {
               defaultTask={defaultChartTask}
               isLoading={isLoading}
               targetBand={targetBand}
-              onStartPractice={() => setShowModal(true)}
+              onStartPractice={handleStartPractice}
             />
             <RecentReports
               hasData={hasData}
               dynamicReports={recentSubmissions}
               onOpenReport={handleOpenRecentReport}
-              onStartPractice={() => setShowModal(true)}
+              onStartPractice={handleStartPractice}
             />
           </div>
         </div>

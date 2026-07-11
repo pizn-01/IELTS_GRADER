@@ -36,6 +36,11 @@ const AnalysisReadyPage = () => {
     // submissionId is pre-set by Hero before navigation in the normal flow.
     // Fallback: if somehow not set, submit now (e.g. direct URL access with essayContent).
     if (!currentSubId) {
+      if ((user?.credits_remaining ?? 0) <= 0) {
+        setGradingStatus('completed');
+        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        return;
+      }
       if (essayData?.essayContent) {
         try {
           const res = await api.submitAttempt({
@@ -58,7 +63,11 @@ const AnalysisReadyPage = () => {
         } catch (err) {
           console.error('Failed to submit attempt:', err.message);
           setGradingStatus('completed');
-          navigate('/performance');
+          if (err.message && err.message.toLowerCase().includes('credit')) {
+            navigate('/analysis-ready', { state: { outOfCredits: true } });
+          } else {
+            navigate('/performance');
+          }
           return;
         }
       } else {

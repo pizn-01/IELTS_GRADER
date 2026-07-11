@@ -35,7 +35,7 @@ Update the **Status** column as work completes. Run `python3 SEO/scripts/tracker
 | A8 | Tool-page outlines (6 pages) | A | Agent | done | `pages/` |
 | A9 | Schema JSON drafts | A | Agent | done | `schema/` |
 | A10 | Add scripts/tracker_status.py | A | Agent | done | |
-| A11 | Create Google Search Console property | A | You | blocked_on_you | See `guides/GOOGLE_SEARCH_CONSOLE.md` |
+| A11 | Create Google Search Console property | A | You | blocked_on_you | DEFERRED — resume when user asks; see EXTERNAL_CHECKLIST |
 | A12 | Create Bing Webmaster Tools property | A | You | blocked_on_you | See `guides/GOOGLE_SEARCH_CONSOLE.md` |
 | A13 | Verify domain (DNS or HTML file) | A | Shared | blocked_on_you | Provide token when ready |
 
