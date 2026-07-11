@@ -117,6 +117,10 @@ const AnalysisReadyPage = () => {
   const forceOutOfCredits = !!location.state?.outOfCredits;
   const isOutOfCredits = forceOutOfCredits || (user && user.credits_remaining <= 0);
   const hasCredits = !forceOutOfCredits && user && user.credits_remaining > 0;
+  const isSubscribed = user?.subscription_status === 'active' || user?.is_subscribed === true;
+  const outOfCreditsMessage = isSubscribed
+    ? "You've used all your credits in your current subscription plan. Upgrade or wait for renewal to keep practicing."
+    : "You've used your free credit. Upgrade now to access your results without losing progress.";
 
   const features = SUBSCRIPTION_FEATURES;
 
@@ -151,7 +155,7 @@ const AnalysisReadyPage = () => {
                   Your Analysis Is Ready
                 </h1>
                 <p className="text-[16px] text-[#4B5563]">
-                  You've used your free credit. Upgrade now to access your results without losing progress.
+                  {outOfCreditsMessage}
                 </p>
               </>
             ) : (
