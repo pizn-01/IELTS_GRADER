@@ -192,7 +192,7 @@ router.get('/users', async (req, res) => {
     // Build profile query — push name search to DB to avoid pulling all records
     let profileQuery = supabaseAdmin
       .from('profiles')
-      .select('id, full_name, target_band, credits_remaining, is_admin, created_at, acquisition_channel, landing_path, acquisition_country, utm_campaign')
+      .select('id, full_name, target_band, credits_remaining, is_admin, created_at, acquisition_channel, landing_path, acquisition_country, utm_campaign, subscription_plan, subscription_status, subscription_period_end')
       .order('created_at', { ascending: false })
       .range((page - 1) * perPage, page * perPage - 1);
 
@@ -229,7 +229,7 @@ router.get('/users', async (req, res) => {
     if (extraEmailIds.length > 0) {
       const { data: extraProfiles } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, target_band, credits_remaining, is_admin, created_at, acquisition_channel, landing_path, acquisition_country, utm_campaign')
+        .select('id, full_name, target_band, credits_remaining, is_admin, created_at, acquisition_channel, landing_path, acquisition_country, utm_campaign, subscription_plan, subscription_status, subscription_period_end')
         .in('id', extraEmailIds);
       allProfiles = [...allProfiles, ...(extraProfiles || [])];
     }

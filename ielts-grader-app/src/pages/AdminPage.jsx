@@ -49,6 +49,28 @@ const formatReferrerLabel = (referrer) => {
   }
 };
 
+const formatAdminDate = (value) => {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const subscriptionStatusPill = (status) => {
+  const normalized = (status || '').toLowerCase();
+  if (normalized === 'active') return <Pill label="Active" color="green" />;
+  if (normalized === 'canceled' || normalized === 'cancelled') return <Pill label="Canceled" color="red" />;
+  if (normalized === 'past_due') return <Pill label="Past due" color="yellow" />;
+  if (normalized === 'trialing') return <Pill label="Trialing" color="blue" />;
+  return <Pill label="Free" color="gray" />;
+};
+
+const formatPlanLabel = (plan) => {
+  if (plan === 'weekly') return 'Weekly';
+  if (plan === 'monthly') return 'Monthly';
+  return '—';
+};
+
 // ── Shared helpers ────────────────────────────────────────────────────────────
 const Pill = ({ label, color }) => {
   const map = {
@@ -142,11 +164,11 @@ const UsersTab = () => {
       </div>
 
       <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
-        <table className="w-full text-[13px] min-w-[900px]">
+        <table className="w-full text-[13px] min-w-[1100px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
             <tr>
-              {['Name', 'Email', 'Channel', 'Landing', 'Country', 'Campaign', 'Credits', 'Target', 'Exams', 'Admin', 'Actions'].map(h => (
-                <th key={h} className="px-4 py-3 text-left">{h}</th>
+              {['Name', 'Email', 'Channel', 'Landing', 'Country', 'Campaign', 'Credits', 'Plan', 'Status', 'Period end', 'Target', 'Exams', 'Admin', 'Actions'].map(h => (
+                <th key={h} className="px-4 py-3 text-left whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -164,6 +186,9 @@ const UsersTab = () => {
                 <td className="px-4 py-3 text-gray-500">{u.acquisition_country || '—'}</td>
                 <td className="px-4 py-3 text-gray-500 max-w-[100px] truncate" title={u.utm_campaign}>{u.utm_campaign || '—'}</td>
                 <td className="px-4 py-3 font-bold text-[#101828]">{u.credits_remaining}</td>
+                <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatPlanLabel(u.subscription_plan)}</td>
+                <td className="px-4 py-3">{subscriptionStatusPill(u.subscription_status)}</td>
+                <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatAdminDate(u.subscription_period_end)}</td>
                 <td className="px-4 py-3 text-gray-500">{u.target_band}</td>
                 <td className="px-4 py-3 text-gray-500">{u.submission_count}</td>
                 <td className="px-4 py-3">{u.is_admin ? <Pill label="Admin" color="blue" /> : <Pill label="User" color="gray" />}</td>
@@ -175,7 +200,7 @@ const UsersTab = () => {
                 </td>
               </tr>
             ))}
-            {users.length === 0 && <tr><td colSpan={11} className="px-5 py-8 text-center text-gray-400">No users found.</td></tr>}
+            {users.length === 0 && <tr><td colSpan={14} className="px-5 py-8 text-center text-gray-400">No users found.</td></tr>}
           </tbody>
         </table>
       </div>
