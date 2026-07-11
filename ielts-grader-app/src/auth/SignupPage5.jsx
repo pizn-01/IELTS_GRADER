@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
+import { setPostAuthRedirect } from '../utils/authStorage';
 
 const SignupPage5 = () => {
   const { register, signInWithGoogle } = useAuth();
@@ -19,11 +20,17 @@ const SignupPage5 = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromLocation = location.state?.from;
+  const from = fromLocation
+    ? `${fromLocation.pathname}${fromLocation.search || ''}`
+    : null;
 
   const handleGoogleSignIn = async () => {
     setError('');
     setIsGoogleLoading(true);
     try {
+      if (from) setPostAuthRedirect(from);
       await signInWithGoogle();
     } catch (err) {
       setError(err.message || 'Google sign-in failed. Please try again.');
@@ -202,7 +209,11 @@ const SignupPage5 = () => {
           {/* Login Link */}
           <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '15px' }}>
             <span style={{ color: '#4B5563', fontWeight: 400 }}>Already have an account? </span>
-            <Link to="/login" style={{ color: COLORS.blue, fontWeight: 600, textDecoration: 'none' }}>
+            <Link
+              to="/login"
+              state={fromLocation ? { from: fromLocation } : undefined}
+              style={{ color: COLORS.blue, fontWeight: 600, textDecoration: 'none' }}
+            >
               Login
             </Link>
           </div>

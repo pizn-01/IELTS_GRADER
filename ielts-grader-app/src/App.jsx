@@ -219,7 +219,9 @@ function App() {
           <ProtectedRoute><DashboardApp /></ProtectedRoute>
         } />
         <Route path="/selection" element={<SelectionPage />} />
-        <Route path="/mock-exam" element={<MockExamPage />} />
+        <Route path="/mock-exam" element={
+          <ProtectedRoute><MockExamPage /></ProtectedRoute>
+        } />
         <Route path="/report" element={
           <ProtectedRoute>
             <Layout 

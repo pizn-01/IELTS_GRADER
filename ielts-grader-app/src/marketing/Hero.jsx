@@ -231,7 +231,13 @@ const Hero = () => {
                 </div>
 
                 <button
-                  onClick={() => navigate('/mock-exam')}
+                  onClick={() => {
+                    if (!user) {
+                      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
+                      return;
+                    }
+                    navigate('/mock-exam');
+                  }}
                   disabled={!essayData.examType || !essayData.taskType}
                   className={`w-full h-[50px] rounded-[8px] font-bold text-[15px] mt-8 transition-all ${
                     (essayData.examType && essayData.taskType)
@@ -374,7 +380,14 @@ const Hero = () => {
                           detected.task === 'task1-report' ? questionChartImage : null,
                       });
 
-                      if (user && user.credits_remaining > 0) {
+                      if (!user) {
+                        setIsSubmitting(false);
+                        navigate('/login', {
+                          state: { from: { pathname: '/analysis-ready' } },
+                        });
+                        return;
+                      }
+                      if (user.credits_remaining > 0) {
                         const res = await api.submitAttempt({
                           exam_type: detected.exam_type,
                           task_type: detected.task_type,
@@ -393,10 +406,8 @@ const Hero = () => {
                         setSubmissionId(res.submission_id);
                         setGradingStatus('processing');
                         navigate('/analysis-ready');
-                      } else if (user) {
-                        navigate('/analysis-ready');
                       } else {
-                        navigate('/selection', { state: { flow: 'essay' } });
+                        navigate('/analysis-ready');
                       }
                     } catch (err) {
                       if (err.message && err.message.includes('Insufficient evaluation credits')) {
@@ -418,7 +429,7 @@ const Hero = () => {
                 </button>
                 {!user && (
                   <p className="text-[12px] text-[#6B7280] text-center mt-3">
-                    Sign up free — includes 1 full evaluation. No card required.
+                    Log in required — free account includes 1 full evaluation. No card required.
                   </p>
                 )}
               </div>

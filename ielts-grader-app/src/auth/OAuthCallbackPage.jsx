@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { getSignupAttribution } from '../utils/attribution';
+import { consumePostAuthRedirect } from '../utils/authStorage';
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const OAuthCallbackPage = () => {
 
         // Store JWT and update AuthContext — no page reload needed
         setUserFromToken(token, user);
-        navigate('/dashboard', { replace: true });
+        navigate(consumePostAuthRedirect('/dashboard'), { replace: true });
       } catch (err) {
         if (!cancelled) setError(err.message || 'Authentication failed. Please try again.');
       }

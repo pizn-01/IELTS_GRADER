@@ -1,6 +1,7 @@
 const TOKEN_KEY = 'token';
 const REMEMBER_KEY = 'remember_me';
 const SAVED_EMAIL_KEY = 'saved_login_email';
+const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
 
 /**
  * Persist JWT. remember=true → localStorage (survives browser restart).
@@ -45,4 +46,18 @@ export function getRememberMePreference() {
   // Default to remembered when no preference has been set yet.
   if (v === null) return true;
   return v === '1';
+}
+
+/** Remember where to send the user after OAuth (full page redirect). */
+export function setPostAuthRedirect(path) {
+  if (path && path.startsWith('/') && !path.startsWith('//')) {
+    sessionStorage.setItem(POST_AUTH_REDIRECT_KEY, path);
+  }
+}
+
+export function consumePostAuthRedirect(fallback = '/dashboard') {
+  const path = sessionStorage.getItem(POST_AUTH_REDIRECT_KEY);
+  sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+  if (path && path.startsWith('/') && !path.startsWith('//')) return path;
+  return fallback;
 }

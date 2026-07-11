@@ -249,7 +249,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
     setShowTimeUp(false);
     if (!user) {
       updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
-      navigate('/selection', { state: { flow: 'mock' } });
+      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
       return;
     }
     setIsGrading(true);
@@ -260,7 +260,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
     if (wordCount < 10) return;
     if (!user) {
       updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
-      navigate('/selection', { state: { flow: 'mock' } });
+      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
       return;
     }
     setIsGrading(true);

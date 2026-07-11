@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
-import { getRememberedEmail } from '../utils/authStorage';
+import { getRememberedEmail, setPostAuthRedirect } from '../utils/authStorage';
 
 const LoginPage1 = () => {
   const { login, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading } = useAuth();
@@ -21,17 +21,19 @@ const LoginPage1 = () => {
   const from = fromLocation
     ? `${fromLocation.pathname}${fromLocation.search || ''}`
     : '/dashboard';
+  const fromState = fromLocation?.state;
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate(from, { replace: true });
+      navigate(from, { replace: true, state: fromState });
     }
-  }, [isAuthenticated, isLoading, navigate, from]);
+  }, [isAuthenticated, isLoading, navigate, from, fromState]);
 
   const handleGoogleSignIn = async () => {
     setError('');
     setIsGoogleLoading(true);
     try {
+      if (from && from !== '/dashboard') setPostAuthRedirect(from);
       await signInWithGoogle();
     } catch (err) {
       setError(err.message || 'Google sign-in failed. Please try again.');
@@ -46,7 +48,7 @@ const LoginPage1 = () => {
     setIsSubmitting(true);
     try {
       await login({ email, password, rememberMe });
-      navigate(from, { replace: true });
+      navigate(from, { replace: true, state: fromState });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -192,7 +194,11 @@ const LoginPage1 = () => {
           {/* Signup Link */}
           <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '15px' }}>
             <span style={{ color: '#4B5563', fontWeight: 400 }}>Don't have an account? </span>
-            <Link to="/signup" style={{ color: COLORS.blue, fontWeight: 600, textDecoration: 'none' }}>
+            <Link
+              to="/signup"
+              state={fromLocation ? { from: fromLocation } : undefined}
+              style={{ color: COLORS.blue, fontWeight: 600, textDecoration: 'none' }}
+            >
               Start your free trial
             </Link>
           </div>
