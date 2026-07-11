@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUp, LineChart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Features = () => {
   return (
@@ -35,12 +35,12 @@ const Features = () => {
             ))}
           </ul>
           <div className="flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto">
-            <a href="#" className="bg-[#1a1f36] text-[#FFFFFF] px-8 py-3.5 rounded-[12px] text-[16px] font-semibold no-underline hover:bg-[#2a2f46] transition-all leading-6 tracking-normal font-['Nunito',_sans-serif] shadow-md w-full sm:w-auto text-center">
+            <Link to="/sample-report" className="bg-[#1a1f36] text-[#FFFFFF] px-8 py-3.5 rounded-[12px] text-[16px] font-semibold no-underline hover:bg-[#2a2f46] transition-all leading-6 tracking-normal font-['Nunito',_sans-serif] shadow-md w-full sm:w-auto text-center">
               See Sample Report
-            </a>
-            <a href="#" className="text-[#101828] font-semibold no-underline text-[16px] hover:text-[#3B82F6] transition-all leading-6 tracking-normal font-['Nunito',_sans-serif] flex items-center gap-1">
+            </Link>
+            <Link to="/features" className="text-[#101828] font-semibold no-underline text-[16px] hover:text-[#3B82F6] transition-all leading-6 tracking-normal font-['Nunito',_sans-serif] flex items-center gap-1">
               View All Features <span className="text-[#4B5563] ml-0.5">→</span>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

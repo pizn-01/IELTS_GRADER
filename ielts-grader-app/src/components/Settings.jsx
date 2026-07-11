@@ -22,9 +22,14 @@ const Settings = ({ profileImage, setProfileImage }) => {
   const [activeTab, setActiveTab] = useState(getInitialTab());
 
   useEffect(() => {
+    const queryTab = new URLSearchParams(location.search).get('tab');
+    if (queryTab && queryTab !== 'Subscription') {
+      setActiveTab(queryTab === 'Security' ? 'Change Password' : queryTab);
+      return;
+    }
     const tab = location.state?.activeTab;
     if (tab) setActiveTab(tab === 'Security' ? 'Change Password' : tab);
-  }, [location.state]);
+  }, [location.state, location.search]);
 
   useEffect(() => {
     if (!user) return;

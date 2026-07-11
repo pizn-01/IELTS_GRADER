@@ -7,6 +7,7 @@ const Footer = () => {
     { label: 'Essay checker', href: '/ielts-essay-checker' },
     { label: 'Pricing', href: '/pricing' },
     { label: 'FAQ', href: '/#faqs' },
+    { label: 'Support', href: '/settings?tab=Support' },
   ];
   const legalLinks = [
     { label: 'Terms', href: '/terms' },

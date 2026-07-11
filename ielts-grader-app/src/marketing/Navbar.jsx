@@ -30,7 +30,7 @@ const Navbar = ({ showCredits }) => {
   };
 
   const handleNavClick = (e, link) => {
-    if (link === 'Blog') {
+    if (link === 'Blog' || link === 'Contact') {
       setIsMobileMenuOpen(false);
       return;
     }
@@ -47,6 +47,11 @@ const Navbar = ({ showCredits }) => {
 
   const navLinks = ['About', 'How it works', 'Sample Report', 'Blog', 'FAQS', 'Contact'];
   const isBlogActive = location.pathname === '/blog' || location.pathname.startsWith('/blog/');
+  const navLinkTo = (link) => {
+    if (link === 'Blog') return '/blog';
+    if (link === 'Contact') return '/settings?tab=Support';
+    return `/#${link.toLowerCase().replace(/\s+/g, '-')}`;
+  };
 
   return (
     <nav className="h-[64px] md:h-[72px] sticky top-0 left-0 w-full bg-white z-[1000] border-b border-[#E5E7EB]">
@@ -63,9 +68,8 @@ const Navbar = ({ showCredits }) => {
           {/* Nav Links (Desktop) */}
           <ul className="hidden md:flex items-center gap-7 list-none m-0 p-0">
             {navLinks.map((link) => {
-              const isBlog = link === 'Blog';
-              const to = isBlog ? '/blog' : `/#${link.toLowerCase().replace(/\s+/g, '-')}`;
-              const active = isBlog && isBlogActive;
+              const to = navLinkTo(link);
+              const active = link === 'Blog' && isBlogActive;
               return (
                 <li key={link}>
                   <Link
@@ -206,15 +210,14 @@ const Navbar = ({ showCredits }) => {
         <div className="md:hidden absolute top-[64px] left-0 w-full bg-white border-b border-[#E5E7EB] shadow-lg animate-in slide-in-from-top-2">
           <div className="px-4 py-4 flex flex-col gap-2">
             {navLinks.map((link) => {
-              const isBlog = link === 'Blog';
-              const to = isBlog ? '/blog' : `/#${link.toLowerCase().replace(/\s+/g, '-')}`;
+              const to = navLinkTo(link);
               return (
                 <Link
                   key={link}
                   to={to}
                   onClick={(e) => handleNavClick(e, link)}
                   className={`text-[15px] font-semibold py-3 px-2 rounded-lg transition-colors ${
-                    isBlog && isBlogActive
+                    link === 'Blog' && isBlogActive
                       ? 'bg-[#F9FAFB] text-[#1a1f36]'
                       : 'text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#1a1f36]'
                   }`}

@@ -63,8 +63,8 @@ const Hero = () => {
   const isUploadFormValid = essayText.trim().length > 0;
 
   return (
-    <header id="about" className="bg-[#1A96F30D] relative min-h-[700px] overflow-hidden flex items-center">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] py-12 lg:py-20 w-full flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+    <header id="about" className="bg-[#1A96F30D] relative min-h-[700px] box-border overflow-hidden flex items-center justify-center py-10 lg:py-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
         
         {/* Left Column - Hero Content */}
         <div className="w-full lg:w-[55%] animate-fadeIn">
