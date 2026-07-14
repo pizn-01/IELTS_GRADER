@@ -17,27 +17,27 @@ const reviews = [
   {
     name: 'Arjun Patel',
     img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    text: 'I was stuck at Band 6 for long time and I didnt know why. This report show me each part of writing like task achievement and grammar with score. Now I know what I need to fix.'
+    text: 'I was stuck at Band 6 for a long time and I didnt know why. This report shows me each part of writing like task achievement and grammar with a score. Now I know what I need to fix.'
   },
   {
     name: 'Hassan Khan',
     img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-    text: 'The fix cards help me a lot. For every bad sentence they give better one so I can see how to write for Band 7. I practise with that and after two weeks my score go up.'
+    text: 'The fix cards help me a lot. For every weak sentence they give a better one so I can see how to write for Band 7. I practice with that and after two weeks my score went up.'
   },
   {
     name: 'Fatemeh Ahmadi',
     img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-    text: 'Mock exam is very useful for me. Same timer and same computer screen like real IELTS. When I go to exam I feel more calm because I already do this many times.'
+    text: 'Mock exam is very useful for me. Same timer and same computer screen like real IELTS. When I went to the exam I felt more calm because I already practiced many times.'
   },
   {
     name: 'Bolormaa Tseren',
     img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    text: 'I take photo of my handwritten essay and upload. It read my writing and give full report very fast. I dont need to type again. Very good for daily practise.'
+    text: 'I take a photo of my handwritten essay and upload it. It reads my writing and gives a full report very fast. I dont need to type again. Very good for daily practice.'
   },
   {
     name: 'Minh Tran',
     img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop',
-    text: 'I can see my progress from all my essays. My grammar get better but coherence still weak. So I study more on that and finally get Band 7 on test day.'
+    text: 'I can see my progress from all my essays. My grammar got better but coherence was still weak. So I studied more on that and finally got Band 7 on test day.'
   }
 ];
 
