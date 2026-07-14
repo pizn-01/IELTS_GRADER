@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { dashboardGoalSubtitle } from '../utils/goalProgress';
 import LearningEditionModal from '../components/LearningEditionModal';
+import GoogleAdsTag from '../components/GoogleAdsTag';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 
 function DashboardApp() {
@@ -182,6 +183,7 @@ function DashboardApp() {
 
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
+      <GoogleAdsTag />
       <div className="w-full max-w-[1440px] mx-auto">
         {/* Hero band */}
         <div className="relative overflow-hidden border-b border-[#E5E7EB]/60">
