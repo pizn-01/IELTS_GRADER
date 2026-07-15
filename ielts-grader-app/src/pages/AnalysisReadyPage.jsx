@@ -7,7 +7,7 @@ import { api } from '../services/api';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
-import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import { trackFunnelEvent } from '../utils/funnelEvents';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
@@ -18,13 +18,18 @@ const AnalysisReadyPage = () => {
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeError, setSubscribeError] = useState('');
 
-  const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData } = useGrade();
+  const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData, pendingUploadGrade, setPendingUploadGrade } = useGrade();
   const pollRef = useRef(null);
 
-  // Set grading status once on mount only (Hero already sets it before navigating;
-  // this is a safety net for direct URL access with credits)
+  // Only auto-start grading when we have a pending free upload or an in-flight submission
   useEffect(() => {
-    if (user && user.credits_remaining > 0 && gradingStatus === 'idle') {
+    if (!user || (user.credits_remaining ?? 0) <= 0) return;
+    if (gradingStatus !== 'idle') return;
+    if (submissionId || pendingUploadGrade) {
+      if (!submissionId && !essayData?.essayContent) {
+        navigate('/', { replace: true, state: { resumeError: 'Paste your essay again to continue your free report.' } });
+        return;
+      }
       setGradingStatus('processing');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -94,6 +99,8 @@ const AnalysisReadyPage = () => {
           } catch {}
           const report = await api.getReport(currentSubId);
           setGradingStatus('completed');
+          setPendingUploadGrade(false);
+          trackFunnelEvent('report_viewed');
           navigate('/report', { state: { reportData: report } });
         } else if (status === 'failed' || attempts >= maxAttempts) {
           clearInterval(pollRef.current);

@@ -81,7 +81,16 @@ function pickFallbackQuestion(bank, storageKey, excludeIndex = null) {
 const MockExam = ({ examType, taskType, onExit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { setSubmissionId: setContextSubmissionId, updateEssayData } = useGrade();
+  const {
+    setSubmissionId: setContextSubmissionId,
+    updateEssayData,
+    essayData,
+    pendingSubmit,
+    setPendingSubmit,
+    mockMeta,
+    updateMockMeta,
+    setIntent,
+  } = useGrade();
   const isAcademicTask1 = examType === 'Academic' && (taskType || '').includes('1');
   const isLetterTask = isGeneralTask1Letter(examType, taskType);
   const isTask1 = (taskType || '').includes('1');
@@ -89,11 +98,20 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const key = `${examType || 'Academic'}-${taskType || 'Task 2'}`;
   const bank = QUESTION_BANK[key] || QUESTION_BANK['Academic-Task 2'];
 
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [examTaskId, setExamTaskId] = useState(null);
-  const [questionLoading, setQuestionLoading] = useState(true);
-  const [essay, setEssay] = useState('');
-  const examTaskIdRef = useRef(null);
+  const restoringRef = useRef(!!pendingSubmit && !!essayData?.essayContent);
+  const autoSubmitStarted = useRef(false);
+
+  const [currentQuestion, setCurrentQuestion] = useState(() => {
+    if (restoringRef.current && mockMeta?.mockPrompt) {
+      return { prompt: mockMeta.mockPrompt, note: noteForTimeLimit(isTask1 ? 1200 : 2400, examType, taskType) };
+    }
+    return null;
+  });
+  const [examTaskId, setExamTaskId] = useState(() => (restoringRef.current ? mockMeta?.mockExamTaskId || null : null));
+  const [questionLoading, setQuestionLoading] = useState(!restoringRef.current);
+  const [essay, setEssay] = useState(() => (restoringRef.current ? essayData.essayContent || '' : ''));
+  const [showPromptSheet, setShowPromptSheet] = useState(false);
+  const examTaskIdRef = useRef(restoringRef.current ? mockMeta?.mockExamTaskId || null : null);
 
   const loadNextQuestion = useCallback(async ({ clearEssay = false } = {}) => {
     const resolvedExam = examType || 'Academic';
@@ -148,12 +166,26 @@ const MockExam = ({ examType, taskType, onExit }) => {
   }, [examType, taskType, bank]);
 
   useEffect(() => {
+    if (restoringRef.current) {
+      setQuestionLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     loadNextQuestion().finally(() => {
       if (!cancelled) setQuestionLoading(false);
     });
     return () => { cancelled = true; };
   }, [loadNextQuestion]);
+
+  // Persist prompt when question loads (for guest → auth resume)
+  useEffect(() => {
+    if (!currentQuestion?.prompt) return;
+    updateMockMeta({
+      mockPrompt: currentQuestion.prompt,
+      mockExamTaskId: examTaskId,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestion?.prompt, examTaskId]);
 
   const question = currentQuestion || bank[0];
 
@@ -163,7 +195,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
   }, [question, isAcademicTask1]);
 
   // Derive display name and initials from auth user
-  const displayName = user?.full_name || 'Candidate';
+  const displayName = user?.full_name || (restoringRef.current ? 'Candidate' : 'Candidate');
   const initials = displayName
     .split(' ')
     .filter(Boolean)
@@ -171,7 +203,11 @@ const MockExam = ({ examType, taskType, onExit }) => {
     .map(w => w[0].toUpperCase())
     .join('');
 
-  const [timeLeft, setTimeLeft] = useState(startSeconds);
+  const [timeLeft, setTimeLeft] = useState(() =>
+    restoringRef.current && typeof mockMeta?.mockTimeLeft === 'number'
+      ? mockMeta.mockTimeLeft
+      : startSeconds
+  );
   const [wordCount, setWordCount] = useState(0);
   const [showTimeUp, setShowTimeUp] = useState(false);
   const [isGrading, setIsGrading] = useState(false);
@@ -219,53 +255,83 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const submitEssay = async () => {
     const timeSpent = startSeconds + 1 - timeLeft;
     startTimeRef.current = Date.now();
+    const promptText = question?.prompt || mockMeta?.mockPrompt || essayData?.questionContent || '';
     try {
       const res = await api.submitAttempt({
         exam_type: examType || 'Academic',
         task_type: taskType || 'Task 2',
         essay_content: essay,
+        question_text: promptText,
         time_spent_seconds: timeSpent,
         exam_task_id: examTaskId?.startsWith('fallback-') ? null : examTaskId,
       });
       setSubmissionId(res.submission_id);
-      setContextSubmissionId(res.submission_id); // persist for AnalysisReadyPage polling
+      setContextSubmissionId(res.submission_id);
+      setPendingSubmit(false);
     } catch (err) {
       if (err.message && err.message.includes('Insufficient evaluation credits')) {
         navigate('/analysis-ready', { state: { outOfCredits: true } });
         return;
       }
-      // If server is reachable and threw a real error (e.g. no credits), surface it
       if (err.message && !err.message.toLowerCase().includes('offline') && !err.message.toLowerCase().includes('demo')) {
         setGradingError(err.message);
         setIsGrading(false);
         return;
       }
-      // Network unreachable: use the mock submission_id from offline fallback
       setSubmissionId(`offline-${Date.now()}`);
     }
   };
 
-  const handleStartGrading = () => {
-    setShowTimeUp(false);
+  const gateOrSubmit = () => {
     if (!user) {
-      updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
-      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
+      updateEssayData({
+        essayContent: essay,
+        examType: examType || 'Academic',
+        taskType: taskType || 'Task 2',
+        questionContent: question?.prompt || '',
+      });
+      updateMockMeta({
+        mockPrompt: question?.prompt || '',
+        mockTimeLeft: timeLeft,
+        mockExamTaskId: examTaskId,
+      });
+      setIntent('mock');
+      setPendingSubmit(true);
+      navigate('/signup', {
+        state: {
+          from: {
+            pathname: '/mock-exam',
+            state: { examType: examType || 'Academic', taskType: taskType || 'Task 2' },
+          },
+        },
+      });
       return;
     }
     setIsGrading(true);
     submitEssay();
   };
 
+  const handleStartGrading = () => {
+    setShowTimeUp(false);
+    if (wordCount < 10 && !essay.trim()) return;
+    gateOrSubmit();
+  };
+
   const handleSubmit = () => {
     if (wordCount < 10) return;
-    if (!user) {
-      updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
-      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
-      return;
-    }
+    gateOrSubmit();
+  };
+
+  // Auto-continue after auth when pendingSubmit was set
+  useEffect(() => {
+    if (!user || !pendingSubmit || autoSubmitStarted.current) return;
+    if (!essay.trim() || essay.trim().split(/\s+/).length < 10) return;
+    autoSubmitStarted.current = true;
+    setPendingSubmit(false);
     setIsGrading(true);
     submitEssay();
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, pendingSubmit, essay]);
 
   // ─── Smooth visual progress (0 → 88% over ~44 seconds) ───────────────────
   useEffect(() => {
@@ -459,7 +525,19 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div className="w-full md:w-[400px] lg:w-[480px] border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC]">
+        {/* Mobile: Write-first with View prompt */}
+        <div className="md:hidden flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-white shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowPromptSheet(true)}
+            className="text-[13px] font-semibold text-[#3B82F6]"
+          >
+            View prompt
+          </button>
+          <span className="text-[12px] text-gray-500 font-medium">{wordCount} words</span>
+        </div>
+
+        <div className="hidden md:block w-full md:w-[400px] lg:w-[480px] border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC]">
           <div className="mb-4 md:mb-6 flex items-center justify-between gap-3">
             <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
               {examType} {taskType || 'Task 2'}
@@ -548,7 +626,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 flex items-center justify-between px-2 md:px-8 h-[52px] md:h-[64px] bg-white shrink-0">
+      <footer className="border-t border-gray-100 flex items-center justify-between px-2 md:px-8 h-[52px] md:h-[64px] bg-white shrink-0 pb-[env(safe-area-inset-bottom)]">
         {/* Left — Task buttons */}
         <div className="flex gap-1.5">
           <button className="px-2.5 md:px-5 h-[30px] md:h-[36px] border border-gray-200 rounded-[8px] text-[11px] md:text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all">Task 1</button>
@@ -611,6 +689,44 @@ const MockExam = ({ examType, taskType, onExit }) => {
           </button>
         </div>
       </footer>
+
+      {/* Mobile prompt sheet */}
+      <AnimatePresence>
+        {showPromptSheet && (
+          <div className="fixed inset-0 z-[250] md:hidden flex flex-col justify-end">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setShowPromptSheet(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="relative bg-white rounded-t-[20px] max-h-[75vh] overflow-y-auto p-5 pb-[calc(20px+env(safe-area-inset-bottom))]"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[16px] font-bold text-[#101828]">Question prompt</h3>
+                <button type="button" onClick={() => setShowPromptSheet(false)} className="p-1 text-gray-400">
+                  <X size={20} />
+                </button>
+              </div>
+              <ExamQuestionPanel
+                examType={examType}
+                taskType={taskType}
+                questionText={question.prompt}
+                chartSvg={question.chartSvg}
+                chartImage={question.chartImage}
+                chartType={questionChartType}
+                timeNote={question.note}
+                showBadge={false}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Time's Up Modal */}
       <AnimatePresence>

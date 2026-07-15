@@ -6,7 +6,7 @@ const HowItWorks = () => {
   const [activeTooltip, setActiveTooltip] = React.useState(null);
 
   const tooltips = {
-    essay: { text: "Upload both your IELTS question prompt and your written answer for accurate evaluation." },
+    essay: { text: "Paste your IELTS question prompt and written answer for accurate evaluation." },
     mock: { text: "Practice under exam conditions to simulate a real computer-based IELTS environment." }
   };
 
@@ -37,7 +37,7 @@ const HowItWorks = () => {
                 <h3 className="text-[24px] font-bold text-[#1a1f36]">Evaluate Your IELTS Writing Skills</h3>
               </div>
               <p className="text-[17px] text-[#6B7280] leading-relaxed">
-                Upload your essay or practice in a real IELTS-style mock exam to get instant evaluation and improve your writing performance.
+                Paste your essay or practice in a real IELTS-style mock exam to get instant evaluation and improve your writing performance.
               </p>
             </div>
  

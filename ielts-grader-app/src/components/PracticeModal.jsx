@@ -348,7 +348,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                         <Upload size={18} strokeWidth={2.5} />
                       </div>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-[14px] font-bold text-[#111827]">Upload Essay</span>
+                        <span className="text-[14px] font-bold text-[#111827]">Grade my essay</span>
                         <Info size={13} className="text-gray-300" strokeWidth={2} />
                       </div>
                       <p className="text-[11px] text-gray-400 max-w-[240px] leading-snug">
@@ -393,7 +393,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                 <div className="flex flex-col font-sans h-full">
                   <div className="mb-5">
                     <h2 className="text-[18px] font-bold text-[#111827]">
-                      {selectedOption === 'upload' ? 'Upload Essay' : 'Mock Exam'}
+                      {selectedOption === 'upload' ? 'Grade my essay' : 'Mock Exam'}
                     </h2>
                   </div>
 

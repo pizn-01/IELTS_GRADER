@@ -9,6 +9,7 @@ import {
   getRememberMePreference,
   setRememberedEmail,
 } from '../utils/authStorage';
+import { clearGradeDraft } from '../utils/gradeDraft';
 
 const AuthContext = createContext(null);
 
@@ -74,8 +75,14 @@ export const AuthProvider = ({ children }) => {
    */
   const logout = () => {
     clearAuthToken();
+    clearGradeDraft();
     setToken(null);
     setUser(null);
+    try {
+      window.dispatchEvent(new Event('ielts-grade-draft-cleared'));
+    } catch {
+      /* ignore */
+    }
   };
 
   /**

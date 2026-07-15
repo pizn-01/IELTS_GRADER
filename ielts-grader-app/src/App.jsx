@@ -102,12 +102,19 @@ const ReportsRedirect = () => {
 // ── Home Route — redirects authenticated users to dashboard ───────────────────
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const intent = searchParams.get('intent');
+
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="w-10 h-10 border-4 border-[#2C3E50] border-t-transparent rounded-full animate-spin" />
     </div>
   );
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) {
+    if (intent === 'mock') return <Navigate to="/mock-exam" replace />;
+    if (intent === 'upload') return <Navigate to="/dashboard" replace state={{ openPractice: true }} />;
+    return <Navigate to="/dashboard" replace />;
+  }
   return <LandingPage />;
 };
 
@@ -219,9 +226,7 @@ function App() {
           <ProtectedRoute><DashboardApp /></ProtectedRoute>
         } />
         <Route path="/selection" element={<SelectionPage />} />
-        <Route path="/mock-exam" element={
-          <ProtectedRoute><MockExamPage /></ProtectedRoute>
-        } />
+        <Route path="/mock-exam" element={<MockExamPage />} />
         <Route path="/report" element={
           <ProtectedRoute>
             <Layout 

@@ -127,7 +127,7 @@ const PricingPage = () => {
               </div>
 
               <button 
-                onClick={() => plan.isPremium ? setShowPremiumModal(true) : navigate('/report')}
+                onClick={() => plan.isPremium ? setShowPremiumModal(true) : navigate('/?intent=upload')}
                 className={`w-full h-[50px] rounded-[10px] font-bold text-[15px] transition-all mt-auto ${
                   plan.isPremium 
                     ? 'bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 

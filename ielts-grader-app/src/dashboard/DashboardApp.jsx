@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Lenis from 'lenis';
 import Layout from '../components/Layout';
 import SkillGrowth from '../components/SkillGrowth';
@@ -19,6 +19,7 @@ import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showModal, setShowModal] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
@@ -179,6 +180,15 @@ function DashboardApp() {
       setPracticeStarting(false);
     }
   };
+
+  // Deep-link from /?intent=upload while logged in
+  useEffect(() => {
+    if (location.state?.openPractice) {
+      navigate(location.pathname, { replace: true, state: {} });
+      handleStartPractice();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
