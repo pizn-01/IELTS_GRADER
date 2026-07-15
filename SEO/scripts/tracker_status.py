@@ -11,7 +11,7 @@ STATUS_PATTERN = re.compile(
     re.MULTILINE,
 )
 
-PHASE_PATTERN = re.compile(r"^## Phase ([A-G])", re.MULTILINE)
+PHASE_PATTERN = re.compile(r"^## Phase ([A-Z]+)", re.MULTILINE)
 
 
 def main():

@@ -21,6 +21,7 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 | [INTERNAL_LINKING.md](INTERNAL_LINKING.md) | Link rules between pages |
 | [MEASUREMENT.md](MEASUREMENT.md) | Weekly KPI scorecard |
 | [EXTERNAL_CHECKLIST.md](EXTERNAL_CHECKLIST.md) | Your action items (Reddit, GSC, directories) |
+| [social-media/](social-media/) | Social strategy, employee PDF, weekly/historical discovery scripts |
 | [guides/](guides/) | External playbooks (GSC, Reddit, backlinks, etc.) |
 | [legal-drafts/](legal-drafts/) | Terms, Privacy, Cookies (approve before shipping) |
 | [pages/](pages/) | Tool/landing page copy drafts |

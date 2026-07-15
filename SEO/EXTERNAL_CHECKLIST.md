@@ -19,7 +19,9 @@ Agent Phase 2 work is done (design, legal, blog depth, tool pages, navbar Blog, 
 
 ## Remaining — ongoing growth
 - [ ] Weekly GSC scorecard ([MEASUREMENT.md](MEASUREMENT.md))
-- [ ] Reddit value-first ([guides/REDDIT.md](guides/REDDIT.md))
+- [ ] Social media hire: follow [social-media/STRATEGY.md](social-media/STRATEGY.md) + [social-media/EMPLOYEE_PLAYBOOK.pdf](social-media/EMPLOYEE_PLAYBOOK.pdf)
+- [ ] Add `SERPER_API_KEY` + `YOUTUBE_API_KEY` and run weekly: `python3 SEO/social-media/scripts/search_weekly.py`
+- [ ] Reddit value-first ([guides/REDDIT.md](guides/REDDIT.md) + social playbook)
 - [ ] Product Hunt + AlternativeTo ([guides/BACKLINKS.md](guides/BACKLINKS.md))
 - [ ] One YouTube Short ([guides/YOUTUBE_SHORTS.md](guides/YOUTUBE_SHORTS.md))
 

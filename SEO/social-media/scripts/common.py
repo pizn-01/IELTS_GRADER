@@ -1,0 +1,482 @@
+"""
+Shared helpers for IELTS social discovery scripts.
+
+Data sources:
+  - Reddit: public JSON search (optional OAuth for higher limits)
+  - YouTube: Data API v3
+  - Facebook, Instagram, Quora, Twitter/X, LinkedIn, TikTok: Serper web search
+
+Never auto-posts or auto-replies — discovery / listening only.
+"""
+
+from __future__ import annotations
+
+import csv
+import os
+import time
+from dataclasses import asdict, dataclass, field
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+from typing import Iterable, Optional
+
+import requests
+from dotenv import load_dotenv
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = SCRIPTS_DIR.parent / "output"
+load_dotenv(SCRIPTS_DIR / ".env")
+
+PLATFORMS = [
+    "facebook",
+    "instagram",
+    "reddit",
+    "quora",
+    "twitter",
+    "linkedin",
+    "tiktok",
+    "youtube",
+]
+
+# Platforms covered via Serper site: queries (Reddit/YouTube also use native APIs)
+SERPER_SITE = {
+    "facebook": "facebook.com",
+    "instagram": "instagram.com",
+    "quora": "quora.com",
+    "twitter": "x.com OR site:twitter.com",
+    "linkedin": "linkedin.com",
+    "tiktok": "tiktok.com",
+    # Extra indexed coverage for Reddit/YouTube via SERP fallback if needed
+    "reddit": "reddit.com",
+    "youtube": "youtube.com",
+}
+
+CSV_FIELDS = [
+    "platform",
+    "url",
+    "title",
+    "snippet",
+    "published_at",
+    "discovered_at",
+    "author",
+    "engagement_score",
+    "views",
+    "likes",
+    "comments",
+    "query",
+    "source",
+    "notes",
+]
+
+QUERY_BANK = [
+    "IELTS essay checker",
+    "IELTS writing feedback",
+    "IELTS band score AI",
+    "IELTS writing tutor",
+    "IELTS essay grading",
+    "IELTS AI tutor",
+    "IELTS writing practice feedback",
+    "IELTS Task 2 checker",
+    "IELTS mock writing test",
+    "grade my IELTS essay",
+    "IELTS writing band score tool",
+    "IELTS essay correction",
+]
+
+USER_AGENT = os.getenv(
+    "REDDIT_USER_AGENT",
+    "IELTSGRADER-social-discovery/1.0 (listening script; contact ieltsgrader.com)",
+)
+
+
+@dataclass
+class ResultRow:
+    platform: str
+    url: str
+    title: str = ""
+    snippet: str = ""
+    published_at: str = ""
+    discovered_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    author: str = ""
+    engagement_score: str = ""
+    views: str = ""
+    likes: str = ""
+    comments: str = ""
+    query: str = ""
+    source: str = ""
+    notes: str = ""
+
+    def sort_key(self) -> float:
+        try:
+            return float(self.engagement_score) if self.engagement_score else -1.0
+        except ValueError:
+            return -1.0
+
+
+def parse_date_arg(value: Optional[str]) -> date:
+    if not value:
+        return date.today()
+    return date.fromisoformat(value)
+
+
+def window_bounds(end: date, days: int) -> tuple[datetime, datetime]:
+    """Inclusive start of window, exclusive end-of-day after `end`."""
+    end_dt = datetime.combine(end, datetime.max.time()).replace(tzinfo=timezone.utc)
+    start_dt = datetime.combine(
+        end - timedelta(days=days - 1), datetime.min.time()
+    ).replace(tzinfo=timezone.utc)
+    return start_dt, end_dt
+
+
+def after_before_for_serper(start: datetime, end: datetime) -> str:
+    """Serper supports after:YYYY-MM-DD before:YYYY-MM-DD in q."""
+    return f"after:{start.date().isoformat()} before:{(end.date() + timedelta(days=1)).isoformat()}"
+
+
+def normalize_url(url: str) -> str:
+    return (url or "").strip().split("#")[0].rstrip("/")
+
+
+def dedupe_rows(rows: Iterable[ResultRow]) -> list[ResultRow]:
+    seen: dict[str, ResultRow] = {}
+    for row in rows:
+        key = normalize_url(row.url).lower()
+        if not key:
+            continue
+        existing = seen.get(key)
+        if existing is None or row.sort_key() > existing.sort_key():
+            seen[key] = row
+    ordered = list(seen.values())
+    ordered.sort(key=lambda r: (r.sort_key(), r.published_at or ""), reverse=True)
+    return ordered
+
+
+def write_csv(path: Path, rows: list[ResultRow]) -> Path:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(asdict(row))
+    return path
+
+
+def _sleep(seconds: float = 0.35) -> None:
+    time.sleep(seconds)
+
+
+# ---------------------------------------------------------------------------
+# Serper
+# ---------------------------------------------------------------------------
+
+
+def serper_search(
+    query: str,
+    *,
+    num: int = 10,
+    tbs: Optional[str] = None,
+) -> list[dict]:
+    api_key = os.getenv("SERPER_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError(
+            "SERPER_API_KEY is not set. Copy .env.example to .env and add your key."
+        )
+    payload: dict = {"q": query, "num": num}
+    if tbs:
+        payload["tbs"] = tbs
+    resp = requests.post(
+        "https://google.serper.dev/search",
+        headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+        json=payload,
+        timeout=45,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("organic") or []
+
+
+def search_platform_serper(
+    platform: str,
+    query: str,
+    *,
+    start: datetime,
+    end: datetime,
+    num: int = 10,
+) -> list[ResultRow]:
+    site = SERPER_SITE.get(platform)
+    if not site:
+        return []
+    date_q = after_before_for_serper(start, end)
+    # twitter uses OR in site expression already
+    if platform == "twitter":
+        full_q = f"({site}) {query} {date_q}"
+    else:
+        full_q = f"site:{site} {query} {date_q}"
+    organic = serper_search(full_q, num=num)
+    _sleep()
+    rows: list[ResultRow] = []
+    for item in organic:
+        link = item.get("link") or ""
+        if not link:
+            continue
+        rows.append(
+            ResultRow(
+                platform=platform,
+                url=link,
+                title=item.get("title") or "",
+                snippet=item.get("snippet") or "",
+                published_at=item.get("date") or "",
+                query=query,
+                source="serper",
+                notes="engagement_unknown",
+                engagement_score="",
+            )
+        )
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Reddit (public JSON)
+# ---------------------------------------------------------------------------
+
+
+def _reddit_headers() -> dict:
+    return {"User-Agent": USER_AGENT}
+
+
+def search_reddit(
+    query: str,
+    *,
+    start: datetime,
+    end: datetime,
+    limit: int = 50,
+) -> list[ResultRow]:
+    """Search Reddit submissions via public search JSON; filter by created_utc."""
+    url = "https://www.reddit.com/search.json"
+    params = {
+        "q": query,
+        "sort": "top",
+        "t": "all",
+        "limit": min(limit, 100),
+        "type": "link",
+    }
+    resp = requests.get(url, params=params, headers=_reddit_headers(), timeout=45)
+    if resp.status_code == 429:
+        _sleep(2.0)
+        resp = requests.get(url, params=params, headers=_reddit_headers(), timeout=45)
+    resp.raise_for_status()
+    children = (resp.json().get("data") or {}).get("children") or []
+    _sleep(0.6)
+    rows: list[ResultRow] = []
+    start_ts = start.timestamp()
+    end_ts = end.timestamp()
+    for child in children:
+        data = child.get("data") or {}
+        created = float(data.get("created_utc") or 0)
+        if created < start_ts or created > end_ts:
+            continue
+        permalink = data.get("permalink") or ""
+        full_url = (
+            f"https://www.reddit.com{permalink}"
+            if permalink.startswith("/")
+            else (data.get("url") or "")
+        )
+        score = int(data.get("score") or 0)
+        num_comments = int(data.get("num_comments") or 0)
+        engagement = score + (num_comments * 2)
+        published = datetime.fromtimestamp(created, tz=timezone.utc).isoformat()
+        rows.append(
+            ResultRow(
+                platform="reddit",
+                url=full_url,
+                title=data.get("title") or "",
+                snippet=(data.get("selftext") or "")[:400],
+                published_at=published,
+                author=data.get("author") or "",
+                engagement_score=str(engagement),
+                views="",
+                likes=str(score),
+                comments=str(num_comments),
+                query=query,
+                source="reddit_public_json",
+                notes=f"subreddit=r/{data.get('subreddit') or ''}",
+            )
+        )
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# YouTube Data API
+# ---------------------------------------------------------------------------
+
+
+def search_youtube(
+    query: str,
+    *,
+    start: datetime,
+    end: datetime,
+    max_results: int = 25,
+) -> list[ResultRow]:
+    api_key = os.getenv("YOUTUBE_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError(
+            "YOUTUBE_API_KEY is not set. Copy .env.example to .env and add your key."
+        )
+    search_url = "https://www.googleapis.com/youtube/v3/search"
+    params = {
+        "part": "snippet",
+        "q": query,
+        "type": "video",
+        "order": "viewCount",
+        "publishedAfter": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "publishedBefore": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "maxResults": min(max_results, 50),
+        "key": api_key,
+    }
+    resp = requests.get(search_url, params=params, timeout=45)
+    resp.raise_for_status()
+    items = resp.json().get("items") or []
+    _sleep(0.25)
+    video_ids = [
+        (it.get("id") or {}).get("videoId")
+        for it in items
+        if (it.get("id") or {}).get("videoId")
+    ]
+    stats_by_id: dict[str, dict] = {}
+    if video_ids:
+        stats_url = "https://www.googleapis.com/youtube/v3/videos"
+        stats_resp = requests.get(
+            stats_url,
+            params={
+                "part": "statistics,snippet",
+                "id": ",".join(video_ids),
+                "key": api_key,
+            },
+            timeout=45,
+        )
+        stats_resp.raise_for_status()
+        for v in stats_resp.json().get("items") or []:
+            stats_by_id[v["id"]] = v
+        _sleep(0.25)
+
+    rows: list[ResultRow] = []
+    for it in items:
+        vid = (it.get("id") or {}).get("videoId")
+        if not vid:
+            continue
+        sn = it.get("snippet") or {}
+        detail = stats_by_id.get(vid) or {}
+        st = detail.get("statistics") or {}
+        views = int(st.get("viewCount") or 0)
+        likes = int(st.get("likeCount") or 0)
+        comments = int(st.get("commentCount") or 0)
+        engagement = views + (likes * 10) + (comments * 20)
+        published = sn.get("publishedAt") or ""
+        rows.append(
+            ResultRow(
+                platform="youtube",
+                url=f"https://www.youtube.com/watch?v={vid}",
+                title=sn.get("title") or "",
+                snippet=sn.get("description") or "",
+                published_at=published,
+                author=sn.get("channelTitle") or "",
+                engagement_score=str(engagement),
+                views=str(views),
+                likes=str(likes),
+                comments=str(comments),
+                query=query,
+                source="youtube_data_api",
+                notes="",
+            )
+        )
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Orchestration helpers
+# ---------------------------------------------------------------------------
+
+
+def collect_all_platforms(
+    *,
+    start: datetime,
+    end: datetime,
+    queries: Optional[list[str]] = None,
+    platforms: Optional[list[str]] = None,
+    serper_num: int = 8,
+    reddit_limit: int = 40,
+    youtube_max: int = 15,
+    dry_run: bool = False,
+) -> list[ResultRow]:
+    queries = queries or QUERY_BANK
+    platforms = platforms or PLATFORMS
+    all_rows: list[ResultRow] = []
+    errors: list[str] = []
+
+    if dry_run:
+        for platform in platforms:
+            all_rows.append(
+                ResultRow(
+                    platform=platform,
+                    url=f"https://example.com/dry-run/{platform}",
+                    title=f"[dry-run] sample for {platform}",
+                    snippet="Dry run — no API calls made.",
+                    published_at=start.isoformat(),
+                    query=queries[0] if queries else "",
+                    source="dry_run",
+                    notes="dry_run",
+                    engagement_score="0",
+                )
+            )
+        return dedupe_rows(all_rows)
+
+    native_reddit = "reddit" in platforms
+    native_youtube = "youtube" in platforms
+    serper_platforms = [p for p in platforms if p in SERPER_SITE]
+
+    for query in queries:
+        if native_reddit:
+            try:
+                all_rows.extend(
+                    search_reddit(query, start=start, end=end, limit=reddit_limit)
+                )
+            except Exception as exc:  # noqa: BLE001 — continue other sources
+                errors.append(f"reddit/{query}: {exc}")
+
+        if native_youtube:
+            try:
+                all_rows.extend(
+                    search_youtube(query, start=start, end=end, max_results=youtube_max)
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"youtube/{query}: {exc}")
+
+        for platform in serper_platforms:
+            # Skip serper for reddit/youtube when native succeeded bulk; still useful
+            # as fallback — keep for FB/IG/etc primarily; include reddit/youtube
+            # only if we want SERP extras. Plan: use Serper for non-native platforms.
+            if platform in ("reddit", "youtube"):
+                continue
+            try:
+                all_rows.extend(
+                    search_platform_serper(
+                        platform, query, start=start, end=end, num=serper_num
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"serper/{platform}/{query}: {exc}")
+
+    if errors:
+        print("Warnings / partial failures:")
+        for err in errors[:30]:
+            print(f"  - {err}")
+        if len(errors) > 30:
+            print(f"  … and {len(errors) - 30} more")
+
+    return dedupe_rows(all_rows)
+
+
+def default_output_path(prefix: str, end: date) -> Path:
+    return OUTPUT_DIR / f"{prefix}_{end.isoformat().replace('-', '')}.csv"

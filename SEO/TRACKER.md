@@ -116,3 +116,15 @@ Update the **Status** column as work completes. Run `python3 SEO/scripts/tracker
 | G7 | Guest posts / HARO | G | You | todo | |
 | G8 | Localized landing pages (hreflang) | G | Shared | todo | Last — after English base works |
 | G9 | Programmatic sample-essay pages | G | Agent | todo | Last — after E stable |
+
+## Phase S — Social media activity pack
+
+| ID | Task | Phase | Owner | Status | Notes |
+|----|------|-------|-------|--------|-------|
+| S1 | Social STRATEGY.md (one-hire model) | S | Agent | done | `social-media/STRATEGY.md` |
+| S2 | Employee playbook PDF (8 platforms) | S | Agent | done | `social-media/EMPLOYEE_PLAYBOOK.pdf` |
+| S3 | Historical discovery script (5 years → CSV) | S | Agent | done | `social-media/scripts/search_historical.py` |
+| S4 | Weekly discovery script (prior 7 days) | S | Agent | done | `social-media/scripts/search_weekly.py` |
+| S5 | Add Serper + YouTube API keys | S | You | blocked_on_you | See `social-media/scripts/.env.example` |
+| S6 | Fill brand handle table in STRATEGY | S | You | blocked_on_you | Footer social URLs still pending (C4) |
+| S7 | Run weekly script every Monday | S | You | blocked_on_you | Hire + CSV triage |
