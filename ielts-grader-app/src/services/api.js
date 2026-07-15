@@ -110,9 +110,7 @@ export const api = {
       serverReachable = true;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const err = new Error(data.error || 'Registration failed.');
-        err.status = res.status;
-        throw err;
+        throw new Error(data.error || 'Registration failed.');
       }
       return await res.json();
     } catch (err) {

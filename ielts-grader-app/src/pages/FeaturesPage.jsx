@@ -18,11 +18,11 @@ import { SeoCta, SeoFaq, SeoPrimaryButton, SeoSecondaryButton } from '../seo/Seo
 const FEATURE_GROUPS = [
   {
     title: 'AI writing evaluation',
-    description: 'Paste or type your essay and get a full tutor-style report in about a minute.',
+    description: 'Upload or type your essay and get a full tutor-style report in about a minute.',
     items: [
       {
         icon: Upload,
-        title: 'Paste essays to grade',
+        title: 'Upload or paste essays',
         body: 'PDF, Word, images, or typed text — including handwritten essays via OCR.',
       },
       {

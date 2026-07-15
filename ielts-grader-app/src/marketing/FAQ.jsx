@@ -32,7 +32,7 @@ const FAQ = () => {
     },
     {
       q: 'How long does it take to get my results?',
-      a: 'Most evaluations are ready in under 60 seconds. Paste your essay (or finish a mock exam), and your full report — band scores, fix cards, and all — is generated automatically.'
+      a: 'Most evaluations are ready in under 60 seconds. Upload your essay (or finish a mock exam), and your full report — band scores, fix cards, and all — is generated automatically.'
     },
     {
       q: 'How do credits and pricing work?',

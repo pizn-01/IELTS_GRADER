@@ -5,9 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { getSignupAttribution } from '../utils/attribution';
 import { consumePostAuthRedirect } from '../utils/authStorage';
-import { loadGradeDraft } from '../utils/gradeDraft';
-import { resolvePostAuthNavigation } from '../utils/postAuthResume';
-import { trackFunnelEvent } from '../utils/funnelEvents';
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -19,6 +16,8 @@ const OAuthCallbackPage = () => {
 
     const handleCallback = async () => {
       try {
+        // Supabase automatically parses the access_token from the URL hash
+        // (because detectSessionInUrl: true is set in the supabase client)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !session?.access_token) {
@@ -26,27 +25,15 @@ const OAuthCallbackPage = () => {
           return;
         }
 
+        // Exchange Supabase token for our custom backend JWT
         const { session_id, attribution } = getSignupAttribution();
         const { token, user } = await api.googleAuth(session.access_token, { session_id, attribution });
 
         if (cancelled) return;
 
+        // Store JWT and update AuthContext — no page reload needed
         setUserFromToken(token, user);
-        trackFunnelEvent('signup_complete', 'google');
-
-        const draft = loadGradeDraft();
-        const redirectPath = consumePostAuthRedirect('/dashboard');
-        const fromLocation = { pathname: redirectPath.split('?')[0], search: redirectPath.includes('?') ? `?${redirectPath.split('?')[1]}` : '' };
-
-        const dest = resolvePostAuthNavigation({
-          user,
-          fromLocation,
-          essayContent: draft?.essayContent,
-          pendingSubmit: draft?.pendingSubmit,
-          pendingUploadGrade: draft?.pendingUploadGrade,
-        });
-
-        navigate(dest.pathname, { replace: true, state: dest.state });
+        navigate(consumePostAuthRedirect('/dashboard'), { replace: true });
       } catch (err) {
         if (!cancelled) setError(err.message || 'Authentication failed. Please try again.');
       }
@@ -64,10 +51,10 @@ const OAuthCallbackPage = () => {
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1f36', marginBottom: '12px' }}>Sign-in failed</h2>
           <p style={{ color: '#6B7280', marginBottom: '24px', fontSize: '14px' }}>{error}</p>
           <button
-            onClick={() => navigate('/signup')}
+            onClick={() => navigate('/login')}
             style={{ background: '#1a1f36', color: 'white', border: 'none', borderRadius: '10px', padding: '12px 32px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
           >
-            Try again
+            Back to Login
           </button>
         </div>
       </div>

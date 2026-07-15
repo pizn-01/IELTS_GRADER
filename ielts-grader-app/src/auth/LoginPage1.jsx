@@ -3,13 +3,10 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { Icons, formStyles, COLORS } from "./Common.jsx";
 import { useAuth } from '../context/AuthContext';
-import { useGrade } from '../context/GradeContext';
 import { getRememberedEmail, setPostAuthRedirect } from '../utils/authStorage';
-import { resolvePostAuthNavigation } from '../utils/postAuthResume';
 
 const LoginPage1 = () => {
-  const { login, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading, user } = useAuth();
-  const { essayData, pendingSubmit, pendingUploadGrade, submissionId } = useGrade();
+  const { login, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState(() => getRememberedEmail());
   const [password, setPassword] = useState('');
@@ -21,39 +18,22 @@ const LoginPage1 = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fromLocation = location.state?.from;
-
-  const goAfterAuth = (authedUser) => {
-    const dest = resolvePostAuthNavigation({
-      user: authedUser,
-      fromLocation,
-      essayContent: essayData?.essayContent,
-      pendingSubmit,
-      pendingUploadGrade,
-      submissionId,
-    });
-    navigate(dest.pathname, { replace: true, state: dest.state });
-  };
+  const from = fromLocation
+    ? `${fromLocation.pathname}${fromLocation.search || ''}`
+    : '/dashboard';
+  const fromState = fromLocation?.state;
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user) {
-      goAfterAuth(user);
+    if (!isLoading && isAuthenticated) {
+      navigate(from, { replace: true, state: fromState });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isLoading, user]);
+  }, [isAuthenticated, isLoading, navigate, from, fromState]);
 
   const handleGoogleSignIn = async () => {
     setError('');
     setIsGoogleLoading(true);
     try {
-      const dest = resolvePostAuthNavigation({
-        user: { credits_remaining: 1 },
-        fromLocation,
-        essayContent: essayData?.essayContent,
-        pendingSubmit,
-        pendingUploadGrade,
-        submissionId,
-      });
-      setPostAuthRedirect(dest.pathname);
+      if (from && from !== '/dashboard') setPostAuthRedirect(from);
       await signInWithGoogle();
     } catch (err) {
       setError(err.message || 'Google sign-in failed. Please try again.');
@@ -67,8 +47,8 @@ const LoginPage1 = () => {
     setError('');
     setIsSubmitting(true);
     try {
-      const u = await login({ email, password, rememberMe });
-      goAfterAuth(u);
+      await login({ email, password, rememberMe });
+      navigate(from, { replace: true, state: fromState });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

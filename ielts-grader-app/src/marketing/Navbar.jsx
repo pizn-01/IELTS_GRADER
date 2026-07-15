@@ -174,20 +174,12 @@ const Navbar = ({ showCredits }) => {
               )}
             </div>
           ) : (
-            <div className="hidden md:flex items-center gap-3">
-              <Link
-                to="/login"
-                className="text-[#4B5563] text-[14px] font-semibold no-underline hover:text-[#1a1f36] transition-colors"
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="bg-[#1a1f36] text-white px-6 py-2 rounded-[8px] text-[14px] font-bold no-underline hover:bg-[#2a2f46] transition-colors items-center justify-center h-[40px] flex"
-              >
-                Sign up
-              </Link>
-            </div>
+            <Link
+              to="/login"
+              className="hidden md:flex bg-[#1a1f36] text-white px-6 py-2 rounded-[8px] text-[14px] font-bold no-underline hover:bg-[#2a2f46] transition-colors items-center justify-center h-[40px]"
+            >
+              Login
+            </Link>
           )}
 
           {/* Mobile Hamburger Menu Toggle */}
@@ -243,22 +235,13 @@ const Navbar = ({ showCredits }) => {
             )}
 
             {!user ? (
-              <>
-                <Link
-                  to="/signup"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="mt-2 w-full bg-[#1a1f36] text-white px-6 py-3 rounded-[8px] text-[15px] font-bold text-center hover:bg-[#2a2f46] transition-colors no-underline"
-                >
-                  Sign up
-                </Link>
-                <Link
-                  to="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="mt-2 w-full bg-white text-[#1a1f36] border border-[#E5E7EB] px-6 py-3 rounded-[8px] text-[15px] font-bold text-center hover:bg-[#F9FAFB] transition-colors no-underline"
-                >
-                  Login
-                </Link>
-              </>
+              <Link
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mt-2 w-full bg-[#1a1f36] text-white px-6 py-3 rounded-[8px] text-[15px] font-bold text-center hover:bg-[#2a2f46] transition-colors"
+              >
+                Login
+              </Link>
             ) : (
               <Link
                 to="/dashboard"

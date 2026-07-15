@@ -130,7 +130,7 @@ export default function SampleReportPage() {
 
         <SeoCta
           title="Ready for your own report?"
-          subtitle="Paste an essay and get the same band breakdown and fix cards in about 60 seconds — first evaluation free."
+          subtitle="Upload an essay and get the same band breakdown and fix cards in about 60 seconds — first evaluation free."
           label="Start free evaluation"
           href="/signup"
         />

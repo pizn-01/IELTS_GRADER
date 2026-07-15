@@ -1,12 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, Paperclip, ChevronRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, Paperclip } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
-import { trackFunnelEvent } from '../utils/funnelEvents';
 
 const readAsDataURL = (file) =>
   new Promise((resolve, reject) => {
@@ -22,33 +21,17 @@ const isImageFile = (file) =>
 
 const Hero = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const {
-    essayData,
-    updateEssayData,
-    setGradingStatus,
-    setSubmissionId,
-    setIntent,
-    setPendingUploadGrade,
-  } = useGrade();
+  const { essayData, updateEssayData, setGradingStatus, setSubmissionId } = useGrade();
   const { user } = useAuth();
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [cardView, setCardView] = useState('upload'); // mobile default: grade-my-essay path
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [cardView, setCardView] = useState('default'); // 'default', 'mock', 'upload'
   const [files, setFiles] = useState({ prompt: null, essay: null });
 
   const tooltips = {
-    essay: { text: 'Paste your IELTS essay (and optional question prompt) to get criterion scores and fixes.' },
-    mock: { text: 'Practice under exam conditions to simulate a real computer-based IELTS environment.' },
+    essay: { text: "Upload both your IELTS question prompt and your written answer for accurate evaluation." },
+    mock: { text: "Practice under exam conditions to simulate a real computer-based IELTS environment." }
   };
-
-  useEffect(() => {
-    if (location.state?.resumeError) {
-      setFileReadError(location.state.resumeError);
-      setCardView('upload');
-    }
-  }, [location.state]);
 
   const Tooltip = ({ text }) => (
     <div className="absolute top-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-[240px] bg-[#1a1f36] rounded-lg p-4 shadow-2xl z-50 text-left pointer-events-none animate-in fade-in zoom-in-95 duration-200">
@@ -81,50 +64,40 @@ const Hero = () => {
 
   return (
     <header id="about" className="bg-[#1A96F30D] relative min-h-[700px] box-border overflow-hidden flex items-center justify-center py-10 lg:py-12">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex flex-col lg:flex-row items-center gap-8 lg:gap-20">
-
-        {/* Mobile: compact promise above card */}
-        <div className="w-full lg:hidden text-center">
-          <p className="text-[13px] font-semibold text-[#78350F] bg-[#FEF9C3] border border-[#FDE68A] inline-block px-3 py-1 rounded-full mb-3">
-            1 free evaluation · No card required
-          </p>
-          <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.15] tracking-[-0.03em] font-['Nunito',_sans-serif]">
-            Free IELTS writing report in <span className="text-[#3B82F6]">60 seconds</span>
-          </h1>
-        </div>
-
-        {/* Left Column - desktop / below-fold on mobile */}
-        <div className="w-full lg:w-[55%] animate-fadeIn order-2 lg:order-1">
-          <div className="hidden lg:inline-flex items-center px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-6">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+        
+        {/* Left Column - Hero Content */}
+        <div className="w-full lg:w-[55%] animate-fadeIn">
+          <div className="inline-flex items-center px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-6">
             1 free evaluation · No card required
           </div>
 
-          <h1 className="hidden lg:block text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
+          <h1 className="text-[25px] sm:text-[32px] lg:text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
             Your IELTS Writing Tutor.<br />
             Band scores, fixes & a plan in<br />
             <span className="text-[#3B82F6]">60 Seconds.</span>
           </h1>
 
-          <p className="text-[15px] lg:text-[17px] text-[#6B7280] leading-[1.6] mb-6 lg:mb-10 max-w-[540px]">
-            Stop guessing. Sign up free, paste an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan — 1 full evaluation included.
+          <p className="text-[17px] text-[#6B7280] leading-[1.6] mb-10 max-w-[540px]">
+            Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan — 1 full evaluation included.
           </p>
 
-          <div className="space-y-4 mb-8 lg:mb-10">
-            <div className="flex items-center gap-4 text-[15px] lg:text-[16px] font-medium text-[#1a1f36]">
+          <div className="space-y-5 mb-10">
+            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Star className="w-5 h-5 text-[#F59E0B]" fill="#F59E0B" strokeWidth={2} />
               1 free full report — no credit card
             </div>
-            <div className="flex items-center gap-4 text-[15px] lg:text-[16px] font-medium text-[#1a1f36]">
+            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Zap className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2} />
               Criterion scores + sentence fixes — not just a band
             </div>
-            <div className="flex items-center gap-4 text-[15px] lg:text-[16px] font-medium text-[#1a1f36]">
+            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <ShieldCheck className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2} />
               Personalized next steps toward your target band
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
               {[ 'photo-1534528741775-53994a69daeb', 'photo-1506794778202-cad84cf45f1d', 'photo-1494790108377-be9c29b29330', 'photo-1500648767791-00dcc994a43e' ].map((id, i) => (
                 <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
@@ -142,76 +115,76 @@ const Hero = () => {
               </div>
             </div>
           </div>
-
-          <div className="lg:hidden flex items-center justify-center gap-2 mt-2">
-            <div className="flex gap-0.5">
-              {[1,2,3,4,5].map(i => <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />)}
-            </div>
-            <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
-            <span className="text-[12px] text-[#9CA3AF]">2,400+ reviews</span>
-          </div>
-        </div>
-
-        {/* Right Column - Dynamic Card — first on mobile */}
-        <div className="w-full lg:w-[45%] flex justify-center lg:justify-end animate-fadeIn order-1 lg:order-2">
-          <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-5 sm:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
+        </div>        {/* Right Column - Dynamic Card */}
+        <div className="w-full lg:w-[45%] flex justify-center lg:justify-end animate-fadeIn">
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
             
             {cardView === 'default' ? (
               <div className="flex-1 flex flex-col animate-fadeIn">
-                <h3 className="text-[18px] sm:text-[20px] font-bold text-[#1a1f36] mb-5">Start your free tutor report</h3>
+                <h3 className="text-[20px] font-bold text-[#1a1f36] mb-6">Start your free tutor report</h3>
                 
-                <button
-                  type="button"
-                  onClick={() => {
-                    trackFunnelEvent('hero_cta', 'upload');
-                    setSelectedOption('upload');
-                    setCardView('upload');
-                  }}
-                  className="group border rounded-[12px] p-4 sm:p-5 mb-3 cursor-pointer transition-all text-center relative bg-white border-[#E5E7EB] hover:border-[#3B82F6] w-full"
+                <div 
+                  onClick={() => setSelectedOption('upload')} 
+                  className={`group border rounded-[12px] p-5 mb-3 cursor-pointer transition-all text-center relative bg-white ${
+                    selectedOption === 'upload' 
+                      ? 'border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
+                      : 'border-[#E5E7EB] hover:border-[#3B82F6] hover:shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                  }`}
                 >
-                  <div className="flex justify-center mb-2">
-                    <div className="w-10 h-10 rounded-[8px] flex items-center justify-center bg-[#EFF6FF]">
-                      <FileCheck2 className="w-5 h-5 text-[#3B82F6]" />
+                  <div className="flex justify-center mb-3">
+                    <div className="w-10 h-10 rounded-[8px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                      <Upload className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-1">
-                    <span className="text-[16px] font-bold text-[#1a1f36]">Grade my essay</span>
+                    <span className={`text-[16px] font-bold transition-colors ${selectedOption === 'upload' ? 'text-[#1a1f36]' : 'text-[#4B5563] group-hover:text-[#1a1f36]'}`}>Upload Essay</span>
                     <span className="relative flex items-center">
-                      <Info
-                        onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'upload' ? null : 'upload'); }}
-                        className="w-[14px] h-[14px] cursor-help text-[#9CA3AF]"
+                      <Info 
+                        onMouseEnter={() => setActiveTooltip('upload')}
+                        onMouseLeave={() => setActiveTooltip(null)}
+                        className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'upload' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
                       />
                       {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
                     </span>
                   </div>
-                  <p className="text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Paste your essay for a band score and fixes</p>
-                </button>
+                  <p className="text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Upload your question and answer (PDF, Word, JPG, etc.)</p>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    trackFunnelEvent('hero_cta', 'mock');
-                    setSelectedOption('mock');
-                    setCardView('mock');
-                  }}
-                  className="group border rounded-[12px] p-4 sm:p-5 mb-3 cursor-pointer transition-all text-center relative bg-white border-[#E5E7EB] hover:border-[#3B82F6] w-full"
+                <div 
+                  onClick={() => setSelectedOption('mock')} 
+                  className={`group border rounded-[12px] p-5 mb-3 cursor-pointer transition-all text-center relative bg-white ${
+                    selectedOption === 'mock' 
+                      ? 'border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
+                      : 'border-[#E5E7EB] hover:border-[#3B82F6] hover:shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                  }`}
                 >
-                  <div className="flex justify-center mb-2">
-                    <div className="w-10 h-10 rounded-[8px] flex items-center justify-center bg-[#EFF6FF]">
-                      <Clock className="w-5 h-5 text-[#3B82F6]" />
+                  <div className="flex justify-center mb-3">
+                    <div className="w-10 h-10 rounded-[8px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                      <Clock className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-1">
-                    <span className="text-[16px] font-bold text-[#4B5563] group-hover:text-[#1a1f36]">Mock Exam</span>
+                    <span className={`text-[16px] font-bold transition-colors ${selectedOption === 'mock' ? 'text-[#1a1f36]' : 'text-[#4B5563] group-hover:text-[#1a1f36]'}`}>Mock Exam</span>
                     <span className="relative flex items-center">
-                      <Info
-                        onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'mock' ? null : 'mock'); }}
-                        className="w-[14px] h-[14px] cursor-help text-[#9CA3AF]"
+                      <Info 
+                        onMouseEnter={() => setActiveTooltip('mock')}
+                        onMouseLeave={() => setActiveTooltip(null)}
+                        className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'mock' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
                       />
                       {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
                     </span>
                   </div>
-                  <p className="text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Timed IELTS computer-based practice</p>
+                  <p className="text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Practice in a real IELTS computer-based environment with timer</p>
+                </div>
+
+                <button 
+                  onClick={() => selectedOption && setCardView(selectedOption)} 
+                  disabled={!selectedOption}
+                  className={`w-full h-[50px] rounded-[10px] font-bold text-[16px] mt-2 transition-all shadow-md active:scale-[0.98] ${
+                    selectedOption ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46]' : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
+                  }`}
+                >
+                  Start free evaluation
                 </button>
               </div>
             ) : cardView === 'mock' ? (
@@ -259,16 +232,15 @@ const Hero = () => {
 
                 <button
                   onClick={() => {
-                    trackFunnelEvent('hero_cta', 'mock_start');
-                    if (!essayData.examType || !essayData.taskType) return;
-                    setIntent('mock');
-                    if (user && (user.credits_remaining ?? 0) <= 0) {
+                    if (!user) {
+                      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
+                      return;
+                    }
+                    if ((user.credits_remaining ?? 0) <= 0) {
                       navigate('/analysis-ready', { state: { outOfCredits: true } });
                       return;
                     }
-                    navigate('/mock-exam', {
-                      state: { examType: essayData.examType, taskType: essayData.taskType },
-                    });
+                    navigate('/mock-exam');
                   }}
                   disabled={!essayData.examType || !essayData.taskType}
                   className={`w-full h-[50px] rounded-[8px] font-bold text-[15px] mt-8 transition-all ${
@@ -286,64 +258,60 @@ const Hero = () => {
                   <button onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
                     <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
                   </button>
-                  <h3 className="text-[18px] font-bold text-[#1a1f36]">Grade my essay</h3>
+                  <h3 className="text-[18px] font-bold text-[#1a1f36]">Upload Essay</h3>
                 </div>
 
                 <div className="space-y-4 flex-1">
+                  <p className="text-[12px] text-[#6B7280]">
+                    Task type is detected automatically from your question prompt (or essay if no prompt is provided).
+                  </p>
+
                   <div>
-                    <button
-                      type="button"
-                      onClick={() => setShowPrompt((v) => !v)}
-                      className="flex items-center gap-1 text-[13px] font-medium text-[#3B82F6] mb-2"
-                    >
-                      <ChevronRight className={`w-4 h-4 transition-transform ${showPrompt ? 'rotate-90' : ''}`} />
-                      Add question (recommended)
-                    </button>
-                    {showPrompt && (
-                      <div className="relative">
-                        <textarea
-                          value={questionText}
-                          onChange={(e) => setQuestionText(e.target.value)}
-                          placeholder="Paste the question prompt (optional)"
-                          rows={3}
-                          className="w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => promptFileRef.current?.click()}
-                          className="absolute right-3 top-3 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
-                          title="Attach file"
-                        >
-                          <Paperclip size={16} />
-                        </button>
-                        <input
-                          ref={promptFileRef}
-                          type="file"
-                          accept={UPLOAD_ACCEPT}
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files[0];
-                            e.target.value = '';
-                            if (!file) return;
-                            setFileReadError('');
-                            try {
-                              if (isImageFile(file)) {
-                                setQuestionChartImage(await readAsDataURL(file));
-                              } else {
-                                setQuestionChartImage(null);
-                              }
-                              const text = normalizeParagraphBreaks(await extractFileText(file));
-                              setQuestionText(text.trim());
-                            } catch (err) {
-                              setFileReadError(err.message || 'Could not read the question file.');
+                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">
+                      Your Question / Prompt <span className="text-[#9CA3AF] font-normal">(recommended)</span>
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        value={questionText}
+                        onChange={(e) => setQuestionText(e.target.value)}
+                        placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
+                        rows={3}
+                        className="w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => promptFileRef.current?.click()}
+                        className="absolute right-3 top-3 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
+                      >
+                        <Paperclip size={16} />
+                      </button>
+                      <input
+                        ref={promptFileRef}
+                        type="file"
+                        accept={UPLOAD_ACCEPT}
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          e.target.value = '';
+                          if (!file) return;
+                          setFileReadError('');
+                          try {
+                            if (isImageFile(file)) {
+                              setQuestionChartImage(await readAsDataURL(file));
+                            } else {
+                              setQuestionChartImage(null);
                             }
-                          }}
-                        />
-                      </div>
-                    )}
+                            const text = normalizeParagraphBreaks(await extractFileText(file));
+                            setQuestionText(text.trim());
+                          } catch (err) {
+                            setFileReadError(err.message || 'Could not read the question file.');
+                          }
+                        }}
+                      />
+                    </div>
                     {questionChartImage && (
                       <p className="text-[11px] text-[#059669] mt-1">
-                        Question image retained for chart grading.
+                        Question image retained for chart grading (not shown in the text box).
                       </p>
                     )}
                   </div>
@@ -354,7 +322,7 @@ const Hero = () => {
                       <textarea
                         value={essayText}
                         onChange={(e) => setEssayText(e.target.value)}
-                        placeholder="Paste or type your essay here"
+                        placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
                         rows={5}
                         className="w-full min-h-[120px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y"
                       />
@@ -362,7 +330,6 @@ const Hero = () => {
                         type="button"
                         onClick={() => essayFileRef.current?.click()}
                         className="absolute right-3 top-3 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
-                        title="Attach file"
                       >
                         <Paperclip size={16} />
                       </button>
@@ -396,7 +363,6 @@ const Hero = () => {
                     if (!essayText.trim()) return;
                     setFileReadError('');
                     setIsSubmitting(true);
-                    trackFunnelEvent('hero_cta', 'upload_submit');
                     try {
                       const detectSource = (questionText || essayText).trim();
                       const detected = await api.detectTask(detectSource);
@@ -417,12 +383,10 @@ const Hero = () => {
                         chartImage:
                           detected.task === 'task1-report' ? questionChartImage : null,
                       });
-                      setIntent('upload');
 
                       if (!user) {
-                        setPendingUploadGrade(true);
                         setIsSubmitting(false);
-                        navigate('/signup', {
+                        navigate('/login', {
                           state: { from: { pathname: '/analysis-ready' } },
                         });
                         return;
@@ -445,10 +409,9 @@ const Hero = () => {
                         });
                         setSubmissionId(res.submission_id);
                         setGradingStatus('processing');
-                        setPendingUploadGrade(false);
                         navigate('/analysis-ready');
                       } else {
-                        navigate('/analysis-ready', { state: { outOfCredits: true } });
+                        navigate('/analysis-ready');
                       }
                     } catch (err) {
                       if (err.message && err.message.includes('Insufficient evaluation credits')) {

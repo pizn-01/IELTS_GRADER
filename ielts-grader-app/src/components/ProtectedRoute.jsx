@@ -14,10 +14,10 @@ const FullPageLoader = () => (
   </div>
 );
 
-const FREE_FUNNEL_SIGNUP_PATHS = new Set(['/analysis-ready']);
-
 /**
- * AdminRoute — wraps admin-only routes. Unauth → /login.
+ * ProtectedRoute — wraps any route that requires authentication.
+ * Shows loader during bootstrap, redirects to /login if unauthenticated,
+ * and preserves the intended destination via location state.
  */
 export const AdminRoute = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -28,11 +28,6 @@ export const AdminRoute = ({ children }) => {
   return children;
 };
 
-/**
- * ProtectedRoute — auth required.
- * Free-funnel destination /analysis-ready → /signup (soft gate).
- * All other protected routes → /login (existing users / session expiry).
- */
 export const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
@@ -40,8 +35,7 @@ export const ProtectedRoute = ({ children }) => {
   if (isLoading) return <FullPageLoader />;
 
   if (!isAuthenticated) {
-    const to = FREE_FUNNEL_SIGNUP_PATHS.has(location.pathname) ? '/signup' : '/login';
-    return <Navigate to={to} state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;
