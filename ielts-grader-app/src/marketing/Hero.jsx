@@ -72,7 +72,7 @@ const Hero = () => {
             1 free evaluation · No card required
           </div>
 
-          <h1 className="text-[34px] sm:text-[42px] lg:text-[62px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
+          <h1 className="text-[28px] sm:text-[36px] lg:text-[50px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
             Your IELTS Writing Tutor.<br />
             Band scores, fixes & a plan in<br />
             <span className="text-[#3B82F6]">60 Seconds.</span>
