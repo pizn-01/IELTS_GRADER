@@ -24,7 +24,7 @@ const HowItWorks = () => {
         <div className="text-center mb-[60px]">
           <h2 className="text-[32px] font-bold text-[#1a1f36] mb-3">How It Works</h2>
           <p className="text-[15px] text-[#9CA3AF]">
-            Get your detailed IELTS report in three simple steps — no sign-up required to start.
+            Get your detailed IELTS tutor report in three steps — 1 free evaluation with signup, no card required.
           </p>
         </div>
 

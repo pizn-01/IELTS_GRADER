@@ -69,31 +69,31 @@ const Hero = () => {
         {/* Left Column - Hero Content */}
         <div className="w-full lg:w-[55%] animate-fadeIn">
           <div className="inline-flex items-center px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-6">
-            Built for students. Trusted by schools
+            1 free evaluation · No card required
           </div>
 
           <h1 className="text-[34px] sm:text-[42px] lg:text-[62px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
-            Get Your IELTS Band<br />
-            Score & Fix Cards in<br />
+            Your IELTS Writing Tutor.<br />
+            Band scores, fixes & a plan in<br />
             <span className="text-[#3B82F6]">60 Seconds.</span>
           </h1>
 
           <p className="text-[17px] text-[#6B7280] leading-[1.6] mb-10 max-w-[540px]">
-            Stop guessing your score. Upload your essay and get a full AI-powered breakdown with corrections, band score, and improvement plan — completely free.
+            Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan — 1 full evaluation included.
           </p>
 
           <div className="space-y-5 mb-10">
             <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Star className="w-5 h-5 text-[#F59E0B]" fill="#F59E0B" strokeWidth={2} />
-              Used by 10,000+ IELTS students
+              1 free full report — no credit card
             </div>
             <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Zap className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2} />
-              Results in 60 seconds
+              Criterion scores + sentence fixes — not just a band
             </div>
             <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <ShieldCheck className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2} />
-              Aligned with official IELTS criteria
+              Personalized next steps toward your target band
             </div>
           </div>
 
@@ -121,7 +121,7 @@ const Hero = () => {
             
             {cardView === 'default' ? (
               <div className="flex-1 flex flex-col animate-fadeIn">
-                <h3 className="text-[20px] font-bold text-[#1a1f36] mb-6">Evaluate Your Essay Writing Skills</h3>
+                <h3 className="text-[20px] font-bold text-[#1a1f36] mb-6">Start your free tutor report</h3>
                 
                 <div 
                   onClick={() => setSelectedOption('upload')} 
@@ -184,7 +184,7 @@ const Hero = () => {
                     selectedOption ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46]' : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
                   }`}
                 >
-                  Get Started
+                  Start free evaluation
                 </button>
               </div>
             ) : cardView === 'mock' ? (
@@ -429,11 +429,11 @@ const Hero = () => {
                       : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
                   }`}
                 >
-                  {isSubmitting ? 'Analyzing…' : 'Analyze My Essay'}
+                  {isSubmitting ? 'Analyzing…' : user ? 'Analyze My Essay' : 'Get my free tutor report'}
                 </button>
                 {!user && (
                   <p className="text-[12px] text-[#6B7280] text-center mt-3">
-                    Log in required — free account includes 1 full evaluation. No card required.
+                    Free account includes 1 full evaluation. No card required.
                   </p>
                 )}
               </div>
