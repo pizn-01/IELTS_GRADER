@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import BrandLogo from '../components/BrandLogo';
 
 const AuthLayout = ({ children, noBox }) => {
   return (
@@ -32,9 +32,10 @@ const AuthLayout = ({ children, noBox }) => {
 
       {/* Navbar */}
       <nav className="h-[56px] bg-white border-b border-[#E5E7EB] px-4 sm:px-10 flex justify-between items-center sticky top-0 z-[100]">
-        <Link to="/" className="text-[16px] font-bold text-[#1a1f36] uppercase tracking-[-0.02em] no-underline">
-          IELTSGRADER
-        </Link>
+        <BrandLogo
+          textClassName="text-[16px] font-bold text-[#1a1f36] uppercase tracking-[-0.02em]"
+          imgClassName="h-7 w-7"
+        />
         <a href="#" className="text-[14px] font-normal text-[#374151] no-underline">
           Need Help?
         </a>

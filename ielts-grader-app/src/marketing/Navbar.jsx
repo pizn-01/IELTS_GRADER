@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Coins, User, Shield, CreditCard, HelpCircle, LogOut } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
 
 const Navbar = ({ showCredits }) => {
   const { user, logout } = useAuth();
@@ -58,9 +59,7 @@ const Navbar = ({ showCredits }) => {
       <div className="max-w-[1440px] mx-auto px-4 md:px-[50px] h-full flex items-center justify-between">
         {/* Left Side: Logo & Desktop Links */}
         <div className="flex items-center">
-          <Link onClick={() => setIsMobileMenuOpen(false)} to="/" className="text-[17px] md:text-[19px] font-extrabold text-[#1a1f36] uppercase tracking-tight cursor-pointer shrink-0 no-underline">
-            IELTSGRADER
-          </Link>
+          <BrandLogo onClick={() => setIsMobileMenuOpen(false)} />
 
           {/* Vertical Divider (Desktop) */}
           <div className="hidden md:block w-[1px] h-[20px] bg-[#D1D5DB] mx-4 shrink-0"></div>

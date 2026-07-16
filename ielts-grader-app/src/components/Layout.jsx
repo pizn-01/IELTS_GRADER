@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3, BookOpen } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { useLearningNavBadge } from '../hooks/useLearningNavBadge';
+import BrandLogo from './BrandLogo';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
   const { user, updateUser } = useAuth();
@@ -72,13 +72,10 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
 
             {/* Left: logo + desktop nav */}
             <div className="flex items-center gap-6">
-              <Link
-                to="/"
-                className="text-[18px] md:text-[20px] tracking-tight text-[#101828] no-underline hover:opacity-80 transition-opacity cursor-pointer"
-                style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}
-              >
-                IELTSGRADER
-              </Link>
+              <BrandLogo
+                textClassName="text-[18px] md:text-[20px] tracking-tight text-[#101828] uppercase"
+                imgClassName="h-7 w-7 md:h-8 md:w-8"
+              />
               <div className="hidden md:block h-6 w-px bg-[#E5E7EB]" />
 
               {/* Desktop nav tabs */}
