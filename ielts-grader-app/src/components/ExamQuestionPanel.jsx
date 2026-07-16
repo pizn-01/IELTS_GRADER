@@ -38,7 +38,8 @@ function LetterQuestionDisplay({ text }) {
 
 function ReportQuestionDisplay({ text, chartType, chartSvg, chartImage }) {
   const { scenario, instruction } = parseReportQuestion(text);
-  const showChart = Boolean(chartSvg || chartImage);
+  // Prefer svg/image; fall back to synthetic chart from chartType/seed.
+  const showChart = Boolean(chartSvg || chartImage || chartType || text);
   return (
     <>
       <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-4">

@@ -480,7 +480,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div className="w-full md:w-[400px] lg:w-[480px] border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC]">
+        <div className="w-full md:w-[400px] lg:w-[480px] max-h-[46vh] md:max-h-none border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC] shrink-0 md:shrink">
           <div className="mb-4 md:mb-6 flex items-center justify-between gap-3">
             <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
               {examType} {taskType || 'Task 2'}
@@ -570,10 +570,19 @@ const MockExam = ({ examType, taskType, onExit }) => {
 
       {/* Footer */}
       <footer className="border-t border-gray-100 flex items-center justify-between px-2 md:px-8 h-[52px] md:h-[64px] bg-white shrink-0">
-        {/* Left — Task buttons */}
-        <div className="flex gap-1.5">
-          <button className="px-2.5 md:px-5 h-[30px] md:h-[36px] border border-gray-200 rounded-[8px] text-[11px] md:text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all">Task 1</button>
-          <button className="px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold transition-all">Task 2</button>
+        {/* Left — Task indicators (reflect current exam task; not switchers) */}
+        <div className="flex gap-1.5" aria-label={`Current task: ${taskType || 'Task 2'}`}>
+          {(() => {
+            const isTask1 = String(taskType || '').includes('1');
+            const activeCls = 'px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold transition-all';
+            const idleCls = 'px-2.5 md:px-5 h-[30px] md:h-[36px] border border-gray-200 rounded-[8px] text-[11px] md:text-[14px] font-semibold text-[#344054]';
+            return (
+              <>
+                <span className={isTask1 ? activeCls : idleCls} aria-current={isTask1 ? 'true' : undefined}>Task 1</span>
+                <span className={!isTask1 ? activeCls : idleCls} aria-current={!isTask1 ? 'true' : undefined}>Task 2</span>
+              </>
+            );
+          })()}
         </div>
 
         {/* Word count */}
