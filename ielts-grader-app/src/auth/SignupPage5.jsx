@@ -82,14 +82,48 @@ const SignupPage5 = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Error Banner */}
-          {error && (
-            <div style={{ background: '#FFF5F5', border: '1.5px solid #FECACA', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '14px', color: '#DC2626', fontWeight: 500 }}>
-              {error}
-            </div>
-          )}
+        {error && (
+          <div style={{ background: '#FFF5F5', border: '1.5px solid #FECACA', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '14px', color: '#DC2626', fontWeight: 500 }}>
+            {error}
+          </div>
+        )}
 
+        {/* Google first */}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={isGoogleLoading || isSubmitting}
+          className="btn-google"
+          style={{
+            width: '100%',
+            height: '52px',
+            backgroundColor: 'white',
+            border: '1.5px solid #E5E7EB',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            cursor: isGoogleLoading ? 'not-allowed' : 'pointer',
+            fontSize: '15px',
+            fontWeight: 600,
+            color: '#374151',
+            transition: 'all 0.2s ease',
+            opacity: isGoogleLoading ? 0.7 : 1,
+            marginBottom: '8px',
+          }}
+        >
+          {Icons.google}
+          {isGoogleLoading ? 'Redirecting…' : 'Continue with Google'}
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 24px' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }} />
+          <span style={{ margin: '0 16px', fontSize: '13px', color: '#9CA3AF', fontWeight: 500 }}>or continue with email</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }} />
+        </div>
+
+        <form onSubmit={handleSubmit}>
           {/* First Name + Last Name */}
           <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
             <div style={{ flex: 1 }}>
@@ -100,7 +134,7 @@ const SignupPage5 = () => {
                 placeholder="Enter First Name"
                 value={formData.firstName}
                 onChange={handleChange}
-                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB' }}
+                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
                 onFocus={(e) => e.target.style.borderColor = COLORS.blue}
                 onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
               />
@@ -113,7 +147,7 @@ const SignupPage5 = () => {
                 placeholder="Enter Last Name"
                 value={formData.lastName}
                 onChange={handleChange}
-                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB' }}
+                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
                 onFocus={(e) => e.target.style.borderColor = COLORS.blue}
                 onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
               />
@@ -129,7 +163,7 @@ const SignupPage5 = () => {
               placeholder="Enter Email"
               value={formData.email}
               onChange={handleChange}
-              style={{ ...formStyles.input, border: '1.5px solid #E5E7EB' }}
+              style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
               onFocus={(e) => e.target.style.borderColor = COLORS.blue}
               onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
             />
@@ -145,7 +179,7 @@ const SignupPage5 = () => {
                 placeholder="Enter Password"
                 value={formData.password}
                 onChange={handleChange}
-                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB' }}
+                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
                 onFocus={(e) => e.target.style.borderColor = COLORS.blue}
                 onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
               />
@@ -169,7 +203,7 @@ const SignupPage5 = () => {
                 placeholder="Re-enter Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB' }}
+                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
                 onFocus={(e) => e.target.style.borderColor = COLORS.blue}
                 onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
               />
@@ -198,6 +232,7 @@ const SignupPage5 = () => {
               ...(isFormValid && !isSubmitting ? formStyles.button.active : formStyles.button.disabled),
               height: '52px',
               fontSize: '15px',
+              transition: 'all 0.3s ease',
               opacity: isSubmitting ? 0.75 : 1,
               cursor: isSubmitting ? 'not-allowed' : (isFormValid ? 'pointer' : 'not-allowed'),
             }}
@@ -217,41 +252,6 @@ const SignupPage5 = () => {
               Login
             </Link>
           </div>
-
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
-            <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }} />
-            <span style={{ margin: '0 16px', fontSize: '13px', color: '#9CA3AF', fontWeight: 500 }}>or</span>
-            <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }} />
-          </div>
-
-          {/* Google Button */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading || isSubmitting}
-            className="btn-google"
-            style={{
-              width: '100%',
-              height: '52px',
-              backgroundColor: 'white',
-              border: '1.5px solid #E5E7EB',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              cursor: isGoogleLoading ? 'not-allowed' : 'pointer',
-              fontSize: '15px',
-              fontWeight: 600,
-              color: '#374151',
-              transition: 'all 0.2s',
-              opacity: isGoogleLoading ? 0.7 : 1,
-            }}
-          >
-            {Icons.google}
-            {isGoogleLoading ? 'Redirecting…' : 'Continue with Google'}
-          </button>
         </form>
       </div>
     </AuthLayout>
