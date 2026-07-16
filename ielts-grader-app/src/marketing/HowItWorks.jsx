@@ -18,11 +18,11 @@ const HowItWorks = () => {
   );
 
   return (
-    <section id="how-it-works" className="bg-white py-20 overflow-hidden">
+    <section id="how-it-works" className="bg-white py-12 lg:py-20 overflow-hidden">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-[80px] lg:px-[242px]">
         {/* Header */}
-        <div className="text-center mb-[60px]">
-          <h2 className="text-[32px] font-bold text-[#1a1f36] mb-3">How It Works</h2>
+        <div className="text-center mb-10 lg:mb-[60px]">
+          <h2 className="text-[28px] lg:text-[32px] font-bold text-[#1a1f36] mb-3">How It Works</h2>
           <p className="text-[15px] text-[#9CA3AF]">
             Get your detailed IELTS tutor report in three steps — 1 free evaluation with signup, no card required.
           </p>

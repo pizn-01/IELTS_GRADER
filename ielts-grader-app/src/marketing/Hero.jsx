@@ -84,7 +84,9 @@ const Hero = () => {
           </div>
           <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.15] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
             Your IELTS Writing Tutor.<br />
-            Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
+            <span className="font-semibold text-[#374151]">
+              Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
+            </span>
           </h1>
         </div>
 
@@ -98,19 +100,19 @@ const Hero = () => {
                 
                 <div 
                   onClick={() => handleOptionSelect('upload')} 
-                  className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
+                  className={`group border rounded-[12px] py-5 px-3.5 min-h-[84px] lg:min-h-0 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
                     selectedOption === 'upload' 
                       ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
                       : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
                   }`}
                 >
                   <div className="flex shrink-0 lg:justify-center lg:mb-3 lg:w-full">
-                    <div className="w-10 h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                    <div className="w-11 h-11 lg:w-10 lg:h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
                       <FileCheck2 className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
                   <div className="min-w-0 flex-1 lg:w-full">
-                    <div className="flex items-center gap-2 mb-0.5 lg:mb-1 lg:justify-center">
+                    <div className="flex items-center gap-2 mb-1 lg:mb-1 lg:justify-center">
                       <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'upload' ? 'text-[#1a1f36]' : 'text-[#374151] group-hover:text-[#1a1f36]'}`}>Grade my essay</span>
                       <span className="relative flex items-center">
                         <Info 
@@ -128,19 +130,19 @@ const Hero = () => {
 
                 <div 
                   onClick={() => handleOptionSelect('mock')} 
-                  className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
+                  className={`group border rounded-[12px] py-5 px-3.5 min-h-[84px] lg:min-h-0 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
                     selectedOption === 'mock' 
                       ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
                       : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
                   }`}
                 >
                   <div className="flex shrink-0 lg:justify-center lg:mb-3 lg:w-full">
-                    <div className="w-10 h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                    <div className="w-11 h-11 lg:w-10 lg:h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
                       <Clock className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
                   <div className="min-w-0 flex-1 lg:w-full">
-                    <div className="flex items-center gap-2 mb-0.5 lg:mb-1 lg:justify-center">
+                    <div className="flex items-center gap-2 mb-1 lg:mb-1 lg:justify-center">
                       <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'mock' ? 'text-[#1a1f36]' : 'text-[#374151] group-hover:text-[#1a1f36]'}`}>Mock Exam</span>
                       <span className="relative flex items-center">
                         <Info 
@@ -152,7 +154,10 @@ const Hero = () => {
                         {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
                       </span>
                     </div>
-                    <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-snug lg:leading-relaxed max-w-[320px] m-0 lg:mx-auto">Practice in a real IELTS computer-based environment with timer</p>
+                    <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-snug lg:leading-relaxed max-w-[320px] m-0 lg:mx-auto">
+                      <span className="lg:hidden">Timed IELTS-style practice</span>
+                      <span className="hidden lg:inline">Practice in a real IELTS computer-based environment with timer</span>
+                    </p>
                   </div>
                 </div>
 
@@ -421,8 +426,8 @@ const Hero = () => {
         </div>
 
         {/* Mobile: composed rating + benefits fill remaining viewport */}
-        <div className="lg:hidden order-3 flex-1 flex flex-col justify-evenly w-full max-w-[480px] mx-auto min-h-[7rem] px-5 py-2 animate-fadeInUp animate-delay-150">
-          <div className="flex items-center gap-1.5">
+        <div className="lg:hidden order-3 flex-1 flex flex-col justify-evenly w-full max-w-[480px] mx-auto min-h-[5.5rem] px-5 py-1 animate-fadeInUp animate-delay-150">
+          <div className="flex items-center gap-1.5 shrink-0 pb-2 border-b border-[#E8ECF1]/90">
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
@@ -431,17 +436,17 @@ const Hero = () => {
             <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
             <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
           </div>
-          <div className="flex items-center gap-3 text-[14px] font-medium text-[#1a1f36]">
-            <Star className="w-[18px] h-[18px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            1 free full report — no credit card
+          <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+            <Star className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
+            <span>1 free full report — no credit card</span>
           </div>
-          <div className="flex items-center gap-3 text-[14px] font-medium text-[#1a1f36]">
-            <Zap className="w-[18px] h-[18px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            Criterion scores + sentence fixes — not just a band
+          <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+            <Zap className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
+            <span>Criterion scores + fixes — not just a band</span>
           </div>
-          <div className="flex items-center gap-3 text-[14px] font-medium text-[#1a1f36]">
-            <ShieldCheck className="w-[18px] h-[18px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            Personalized next steps toward your target band
+          <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+            <ShieldCheck className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
+            <span>Personalized steps to your target band</span>
           </div>
         </div>
 
