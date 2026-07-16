@@ -73,16 +73,16 @@ const Hero = () => {
   return (
     <header
       id="about"
-      className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-2 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
+      className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-5 pb-3 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-3 lg:gap-20">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-4 lg:gap-20">
 
         {/* Mobile: compact headline above the card */}
         <div className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0">
-          <div className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide">
+          <div className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-2.5 tracking-wide">
             Free · No card
           </div>
-          <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.15] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+          <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
             Your IELTS Writing Tutor.<br />
             <span className="font-semibold text-[#374151]">
               Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
@@ -92,15 +92,15 @@ const Hero = () => {
 
         {/* Submission card — first interactive surface on mobile */}
         <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeInUp animate-delay-50 shrink-0">
-          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-5 lg:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
+          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-4 lg:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
             
             {cardView === 'default' ? (
               <div className="flex-1 flex flex-col animate-fadeIn">
-                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-3.5 lg:mb-6 tracking-[-0.01em]">Start your free tutor report</h3>
+                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-3 lg:mb-6 tracking-[-0.01em]">Start your free tutor report</h3>
                 
                 <div 
                   onClick={() => handleOptionSelect('upload')} 
-                  className={`group border rounded-[12px] py-5 px-3.5 min-h-[84px] lg:min-h-0 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
+                  className={`group border rounded-[12px] py-4 px-3.5 min-h-[80px] lg:min-h-0 lg:p-5 mb-3 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
                     selectedOption === 'upload' 
                       ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
                       : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
@@ -130,7 +130,7 @@ const Hero = () => {
 
                 <div 
                   onClick={() => handleOptionSelect('mock')} 
-                  className={`group border rounded-[12px] py-5 px-3.5 min-h-[84px] lg:min-h-0 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
+                  className={`group border rounded-[12px] py-4 px-3.5 min-h-[80px] lg:min-h-0 lg:p-5 mb-0 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
                     selectedOption === 'mock' 
                       ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
                       : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
@@ -426,8 +426,8 @@ const Hero = () => {
         </div>
 
         {/* Mobile: composed rating + benefits fill remaining viewport */}
-        <div className="lg:hidden order-3 flex-1 flex flex-col justify-evenly w-full max-w-[480px] mx-auto min-h-[5.5rem] px-5 py-1 animate-fadeInUp animate-delay-150">
-          <div className="flex items-center gap-1.5 shrink-0 pb-2 border-b border-[#E8ECF1]/90">
+        <div className="lg:hidden order-3 flex-1 flex flex-col justify-center gap-3.5 w-full max-w-[480px] mx-auto px-5 pt-1 pb-1 animate-fadeInUp animate-delay-150">
+          <div className="flex items-center gap-1.5 shrink-0 pb-3 mb-0.5 border-b border-[#E8ECF1]/90">
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
