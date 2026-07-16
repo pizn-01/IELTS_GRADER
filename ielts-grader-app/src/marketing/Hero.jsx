@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, Paperclip } from 'lucide-react';
+import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, Paperclip } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +29,7 @@ const Hero = () => {
   const [files, setFiles] = useState({ prompt: null, essay: null });
 
   const tooltips = {
-    essay: { text: "Upload both your IELTS question prompt and your written answer for accurate evaluation." },
+    essay: { text: "Paste or upload your IELTS essay (and optional question prompt) to get criterion scores and fixes." },
     mock: { text: "Practice under exam conditions to simulate a real computer-based IELTS environment." }
   };
 
@@ -133,11 +133,11 @@ const Hero = () => {
                 >
                   <div className="flex justify-center mb-3">
                     <div className="w-10 h-10 rounded-[8px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
-                      <Upload className="w-5 h-5 transition-colors text-[#3B82F6]" />
+                      <FileCheck2 className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-1">
-                    <span className={`text-[16px] font-bold transition-colors ${selectedOption === 'upload' ? 'text-[#1a1f36]' : 'text-[#4B5563] group-hover:text-[#1a1f36]'}`}>Upload Essay</span>
+                    <span className={`text-[16px] font-bold transition-colors ${selectedOption === 'upload' ? 'text-[#1a1f36]' : 'text-[#4B5563] group-hover:text-[#1a1f36]'}`}>Grade my essay</span>
                     <span className="relative flex items-center">
                       <Info 
                         onMouseEnter={() => setActiveTooltip('upload')}
@@ -147,7 +147,7 @@ const Hero = () => {
                       {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
                     </span>
                   </div>
-                  <p className="text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Upload your question and answer (PDF, Word, JPG, etc.)</p>
+                  <p className="text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Paste or upload your essay for a band score and fixes</p>
                 </div>
 
                 <div 
@@ -258,7 +258,7 @@ const Hero = () => {
                   <button onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
                     <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
                   </button>
-                  <h3 className="text-[18px] font-bold text-[#1a1f36]">Upload Essay</h3>
+                  <h3 className="text-[18px] font-bold text-[#1a1f36]">Grade my essay</h3>
                 </div>
 
                 <div className="space-y-4 flex-1">

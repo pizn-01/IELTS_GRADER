@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Clock, Info, ChevronDown, Paperclip } from 'lucide-react';
+import { X, FileCheck2, Clock, Info, ChevronDown, Paperclip } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -339,20 +339,20 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                   </div>
                   
                   <div className="space-y-3">
-                    {/* Upload Essay Option */}
+                    {/* Grade my essay Option */}
                     <div 
                       onClick={() => setSelectedOption('upload')} 
                       className={`border-[1.5px] rounded-[16px] p-4 flex flex-col items-center text-center cursor-pointer transition-all duration-300 ${selectedOption === 'upload' ? 'border-[#1A96F3] bg-white' : 'border-gray-100 bg-white hover:border-gray-200'}`}
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 transition-colors ${selectedOption === 'upload' ? 'bg-[#E3F2FD] text-[#1A96F3]' : 'bg-[#F8FAFC] text-gray-400'}`}>
-                        <Upload size={18} strokeWidth={2.5} />
+                        <FileCheck2 size={18} strokeWidth={2.5} />
                       </div>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-[14px] font-bold text-[#111827]">Upload Essay</span>
+                        <span className="text-[14px] font-bold text-[#111827]">Grade my essay</span>
                         <Info size={13} className="text-gray-300" strokeWidth={2} />
                       </div>
                       <p className="text-[11px] text-gray-400 max-w-[240px] leading-snug">
-                        Paste your question and essay for instant AI grading
+                        Paste or upload your question and essay for instant AI grading
                       </p>
                     </div>
 
@@ -393,7 +393,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock }) => 
                 <div className="flex flex-col font-sans h-full">
                   <div className="mb-5">
                     <h2 className="text-[18px] font-bold text-[#111827]">
-                      {selectedOption === 'upload' ? 'Upload Essay' : 'Mock Exam'}
+                      {selectedOption === 'upload' ? 'Grade my essay' : 'Mock Exam'}
                     </h2>
                   </div>
 

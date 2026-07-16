@@ -8,7 +8,7 @@ import {
   LineChart,
   Sparkles,
   Target,
-  Upload,
+  FileCheck2,
   Wand2,
 } from 'lucide-react';
 import SeoLayout from '../seo/SeoLayout';
@@ -18,11 +18,11 @@ import { SeoCta, SeoFaq, SeoPrimaryButton, SeoSecondaryButton } from '../seo/Seo
 const FEATURE_GROUPS = [
   {
     title: 'AI writing evaluation',
-    description: 'Upload or type your essay and get a full tutor-style report in about a minute.',
+    description: 'Paste, upload, or type your essay and get a full tutor-style report in about a minute.',
     items: [
       {
-        icon: Upload,
-        title: 'Upload or paste essays',
+        icon: FileCheck2,
+        title: 'Paste or upload essays',
         body: 'PDF, Word, images, or typed text — including handwritten essays via OCR.',
       },
       {
