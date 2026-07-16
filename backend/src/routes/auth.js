@@ -19,6 +19,44 @@ function generateToken(bytes = 32) {
   return crypto.randomBytes(bytes).toString('hex');
 }
 
+/**
+ * Resolve an auth user by email. listUsers defaults to 50/page — without
+ * pagination, resend/forgot-password silently no-ops for many accounts.
+ */
+async function findAuthUserByEmail(email) {
+  const target = String(email || '').trim().toLowerCase();
+  if (!target) return null;
+
+  let page = 1;
+  const perPage = 200;
+  for (;;) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const users = data?.users || [];
+    const match = users.find((u) => String(u.email || '').toLowerCase() === target);
+    if (match) return match;
+    if (users.length < perPage) return null;
+    page += 1;
+    if (page > 50) return null; // safety cap
+  }
+}
+
+async function issueVerificationEmail(userId, email, fullName) {
+  const newToken = generateToken();
+  const newExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  await supabaseAdmin.from('profiles').update({
+    verification_token: newToken,
+    verification_token_expires_at: newExpiry,
+  }).eq('id', userId);
+
+  await sendVerificationEmail(email, fullName, newToken, {
+    idempotencyKey: `verify/${userId}/${newToken.slice(0, 16)}`,
+  });
+
+  return { token: newToken };
+}
+
 async function fetchProfile(userId) {
   const [{ data, error }, { count: paymentCount }] = await Promise.all([
     supabaseAdmin
@@ -159,6 +197,16 @@ router.post('/register', async (req, res) => {
       console.error('[auth/register] Attribution save failed:', err.message)
     );
 
+    // Send verification email during signup. Await so failures are logged; do not
+    // fail registration if Resend is temporarily unavailable (user can resend).
+    try {
+      await sendVerificationEmail(email, name, verificationToken, {
+        idempotencyKey: `verify/${data.user.id}/${verificationToken.slice(0, 16)}`,
+      });
+    } catch (err) {
+      console.error('[auth/register] Verification email failed:', err.message);
+    }
+
     const token = signToken(data.user.id, data.user.email);
     const fullProfile = await fetchProfile(data.user.id).catch(() => profile);
 
@@ -268,63 +316,38 @@ router.post('/send-verification', authenticateToken, async (req, res) => {
       return res.json({ message: 'Email already verified.', already_verified: true });
     }
 
-    const newToken = generateToken();
-    const newExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    await supabaseAdmin.from('profiles').update({
-      verification_token: newToken,
-      verification_token_expires_at: newExpiry,
-    }).eq('id', profile.id);
-
-    sendVerificationEmail(email, profile.full_name, newToken).catch(err =>
-      console.error('[auth/send-verification] Email failed:', err.message)
-    );
-
-    return res.json({ message: 'Verification email sent.' });
+    await issueVerificationEmail(userId, email, profile.full_name);
+    return res.json({ message: 'Verification email sent.', sent: true });
   } catch (err) {
     console.error('[auth/send-verification]', err.message);
-    return res.status(500).json({ error: 'Failed to send verification email.' });
+    return res.status(500).json({ error: err.message || 'Failed to send verification email.' });
   }
 });
 
 // ─── POST /api/auth/resend-verification ──────────────────────────────────────
 router.post('/resend-verification', async (req, res) => {
-  const { email } = req.body;
+  const email = String(req.body?.email || '').trim().toLowerCase();
 
   if (!email) {
     return res.status(400).json({ error: 'Email is required.' });
   }
 
-  // Always return success to prevent email enumeration
+  // Always return success to prevent email enumeration — but still await the send
+  // so failures are logged and retries can succeed on the next click.
   try {
-    const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-    const authUser = authData?.users?.find(u => u.email === email);
+    const authUser = await findAuthUserByEmail(email);
 
-    if (!authUser) {
-      return res.json({ message: 'If an account exists, a new verification email has been sent.' });
+    if (authUser) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name, email_verified')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profile && !profile.email_verified) {
+        await issueVerificationEmail(profile.id, email, profile.full_name);
+      }
     }
-
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('id, full_name, email_verified')
-      .eq('id', authUser.id)
-      .single();
-
-    if (!profile || profile.email_verified) {
-      return res.json({ message: 'If an account exists, a new verification email has been sent.' });
-    }
-
-    const newToken = generateToken();
-    const newExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    await supabaseAdmin.from('profiles').update({
-      verification_token: newToken,
-      verification_token_expires_at: newExpiry,
-    }).eq('id', profile.id);
-
-    sendVerificationEmail(email, profile.full_name, newToken).catch(err =>
-      console.error('[auth/resend-verification] Email failed:', err.message)
-    );
   } catch (err) {
     console.error('[auth/resend-verification]', err.message);
   }
@@ -334,7 +357,7 @@ router.post('/resend-verification', async (req, res) => {
 
 // ─── POST /api/auth/forgot-password ──────────────────────────────────────────
 router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
+  const email = String(req.body?.email || '').trim().toLowerCase();
 
   if (!email) {
     return res.status(400).json({ error: 'Email is required.' });
@@ -342,8 +365,7 @@ router.post('/forgot-password', async (req, res) => {
 
   // Always return success to prevent email enumeration
   try {
-    const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-    const authUser = authData?.users?.find(u => u.email === email);
+    const authUser = await findAuthUserByEmail(email);
 
     if (authUser) {
       const { data: profile } = await supabaseAdmin
@@ -361,9 +383,9 @@ router.post('/forgot-password', async (req, res) => {
           reset_token_expires_at: resetExpiry,
         }).eq('id', profile.id);
 
-        sendPasswordResetEmail(email, profile.full_name, resetToken).catch(err =>
-          console.error('[auth/forgot-password] Email failed:', err.message)
-        );
+        await sendPasswordResetEmail(email, profile.full_name, resetToken, {
+          idempotencyKey: `reset/${profile.id}/${resetToken.slice(0, 16)}`,
+        });
       }
     }
   } catch (err) {

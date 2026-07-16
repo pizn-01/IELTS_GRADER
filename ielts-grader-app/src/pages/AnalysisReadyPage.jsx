@@ -53,15 +53,11 @@ const AnalysisReadyPage = () => {
     if (!profile?.email || profile.email_verified) return;
     if (wasVerificationEmailSent()) return;
     try {
-      await api.sendVerification();
-      markVerificationEmailSent();
-    } catch {
-      try {
-        await api.resendVerification(profile.email);
-        markVerificationEmailSent();
-      } catch {
-        /* non-blocking */
-      }
+      const result = await api.sendVerification();
+      if (!result?.already_verified) markVerificationEmailSent();
+    } catch (err) {
+      console.warn('[verify] post-eval send failed:', err.message);
+      // Do not mark as sent — ReportPage / verify UI can retry
     }
   };
 

@@ -431,16 +431,14 @@ export const api = {
 
   // ─── POST /api/auth/resend-verification ──────────────────────────────────────
   resendVerification: async (email) => {
-    try {
-      const res = await fetch(`${BASE_URL}/auth/resend-verification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      return await res.json().catch(() => ({}));
-    } catch {
-      return { message: 'Sent.' };
-    }
+    const res = await fetch(`${BASE_URL}/auth/resend-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Failed to resend verification email.');
+    return data;
   },
 
   // ─── Stripe API ───────────────────────────────────────────────────────────────

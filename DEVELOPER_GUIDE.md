@@ -109,6 +109,7 @@ EMAIL_FROM=IELTS Grader <noreply@yourdomain.com>
 EMAIL_REPLY_TO=support@yourdomain.com
 # Deliverability: verify the sending domain in Resend (SPF + DKIM) and add DMARC.
 # EMAIL_FROM must use that verified domain (not Resend's onboarding domain).
+# Production must set EMAIL_FROM and EMAIL_REPLY_TO as Fly secrets.
 ```
 
 Install dependencies and start:

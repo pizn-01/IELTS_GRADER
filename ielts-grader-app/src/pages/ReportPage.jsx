@@ -37,7 +37,7 @@ const ReportPage = () => {
     if (reportData) refreshLearningStatus();
   }, [reportData, refreshLearningStatus]);
 
-  // After first free evaluation: send verification email once and prompt the user
+  // After first free evaluation: ensure verification email is sent, then prompt
   useEffect(() => {
     if (!needsEmailVerify || !user?.email) return;
 
@@ -45,14 +45,17 @@ const ReportPage = () => {
     const run = async () => {
       if (!wasVerificationEmailSent()) {
         try {
-          await api.sendVerification();
-          markVerificationEmailSent();
-        } catch {
+          const result = await api.sendVerification();
+          if (!result?.already_verified) markVerificationEmailSent();
+        } catch (err) {
+          console.warn('[verify] report-page send failed:', err.message);
           try {
             await api.resendVerification(user.email);
+            // Public resend always returns 200; mark so we don't hammer Resend.
+            // User can still manually resend from the verify page.
             markVerificationEmailSent();
           } catch {
-            /* non-blocking */
+            /* leave unmarked so another navigation can retry */
           }
         }
       }
