@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { Icons, formStyles } from "./Common.jsx";
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { clearVerificationEmailSent } from '../utils/authStorage';
+import { clearVerificationEmailSent, getAuthToken } from '../utils/authStorage';
 
 const AccountVerifiedPage12 = () => {
   const navigate = useNavigate();
@@ -14,32 +14,93 @@ const AccountVerifiedPage12 = () => {
 
   const [status, setStatus] = useState('verifying'); // 'verifying' | 'success' | 'error' | 'static'
   const [errorMsg, setErrorMsg] = useState('');
+  const startedRef = useRef(false);
 
   useEffect(() => {
     if (!token) {
-      // No token — this is just the static success page (navigated to without email link)
       setStatus('static');
       return;
     }
 
+    // Prevent duplicate verify calls (React Strict Mode remount / auth bootstrap re-render)
+    if (startedRef.current) return;
+    startedRef.current = true;
+
+    const doneKey = `email_verify_done_${token}`;
+    try {
+      if (sessionStorage.getItem(doneKey) === '1') {
+        setStatus('success');
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+
+    let cancelled = false;
+
+    const markDone = () => {
+      try {
+        sessionStorage.setItem(doneKey, '1');
+      } catch {
+        /* ignore */
+      }
+      clearVerificationEmailSent();
+    };
+
+    const refreshProfile = async () => {
+      if (!getAuthToken()) return;
+      try {
+        const fresh = await api.getMe();
+        updateUser(fresh);
+      } catch {
+        updateUser({ email_verified: true });
+      }
+    };
+
     api.verifyEmail(token)
       .then(async () => {
-        clearVerificationEmailSent();
-        if (isAuthenticated) {
-          try {
-            const fresh = await api.getMe();
-            updateUser(fresh);
-          } catch {
-            updateUser({ email_verified: true });
-          }
-        }
-        setStatus('success');
+        markDone();
+        await refreshProfile();
+        if (!cancelled) setStatus('success');
       })
-      .catch(err => {
-        setErrorMsg(err.message || 'Verification failed. The link may have expired.');
-        setStatus('error');
+      .catch(async (err) => {
+        // First request may have succeeded while a remount fired a second request
+        // against a cleared/already-used token — treat verified accounts as success.
+        try {
+          if (getAuthToken()) {
+            const fresh = await api.getMe();
+            if (fresh?.email_verified) {
+              markDone();
+              updateUser(fresh);
+              if (!cancelled) setStatus('success');
+              return;
+            }
+          }
+        } catch {
+          /* fall through to error */
+        }
+
+        try {
+          if (sessionStorage.getItem(doneKey) === '1') {
+            if (!cancelled) setStatus('success');
+            return;
+          }
+        } catch {
+          /* ignore */
+        }
+
+        if (!cancelled) {
+          setErrorMsg(err.message || 'Verification failed. The link may have expired.');
+          setStatus('error');
+        }
       });
-  }, [token, isAuthenticated, updateUser]);
+
+    return () => {
+      cancelled = true;
+    };
+  // Intentionally only re-run when the token in the URL changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const handleContinue = () => {
     if (isAuthenticated) {

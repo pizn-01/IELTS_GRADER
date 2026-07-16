@@ -234,7 +234,7 @@ router.get('/verify-email', async (req, res) => {
       .from('profiles')
       .update({
         email_verified: true,
-        verification_token: null,
+        // Keep verification_token so duplicate clicks / React remounts stay idempotent
         verification_token_expires_at: null,
       })
       .eq('id', profile.id);
