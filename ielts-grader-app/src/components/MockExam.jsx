@@ -574,8 +574,8 @@ const MockExam = ({ examType, taskType, onExit }) => {
         <div className="flex gap-1.5" aria-label={`Current task: ${taskType || 'Task 2'}`}>
           {(() => {
             const isTask1 = String(taskType || '').includes('1');
-            const activeCls = 'px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold transition-all';
-            const idleCls = 'px-2.5 md:px-5 h-[30px] md:h-[36px] border border-gray-200 rounded-[8px] text-[11px] md:text-[14px] font-semibold text-[#344054]';
+            const activeCls = 'inline-flex items-center justify-center px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold leading-none transition-all';
+            const idleCls = 'inline-flex items-center justify-center px-2.5 md:px-5 h-[30px] md:h-[36px] border border-gray-200 rounded-[8px] text-[11px] md:text-[14px] font-semibold leading-none text-[#344054]';
             return (
               <>
                 <span className={isTask1 ? activeCls : idleCls} aria-current={isTask1 ? 'true' : undefined}>Task 1</span>
