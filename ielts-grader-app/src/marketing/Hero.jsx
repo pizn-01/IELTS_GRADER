@@ -62,9 +62,17 @@ const Hero = () => {
 
   const isUploadFormValid = essayText.trim().length > 0;
 
+  const handleOptionSelect = (option) => {
+    setSelectedOption(option);
+    // Mobile: one tap opens the flow; desktop keeps select → Start
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+      setCardView(option);
+    }
+  };
+
   return (
-    <header id="about" className="bg-[#1A96F30D] relative min-h-0 lg:min-h-[700px] box-border overflow-hidden flex items-center justify-center py-6 lg:py-12">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-20">
+    <header id="about" className="bg-[#1A96F30D] relative min-h-0 lg:min-h-[700px] box-border overflow-hidden flex items-center justify-center pt-6 pb-4 lg:py-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-20">
 
         {/* Mobile: compact headline above the card */}
         <div className="w-full order-1 lg:hidden animate-fadeIn text-center">
@@ -78,7 +86,7 @@ const Hero = () => {
         </div>
 
         {/* Submission card — first interactive surface on mobile */}
-        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex justify-center lg:justify-end animate-fadeIn">
+        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeIn">
           <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-5 lg:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
             
             {cardView === 'default' ? (
@@ -86,7 +94,7 @@ const Hero = () => {
                 <h3 className="text-[18px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-6">Start your free tutor report</h3>
                 
                 <div 
-                  onClick={() => setSelectedOption('upload')} 
+                  onClick={() => handleOptionSelect('upload')} 
                   className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all text-center relative bg-white ${
                     selectedOption === 'upload' 
                       ? 'border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
@@ -104,6 +112,7 @@ const Hero = () => {
                       <Info 
                         onMouseEnter={() => setActiveTooltip('upload')}
                         onMouseLeave={() => setActiveTooltip(null)}
+                        onClick={(e) => e.stopPropagation()}
                         className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'upload' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
                       />
                       {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
@@ -113,7 +122,7 @@ const Hero = () => {
                 </div>
 
                 <div 
-                  onClick={() => setSelectedOption('mock')} 
+                  onClick={() => handleOptionSelect('mock')} 
                   className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all text-center relative bg-white ${
                     selectedOption === 'mock' 
                       ? 'border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
@@ -131,6 +140,7 @@ const Hero = () => {
                       <Info 
                         onMouseEnter={() => setActiveTooltip('mock')}
                         onMouseLeave={() => setActiveTooltip(null)}
+                        onClick={(e) => e.stopPropagation()}
                         className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'mock' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
                       />
                       {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
@@ -142,7 +152,7 @@ const Hero = () => {
                 <button 
                   onClick={() => selectedOption && setCardView(selectedOption)} 
                   disabled={!selectedOption}
-                  className={`w-full h-[48px] lg:h-[50px] rounded-[10px] font-bold text-[15px] lg:text-[16px] mt-2 transition-all shadow-md active:scale-[0.98] ${
+                  className={`hidden lg:block w-full h-[50px] rounded-[10px] font-bold text-[16px] mt-2 transition-all shadow-md active:scale-[0.98] ${
                     selectedOption ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46]' : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
                   }`}
                 >
@@ -401,56 +411,68 @@ const Hero = () => {
               </div>
             )}
           </div>
+
+          {/* Mobile: slim trust under card — no filler screen before How It Works */}
+          <div className="lg:hidden w-full max-w-[480px] mt-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
+                ))}
+              </div>
+              <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
+              <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
+            </div>
+            <p className="text-[12px] text-[#6B7280] m-0">1 free evaluation · No card</p>
+          </div>
         </div>
 
-        {/* Desktop left copy + mobile trust below the card */}
-        <div className="w-full order-3 lg:order-1 lg:w-[55%] animate-fadeIn">
-          <div className="hidden lg:block">
-            <div className="inline-flex items-center px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-6">
-              1 free evaluation · No card required
-            </div>
-
-            <h1 className="text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
-              Your IELTS Writing Tutor.<br />
-              Band scores, fixes & a plan in<br />
-              <span className="text-[#3B82F6]">60 Seconds.</span>
-            </h1>
+        {/* Desktop left copy (hidden on mobile) */}
+        <div className="hidden lg:block w-full order-3 lg:order-1 lg:w-[55%] animate-fadeIn">
+          <div className="inline-flex items-center px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-6">
+            1 free evaluation · No card required
           </div>
 
-          <p className="text-[15px] lg:text-[17px] text-[#6B7280] leading-[1.6] mb-6 lg:mb-10 max-w-[540px]">
+          <h1 className="text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
+            Your IELTS Writing Tutor.<br />
+            Band scores, fixes & a plan in<br />
+            <span className="text-[#3B82F6]">60 Seconds.</span>
+          </h1>
+
+          <p className="text-[17px] text-[#6B7280] leading-[1.6] mb-10 max-w-[540px]">
             Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan — 1 full evaluation included.
           </p>
 
-          <div className="space-y-4 lg:space-y-5 mb-6 lg:mb-10">
-            <div className="flex items-center gap-3 lg:gap-4 text-[15px] lg:text-[16px] font-medium text-[#1a1f36]">
+          <div className="space-y-5 mb-10">
+            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Star className="w-5 h-5 text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={2} />
               1 free full report — no credit card
             </div>
-            <div className="flex items-center gap-3 lg:gap-4 text-[15px] lg:text-[16px] font-medium text-[#1a1f36]">
+            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Zap className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
               Criterion scores + sentence fixes — not just a band
             </div>
-            <div className="flex items-center gap-3 lg:gap-4 text-[15px] lg:text-[16px] font-medium text-[#1a1f36]">
+            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <ShieldCheck className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
               Personalized next steps toward your target band
             </div>
           </div>
 
-          <div className="flex items-center gap-3 lg:gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
               {[ 'photo-1534528741775-53994a69daeb', 'photo-1506794778202-cad84cf45f1d', 'photo-1494790108377-be9c29b29330', 'photo-1500648767791-00dcc994a43e' ].map((id, i) => (
-                <div key={i} className="w-9 h-9 lg:w-10 lg:h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
+                <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
                   <img src={`https://images.unsplash.com/${id}?w=100&h=100&fit=crop`} alt="User" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
             <div className="flex items-center gap-2.5">
               <div className="flex gap-0.5">
-                {[1,2,3,4,5].map(i => <Star key={i} className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-[#F59E0B]" fill="#F59E0B" />)}
+                {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-[#F59E0B]" fill="#F59E0B" />)}
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[14px] lg:text-[15px] font-bold text-[#1a1f36]">4.9/5</span>
-                <span className="text-[13px] lg:text-[14px] text-[#9CA3AF]">from 2,400+ reviews</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[15px] font-bold text-[#1a1f36]">4.9/5</span>
+                <span className="text-[14px] text-[#9CA3AF]">from 2,400+ reviews</span>
               </div>
             </div>
           </div>
