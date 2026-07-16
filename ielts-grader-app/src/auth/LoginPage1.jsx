@@ -1,33 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
-import { Icons, formStyles, COLORS } from "./Common.jsx";
+import { Icons, formStyles, COLORS } from './Common.jsx';
 import { useAuth } from '../context/AuthContext';
 import { getRememberedEmail, setPostAuthRedirect } from '../utils/authStorage';
 
-const LoginPage1 = () => {
-  const { login, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState(() => getRememberedEmail());
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(rememberMePreference ?? true);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+/** Guest continuing grading/exam — prefer signup first. */
+function isGuestContinueFlow(fromLocation) {
+  if (!fromLocation?.pathname) return false;
+  const path = fromLocation.pathname;
+  return path === '/analysis-ready' || path.startsWith('/analysis-ready');
+}
 
+const LoginPage1 = () => {
+  const { login, register, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
   const fromLocation = location.state?.from;
   const from = fromLocation
     ? `${fromLocation.pathname}${fromLocation.search || ''}`
     : '/dashboard';
   const fromState = fromLocation?.state;
+  const isGuestFlow = isGuestContinueFlow(fromLocation);
+
+  const initialMode =
+    location.state?.authMode === 'signup' || location.state?.authMode === 'login'
+      ? location.state.authMode
+      : isGuestFlow
+        ? 'signup'
+        : 'login';
+
+  const [mode, setMode] = useState(initialMode); // 'login' | 'signup'
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [email, setEmail] = useState(() => getRememberedEmail());
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(rememberMePreference ?? true);
+  const [signupData, setSignupData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Sync mode if navigated here with explicit authMode / guest from
+  useEffect(() => {
+    const next =
+      location.state?.authMode === 'signup' || location.state?.authMode === 'login'
+        ? location.state.authMode
+        : isGuestContinueFlow(location.state?.from)
+          ? 'signup'
+          : null;
+    if (next) setMode(next);
+  }, [location.state]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       navigate(from, { replace: true, state: fromState });
     }
   }, [isAuthenticated, isLoading, navigate, from, fromState]);
+
+  const switchMode = (next) => {
+    setMode(next);
+    setError('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
 
   const handleGoogleSignIn = async () => {
     setError('');
@@ -41,7 +84,7 @@ const LoginPage1 = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) return;
     setError('');
@@ -56,26 +99,131 @@ const LoginPage1 = () => {
     }
   };
 
+  const handleSignupChange = (e) => {
+    setSignupData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const isSignupValid = Object.values(signupData).every((val) => val.length > 0);
+
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    if (!isSignupValid) return;
+    if (signupData.password !== signupData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await register({
+        first_name: signupData.firstName,
+        last_name: signupData.lastName,
+        full_name: `${signupData.firstName} ${signupData.lastName}`.trim(),
+        email: signupData.email,
+        password: signupData.password,
+      });
+      navigate(from || '/dashboard', { replace: true, state: fromState });
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isSignup = mode === 'signup';
+  const title = isSignup
+    ? isGuestFlow
+      ? 'Create your free account'
+      : 'Create free account'
+    : 'Welcome back';
+  const subtitle = isSignup
+    ? isGuestFlow
+      ? 'Sign up to get your report — 1 free evaluation, no card required.'
+      : 'Join IELTSGRADER and start improving in minutes.'
+    : isGuestFlow
+      ? 'Log in to continue and get your report.'
+      : 'Log in to access your account and manage everything in one place.';
+
+  const tabBtn = (id, label) => {
+    const active = mode === id;
+    return (
+      <button
+        type="button"
+        onClick={() => switchMode(id)}
+        style={{
+          flex: 1,
+          height: '44px',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: 700,
+          transition: 'all 0.2s ease',
+          background: active ? '#fff' : 'transparent',
+          color: active ? '#1a1f36' : '#6B7280',
+          boxShadow: active ? '0 1px 3px rgba(26,31,54,0.08)' : 'none',
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+
   return (
     <AuthLayout noBox>
       <div className="animate-fadeIn">
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#1a1f36', margin: '0 0 12px 0', letterSpacing: '-0.02em', fontFamily: "'Nunito', sans-serif" }}>
-            Welcome Back!
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <h1
+            style={{
+              fontSize: '32px',
+              fontWeight: 800,
+              color: '#1a1f36',
+              margin: '0 0 10px 0',
+              letterSpacing: '-0.02em',
+              fontFamily: "'Nunito', sans-serif",
+            }}
+          >
+            {title}
           </h1>
-          <p style={{ fontSize: '16px', color: '#6B7280', margin: 0, fontWeight: 400 }}>
-            Log in to access your account and manage everything in one place.
+          <p style={{ fontSize: '15px', color: '#6B7280', margin: 0, lineHeight: 1.5, fontWeight: 400 }}>
+            {subtitle}
           </p>
         </div>
 
+        {/* Log in / Sign up toggle */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '4px',
+            padding: '4px',
+            background: '#F3F4F6',
+            borderRadius: '10px',
+            marginBottom: '24px',
+          }}
+          role="tablist"
+          aria-label="Account mode"
+        >
+          {tabBtn('login', 'Log in')}
+          {tabBtn('signup', 'Sign up')}
+        </div>
+
         {error && (
-          <div style={{ background: '#FFF5F5', border: '1.5px solid #FECACA', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '14px', color: '#DC2626', fontWeight: 500 }}>
+          <div
+            style={{
+              background: '#FFF5F5',
+              border: '1.5px solid #FECACA',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+              fontSize: '14px',
+              color: '#DC2626',
+              fontWeight: 500,
+            }}
+          >
             {error}
           </div>
         )}
 
-        {/* Google first */}
         <button
           type="button"
           onClick={handleGoogleSignIn}
@@ -106,137 +254,276 @@ const LoginPage1 = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 24px' }}>
           <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }} />
-          <span style={{ margin: '0 16px', fontSize: '13px', color: '#9CA3AF', fontWeight: 500 }}>or continue with email</span>
+          <span style={{ margin: '0 16px', fontSize: '13px', color: '#9CA3AF', fontWeight: 500 }}>
+            or continue with email
+          </span>
           <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }} />
         </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Email */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={formStyles.label}>Email</label>
-            <input
-              type="email"
-              name="email"
-              autoComplete="username"
-              placeholder="Enter Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
-              onFocus={(e) => e.target.style.borderColor = COLORS.blue}
-              onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-            />
-          </div>
-
-          {/* Password */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={formStyles.label}>Password</label>
-            <div style={{ position: 'relative' }}>
+        {!isSignup ? (
+          <form onSubmit={handleLoginSubmit}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={formStyles.label}>Email</label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                autoComplete="current-password"
-                placeholder="Enter Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="email"
+                name="email"
+                autoComplete="username"
+                placeholder="Enter Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
-                onFocus={(e) => e.target.style.borderColor = COLORS.blue}
-                onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0, opacity: 0.6 }}
-              >
-                {showPassword ? Icons.eye : Icons.eyeOff}
-              </button>
             </div>
-          </div>
 
-          {/* Remember Me + Forgot Password */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-            <label
-              htmlFor="remember-me"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                color: '#1a1f36',
-                fontWeight: 600,
-                userSelect: 'none',
-              }}
-            >
-              <span
+            <div style={{ marginBottom: '20px' }}>
+              <label style={formStyles.label}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  autoComplete="current-password"
+                  placeholder="Enter Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                  onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                    opacity: 0.6,
+                  }}
+                >
+                  {showPassword ? Icons.eye : Icons.eyeOff}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+              <label
+                htmlFor="remember-me"
                 style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '6px',
-                  border: rememberMe ? `2px solid ${COLORS.blue}` : '2px solid #9CA3AF',
-                  background: rememberMe ? COLORS.blue : '#FFFFFF',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  transition: 'all 0.15s ease',
-                  boxShadow: rememberMe ? '0 0 0 3px rgba(59, 130, 246, 0.15)' : 'none',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: '#1a1f36',
+                  fontWeight: 600,
+                  userSelect: 'none',
                 }}
-                aria-hidden
               >
-                {rememberMe && (
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 6.2L4.8 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-              <input
-                id="remember-me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                style={{
-                  position: 'absolute',
-                  opacity: 0,
-                  width: 0,
-                  height: 0,
-                  margin: 0,
-                }}
-              />
-              Remember me
-            </label>
-            <Link to="/forgot-password" style={{ fontSize: '14px', fontWeight: 700, color: COLORS.blue, textDecoration: 'none' }}>
-              Forgot Password?
-            </Link>
-          </div>
+                <span
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '6px',
+                    border: rememberMe ? `2px solid ${COLORS.blue}` : '2px solid #9CA3AF',
+                    background: rememberMe ? COLORS.blue : '#FFFFFF',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    transition: 'all 0.15s ease',
+                    boxShadow: rememberMe ? '0 0 0 3px rgba(59, 130, 246, 0.15)' : 'none',
+                  }}
+                  aria-hidden
+                >
+                  {rememberMe && (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M2 6.2L4.8 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, margin: 0 }}
+                />
+                Remember me
+              </label>
+              <Link to="/forgot-password" style={{ fontSize: '14px', fontWeight: 700, color: COLORS.blue, textDecoration: 'none' }}>
+                Forgot Password?
+              </Link>
+            </div>
 
-          {/* Sign In Button */}
-          <button
-            type="submit"
-            style={{
-              ...(email && password && !isSubmitting ? formStyles.button.active : formStyles.button.disabled),
-              height: '52px',
-              fontSize: '15px',
-              transition: 'all 0.3s ease',
-              opacity: isSubmitting ? 0.75 : 1,
-              cursor: isSubmitting ? 'not-allowed' : (email && password ? 'pointer' : 'not-allowed'),
-            }}
-            disabled={!email || !password || isSubmitting}
-          >
-            {isSubmitting ? 'Signing in...' : 'Sign In'}
-          </button>
-
-          {/* Signup Link */}
-          <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '15px' }}>
-            <span style={{ color: '#4B5563', fontWeight: 400 }}>Don't have an account? </span>
-            <Link
-              to="/signup"
-              state={fromLocation ? { from: fromLocation } : undefined}
-              style={{ color: COLORS.blue, fontWeight: 600, textDecoration: 'none' }}
+            <button
+              type="submit"
+              style={{
+                ...(email && password && !isSubmitting ? formStyles.button.active : formStyles.button.disabled),
+                height: '52px',
+                fontSize: '15px',
+                transition: 'all 0.3s ease',
+                opacity: isSubmitting ? 0.75 : 1,
+                cursor: isSubmitting ? 'not-allowed' : email && password ? 'pointer' : 'not-allowed',
+              }}
+              disabled={!email || !password || isSubmitting}
             >
-              Start your free trial
-            </Link>
-          </div>
-        </form>
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSignupSubmit}>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={formStyles.label}>First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="Enter First Name"
+                  value={signupData.firstName}
+                  onChange={handleSignupChange}
+                  style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                  onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={formStyles.label}>Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Enter Last Name"
+                  value={signupData.lastName}
+                  onChange={handleSignupChange}
+                  style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                  onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={formStyles.label}>Email</label>
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                placeholder="Enter Email"
+                value={signupData.email}
+                onChange={handleSignupChange}
+                style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={formStyles.label}>Create Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  autoComplete="new-password"
+                  placeholder="Enter Password"
+                  value={signupData.password}
+                  onChange={handleSignupChange}
+                  style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                  onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                    opacity: 0.6,
+                  }}
+                >
+                  {showPassword ? Icons.eye : Icons.eyeOff}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={formStyles.label}>Confirm Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  autoComplete="new-password"
+                  placeholder="Re-enter Password"
+                  value={signupData.confirmPassword}
+                  onChange={handleSignupChange}
+                  style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                  onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                    opacity: 0.6,
+                  }}
+                >
+                  {showConfirmPassword ? Icons.eye : Icons.eyeOff}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '24px', lineHeight: '1.6' }}>
+              By creating an account, you agree to our{' '}
+              <Link to="/terms" style={{ color: COLORS.blue, textDecoration: 'none', fontWeight: 600 }}>
+                Terms of Service
+              </Link>
+              {' and '}
+              <Link to="/privacy" style={{ color: COLORS.blue, textDecoration: 'none', fontWeight: 600 }}>
+                Privacy Policy
+              </Link>
+              .
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                ...(isSignupValid && !isSubmitting ? formStyles.button.active : formStyles.button.disabled),
+                height: '52px',
+                fontSize: '15px',
+                transition: 'all 0.3s ease',
+                opacity: isSubmitting ? 0.75 : 1,
+                cursor: isSubmitting ? 'not-allowed' : isSignupValid ? 'pointer' : 'not-allowed',
+              }}
+              disabled={!isSignupValid || isSubmitting}
+            >
+              {isSubmitting ? 'Creating account...' : isGuestFlow ? 'Create account & continue' : 'Create free account'}
+            </button>
+          </form>
+        )}
       </div>
     </AuthLayout>
   );

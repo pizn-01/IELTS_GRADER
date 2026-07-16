@@ -176,7 +176,7 @@ const AnalysisReadyPage = () => {
 
   const handleSignup = (e) => {
     e.preventDefault();
-    navigate('/signup');
+    navigate('/login', { state: { authMode: 'signup' } });
   };
 
   return (
