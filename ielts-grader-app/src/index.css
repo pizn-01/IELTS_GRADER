@@ -136,6 +136,31 @@ html.lenis body {
   animation: fadeIn 0.4s ease-out;
 }
 
+.animate-fadeInUp {
+  animation: fadeInUp 0.45s ease-out both;
+}
+
+.animate-delay-50 {
+  animation-delay: 50ms;
+}
+
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-150 {
+  animation-delay: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn,
+  .animate-fadeInUp,
+  .animate-slideDown,
+  .animate-in {
+    animation: none !important;
+  }
+}
+
 .animate-slideDown {
   animation: slideDown 0.3s ease-out;
 }
@@ -154,6 +179,19 @@ html.lenis body {
 .zoom-in { animation-name: zoomIn; }
 .slide-in-from-top { animation-name: slideInTop; }
 .slide-in-from-bottom { animation-name: slideInBottom; }
+
+/* Soft mobile hero atmosphere (desktop keeps flat tint via Tailwind) */
+.hero-mobile-wash {
+  background-color: #f4f8fc;
+  background-image: radial-gradient(ellipse 120% 70% at 50% -10%, rgba(59, 130, 246, 0.14), transparent 55%);
+}
+
+@media (min-width: 1024px) {
+  .hero-mobile-wash {
+    background-color: #1A96F30D;
+    background-image: none;
+  }
+}
 
 /* --- Marketing Site Specific --- */
 .connector-line {

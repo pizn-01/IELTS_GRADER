@@ -73,14 +73,14 @@ const Hero = () => {
   return (
     <header
       id="about"
-      className="bg-[#1A96F30D] relative box-border overflow-hidden flex flex-col pt-6 pb-2 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
+      className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-2 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-3 lg:gap-20">
 
         {/* Mobile: compact headline above the card */}
-        <div className="w-full order-1 lg:hidden animate-fadeIn text-center shrink-0">
-          <div className="inline-flex items-center px-3 py-1 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[12px] font-medium text-[#78350F] mb-3">
-            1 free evaluation · No card required
+        <div className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0">
+          <div className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide">
+            Free · No card
           </div>
           <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.15] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
             Your IELTS Writing Tutor.<br />
@@ -89,67 +89,71 @@ const Hero = () => {
         </div>
 
         {/* Submission card — first interactive surface on mobile */}
-        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeIn shrink-0">
-          <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-5 lg:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
+        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeInUp animate-delay-50 shrink-0">
+          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-5 lg:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
             
             {cardView === 'default' ? (
               <div className="flex-1 flex flex-col animate-fadeIn">
-                <h3 className="text-[18px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-6">Start your free tutor report</h3>
+                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-3.5 lg:mb-6 tracking-[-0.01em]">Start your free tutor report</h3>
                 
                 <div 
                   onClick={() => handleOptionSelect('upload')} 
-                  className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all text-center relative bg-white ${
+                  className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
                     selectedOption === 'upload' 
-                      ? 'border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
-                      : 'border-[#E5E7EB] hover:border-[#3B82F6] hover:shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                      ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
+                      : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
                   }`}
                 >
-                  <div className="flex justify-center mb-2 lg:mb-3">
-                    <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-[8px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                  <div className="flex shrink-0 lg:justify-center lg:mb-3 lg:w-full">
+                    <div className="w-10 h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
                       <FileCheck2 className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'upload' ? 'text-[#1a1f36]' : 'text-[#4B5563] group-hover:text-[#1a1f36]'}`}>Grade my essay</span>
-                    <span className="relative flex items-center">
-                      <Info 
-                        onMouseEnter={() => setActiveTooltip('upload')}
-                        onMouseLeave={() => setActiveTooltip(null)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'upload' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
-                      />
-                      {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
-                    </span>
+                  <div className="min-w-0 flex-1 lg:w-full">
+                    <div className="flex items-center gap-2 mb-0.5 lg:mb-1 lg:justify-center">
+                      <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'upload' ? 'text-[#1a1f36]' : 'text-[#374151] group-hover:text-[#1a1f36]'}`}>Grade my essay</span>
+                      <span className="relative flex items-center">
+                        <Info 
+                          onMouseEnter={() => setActiveTooltip('upload')}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'upload' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
+                        />
+                        {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
+                      </span>
+                    </div>
+                    <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-snug lg:leading-relaxed max-w-[320px] m-0 lg:mx-auto">Paste or upload your essay for a band score and fixes</p>
                   </div>
-                  <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Paste or upload your essay for a band score and fixes</p>
                 </div>
 
                 <div 
                   onClick={() => handleOptionSelect('mock')} 
-                  className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all text-center relative bg-white ${
+                  className={`group border rounded-[12px] p-3.5 lg:p-5 mb-2.5 lg:mb-3 cursor-pointer transition-all relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
                     selectedOption === 'mock' 
-                      ? 'border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
-                      : 'border-[#E5E7EB] hover:border-[#3B82F6] hover:shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                      ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
+                      : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
                   }`}
                 >
-                  <div className="flex justify-center mb-2 lg:mb-3">
-                    <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-[8px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
+                  <div className="flex shrink-0 lg:justify-center lg:mb-3 lg:w-full">
+                    <div className="w-10 h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
                       <Clock className="w-5 h-5 transition-colors text-[#3B82F6]" />
                     </div>
                   </div>
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'mock' ? 'text-[#1a1f36]' : 'text-[#4B5563] group-hover:text-[#1a1f36]'}`}>Mock Exam</span>
-                    <span className="relative flex items-center">
-                      <Info 
-                        onMouseEnter={() => setActiveTooltip('mock')}
-                        onMouseLeave={() => setActiveTooltip(null)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'mock' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
-                      />
-                      {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
-                    </span>
+                  <div className="min-w-0 flex-1 lg:w-full">
+                    <div className="flex items-center gap-2 mb-0.5 lg:mb-1 lg:justify-center">
+                      <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'mock' ? 'text-[#1a1f36]' : 'text-[#374151] group-hover:text-[#1a1f36]'}`}>Mock Exam</span>
+                      <span className="relative flex items-center">
+                        <Info 
+                          onMouseEnter={() => setActiveTooltip('mock')}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'mock' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
+                        />
+                        {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
+                      </span>
+                    </div>
+                    <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-snug lg:leading-relaxed max-w-[320px] m-0 lg:mx-auto">Practice in a real IELTS computer-based environment with timer</p>
                   </div>
-                  <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-relaxed max-w-[320px] mx-auto">Practice in a real IELTS computer-based environment with timer</p>
                 </div>
 
                 <button 
@@ -414,33 +418,29 @@ const Hero = () => {
               </div>
             )}
           </div>
-
-          {/* Mobile: rating under card */}
-          <div className="lg:hidden w-full max-w-[480px] mt-3 text-center shrink-0">
-            <div className="flex items-center justify-center gap-1.5">
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
-                ))}
-              </div>
-              <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
-              <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
-            </div>
-          </div>
         </div>
 
-        {/* Mobile: benefits fill remaining viewport before How It Works */}
-        <div className="lg:hidden order-3 flex-1 flex flex-col justify-evenly w-full max-w-[480px] mx-auto min-h-[7rem] py-2">
-          <div className="flex items-center gap-3 text-[15px] font-medium text-[#1a1f36]">
-            <Star className="w-5 h-5 text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={2} />
+        {/* Mobile: composed rating + benefits fill remaining viewport */}
+        <div className="lg:hidden order-3 flex-1 flex flex-col justify-evenly w-full max-w-[480px] mx-auto min-h-[7rem] px-5 py-2 animate-fadeInUp animate-delay-150">
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
+              ))}
+            </div>
+            <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
+            <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
+          </div>
+          <div className="flex items-center gap-3 text-[14px] font-medium text-[#1a1f36]">
+            <Star className="w-[18px] h-[18px] text-[#3B82F6] shrink-0" strokeWidth={2} />
             1 free full report — no credit card
           </div>
-          <div className="flex items-center gap-3 text-[15px] font-medium text-[#1a1f36]">
-            <Zap className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
+          <div className="flex items-center gap-3 text-[14px] font-medium text-[#1a1f36]">
+            <Zap className="w-[18px] h-[18px] text-[#3B82F6] shrink-0" strokeWidth={2} />
             Criterion scores + sentence fixes — not just a band
           </div>
-          <div className="flex items-center gap-3 text-[15px] font-medium text-[#1a1f36]">
-            <ShieldCheck className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
+          <div className="flex items-center gap-3 text-[14px] font-medium text-[#1a1f36]">
+            <ShieldCheck className="w-[18px] h-[18px] text-[#3B82F6] shrink-0" strokeWidth={2} />
             Personalized next steps toward your target band
           </div>
         </div>
