@@ -68,7 +68,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
 
         {/* ── 56px header bar ── */}
         <div className="h-[56px] flex items-center">
-          <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[50px] flex items-center justify-between">
+          <div className="w-full max-w-[1440px] mx-auto pl-3 pr-4 md:pl-5 md:pr-[50px] flex items-center justify-between">
 
             {/* Left: logo + desktop nav */}
             <div className="flex items-center gap-6">

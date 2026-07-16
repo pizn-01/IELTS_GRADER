@@ -56,7 +56,7 @@ const Navbar = ({ showCredits }) => {
 
   return (
     <nav className="h-[64px] md:h-[72px] sticky top-0 left-0 w-full bg-white z-[1000] border-b border-[#E5E7EB]">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-[50px] h-full flex items-center justify-between">
+      <div className="max-w-[1440px] mx-auto pl-3 pr-4 md:pl-5 md:pr-[50px] h-full flex items-center justify-between">
         {/* Left Side: Logo & Desktop Links */}
         <div className="flex items-center">
           <BrandLogo onClick={() => setIsMobileMenuOpen(false)} />

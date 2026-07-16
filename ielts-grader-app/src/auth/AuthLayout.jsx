@@ -31,7 +31,7 @@ const AuthLayout = ({ children, noBox }) => {
       ` }} />
 
       {/* Navbar */}
-      <nav className="h-[56px] bg-white border-b border-[#E5E7EB] px-4 sm:px-10 flex justify-between items-center sticky top-0 z-[100]">
+      <nav className="h-[56px] bg-white border-b border-[#E5E7EB] pl-3 pr-4 sm:pl-5 sm:pr-10 flex justify-between items-center sticky top-0 z-[100]">
         <BrandLogo
           textClassName="text-[16px] font-bold text-[#1a1f36] uppercase tracking-[-0.02em]"
         />

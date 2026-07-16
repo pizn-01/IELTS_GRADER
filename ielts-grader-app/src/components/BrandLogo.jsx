@@ -9,7 +9,7 @@ const BrandLogo = ({
   to = '/',
   className = '',
   textClassName = 'text-[17px] md:text-[19px] font-extrabold text-[#1a1f36] uppercase tracking-tight',
-  imgClassName = 'h-[15px] md:h-[17px] w-auto',
+  imgClassName = 'h-[14px] md:h-[16px] w-auto',
   onClick,
 }) => (
   <Link
