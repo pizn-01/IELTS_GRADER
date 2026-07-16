@@ -71,11 +71,14 @@ const Hero = () => {
   };
 
   return (
-    <header id="about" className="bg-[#1A96F30D] relative min-h-0 lg:min-h-[700px] box-border overflow-hidden flex items-center justify-center pt-6 pb-4 lg:py-12">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-20">
+    <header
+      id="about"
+      className="bg-[#1A96F30D] relative box-border overflow-hidden flex flex-col pt-6 pb-2 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
+    >
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-3 lg:gap-20">
 
         {/* Mobile: compact headline above the card */}
-        <div className="w-full order-1 lg:hidden animate-fadeIn text-center">
+        <div className="w-full order-1 lg:hidden animate-fadeIn text-center shrink-0">
           <div className="inline-flex items-center px-3 py-1 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[12px] font-medium text-[#78350F] mb-3">
             1 free evaluation · No card required
           </div>
@@ -86,7 +89,7 @@ const Hero = () => {
         </div>
 
         {/* Submission card — first interactive surface on mobile */}
-        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeIn">
+        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeIn shrink-0">
           <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-5 lg:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
             
             {cardView === 'default' ? (
@@ -412,9 +415,9 @@ const Hero = () => {
             )}
           </div>
 
-          {/* Mobile: slim trust under card — no filler screen before How It Works */}
-          <div className="lg:hidden w-full max-w-[480px] mt-3 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
+          {/* Mobile: rating under card */}
+          <div className="lg:hidden w-full max-w-[480px] mt-3 text-center shrink-0">
+            <div className="flex items-center justify-center gap-1.5">
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
@@ -423,7 +426,22 @@ const Hero = () => {
               <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
               <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
             </div>
-            <p className="text-[12px] text-[#6B7280] m-0">1 free evaluation · No card</p>
+          </div>
+        </div>
+
+        {/* Mobile: benefits fill remaining viewport before How It Works */}
+        <div className="lg:hidden order-3 flex-1 flex flex-col justify-evenly w-full max-w-[480px] mx-auto min-h-[7rem] py-2">
+          <div className="flex items-center gap-3 text-[15px] font-medium text-[#1a1f36]">
+            <Star className="w-5 h-5 text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={2} />
+            1 free full report — no credit card
+          </div>
+          <div className="flex items-center gap-3 text-[15px] font-medium text-[#1a1f36]">
+            <Zap className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
+            Criterion scores + sentence fixes — not just a band
+          </div>
+          <div className="flex items-center gap-3 text-[15px] font-medium text-[#1a1f36]">
+            <ShieldCheck className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
+            Personalized next steps toward your target band
           </div>
         </div>
 
