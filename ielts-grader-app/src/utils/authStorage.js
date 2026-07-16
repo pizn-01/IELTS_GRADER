@@ -61,3 +61,63 @@ export function consumePostAuthRedirect(fallback = '/dashboard') {
   if (path && path.startsWith('/') && !path.startsWith('//')) return path;
   return fallback;
 }
+
+const PENDING_GRADE_KEY = 'pending_grade_payload';
+const VERIFY_EMAIL_SENT_KEY = 'verify_email_sent_after_eval';
+
+/**
+ * Persist essay/exam payload across login/signup (and Google OAuth full-page redirect).
+ * Only JSON-serializable fields — no File objects.
+ */
+export function setPendingGradePayload(payload) {
+  if (!payload || typeof payload !== 'object') return;
+  try {
+    sessionStorage.setItem(PENDING_GRADE_KEY, JSON.stringify(payload));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function peekPendingGradePayload() {
+  try {
+    const raw = sessionStorage.getItem(PENDING_GRADE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function consumePendingGradePayload() {
+  const payload = peekPendingGradePayload();
+  try {
+    sessionStorage.removeItem(PENDING_GRADE_KEY);
+  } catch {
+    /* ignore */
+  }
+  return payload;
+}
+
+export function markVerificationEmailSent() {
+  try {
+    sessionStorage.setItem(VERIFY_EMAIL_SENT_KEY, '1');
+  } catch {
+    /* ignore */
+  }
+}
+
+export function wasVerificationEmailSent() {
+  try {
+    return sessionStorage.getItem(VERIFY_EMAIL_SENT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function clearVerificationEmailSent() {
+  try {
+    sessionStorage.removeItem(VERIFY_EMAIL_SENT_KEY);
+  } catch {
+    /* ignore */
+  }
+}

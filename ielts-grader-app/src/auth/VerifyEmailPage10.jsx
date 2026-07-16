@@ -4,13 +4,15 @@ import AuthLayout from './AuthLayout';
 import { Icons, formStyles } from "./Common.jsx";
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { clearVerificationEmailSent } from '../utils/authStorage';
 
 const VerifyEmailPage10 = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, updateUser, isAuthenticated } = useAuth();
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
 
   const email = user?.email || location.state?.email || '';
@@ -32,6 +34,29 @@ const VerifyEmailPage10 = () => {
     }
   };
 
+  const handleContinue = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    setChecking(true);
+    setError('');
+    try {
+      const fresh = await api.getMe();
+      updateUser(fresh);
+      if (fresh.email_verified) {
+        clearVerificationEmailSent();
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError('Email not verified yet. Click the link in your inbox, then try again.');
+      }
+    } catch (err) {
+      setError(err.message || 'Could not refresh your account status.');
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <AuthLayout noBox>
       <div style={{ textAlign: 'center', padding: '40px 0 10px' }}>
@@ -43,10 +68,10 @@ const VerifyEmailPage10 = () => {
           Verify Your Email
         </h1>
         <p style={{ fontSize: '16px', color: '#6B7280', margin: '0 auto 12px', maxWidth: '420px', lineHeight: 1.7 }}>
-          We've sent a verification link to{email ? <> <strong style={{ color: '#1a1f36' }}>{email}</strong></> : ' your email'}. Click the link to activate your account.
+          We&apos;ve sent a verification link to{email ? <> <strong style={{ color: '#1a1f36' }}>{email}</strong></> : ' your email'}. Click the link to continue using IELTS Grader.
         </p>
         <p style={{ fontSize: '13px', color: '#9CA3AF', margin: '0 auto 32px', maxWidth: '380px', lineHeight: 1.6 }}>
-          The link expires in 24 hours. Check your spam folder if you don't see it.
+          The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
         </p>
 
         {error && (
@@ -70,12 +95,23 @@ const VerifyEmailPage10 = () => {
           </button>
         )}
 
-        <p style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '16px' }}>
-          Already verified?{' '}
-          <button onClick={() => navigate('/login')} style={{ background: 'none', border: 'none', color: '#2C3E50', fontWeight: 700, cursor: 'pointer', fontSize: '13px', padding: 0 }}>
-            Sign In
-          </button>
-        </p>
+        <button
+          onClick={handleContinue}
+          disabled={checking}
+          style={{
+            ...formStyles.button.active,
+            marginTop: '8px',
+            background: '#fff',
+            color: '#1a1f36',
+            border: '1.5px solid #E5E7EB',
+          }}
+        >
+          {checking
+            ? 'Checking…'
+            : isAuthenticated
+              ? "I've verified — Continue"
+              : 'Sign In'}
+        </button>
       </div>
     </AuthLayout>
   );

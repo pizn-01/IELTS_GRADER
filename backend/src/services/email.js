@@ -9,6 +9,7 @@ function getResend() {
   return _resend;
 }
 const FROM = process.env.EMAIL_FROM || 'IELTS Grader <noreply@ieltsgrader.com>';
+const REPLY_TO = process.env.EMAIL_REPLY_TO || 'support@ieltsgrader.com';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 const wrap = (title, body, ctaText, ctaHref, note) => `
@@ -31,21 +32,60 @@ const wrap = (title, body, ctaText, ctaHref, note) => `
 </table>
 </body></html>`;
 
-async function sendVerificationEmail(email, fullName, token) {
-  const link = `${FRONTEND_URL}/account-verified?token=${encodeURIComponent(token)}`;
+function stripHtml(html) {
+  return String(html || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&mdash;/g, '—')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+async function sendEmail({ to, subject, html, text }) {
   const { error } = await getResend().emails.send({
     from: FROM,
-    to: email,
-    subject: 'Verify your IELTS Grader account',
-    html: wrap(
-      'Verify Your Email',
-      `Hi ${fullName || 'there'},<br/><br/>Thank you for signing up for IELTS Grader. Click the button below to verify your email address and activate your account.`,
-      'Verify Email Address',
-      link,
-      'This link expires in 24 hours. If you didn\'t create an account, you can safely ignore this email.'
-    ),
+    replyTo: REPLY_TO,
+    to,
+    subject,
+    html,
+    text: text || stripHtml(html),
   });
-  if (error) {
+  if (error) throw error;
+}
+
+async function sendVerificationEmail(email, fullName, token) {
+  const link = `${FRONTEND_URL}/account-verified?token=${encodeURIComponent(token)}`;
+  const greeting = fullName || 'there';
+  const html = wrap(
+    'Confirm Your Email',
+    `Hi ${greeting},<br/><br/>Thanks for trying IELTS Grader. Please confirm your email address so we can secure your account and keep your reports accessible.`,
+    'Confirm Email Address',
+    link,
+    'This link expires in 24 hours. If you didn\'t create an account, you can safely ignore this email.'
+  );
+  const text = [
+    `Hi ${greeting},`,
+    '',
+    'Thanks for trying IELTS Grader. Please confirm your email address so we can secure your account and keep your reports accessible.',
+    '',
+    `Confirm your email: ${link}`,
+    '',
+    'This link expires in 24 hours. If you didn\'t create an account, you can safely ignore this email.',
+    '',
+    '— IELTS Grader',
+  ].join('\n');
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: 'Confirm your IELTS Grader email',
+      html,
+      text,
+    });
+  } catch (error) {
     console.error('[email/sendVerification]', error);
     throw new Error('Failed to send verification email.');
   }
@@ -53,19 +93,34 @@ async function sendVerificationEmail(email, fullName, token) {
 
 async function sendPasswordResetEmail(email, fullName, token) {
   const link = `${FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
-  const { error } = await getResend().emails.send({
-    from: FROM,
-    to: email,
-    subject: 'Reset your IELTS Grader password',
-    html: wrap(
-      'Reset Your Password',
-      `Hi ${fullName || 'there'},<br/><br/>We received a request to reset your IELTS Grader password. Click the button below to choose a new password.`,
-      'Reset Password',
-      link,
-      'This link expires in 1 hour. If you didn\'t request a password reset, you can safely ignore this email.'
-    ),
-  });
-  if (error) {
+  const greeting = fullName || 'there';
+  const html = wrap(
+    'Reset Your Password',
+    `Hi ${greeting},<br/><br/>We received a request to reset your IELTS Grader password. Click the button below to choose a new password.`,
+    'Reset Password',
+    link,
+    'This link expires in 1 hour. If you didn\'t request a password reset, you can safely ignore this email.'
+  );
+  const text = [
+    `Hi ${greeting},`,
+    '',
+    'We received a request to reset your IELTS Grader password. Open the link below to choose a new password.',
+    '',
+    `Reset password: ${link}`,
+    '',
+    'This link expires in 1 hour. If you didn\'t request a password reset, you can safely ignore this email.',
+    '',
+    '— IELTS Grader',
+  ].join('\n');
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: 'Reset your IELTS Grader password',
+      html,
+      text,
+    });
+  } catch (error) {
     console.error('[email/sendPasswordReset]', error);
     throw new Error('Failed to send password reset email.');
   }

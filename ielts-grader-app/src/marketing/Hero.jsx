@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
+import { setPendingGradePayload } from '../utils/authStorage';
 
 const readAsDataURL = (file) =>
   new Promise((resolve, reject) => {
@@ -216,11 +217,7 @@ const Hero = () => {
 
                 <button
                   onClick={() => {
-                    if (!user) {
-                      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
-                      return;
-                    }
-                    if ((user.credits_remaining ?? 0) <= 0) {
+                    if (user && (user.credits_remaining ?? 0) <= 0) {
                       navigate('/analysis-ready', { state: { outOfCredits: true } });
                       return;
                     }
@@ -354,7 +351,7 @@ const Hero = () => {
                         (questionText || detected.prompt || '').trim(),
                       );
                       const essayForGrading = normalizeParagraphBreaks(essayText);
-                      updateEssayData({
+                      const gradePayload = {
                         essayContent: essayForGrading,
                         questionContent: promptForGrading,
                         examType: detected.exam_type,
@@ -366,9 +363,12 @@ const Hero = () => {
                         taskVariant: detected.task || null,
                         chartImage:
                           detected.task === 'task1-report' ? questionChartImage : null,
-                      });
+                        timeSpentSeconds: 0,
+                      };
+                      updateEssayData(gradePayload);
 
                       if (!user) {
+                        setPendingGradePayload(gradePayload);
                         setIsSubmitting(false);
                         navigate('/login', {
                           state: { from: { pathname: '/analysis-ready' } },

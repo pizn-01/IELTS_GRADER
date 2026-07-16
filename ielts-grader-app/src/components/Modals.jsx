@@ -1,49 +1,114 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mail, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 
-export const VerifyEmailModal = ({ isOpen, onClose }) => {
+export const VerifyEmailModal = ({
+  isOpen,
+  email,
+  onContinueReading,
+  onGoVerify,
+  onResend,
+}) => {
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleResend = async () => {
+    if (!onResend) return;
+    setResending(true);
+    setError('');
+    try {
+      await onResend();
+      setResent(true);
+    } catch (err) {
+      setError(err?.message || 'Failed to resend. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
           />
-          
-          {/* Modal Content */}
-          <motion.div 
+
+          <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
           >
-            <button 
-              onClick={onClose}
-              className="absolute top-4 md:top-6 right-4 md:right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={24} />
-            </button>
-            
+            {onContinueReading && (
+              <button
+                type="button"
+                onClick={onContinueReading}
+                className="absolute top-4 md:top-6 right-4 md:right-6 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Continue reading report"
+              >
+                <X size={24} />
+              </button>
+            )}
+
             <div className="p-8 md:p-12 flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white mb-6 md:mb-8 shadow-lg shadow-blue-200">
+              <div className="w-16 h-16 bg-[#3B82F6] rounded-full flex items-center justify-center text-white mb-6 md:mb-8 shadow-lg shadow-blue-200">
                 <Mail size={32} />
               </div>
-              
-              <h2 className="text-xl md:text-2xl font-bold mb-4">Verify your email</h2>
-              <p className="text-sm md:text-base text-gray-500 mb-8 max-w-sm leading-relaxed">
-                Verify your email to continue using our app. We've sent a secure link to <span className="font-semibold text-gray-700">johndoe@gmail.com</span>
+
+              <h2 className="text-xl md:text-2xl font-bold mb-4 text-[#1a1f36]">Verify your email</h2>
+              <p className="text-sm md:text-base text-gray-500 mb-6 max-w-sm leading-relaxed">
+                Your free evaluation is ready. Verify your email to keep using IELTS Grader.
+                {email ? (
+                  <>
+                    {' '}We&apos;ve sent a secure link to{' '}
+                    <span className="font-semibold text-gray-700">{email}</span>.
+                  </>
+                ) : null}
               </p>
-              
-              <div className="text-[13px] md:text-sm">
-                <span className="text-gray-400">Didn't receive it? </span>
-                <button className="text-blue-600 font-bold hover:underline">Resend email.</button>
+
+              {error && (
+                <p className="text-sm text-red-600 mb-4">{error}</p>
+              )}
+              {resent && (
+                <p className="text-sm text-green-700 mb-4">Verification email resent. Check your inbox (and spam).</p>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                <button
+                  type="button"
+                  onClick={onGoVerify}
+                  className="flex-1 h-11 bg-[#1a1f36] text-white rounded-[10px] font-semibold text-sm hover:bg-[#2a2f46] transition-colors"
+                >
+                  Open verify page
+                </button>
+                {onContinueReading && (
+                  <button
+                    type="button"
+                    onClick={onContinueReading}
+                    className="flex-1 h-11 bg-white border border-[#E5E7EB] text-[#1a1f36] rounded-[10px] font-semibold text-sm hover:bg-[#F9FAFB] transition-colors"
+                  >
+                    Keep reading report
+                  </button>
+                )}
+              </div>
+
+              <div className="text-[13px] md:text-sm mt-6">
+                <span className="text-gray-400">Didn&apos;t receive it? </span>
+                <button
+                  type="button"
+                  disabled={resending}
+                  onClick={handleResend}
+                  className="text-[#3B82F6] font-bold hover:underline disabled:opacity-60"
+                >
+                  {resending ? 'Sending…' : 'Resend email'}
+                </button>
               </div>
             </div>
           </motion.div>
@@ -52,8 +117,6 @@ export const VerifyEmailModal = ({ isOpen, onClose }) => {
     </AnimatePresence>
   );
 };
-
-import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 

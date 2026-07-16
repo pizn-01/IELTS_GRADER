@@ -8,6 +8,12 @@ import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
 import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import {
+  peekPendingGradePayload,
+  consumePendingGradePayload,
+  markVerificationEmailSent,
+  wasVerificationEmailSent,
+} from '../utils/authStorage';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
@@ -18,8 +24,20 @@ const AnalysisReadyPage = () => {
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeError, setSubscribeError] = useState('');
 
-  const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData } = useGrade();
+  const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData, updateEssayData } = useGrade();
   const pollRef = useRef(null);
+  const hydratedRef = useRef(false);
+
+  // Restore essay payload saved before login/signup (incl. Google OAuth)
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    const pending = peekPendingGradePayload();
+    if (pending?.essayContent) {
+      updateEssayData(pending);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Set grading status once on mount only (Hero already sets it before navigating;
   // this is a safety net for direct URL access with credits)
@@ -30,11 +48,28 @@ const AnalysisReadyPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const triggerPostEvalVerification = async (freshUser) => {
+    const profile = freshUser || user;
+    if (!profile?.email || profile.email_verified) return;
+    if (wasVerificationEmailSent()) return;
+    try {
+      await api.sendVerification();
+      markVerificationEmailSent();
+    } catch {
+      try {
+        await api.resendVerification(profile.email);
+        markVerificationEmailSent();
+      } catch {
+        /* non-blocking */
+      }
+    }
+  };
+
   const onGradingComplete = async () => {
     let currentSubId = submissionId;
 
     // submissionId is pre-set by Hero before navigation in the normal flow.
-    // Fallback: if somehow not set, submit now (e.g. direct URL access with essayContent).
+    // Fallback: if somehow not set, submit now (e.g. after login with pending essay).
     if (!currentSubId) {
       if ((user?.credits_remaining ?? 0) <= 0) {
         setGradingStatus('completed');
@@ -56,10 +91,12 @@ const AnalysisReadyPage = () => {
               essayData.taskVariant === 'task1-report' && essayData.chartImage
                 ? essayData.chartImage
                 : undefined,
-            time_spent_seconds: 0,
+            exam_task_id: essayData.examTaskId || undefined,
+            time_spent_seconds: essayData.timeSpentSeconds || 0,
           });
           currentSubId = res.submission_id;
           setSubmissionId(currentSubId);
+          consumePendingGradePayload();
         } catch (err) {
           console.error('Failed to submit attempt:', err.message);
           setGradingStatus('completed');
@@ -88,13 +125,18 @@ const AnalysisReadyPage = () => {
         const { status } = await api.checkStatus(currentSubId);
         if (status === 'graded') {
           clearInterval(pollRef.current);
+          let fresh = null;
           try {
-            const fresh = await api.getMe();
-            updateUser({ credits_remaining: fresh.credits_remaining });
+            fresh = await api.getMe();
+            updateUser({
+              credits_remaining: fresh.credits_remaining,
+              email_verified: fresh.email_verified,
+            });
           } catch {}
+          await triggerPostEvalVerification(fresh);
           const report = await api.getReport(currentSubId);
           setGradingStatus('completed');
-          navigate('/report', { state: { reportData: report } });
+          navigate('/report', { state: { reportData: report, requireEmailVerify: fresh && !fresh.email_verified } });
         } else if (status === 'failed' || attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           setGradingStatus('completed');

@@ -9,6 +9,7 @@ import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import ExamQuestionPanel, { noteForTimeLimit } from './ExamQuestionPanel';
 import { isGeneralTask1Letter } from '../utils/parseLetterQuestion';
 import { detectChartType } from './QuestionChart';
+import { setPendingGradePayload } from '../utils/authStorage';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -245,11 +246,32 @@ const MockExam = ({ examType, taskType, onExit }) => {
     }
   };
 
+  const redirectGuestToAuth = () => {
+    const timeSpent = startSeconds + 1 - timeLeft;
+    const q = currentQuestion || bank[0];
+    const payload = {
+      essayContent: essay,
+      questionContent: q?.prompt || '',
+      examType: examType || 'Academic',
+      taskType: taskType || 'Task 2',
+      examTaskId: examTaskId?.startsWith('fallback-') ? null : examTaskId,
+      timeSpentSeconds: timeSpent,
+      chartImage: q?.chartImage || null,
+      chartType: q?.chartType || null,
+      bulletPoints: [],
+      letterType: null,
+      openingLine: '',
+      taskVariant: null,
+    };
+    updateEssayData(payload);
+    setPendingGradePayload(payload);
+    navigate('/login', { state: { from: { pathname: '/analysis-ready' } } });
+  };
+
   const handleStartGrading = () => {
     setShowTimeUp(false);
     if (!user) {
-      updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
-      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
+      redirectGuestToAuth();
       return;
     }
     setIsGrading(true);
@@ -259,8 +281,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const handleSubmit = () => {
     if (wordCount < 10) return;
     if (!user) {
-      updateEssayData({ essayContent: essay, examType: examType || 'Academic', taskType: taskType || 'Task 2' });
-      navigate('/login', { state: { from: { pathname: '/mock-exam' } } });
+      redirectGuestToAuth();
       return;
     }
     setIsGrading(true);

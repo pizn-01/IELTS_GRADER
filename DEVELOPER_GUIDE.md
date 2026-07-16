@@ -106,6 +106,9 @@ FRONTEND_URL=http://localhost:5173
 # Optional — only needed if testing email flows locally
 RESEND_API_KEY=re_...
 EMAIL_FROM=IELTS Grader <noreply@yourdomain.com>
+EMAIL_REPLY_TO=support@yourdomain.com
+# Deliverability: verify the sending domain in Resend (SPF + DKIM) and add DMARC.
+# EMAIL_FROM must use that verified domain (not Resend's onboarding domain).
 ```
 
 Install dependencies and start:

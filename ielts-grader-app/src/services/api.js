@@ -418,6 +418,17 @@ export const api = {
     }
   },
 
+  // ─── POST /api/auth/send-verification ────────────────────────────────────────
+  sendVerification: async () => {
+    const res = await fetch(`${BASE_URL}/auth/send-verification`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Failed to send verification email.');
+    return data;
+  },
+
   // ─── POST /api/auth/resend-verification ──────────────────────────────────────
   resendVerification: async (email) => {
     try {

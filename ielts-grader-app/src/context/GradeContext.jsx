@@ -16,6 +16,8 @@ export const GradeProvider = ({ children }) => {
     openingLine: '',
     chartType: null,
     taskVariant: null,
+    examTaskId: null,
+    timeSpentSeconds: 0,
   });
   const [gradingStatus, setGradingStatus] = useState('idle'); // idle, processing, completed
   const [submissionId, setSubmissionId] = useState(null); // set by MockExam after api.submitAttempt succeeds

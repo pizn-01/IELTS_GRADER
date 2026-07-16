@@ -61,7 +61,7 @@ const SignupPage5 = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate('/verify-email');
+      navigate(from || '/dashboard', { replace: true, state: fromLocation?.state });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {

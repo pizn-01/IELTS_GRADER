@@ -141,7 +141,8 @@ router.post('/register', async (req, res) => {
       profile = inserted || { full_name: name, target_band: 7.5, target_band_confirmed: false, credits_remaining: 1, profile_image_url: null, email_verified: false };
     }
 
-    // Enforce 1 free trial credit, set email_verified = false, generate verification token
+    // Enforce 1 free trial credit, set email_verified = false, generate verification token.
+    // Verification email is deferred until after the first free evaluation.
     const verificationToken = generateToken();
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
 
@@ -153,11 +154,6 @@ router.post('/register', async (req, res) => {
     }).eq('id', data.user.id);
 
     profile = { ...profile, credits_remaining: 1, email_verified: false };
-
-    // Send verification email — fire-and-forget so it doesn't block registration
-    sendVerificationEmail(email, name, verificationToken).catch(err =>
-      console.error('[auth/register] Verification email failed:', err.message)
-    );
 
     await saveUserAttribution(supabaseAdmin, data.user.id, { attribution, session_id, req }).catch(err =>
       console.error('[auth/register] Attribution save failed:', err.message)
@@ -247,6 +243,47 @@ router.get('/verify-email', async (req, res) => {
   } catch (err) {
     console.error('[auth/verify-email]', err.message);
     return res.status(500).json({ error: 'Verification failed. Please try again.' });
+  }
+});
+
+// ─── POST /api/auth/send-verification ─────────────────────────────────────────
+// Authenticated: generate/refresh token and send verification email (used after
+// first free evaluation). Always safe to call; no-ops if already verified.
+router.post('/send-verification', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const email = req.user.email;
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, email_verified')
+      .eq('id', userId)
+      .single();
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found.' });
+    }
+
+    if (profile.email_verified) {
+      return res.json({ message: 'Email already verified.', already_verified: true });
+    }
+
+    const newToken = generateToken();
+    const newExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    await supabaseAdmin.from('profiles').update({
+      verification_token: newToken,
+      verification_token_expires_at: newExpiry,
+    }).eq('id', profile.id);
+
+    sendVerificationEmail(email, profile.full_name, newToken).catch(err =>
+      console.error('[auth/send-verification] Email failed:', err.message)
+    );
+
+    return res.json({ message: 'Verification email sent.' });
+  } catch (err) {
+    console.error('[auth/send-verification]', err.message);
+    return res.status(500).json({ error: 'Failed to send verification email.' });
   }
 });
 

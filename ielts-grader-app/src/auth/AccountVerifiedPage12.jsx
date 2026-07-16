@@ -3,11 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { Icons, formStyles } from "./Common.jsx";
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { clearVerificationEmailSent } from '../utils/authStorage';
 
 const AccountVerifiedPage12 = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const { isAuthenticated, updateUser } = useAuth();
 
   const [status, setStatus] = useState('verifying'); // 'verifying' | 'success' | 'error' | 'static'
   const [errorMsg, setErrorMsg] = useState('');
@@ -20,12 +23,31 @@ const AccountVerifiedPage12 = () => {
     }
 
     api.verifyEmail(token)
-      .then(() => setStatus('success'))
+      .then(async () => {
+        clearVerificationEmailSent();
+        if (isAuthenticated) {
+          try {
+            const fresh = await api.getMe();
+            updateUser(fresh);
+          } catch {
+            updateUser({ email_verified: true });
+          }
+        }
+        setStatus('success');
+      })
       .catch(err => {
         setErrorMsg(err.message || 'Verification failed. The link may have expired.');
         setStatus('error');
       });
-  }, [token]);
+  }, [token, isAuthenticated, updateUser]);
+
+  const handleContinue = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    } else {
+      navigate('/login');
+    }
+  };
 
   if (status === 'verifying') {
     return (
@@ -67,10 +89,10 @@ const AccountVerifiedPage12 = () => {
           Account Verified!
         </h1>
         <p style={{ fontSize: '16px', color: '#6B7280', margin: '0 auto 36px', maxWidth: '420px', lineHeight: 1.7 }}>
-          Your email has been verified and your account is now active. You can now sign in and start practising.
+          Your email has been verified and your account is now active. You can continue practising.
         </p>
-        <button onClick={() => navigate('/login')} className="btn-primary-active" style={formStyles.button.active}>
-          Sign In
+        <button onClick={handleContinue} className="btn-primary-active" style={formStyles.button.active}>
+          {isAuthenticated ? 'Continue to Dashboard' : 'Sign In'}
         </button>
       </div>
     </AuthLayout>

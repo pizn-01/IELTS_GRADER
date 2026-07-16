@@ -219,11 +219,9 @@ function App() {
           <ProtectedRoute><DashboardApp /></ProtectedRoute>
         } />
         <Route path="/selection" element={<SelectionPage />} />
-        <Route path="/mock-exam" element={
-          <ProtectedRoute><MockExamPage /></ProtectedRoute>
-        } />
+        <Route path="/mock-exam" element={<MockExamPage />} />
         <Route path="/report" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowUnverified>
             <Layout 
               currentView="reports" 
               onNavigate={handleProtectedNavigate} 
@@ -234,7 +232,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/analysis-ready" element={
-          <ProtectedRoute><AnalysisReadyPage /></ProtectedRoute>
+          <ProtectedRoute allowUnverified><AnalysisReadyPage /></ProtectedRoute>
         } />
         <Route path="/reports" element={
           <ProtectedRoute><ReportsRedirect /></ProtectedRoute>
