@@ -74,7 +74,6 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
             <div className="flex items-center gap-6">
               <BrandLogo
                 textClassName="text-[18px] md:text-[20px] tracking-tight text-[#101828] uppercase"
-                imgClassName="h-7 w-7 md:h-8 md:w-8"
               />
               <div className="hidden md:block h-6 w-px bg-[#E5E7EB]" />
 

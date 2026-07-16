@@ -9,20 +9,18 @@ const BrandLogo = ({
   to = '/',
   className = '',
   textClassName = 'text-[17px] md:text-[19px] font-extrabold text-[#1a1f36] uppercase tracking-tight',
-  imgClassName = 'h-7 w-7 md:h-8 md:w-8',
+  imgClassName = 'h-[15px] md:h-[17px] w-auto',
   onClick,
 }) => (
   <Link
     to={to}
     onClick={onClick}
-    className={`inline-flex items-center gap-2 shrink-0 no-underline hover:opacity-80 transition-opacity cursor-pointer ${className}`}
+    className={`inline-flex items-center gap-1.5 shrink-0 no-underline hover:opacity-80 transition-opacity cursor-pointer ${className}`}
   >
     <img
       src="/brand-logo.png"
       alt=""
-      width={32}
-      height={32}
-      className={`${imgClassName} object-contain`}
+      className={`${imgClassName} object-contain object-left block`}
       decoding="async"
     />
     <span className={textClassName} style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>
