@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../marketing/Navbar';
 import SeoHead from '../seo/SeoHead';
 import GradeEssayForm from '../components/GradeEssayForm';
 import { useAuth } from '../context/AuthContext';
@@ -17,40 +16,36 @@ const GradeEssayPage = () => {
         description="Paste or upload your IELTS essay for criterion band scores, sentence-level fixes, and a clear improvement plan. 1 free evaluation. No card required."
         path="/grade-my-essay"
       />
-      <Navbar />
-      <main className="h-[calc(100dvh-64px)] overflow-hidden bg-[#F4F6F8] flex flex-col font-sans">
-        <div className="max-w-[1440px] w-full mx-auto flex-1 min-h-0 flex flex-col px-3 sm:px-5 py-3">
-          {/* Slim tool chrome */}
-          <div className="flex items-center gap-3 mb-3 shrink-0">
+      <div className="fixed inset-0 z-[200] bg-white flex flex-col font-sans overflow-hidden">
+        <header className="h-[64px] border-b border-gray-100 flex items-center justify-between px-4 md:px-6 bg-white shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}
-              className="p-2 rounded-[10px] bg-white border border-[#E5E7EB] hover:bg-[#F8FAFC] transition-colors text-[#667085] hover:text-[#101828] shadow-sm"
+              className="flex items-center justify-center w-8 h-8 rounded-[8px] border border-gray-200 text-[#344054] hover:bg-gray-50 transition-all shrink-0"
               aria-label="Back"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft size={18} />
             </button>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-[18px] sm:text-[22px] font-bold text-[#101828] tracking-tight m-0">
-                  Grade my essay
-                </h1>
-                <span className="bg-[#E0F2FE] text-[#0EA5E9] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                  Auto-detect task
-                </span>
+            <div className="min-w-0">
+              <div className="text-[13px] md:text-[14px] font-semibold text-[#101828] truncate">
+                Grade my essay
               </div>
-              <p className="text-[12px] sm:text-[13px] text-[#667085] m-0 mt-0.5 truncate">
-                Task type is detected from your question prompt (or essay if no prompt is provided).
-              </p>
+              <div className="text-[10px] md:text-[11px] text-gray-500 font-medium truncate">
+                Task type detected automatically
+              </div>
             </div>
           </div>
 
-          {/* Workspace card */}
-          <div className="flex-1 flex flex-col min-h-0 bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden">
-            <GradeEssayForm variant="page" hidePageTitle />
-          </div>
+          <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0">
+            Auto-detect task
+          </span>
+        </header>
+
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <GradeEssayForm variant="page" hidePageTitle />
         </div>
-      </main>
+      </div>
     </>
   );
 };

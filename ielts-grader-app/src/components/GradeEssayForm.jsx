@@ -156,25 +156,31 @@ export default function GradeEssayForm({
     }
   };
 
-  /* ─── Page variant: full-viewport split workspace ─── */
+  /* ─── Page variant: Mock Exam–aligned full-bleed workspace ─── */
   if (isPage) {
+    const exitTo = user ? '/dashboard' : '/';
+    const activePill =
+      'inline-flex items-center justify-center px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold leading-none';
+    const idlePill =
+      'inline-flex items-center justify-center px-2.5 md:px-5 h-[30px] md:h-[36px] border border-gray-200 rounded-[8px] text-[11px] md:text-[14px] font-semibold leading-none text-[#344054]';
+
     return (
       <div className="h-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-          {/* Prompt pane */}
-          <div className="w-full md:w-[40%] lg:w-[420px] max-h-[42%] md:max-h-none flex flex-col min-h-0 border-b md:border-b-0 md:border-r border-[#E5E7EB] bg-[#F8FAFC] shrink-0 md:shrink">
-            <div className="flex items-center justify-between gap-2 px-4 sm:px-5 pt-3.5 pb-2 shrink-0">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-[#667085] m-0">
+          {/* Prompt pane — Mock dimensions */}
+          <div className="w-full md:w-[400px] lg:w-[480px] max-h-[46vh] md:max-h-none border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC] shrink-0 md:shrink flex flex-col min-h-0">
+            <div className="mb-4 md:mb-6 flex items-center justify-between gap-3 shrink-0">
+              <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
                 Question / Prompt
-                <span className="font-medium normal-case tracking-normal text-[#98A2B3] ml-1.5">(optional)</span>
-              </label>
+              </span>
               <button
                 type="button"
                 onClick={() => promptFileRef.current?.click()}
                 title="Upload prompt"
-                className="p-1.5 rounded-[8px] text-[#667085] hover:text-[#101828] hover:bg-white border border-transparent hover:border-[#E5E7EB] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-[11px] font-semibold text-[#344054] border border-gray-200 hover:bg-white transition-all"
               >
-                <Paperclip size={15} />
+                <Paperclip size={14} />
+                <span className="hidden sm:inline">Upload</span>
               </button>
               <input
                 ref={promptFileRef}
@@ -188,78 +194,91 @@ export default function GradeEssayForm({
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
               placeholder="Paste or upload your IELTS question…"
-              className="flex-1 min-h-0 w-full px-4 sm:px-5 pb-4 bg-transparent outline-none resize-none text-[14px] sm:text-[15px] text-[#344054] leading-[1.7] placeholder:text-[#D0D5DD] custom-scrollbar"
+              className="flex-1 min-h-[120px] w-full bg-transparent outline-none resize-none text-[15px] md:text-[16px] text-[#475467] leading-[1.8] placeholder:text-gray-300 custom-scrollbar"
             />
-            {questionChartImage && (
-              <p className="px-4 sm:px-5 pb-3 text-[11px] text-[#059669] shrink-0">
-                Question image retained for chart grading.
-              </p>
-            )}
           </div>
 
-          {/* Essay pane */}
-          <div className="flex-1 flex flex-col min-h-0 bg-white">
-            <div className="flex items-center justify-between gap-2 px-4 sm:px-5 pt-3.5 pb-2 shrink-0 border-b border-[#F2F4F7]">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-[#667085] m-0">
-                Your essay
-              </label>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-[#98A2B3] tabular-nums">
-                  {wordCount} {wordCount === 1 ? 'word' : 'words'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => essayFileRef.current?.click()}
-                  title="Upload essay"
-                  className="p-1.5 rounded-[8px] text-[#667085] hover:text-[#101828] hover:bg-[#F8FAFC] border border-transparent hover:border-[#E5E7EB] transition-colors"
-                >
-                  <Paperclip size={15} />
-                </button>
-                <input
-                  ref={essayFileRef}
-                  type="file"
-                  accept={UPLOAD_ACCEPT}
-                  className="hidden"
-                  onChange={handleEssayFile}
-                />
-              </div>
-            </div>
+          {/* Essay pane — Mock borderless editor */}
+          <div className="flex-1 flex flex-col bg-white min-h-0">
             <textarea
               value={essayText}
               onChange={(e) => setEssayText(e.target.value)}
-              placeholder="Start writing, paste, or upload PDF / DOCX / image…"
-              className="flex-1 min-h-0 w-full px-4 sm:px-5 py-3 outline-none resize-none text-[15px] md:text-[16px] text-[#475467] leading-[1.75] placeholder:text-[#D0D5DD] custom-scrollbar"
+              placeholder="Start writing your essay here..."
+              className="flex-1 p-4 md:p-10 outline-none text-[15px] md:text-[16px] text-[#475467] leading-[1.8] font-normal resize-none placeholder:text-gray-300 custom-scrollbar min-h-0"
             />
           </div>
         </div>
 
-        {/* Sticky footer CTA */}
-        <div className="shrink-0 border-t border-[#E5E7EB] bg-white px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4">
-          {fileReadError && (
-            <p className="text-[12px] text-red-500 m-0 sm:flex-1 order-first sm:order-none">
-              {fileReadError}
-            </p>
-          )}
-          <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 ${fileReadError ? '' : 'sm:ml-auto'} w-full sm:w-auto`}>
+        {/* Status strip (errors / chart image) */}
+        {(fileReadError || questionChartImage) && (
+          <div
+            className={`px-4 md:px-8 py-1.5 text-[12px] font-medium flex items-center gap-2 border-t shrink-0 ${
+              fileReadError
+                ? 'bg-red-50 border-red-100 text-red-500'
+                : 'bg-[#F0F9FF] border-[#DBEAFE] text-[#1A96F3]'
+            }`}
+          >
+            <Paperclip size={13} className="shrink-0" />
+            {fileReadError || 'Question image retained for chart grading.'}
+          </div>
+        )}
+
+        {/* Mock-style footer */}
+        <footer className="border-t border-gray-100 flex items-center justify-between px-2 md:px-8 h-[52px] md:h-[64px] bg-white shrink-0 gap-2">
+          <div className="flex gap-1.5" aria-label="Grade essay workspace">
+            <span className={idlePill}>Prompt</span>
+            <span className={activePill} aria-current="true">Essay</span>
+          </div>
+
+          <div className="text-[12px] md:text-[14px] font-medium text-gray-500 tabular-nums">
+            {wordCount} words
+          </div>
+
+          <div className="flex items-center gap-1 md:gap-3">
             {!user && (
-              <p className="text-[12px] text-[#667085] m-0 text-center sm:text-right order-last sm:order-first">
-                Free account includes 1 full evaluation. No card required.
+              <p className="hidden lg:block text-[11px] text-gray-500 m-0 max-w-[160px] text-right leading-snug">
+                1 free evaluation. No card required.
               </p>
             )}
             <button
               type="button"
+              onClick={() => essayFileRef.current?.click()}
+              title="Upload essay"
+              className="w-[30px] h-[30px] md:w-[34px] md:h-[34px] flex items-center justify-center rounded-[8px] text-[#344054] hover:bg-gray-50 transition-all"
+            >
+              <Paperclip size={17} />
+            </button>
+            <input
+              ref={essayFileRef}
+              type="file"
+              accept={UPLOAD_ACCEPT}
+              className="hidden"
+              onChange={handleEssayFile}
+            />
+            <button
+              type="button"
+              onClick={() => navigate(exitTo)}
+              className="flex items-center px-2.5 md:px-4 h-[30px] md:h-[34px] border border-gray-200 rounded-[8px] text-[11px] md:text-[13px] font-semibold text-[#344054] hover:bg-gray-50 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
               onClick={handleSubmit}
               disabled={!isUploadFormValid || isSubmitting}
-              className={`w-full sm:w-auto sm:min-w-[200px] h-[48px] px-6 rounded-[14px] font-semibold text-[14px] transition-all shadow-sm ${
-                isUploadFormValid && !isSubmitting
-                  ? 'bg-[#2C3E50] text-white hover:bg-[#1D2939]'
-                  : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
-              }`}
+              className="px-2.5 md:px-5 h-[30px] md:h-[36px] bg-[#2C3E50] text-white rounded-[8px] text-[11px] md:text-[14px] font-semibold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
-              {isSubmitting ? 'Analyzing…' : user ? 'Analyze My Essay' : 'Get my free tutor report'}
+              {isSubmitting
+                ? 'Analyzing…'
+                : (
+                  <>
+                    <span className="hidden sm:inline">{user ? 'Analyze My Essay' : 'Get my free tutor report'}</span>
+                    <span className="sm:hidden">{user ? 'Analyze' : 'Get report'}</span>
+                  </>
+                )}
             </button>
           </div>
-        </div>
+        </footer>
       </div>
     );
   }
