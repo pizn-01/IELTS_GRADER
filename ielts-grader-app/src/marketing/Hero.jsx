@@ -66,11 +66,11 @@ const Hero = () => {
 
         {/* Submission card — first interactive surface on mobile */}
         <div
-          className={`w-full order-2 lg:order-2 lg:w-[38%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 mb-2.5 lg:mb-0 ${
+          className={`w-full order-2 lg:order-2 lg:w-[42%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 mb-2.5 lg:mb-0 ${
             isMockMobileFill ? 'flex-1 min-h-0 lg:flex-none lg:shrink-0' : 'shrink-0'
           }`}
         >
-          <div className={`bg-white/95 rounded-[16px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] w-full max-w-[420px] lg:max-w-none flex flex-col transition-all duration-500 ${
+          <div className={`bg-white/95 rounded-[16px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] w-full max-w-[462px] lg:max-w-none flex flex-col transition-all duration-500 ${
             cardView === 'mock' ? 'p-4 lg:p-6 flex-1 lg:flex-auto min-h-0 lg:h-full' : 'p-4 pb-5 lg:p-5'
           }`}>
             
@@ -82,7 +82,7 @@ const Hero = () => {
                   <button
                     type="button"
                     onClick={() => setCardView('upload')}
-                    className="group relative flex items-center gap-3 text-left rounded-[12px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-4 min-h-[104px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+                    className="group relative flex items-center gap-3.5 text-left rounded-[12px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-5 min-h-[136px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
                   >
                     <div className="flex shrink-0">
                       <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
@@ -112,7 +112,7 @@ const Hero = () => {
                   <button
                     type="button"
                     onClick={() => setCardView('mock')}
-                    className="group relative flex items-center gap-3 text-left rounded-[12px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-4 min-h-[104px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
+                    className="group relative flex items-center gap-3.5 text-left rounded-[12px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-5 min-h-[136px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
                   >
                     <div className="flex shrink-0">
                       <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
