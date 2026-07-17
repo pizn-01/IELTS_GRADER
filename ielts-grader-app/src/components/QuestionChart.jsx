@@ -195,12 +195,12 @@ const axisTickStyle = { fontSize: 11, fill: '#9CA3AF' };
 const legendStyle = { fontSize: 11, paddingTop: 6 };
 
 // ── Multi-line chart (entities over years) ────────────────────────────────────
-function LineChartView({ seed }) {
+function LineChartView({ seed, height = 240 }) {
   const entities = extractEntities(seed, ['Series A', 'Series B', 'Series C']);
   const ticks = extractYearTicks(seed, 6) || ['2000', '2004', '2008', '2012', '2016', '2020'];
   const data = makeTrendSeries(seed, entities, ticks);
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }}>
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
         <XAxis dataKey="tick" tick={axisTickStyle} axisLine={false} tickLine={false} />
@@ -230,12 +230,12 @@ function LineChartView({ seed }) {
 }
 
 // ── Single-series bar chart (values over years) ───────────────────────────────
-function BarChartView({ seed }) {
+function BarChartView({ seed, height = 240 }) {
   const [measure] = extractMeasures(seed, ['Value', 'Value']);
   const ticks = extractYearTicks(seed, 6) || ['2000', '2004', '2008', '2012', '2016', '2020'];
   const data = makeSingleSeries(seed, ticks);
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }} barCategoryGap="28%">
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
         <XAxis dataKey="tick" tick={axisTickStyle} axisLine={false} tickLine={false} />
@@ -255,12 +255,12 @@ function BarChartView({ seed }) {
 }
 
 // ── Grouped bar chart with an overlaid average line ───────────────────────────
-function GroupedBarChartView({ seed }) {
+function GroupedBarChartView({ seed, height = 250 }) {
   const entities = extractGroupLabels(seed, ['Group A', 'Group B', 'Group C']);
   const categories = extractYearTicks(seed, 4) || ['Category 1', 'Category 2', 'Category 3', 'Category 4'];
   const data = makeGroupedBarData(seed, entities, categories);
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }} barCategoryGap="24%">
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
         <XAxis dataKey="category" tick={axisTickStyle} axisLine={false} tickLine={false} />
@@ -290,7 +290,7 @@ function GroupedBarChartView({ seed }) {
 }
 
 // ── Mixed bar + line combo chart ──────────────────────────────────────────────
-function MixedChartView({ seed }) {
+function MixedChartView({ seed, height = 240 }) {
   const [barName, lineName] = extractMeasures(seed, ['Total volume', 'Rate (%)']);
   const ticks = extractYearTicks(seed, 6) || ['2000', '2004', '2008', '2012', '2016', '2020'];
   const h = hashStr(seed);
@@ -300,7 +300,7 @@ function MixedChartView({ seed }) {
     [lineName]: clamp(seededInt(h + 2, 13, 20, 50) + seededInt(h + 2, 5, -3, 7) * i + seededInt(h + 2, (i + 1) * 6, -5, 5), 5, 90),
   }));
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: -22, bottom: 4 }}>
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
         <XAxis dataKey="tick" tick={axisTickStyle} axisLine={false} tickLine={false} />
@@ -321,7 +321,7 @@ function MixedChartView({ seed }) {
 }
 
 // ── Pie / donut chart with legend ─────────────────────────────────────────────
-function PieChartView({ seed, title = null }) {
+function PieChartView({ seed, title = null, height = 210 }) {
   const segments = makePieData(seed);
   const RADIAN = Math.PI / 180;
 
@@ -346,7 +346,7 @@ function PieChartView({ seed, title = null }) {
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={210}>
+      <ResponsiveContainer width="100%" height={height}>
         <PieChart>
           <Pie
             data={segments}
@@ -433,34 +433,49 @@ function isSafeSvg(markup) {
   return typeof markup === 'string' && /^\s*<svg[\s>]/i.test(markup) && !/<script/i.test(markup);
 }
 
-function SvgChartView({ svg }) {
+function SvgChartView({ svg, fit = false }) {
   return (
     <div
-      className="w-full flex justify-center [&_svg]:max-w-full [&_svg]:h-auto"
+      className={`w-full flex justify-center items-center ${
+        fit
+          ? 'h-full max-h-full [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto'
+          : '[&_svg]:max-w-full [&_svg]:h-auto'
+      }`}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
 }
 
-function ImageChartView({ src }) {
+function ImageChartView({ src, fit = false }) {
   return (
-    <img src={src} alt="" className="max-w-full h-auto mx-auto block" />
+    <img
+      src={src}
+      alt=""
+      className={
+        fit
+          ? 'max-w-full max-h-full w-auto h-auto object-contain mx-auto block'
+          : 'max-w-full h-auto mx-auto block'
+      }
+    />
   );
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
-const QuestionChart = ({ type, seed = '', svg = null, image = null }) => {
-  const wrapper = 'bg-[#F3F4F6] rounded-[12px] p-3';
+const QuestionChart = ({ type, seed = '', svg = null, image = null, fit = false, height = null }) => {
+  const wrapper = fit
+    ? 'bg-[#F3F4F6] rounded-[12px] p-2 md:p-3 w-full h-full max-h-full flex items-center justify-center overflow-hidden'
+    : 'bg-[#F3F4F6] rounded-[12px] p-3';
+  const chartH = height ?? (fit ? 160 : 240);
 
-  if (isSafeSvg(svg)) return <div className={wrapper}><SvgChartView svg={svg} /></div>;
+  if (isSafeSvg(svg)) return <div className={wrapper}><SvgChartView svg={svg} fit={fit} /></div>;
 
-  if (image) return <div className={wrapper}><ImageChartView src={image} /></div>;
+  if (image) return <div className={wrapper}><ImageChartView src={image} fit={fit} /></div>;
 
-  if (type === 'line') return <div className={wrapper}><LineChartView seed={seed} /></div>;
-  if (type === 'bar') return <div className={wrapper}><BarChartView seed={seed} /></div>;
-  if (type === 'pie') return <div className={wrapper}><PieChartView seed={seed} /></div>;
-  if (type === 'groupedBar') return <div className={wrapper}><GroupedBarChartView seed={seed} /></div>;
-  if (type === 'mixed') return <div className={wrapper}><MixedChartView seed={seed} /></div>;
+  if (type === 'line') return <div className={wrapper}><LineChartView seed={seed} height={chartH} /></div>;
+  if (type === 'bar') return <div className={wrapper}><BarChartView seed={seed} height={chartH} /></div>;
+  if (type === 'pie') return <div className={wrapper}><PieChartView seed={seed} height={chartH} /></div>;
+  if (type === 'groupedBar') return <div className={wrapper}><GroupedBarChartView seed={seed} height={chartH} /></div>;
+  if (type === 'mixed') return <div className={wrapper}><MixedChartView seed={seed} height={chartH} /></div>;
   if (type === 'pieComparative') return <div className={wrapper}><PieComparativeView seed={seed} /></div>;
   if (type === 'table') return <div className={wrapper}><TableView seed={seed} /></div>;
   return null;
