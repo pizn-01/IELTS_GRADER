@@ -42,16 +42,24 @@ function ReportQuestionDisplay({ text, chartType, chartSvg, chartImage }) {
   const showChart = Boolean(chartSvg || chartImage || chartType || text);
   return (
     <>
-      <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-4">
+      {/* Keep timing + task rules above the chart so they stay visible on mobile
+          (prompt pane is height-capped and charts used to push this text off-screen). */}
+      <p className="text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90 mb-3">
+        You should spend about 20 minutes on this task.
+      </p>
+      <h2 className="text-[14px] md:text-[15px] font-bold text-[#101828] leading-[1.6] mb-3 md:mb-4">
         {scenario}
       </h2>
       {showChart && (
-        <div className="mb-4">
+        <div className="mb-3 md:mb-4 max-h-[140px] sm:max-h-[180px] md:max-h-none overflow-auto rounded-[8px]">
           <QuestionChart type={chartType} seed={text} svg={chartSvg} image={chartImage} />
         </div>
       )}
-      <p className="text-[12px] md:text-[13px] text-[#475467] leading-[1.6] font-medium">
+      <p className="text-[12px] md:text-[13px] text-[#475467] leading-[1.6] font-medium mb-2">
         {instruction}
+      </p>
+      <p className="text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90">
+        Write at least 150 words.
       </p>
     </>
   );
@@ -114,9 +122,12 @@ export default function ExamQuestionPanel({
       ) : (
         <Task2QuestionDisplay text={questionText} />
       )}
-      <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90 mt-5">
-        <p className="whitespace-pre-line">{resolvedNote}</p>
-      </div>
+      {/* Report tasks render spend/word instructions inline above; avoid duplicating below. */}
+      {!isReport && (
+        <div className="space-y-4 text-[11px] md:text-[12px] text-[#475467] leading-[1.7] font-medium opacity-90 mt-5">
+          <p className="whitespace-pre-line">{resolvedNote}</p>
+        </div>
+      )}
     </div>
   );
 }
