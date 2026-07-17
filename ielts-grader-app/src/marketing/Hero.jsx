@@ -78,19 +78,19 @@ const Hero = () => {
               <div className="flex-1 flex flex-col animate-fadeIn min-h-0">
                 <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-6 tracking-[-0.01em]">Start your free tutor report</h3>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 flex-1 min-h-0">
+                <div className="flex flex-col gap-3 lg:gap-3.5 flex-1 min-h-0 justify-center">
                   <button
                     type="button"
                     onClick={() => setCardView('upload')}
-                    className="group relative flex items-center gap-3.5 lg:flex-col lg:justify-center lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-[#F8FAFC] p-4 lg:p-6 min-h-[104px] lg:min-h-0 lg:h-full cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+                    className="group relative flex items-center gap-3.5 text-left rounded-[14px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-4 lg:p-5 min-h-[96px] lg:min-h-[108px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
                   >
-                    <div className="flex shrink-0 lg:justify-center lg:mb-5 lg:w-full">
+                    <div className="flex shrink-0">
                       <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-[12px] lg:rounded-[14px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
                         <FileCheck2 className="w-6 h-6 lg:w-7 lg:h-7 text-[#3B82F6]" />
                       </div>
                     </div>
-                    <div className="min-w-0 flex-1 lg:w-full lg:flex-none">
-                      <div className="flex items-center gap-2 mb-1 lg:mb-2 lg:justify-center">
+                    <div className="min-w-0 flex-1 pr-6">
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="text-[15px] lg:text-[17px] font-bold text-[#1a1f36]">Grade my essay</span>
                         <span className="relative flex items-center">
                           <Info
@@ -102,25 +102,25 @@ const Hero = () => {
                           {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
                         </span>
                       </div>
-                      <p className="text-[12px] lg:text-[14px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[220px]">
+                      <p className="text-[12px] lg:text-[14px] text-[#6B7280] leading-snug lg:leading-relaxed m-0">
                         Paste or upload your essay for a band score and fixes
                       </p>
                     </div>
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3B82F6]/70 lg:static lg:translate-y-0 lg:mt-6 lg:mx-auto shrink-0" />
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3B82F6]/70 shrink-0" />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setCardView('mock')}
-                    className="group relative flex items-center gap-3.5 lg:flex-col lg:justify-center lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-[#F8FAFC] p-4 lg:p-6 min-h-[104px] lg:min-h-0 lg:h-full cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
+                    className="group relative flex items-center gap-3.5 text-left rounded-[14px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-4 lg:p-5 min-h-[96px] lg:min-h-[108px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
                   >
-                    <div className="flex shrink-0 lg:justify-center lg:mb-5 lg:w-full">
+                    <div className="flex shrink-0">
                       <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-[12px] lg:rounded-[14px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
                         <Clock className="w-6 h-6 lg:w-7 lg:h-7 text-[#0D9488]" />
                       </div>
                     </div>
-                    <div className="min-w-0 flex-1 lg:w-full lg:flex-none">
-                      <div className="flex items-center gap-2 mb-1 lg:mb-2 lg:justify-center">
+                    <div className="min-w-0 flex-1 pr-6">
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="text-[15px] lg:text-[17px] font-bold text-[#1a1f36]">Mock Exam</span>
                         <span className="relative flex items-center">
                           <Info
@@ -132,12 +132,11 @@ const Hero = () => {
                           {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
                         </span>
                       </div>
-                      <p className="text-[12px] lg:text-[14px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[220px]">
-                        <span className="lg:hidden">Timed IELTS-style practice</span>
-                        <span className="hidden lg:inline">Practice in a real IELTS computer-based environment with timer</span>
+                      <p className="text-[12px] lg:text-[14px] text-[#6B7280] leading-snug lg:leading-relaxed m-0">
+                        Practice in a real IELTS computer-based environment with timer
                       </p>
                     </div>
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0D9488]/70 lg:static lg:translate-y-0 lg:mt-6 lg:mx-auto shrink-0" />
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0D9488]/70 shrink-0" />
                   </button>
                 </div>
 
