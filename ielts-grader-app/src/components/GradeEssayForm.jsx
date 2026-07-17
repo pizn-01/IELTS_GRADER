@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, Paperclip, Maximize2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGrade } from '../context/GradeContext';
@@ -51,8 +51,20 @@ export default function GradeEssayForm({
   const [questionChartImage, setQuestionChartImage] = useState(
     draft?.questionChartImage || null,
   );
+  const [showChartImageNote, setShowChartImageNote] = useState(false);
   const promptFileRef = useRef(null);
   const essayFileRef = useRef(null);
+
+  // Keep chart image for grading; only auto-hide the status note.
+  useEffect(() => {
+    if (!questionChartImage) {
+      setShowChartImageNote(false);
+      return undefined;
+    }
+    setShowChartImageNote(true);
+    const timer = setTimeout(() => setShowChartImageNote(false), 3000);
+    return () => clearTimeout(timer);
+  }, [questionChartImage]);
 
   const isPage = variant === 'page';
   const isUploadFormValid = essayText.trim().length > 0;
@@ -209,8 +221,8 @@ export default function GradeEssayForm({
           </div>
         </div>
 
-        {/* Status strip (errors / chart image) */}
-        {(fileReadError || questionChartImage) && (
+        {/* Status strip (errors / chart image note — chart note auto-hides) */}
+        {(fileReadError || showChartImageNote) && (
           <div
             className={`px-4 md:px-8 py-1.5 text-[12px] font-medium flex items-center gap-2 border-t shrink-0 ${
               fileReadError
@@ -348,7 +360,7 @@ export default function GradeEssayForm({
               onChange={handlePromptFile}
             />
           </div>
-          {questionChartImage && (
+          {showChartImageNote && (
             <p className="text-[11px] text-[#059669] mt-1">
               Question image retained for chart grading (not shown in the text box).
             </p>
