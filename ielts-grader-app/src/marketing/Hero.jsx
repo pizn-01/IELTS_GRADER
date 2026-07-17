@@ -20,10 +20,10 @@ const isImageFile = (file) =>
   file && (file.type?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name || ''));
 
 const MOCK_OPTIONS = [
-  { examType: 'Academic', taskType: 'Task 1', label: 'Academic · Task 1', sublabel: 'Report' },
-  { examType: 'Academic', taskType: 'Task 2', label: 'Academic · Task 2', sublabel: 'Essay' },
-  { examType: 'General', taskType: 'Task 1', label: 'General · Task 1', sublabel: 'Letter' },
-  { examType: 'General', taskType: 'Task 2', label: 'General · Task 2', sublabel: 'Essay' },
+  { examType: 'Academic', taskType: 'Task 1', label: 'Task 1', sublabel: 'Report' },
+  { examType: 'Academic', taskType: 'Task 2', label: 'Task 2', sublabel: 'Essay' },
+  { examType: 'General', taskType: 'Task 1', label: 'Task 1', sublabel: 'Letter' },
+  { examType: 'General', taskType: 'Task 2', label: 'Task 2', sublabel: 'Essay' },
 ];
 
 const Hero = () => {
@@ -80,26 +80,32 @@ const Hero = () => {
   return (
     <header
       id="about"
-      className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
+      className={`hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center lg:min-h-[700px] ${
+        cardView === 'mock' ? 'min-h-0' : 'min-h-[calc(100dvh-64px)]'
+      }`}
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-stretch gap-0 lg:gap-14">
 
-        {/* Mobile: compact headline above the card */}
-        <div className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5">
-          <div className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide">
-            Free · No card
+        {/* Mobile: compact headline above the card (hidden on mock so all 4 tasks fit) */}
+        {cardView !== 'mock' && (
+          <div className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5">
+            <div className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide">
+              Free · No card
+            </div>
+            <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+              Your IELTS Writing Tutor.<br />
+              <span className="font-semibold text-[#374151]">
+                Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
+              </span>
+            </h1>
           </div>
-          <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
-            Your IELTS Writing Tutor.<br />
-            <span className="font-semibold text-[#374151]">
-              Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
-            </span>
-          </h1>
-        </div>
+        )}
 
         {/* Submission card — first interactive surface on mobile */}
         <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 shrink-0 mb-2.5 lg:mb-0">
-          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-5 pb-6 lg:p-8 w-full max-w-[480px] lg:max-w-none lg:h-full flex flex-col transition-all duration-500">
+          <div className={`bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] w-full max-w-[480px] lg:max-w-none lg:h-full flex flex-col transition-all duration-500 ${
+            cardView === 'mock' ? 'p-4 lg:p-8' : 'p-5 pb-6 lg:p-8'
+          }`}>
             
             {cardView === 'default' ? (
               <div className="flex-1 flex flex-col animate-fadeIn min-h-0">
@@ -174,17 +180,17 @@ const Hero = () => {
               </div>
             ) : cardView === 'mock' ? (
               <div className="flex-1 flex flex-col animate-fadeIn min-h-0">
-                <div className="flex items-center gap-3 mb-4 lg:mb-6">
-                  <button type="button" onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
+                <div className="flex items-center gap-2.5 mb-3 lg:mb-6">
+                  <button type="button" onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors shrink-0">
                     <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
                   </button>
-                  <div>
-                    <h3 className="text-[18px] font-bold text-[#1a1f36]">Mock Exam</h3>
-                    <p className="text-[12px] text-[#6B7280] m-0 mt-0.5">Pick a task to start timed practice</p>
+                  <div className="min-w-0">
+                    <h3 className="text-[16px] lg:text-[18px] font-bold text-[#1a1f36] leading-tight">Mock Exam</h3>
+                    <p className="text-[11px] lg:text-[12px] text-[#6B7280] m-0 mt-0.5">Pick a task to start</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 flex-1 min-h-0">
+                <div className="grid grid-cols-2 gap-2.5 lg:gap-4 flex-1 min-h-0">
                   {MOCK_OPTIONS.map((opt) => {
                     const isAcademic = opt.examType === 'Academic';
                     return (
@@ -192,20 +198,20 @@ const Hero = () => {
                         key={`${opt.examType}-${opt.taskType}`}
                         type="button"
                         onClick={() => handleStartMock(opt.examType, opt.taskType)}
-                        className={`group text-left rounded-[12px] border p-4 lg:p-5 lg:h-full min-h-[88px] lg:min-h-0 cursor-pointer transition-all active:scale-[0.98] hover:shadow-md flex flex-col justify-center ${
+                        className={`group text-left rounded-[12px] border p-3 lg:p-5 lg:h-full min-h-0 cursor-pointer transition-all active:scale-[0.98] hover:shadow-md flex flex-col justify-center ${
                           isAcademic
                             ? 'border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-white hover:border-[#3B82F6]'
                             : 'border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-white hover:border-[#2DD4BF]'
                         }`}
                       >
-                        <p className={`text-[11px] font-bold uppercase tracking-wide mb-1.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`}>
+                        <p className={`text-[10px] lg:text-[11px] font-bold uppercase tracking-wide mb-1 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`}>
                           {opt.examType}
                         </p>
-                        <p className="text-[14px] lg:text-[15px] font-bold text-[#1a1f36] mb-0.5 leading-tight">
+                        <p className="text-[13px] lg:text-[15px] font-bold text-[#1a1f36] mb-0 leading-tight">
                           {opt.label}
                         </p>
-                        <p className="text-[12px] text-[#6B7280] m-0">{opt.sublabel}</p>
-                        <ChevronRight className={`w-4 h-4 mt-2 lg:mt-3 transition-transform group-hover:translate-x-0.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`} />
+                        <p className="text-[11px] lg:text-[12px] text-[#6B7280] m-0 mt-0.5">{opt.sublabel}</p>
+                        <ChevronRight className={`hidden lg:block w-4 h-4 mt-3 transition-transform group-hover:translate-x-0.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`} />
                       </button>
                     );
                   })}
@@ -403,30 +409,32 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Mobile: composed rating + benefits fill remaining viewport */}
-        <div className="lg:hidden order-3 flex-1 flex flex-col justify-center gap-3.5 w-full max-w-[480px] mx-auto px-5 pt-1 pb-1 animate-fadeInUp animate-delay-150">
-          <div className="flex items-center gap-1.5 shrink-0 pb-3 mb-0.5 border-b border-[#E8ECF1]/90">
-            <div className="flex gap-0.5">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
-              ))}
+        {/* Mobile: composed rating + benefits fill remaining viewport (hidden on mock) */}
+        {cardView !== 'mock' && (
+          <div className="lg:hidden order-3 flex-1 flex flex-col justify-center gap-3.5 w-full max-w-[480px] mx-auto px-5 pt-1 pb-1 animate-fadeInUp animate-delay-150">
+            <div className="flex items-center gap-1.5 shrink-0 pb-3 mb-0.5 border-b border-[#E8ECF1]/90">
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
+                ))}
+              </div>
+              <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
+              <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
             </div>
-            <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
-            <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
+            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+              <Star className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
+              <span>1 free full report, no credit card</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+              <Zap className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
+              <span>Criterion scores + fixes, not just a band</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+              <ShieldCheck className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
+              <span>Personalized steps to your target band</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-            <Star className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            <span>1 free full report, no credit card</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-            <Zap className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            <span>Criterion scores + fixes, not just a band</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-            <ShieldCheck className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            <span>Personalized steps to your target band</span>
-          </div>
-        </div>
+        )}
 
         {/* Desktop left copy (hidden on mobile) */}
         <div className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[55%] animate-fadeIn flex-col justify-center">
