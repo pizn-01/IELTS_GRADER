@@ -48,6 +48,7 @@ export default function GradeEssayForm({
 
   const isPage = variant === 'page';
   const isUploadFormValid = essayText.trim().length > 0;
+  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
 
   const handleSubmit = async () => {
     if (!essayText.trim()) return;
@@ -116,51 +117,177 @@ export default function GradeEssayForm({
     }
   };
 
-  const promptRows = isPage ? 6 : 3;
-  const essayRows = isPage ? 14 : 5;
-  const labelClass = isPage
-    ? 'block text-[13px] font-semibold text-[#374151] mb-2'
-    : 'block text-[13px] font-medium text-[#4B5563] mb-1.5';
-  const textareaClass = isPage
-    ? 'w-full min-h-[140px] flex-1 px-4 py-3.5 pr-11 bg-[#F8FAFC] border border-[#E5E7EB] rounded-[12px] text-[15px] text-[#1a1f36] placeholder-[#9CA3AF] outline-none focus:border-[#3B82F6] focus:bg-white transition-all resize-y'
-    : 'w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y';
-  const essayTextareaClass = isPage
-    ? 'w-full min-h-[280px] lg:min-h-[360px] flex-1 px-4 py-3.5 pr-11 bg-[#F8FAFC] border border-[#E5E7EB] rounded-[12px] text-[15px] text-[#1a1f36] placeholder-[#9CA3AF] outline-none focus:border-[#3B82F6] focus:bg-white transition-all resize-y'
-    : 'w-full min-h-[120px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y';
+  const handlePromptFile = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setFileReadError('');
+    try {
+      if (isImageFile(file)) {
+        setQuestionChartImage(await readAsDataURL(file));
+      } else {
+        setQuestionChartImage(null);
+      }
+      const text = normalizeParagraphBreaks(await extractFileText(file));
+      setQuestionText(text.trim());
+    } catch (err) {
+      setFileReadError(err.message || 'Could not read the question file.');
+    }
+  };
 
-  return (
-    <div className={`flex-1 flex flex-col min-h-0 ${isPage ? '' : 'animate-fadeIn'}`}>
-      {!isPage && (
-        <div className="flex items-center gap-2 mb-6">
-          <button type="button" onClick={onBack} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
-            <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
-          </button>
-          <h3 className="text-[18px] font-bold text-[#1a1f36] flex-1">Grade my essay</h3>
-          {showMaximize && onMaximize && (
+  const handleEssayFile = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setFileReadError('');
+    try {
+      const text = normalizeParagraphBreaks(await extractFileText(file));
+      setEssayText(text.trim());
+    } catch (err) {
+      setFileReadError(err.message || 'Could not read file.');
+    }
+  };
+
+  /* ─── Page variant: full-viewport split workspace ─── */
+  if (isPage) {
+    return (
+      <div className="h-full flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+          {/* Prompt pane */}
+          <div className="w-full md:w-[40%] lg:w-[420px] max-h-[42%] md:max-h-none flex flex-col min-h-0 border-b md:border-b-0 md:border-r border-[#E5E7EB] bg-[#F8FAFC] shrink-0 md:shrink">
+            <div className="flex items-center justify-between gap-2 px-4 sm:px-5 pt-3.5 pb-2 shrink-0">
+              <label className="text-[11px] font-bold uppercase tracking-widest text-[#667085] m-0">
+                Question / Prompt
+                <span className="font-medium normal-case tracking-normal text-[#98A2B3] ml-1.5">(optional)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => promptFileRef.current?.click()}
+                title="Upload prompt"
+                className="p-1.5 rounded-[8px] text-[#667085] hover:text-[#101828] hover:bg-white border border-transparent hover:border-[#E5E7EB] transition-colors"
+              >
+                <Paperclip size={15} />
+              </button>
+              <input
+                ref={promptFileRef}
+                type="file"
+                accept={UPLOAD_ACCEPT}
+                className="hidden"
+                onChange={handlePromptFile}
+              />
+            </div>
+            <textarea
+              value={questionText}
+              onChange={(e) => setQuestionText(e.target.value)}
+              placeholder="Paste or upload your IELTS question…"
+              className="flex-1 min-h-0 w-full px-4 sm:px-5 pb-4 bg-transparent outline-none resize-none text-[14px] sm:text-[15px] text-[#344054] leading-[1.7] placeholder:text-[#D0D5DD] custom-scrollbar"
+            />
+            {questionChartImage && (
+              <p className="px-4 sm:px-5 pb-3 text-[11px] text-[#059669] shrink-0">
+                Question image retained for chart grading.
+              </p>
+            )}
+          </div>
+
+          {/* Essay pane */}
+          <div className="flex-1 flex flex-col min-h-0 bg-white">
+            <div className="flex items-center justify-between gap-2 px-4 sm:px-5 pt-3.5 pb-2 shrink-0 border-b border-[#F2F4F7]">
+              <label className="text-[11px] font-bold uppercase tracking-widest text-[#667085] m-0">
+                Your essay
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-[#98A2B3] tabular-nums">
+                  {wordCount} {wordCount === 1 ? 'word' : 'words'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => essayFileRef.current?.click()}
+                  title="Upload essay"
+                  className="p-1.5 rounded-[8px] text-[#667085] hover:text-[#101828] hover:bg-[#F8FAFC] border border-transparent hover:border-[#E5E7EB] transition-colors"
+                >
+                  <Paperclip size={15} />
+                </button>
+                <input
+                  ref={essayFileRef}
+                  type="file"
+                  accept={UPLOAD_ACCEPT}
+                  className="hidden"
+                  onChange={handleEssayFile}
+                />
+              </div>
+            </div>
+            <textarea
+              value={essayText}
+              onChange={(e) => setEssayText(e.target.value)}
+              placeholder="Start writing, paste, or upload PDF / DOCX / image…"
+              className="flex-1 min-h-0 w-full px-4 sm:px-5 py-3 outline-none resize-none text-[15px] md:text-[16px] text-[#475467] leading-[1.75] placeholder:text-[#D0D5DD] custom-scrollbar"
+            />
+          </div>
+        </div>
+
+        {/* Sticky footer CTA */}
+        <div className="shrink-0 border-t border-[#E5E7EB] bg-white px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4">
+          {fileReadError && (
+            <p className="text-[12px] text-red-500 m-0 sm:flex-1 order-first sm:order-none">
+              {fileReadError}
+            </p>
+          )}
+          <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 ${fileReadError ? '' : 'sm:ml-auto'} w-full sm:w-auto`}>
+            {!user && (
+              <p className="text-[12px] text-[#667085] m-0 text-center sm:text-right order-last sm:order-first">
+                Free account includes 1 full evaluation. No card required.
+              </p>
+            )}
             <button
               type="button"
-              onClick={onMaximize}
-              title="Open full editor"
-              className="p-1.5 hover:bg-[#EFF6FF] rounded-full transition-colors text-[#6B7280] hover:text-[#3B82F6]"
+              onClick={handleSubmit}
+              disabled={!isUploadFormValid || isSubmitting}
+              className={`w-full sm:w-auto sm:min-w-[200px] h-[48px] px-6 rounded-[14px] font-semibold text-[14px] transition-all shadow-sm ${
+                isUploadFormValid && !isSubmitting
+                  ? 'bg-[#2C3E50] text-white hover:bg-[#1D2939]'
+                  : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
+              }`}
             >
-              <Maximize2 className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+              {isSubmitting ? 'Analyzing…' : user ? 'Analyze My Essay' : 'Get my free tutor report'}
             </button>
-          )}
+          </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {isPage && !hidePageTitle && (
-        <h2 className="text-[22px] font-bold text-[#1a1f36] mb-2 tracking-tight">Grade my essay</h2>
-      )}
+  /* ─── Card variant: compact landing hero form ─── */
+  const labelClass = 'block text-[13px] font-medium text-[#4B5563] mb-1.5';
+  const textareaClass =
+    'w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y';
+  const essayTextareaClass =
+    'w-full min-h-[120px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y';
 
-      <div className={`flex-1 flex flex-col min-h-0 ${isPage ? 'gap-5' : 'space-y-4'}`}>
-        {!hidePageTitle && (
-          <p className={isPage ? 'text-[13px] text-[#6B7280] m-0 shrink-0' : 'text-[12px] text-[#6B7280]'}>
-            Task type is detected automatically from your question prompt (or essay if no prompt is provided).
-          </p>
+  return (
+    <div className="flex-1 flex flex-col min-h-0 animate-fadeIn">
+      <div className="flex items-center gap-2 mb-6">
+        <button type="button" onClick={onBack} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
+          <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
+        </button>
+        <h3 className="text-[18px] font-bold text-[#1a1f36] flex-1">Grade my essay</h3>
+        {showMaximize && onMaximize && (
+          <button
+            type="button"
+            onClick={onMaximize}
+            title="Open full editor"
+            className="p-1.5 hover:bg-[#EFF6FF] rounded-full transition-colors text-[#6B7280] hover:text-[#3B82F6]"
+          >
+            <Maximize2 className="w-[18px] h-[18px]" />
+          </button>
         )}
+      </div>
 
-        <div className={isPage ? 'shrink-0' : ''}>
+      <div className="flex-1 flex flex-col min-h-0 space-y-4">
+        <p className="text-[12px] text-[#6B7280]">
+          Task type is detected automatically from your question prompt (or essay if no prompt is provided).
+        </p>
+
+        <div>
           <label className={labelClass}>
             Your Question / Prompt <span className="text-[#9CA3AF] font-normal">(recommended)</span>
           </label>
@@ -169,7 +296,7 @@ export default function GradeEssayForm({
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
               placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
-              rows={promptRows}
+              rows={3}
               className={textareaClass}
             />
             <button
@@ -184,23 +311,7 @@ export default function GradeEssayForm({
               type="file"
               accept={UPLOAD_ACCEPT}
               className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                e.target.value = '';
-                if (!file) return;
-                setFileReadError('');
-                try {
-                  if (isImageFile(file)) {
-                    setQuestionChartImage(await readAsDataURL(file));
-                  } else {
-                    setQuestionChartImage(null);
-                  }
-                  const text = normalizeParagraphBreaks(await extractFileText(file));
-                  setQuestionText(text.trim());
-                } catch (err) {
-                  setFileReadError(err.message || 'Could not read the question file.');
-                }
-              }}
+              onChange={handlePromptFile}
             />
           </div>
           {questionChartImage && (
@@ -210,15 +321,15 @@ export default function GradeEssayForm({
           )}
         </div>
 
-        <div className={isPage ? 'flex-1 flex flex-col min-h-0' : ''}>
+        <div>
           <label className={labelClass}>Your Essay</label>
-          <div className={`relative ${isPage ? 'flex-1 flex flex-col min-h-0' : ''}`}>
+          <div className="relative">
             <textarea
               value={essayText}
               onChange={(e) => setEssayText(e.target.value)}
               placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
-              rows={essayRows}
-              className={`${essayTextareaClass}${isPage ? ' lg:h-full' : ''}`}
+              rows={5}
+              className={essayTextareaClass}
             />
             <button
               type="button"
@@ -232,18 +343,7 @@ export default function GradeEssayForm({
               type="file"
               accept={UPLOAD_ACCEPT}
               className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                e.target.value = '';
-                if (!file) return;
-                setFileReadError('');
-                try {
-                  const text = normalizeParagraphBreaks(await extractFileText(file));
-                  setEssayText(text.trim());
-                } catch (err) {
-                  setFileReadError(err.message || 'Could not read file.');
-                }
-              }}
+              onChange={handleEssayFile}
             />
           </div>
           {fileReadError && (
@@ -252,7 +352,7 @@ export default function GradeEssayForm({
         </div>
       </div>
 
-      <div className={`shrink-0 ${isPage ? 'mt-6 pt-5 border-t border-[#E8ECF1]' : 'mt-6'}`}>
+      <div className="shrink-0 mt-6">
         <button
           type="button"
           onClick={handleSubmit}
