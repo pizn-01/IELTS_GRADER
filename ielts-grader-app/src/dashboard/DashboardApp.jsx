@@ -284,6 +284,10 @@ function DashboardApp() {
         <PracticeModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
+          onStartGrade={() => {
+            setShowModal(false);
+            navigate('/grade-my-essay');
+          }}
           onStartMock={async (type, task) => {
             try {
               const fresh = await api.getMe();

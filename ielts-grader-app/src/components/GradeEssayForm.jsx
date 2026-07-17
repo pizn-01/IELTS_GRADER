@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ChevronLeft, Paperclip } from 'lucide-react';
+import { ChevronLeft, Paperclip, Maximize2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
@@ -23,8 +23,17 @@ const isImageFile = (file) =>
  * Shared grade essay form used by the landing hero card and /grade-my-essay page.
  * @param {'card' | 'page'} variant
  * @param {() => void} [onBack] shown only for card variant
+ * @param {boolean} [showMaximize]
+ * @param {() => void} [onMaximize]
+ * @param {boolean} [hidePageTitle] when page chrome provides the title
  */
-export default function GradeEssayForm({ variant = 'card', onBack }) {
+export default function GradeEssayForm({
+  variant = 'card',
+  onBack,
+  showMaximize = false,
+  onMaximize,
+  hidePageTitle = false,
+}) {
   const navigate = useNavigate();
   const { updateEssayData, setGradingStatus, setSubmissionId } = useGrade();
   const { user } = useAuth();
@@ -107,41 +116,51 @@ export default function GradeEssayForm({ variant = 'card', onBack }) {
     }
   };
 
-  const promptRows = isPage ? 5 : 3;
-  const essayRows = isPage ? 10 : 5;
-  const promptMinH = isPage ? 'min-h-[120px]' : 'min-h-[72px]';
-  const essayMinH = isPage ? 'min-h-[220px]' : 'min-h-[120px]';
+  const promptRows = isPage ? 6 : 3;
+  const essayRows = isPage ? 14 : 5;
   const labelClass = isPage
-    ? 'block text-[14px] font-medium text-[#4B5563] mb-2'
+    ? 'block text-[13px] font-semibold text-[#374151] mb-2'
     : 'block text-[13px] font-medium text-[#4B5563] mb-1.5';
   const textareaClass = isPage
-    ? `w-full ${promptMinH} px-4 py-3 pr-11 bg-white border border-[#E5E7EB] rounded-[12px] text-[14px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y`
-    : `w-full ${promptMinH} px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y`;
+    ? 'w-full min-h-[140px] flex-1 px-4 py-3.5 pr-11 bg-[#F8FAFC] border border-[#E5E7EB] rounded-[12px] text-[15px] text-[#1a1f36] placeholder-[#9CA3AF] outline-none focus:border-[#3B82F6] focus:bg-white transition-all resize-y'
+    : 'w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y';
   const essayTextareaClass = isPage
-    ? `w-full ${essayMinH} px-4 py-3 pr-11 bg-white border border-[#E5E7EB] rounded-[12px] text-[14px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y`
-    : `w-full ${essayMinH} px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y`;
+    ? 'w-full min-h-[280px] lg:min-h-[360px] flex-1 px-4 py-3.5 pr-11 bg-[#F8FAFC] border border-[#E5E7EB] rounded-[12px] text-[15px] text-[#1a1f36] placeholder-[#9CA3AF] outline-none focus:border-[#3B82F6] focus:bg-white transition-all resize-y'
+    : 'w-full min-h-[120px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y';
 
   return (
-    <div className={`flex-1 flex flex-col ${isPage ? '' : 'animate-fadeIn'}`}>
+    <div className={`flex-1 flex flex-col min-h-0 ${isPage ? '' : 'animate-fadeIn'}`}>
       {!isPage && (
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-2 mb-6">
           <button type="button" onClick={onBack} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
             <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
           </button>
-          <h3 className="text-[18px] font-bold text-[#1a1f36]">Grade my essay</h3>
+          <h3 className="text-[18px] font-bold text-[#1a1f36] flex-1">Grade my essay</h3>
+          {showMaximize && onMaximize && (
+            <button
+              type="button"
+              onClick={onMaximize}
+              title="Open full editor"
+              className="p-1.5 hover:bg-[#EFF6FF] rounded-full transition-colors text-[#6B7280] hover:text-[#3B82F6]"
+            >
+              <Maximize2 className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+            </button>
+          )}
         </div>
       )}
 
-      {isPage && (
+      {isPage && !hidePageTitle && (
         <h2 className="text-[22px] font-bold text-[#1a1f36] mb-2 tracking-tight">Grade my essay</h2>
       )}
 
-      <div className={`flex-1 ${isPage ? 'space-y-5' : 'space-y-4'}`}>
-        <p className={isPage ? 'text-[14px] text-[#6B7280] mb-1' : 'text-[12px] text-[#6B7280]'}>
-          Task type is detected automatically from your question prompt (or essay if no prompt is provided).
-        </p>
+      <div className={`flex-1 flex flex-col min-h-0 ${isPage ? 'gap-5' : 'space-y-4'}`}>
+        {!hidePageTitle && (
+          <p className={isPage ? 'text-[13px] text-[#6B7280] m-0 shrink-0' : 'text-[12px] text-[#6B7280]'}>
+            Task type is detected automatically from your question prompt (or essay if no prompt is provided).
+          </p>
+        )}
 
-        <div>
+        <div className={isPage ? 'shrink-0' : ''}>
           <label className={labelClass}>
             Your Question / Prompt <span className="text-[#9CA3AF] font-normal">(recommended)</span>
           </label>
@@ -191,15 +210,15 @@ export default function GradeEssayForm({ variant = 'card', onBack }) {
           )}
         </div>
 
-        <div>
+        <div className={isPage ? 'flex-1 flex flex-col min-h-0' : ''}>
           <label className={labelClass}>Your Essay</label>
-          <div className="relative">
+          <div className={`relative ${isPage ? 'flex-1 flex flex-col min-h-0' : ''}`}>
             <textarea
               value={essayText}
               onChange={(e) => setEssayText(e.target.value)}
               placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
               rows={essayRows}
-              className={essayTextareaClass}
+              className={`${essayTextareaClass}${isPage ? ' lg:h-full' : ''}`}
             />
             <button
               type="button"
@@ -233,23 +252,25 @@ export default function GradeEssayForm({ variant = 'card', onBack }) {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={!isUploadFormValid || isSubmitting}
-        className={`w-full h-[50px] rounded-[10px] font-bold text-[15px] ${isPage ? 'mt-8' : 'mt-6'} transition-all ${
-          isUploadFormValid && !isSubmitting
-            ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46] shadow-lg'
-            : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
-        }`}
-      >
-        {isSubmitting ? 'Analyzing…' : user ? 'Analyze My Essay' : 'Get my free tutor report'}
-      </button>
-      {!user && (
-        <p className={`text-[12px] text-[#6B7280] text-center ${isPage ? 'mt-4' : 'mt-3'}`}>
-          Free account includes 1 full evaluation. No card required.
-        </p>
-      )}
+      <div className={`shrink-0 ${isPage ? 'mt-6 pt-5 border-t border-[#E8ECF1]' : 'mt-6'}`}>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!isUploadFormValid || isSubmitting}
+          className={`w-full h-[52px] rounded-[10px] font-bold text-[15px] transition-all ${
+            isUploadFormValid && !isSubmitting
+              ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46] shadow-lg'
+              : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
+          }`}
+        >
+          {isSubmitting ? 'Analyzing…' : user ? 'Analyze My Essay' : 'Get my free tutor report'}
+        </button>
+        {!user && (
+          <p className="text-[12px] text-[#6B7280] text-center mt-3 mb-0">
+            Free account includes 1 full evaluation. No card required.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

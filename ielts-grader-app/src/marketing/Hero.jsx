@@ -185,7 +185,12 @@ const Hero = () => {
                 </div>
               </div>
             ) : (
-              <GradeEssayForm variant="card" onBack={() => setCardView('default')} />
+              <GradeEssayForm
+                variant="card"
+                onBack={() => setCardView('default')}
+                showMaximize
+                onMaximize={() => navigate('/grade-my-essay')}
+              />
             )}
           </div>
         </div>
