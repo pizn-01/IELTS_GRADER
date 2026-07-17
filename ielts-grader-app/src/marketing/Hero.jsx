@@ -82,7 +82,7 @@ const Hero = () => {
       id="about"
       className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-16">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-stretch gap-0 lg:gap-14">
 
         {/* Mobile: compact headline above the card */}
         <div className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5">
@@ -98,27 +98,27 @@ const Hero = () => {
         </div>
 
         {/* Submission card — first interactive surface on mobile */}
-        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeInUp animate-delay-50 shrink-0 mb-2.5 lg:mb-0">
-          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-5 pb-6 lg:p-8 w-full max-w-[480px] lg:max-w-[520px] flex flex-col transition-all duration-500 min-h-[280px] lg:min-h-[320px]">
+        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 shrink-0 mb-2.5 lg:mb-0">
+          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-5 pb-6 lg:p-8 w-full max-w-[480px] lg:max-w-none lg:h-full flex flex-col transition-all duration-500">
             
             {cardView === 'default' ? (
-              <div className="flex-1 flex flex-col animate-fadeIn">
-                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-5 tracking-[-0.01em]">Start your free tutor report</h3>
+              <div className="flex-1 flex flex-col animate-fadeIn min-h-0">
+                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-6 tracking-[-0.01em]">Start your free tutor report</h3>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 flex-1 min-h-0">
                   <button
                     type="button"
                     onClick={() => setCardView('upload')}
-                    className="group relative flex items-center gap-3.5 lg:flex-col lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-[#F8FAFC] p-4 lg:p-5 min-h-[104px] lg:min-h-[200px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+                    className="group relative flex items-center gap-3.5 lg:flex-col lg:justify-center lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-[#F8FAFC] p-4 lg:p-6 min-h-[104px] lg:min-h-0 lg:h-full cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
                   >
-                    <div className="flex shrink-0 lg:justify-center lg:mb-4 lg:w-full">
-                      <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
-                        <FileCheck2 className="w-6 h-6 text-[#3B82F6]" />
+                    <div className="flex shrink-0 lg:justify-center lg:mb-5 lg:w-full">
+                      <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-[12px] lg:rounded-[14px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
+                        <FileCheck2 className="w-6 h-6 lg:w-7 lg:h-7 text-[#3B82F6]" />
                       </div>
                     </div>
-                    <div className="min-w-0 flex-1 lg:w-full">
-                      <div className="flex items-center gap-2 mb-1 lg:mb-1.5 lg:justify-center">
-                        <span className="text-[15px] lg:text-[16px] font-bold text-[#1a1f36]">Grade my essay</span>
+                    <div className="min-w-0 flex-1 lg:w-full lg:flex-none">
+                      <div className="flex items-center gap-2 mb-1 lg:mb-2 lg:justify-center">
+                        <span className="text-[15px] lg:text-[17px] font-bold text-[#1a1f36]">Grade my essay</span>
                         <span className="relative flex items-center">
                           <Info
                             onMouseEnter={() => setActiveTooltip('upload')}
@@ -129,26 +129,26 @@ const Hero = () => {
                           {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
                         </span>
                       </div>
-                      <p className="text-[12px] lg:text-[13px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[200px]">
+                      <p className="text-[12px] lg:text-[14px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[220px]">
                         Paste or upload your essay for a band score and fixes
                       </p>
                     </div>
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3B82F6]/70 lg:static lg:translate-y-0 lg:mt-4 lg:mx-auto shrink-0" />
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3B82F6]/70 lg:static lg:translate-y-0 lg:mt-6 lg:mx-auto shrink-0" />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setCardView('mock')}
-                    className="group relative flex items-center gap-3.5 lg:flex-col lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-[#F8FAFC] p-4 lg:p-5 min-h-[104px] lg:min-h-[200px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
+                    className="group relative flex items-center gap-3.5 lg:flex-col lg:justify-center lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-[#F8FAFC] p-4 lg:p-6 min-h-[104px] lg:min-h-0 lg:h-full cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
                   >
-                    <div className="flex shrink-0 lg:justify-center lg:mb-4 lg:w-full">
-                      <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
-                        <Clock className="w-6 h-6 text-[#0D9488]" />
+                    <div className="flex shrink-0 lg:justify-center lg:mb-5 lg:w-full">
+                      <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-[12px] lg:rounded-[14px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
+                        <Clock className="w-6 h-6 lg:w-7 lg:h-7 text-[#0D9488]" />
                       </div>
                     </div>
-                    <div className="min-w-0 flex-1 lg:w-full">
-                      <div className="flex items-center gap-2 mb-1 lg:mb-1.5 lg:justify-center">
-                        <span className="text-[15px] lg:text-[16px] font-bold text-[#1a1f36]">Mock Exam</span>
+                    <div className="min-w-0 flex-1 lg:w-full lg:flex-none">
+                      <div className="flex items-center gap-2 mb-1 lg:mb-2 lg:justify-center">
+                        <span className="text-[15px] lg:text-[17px] font-bold text-[#1a1f36]">Mock Exam</span>
                         <span className="relative flex items-center">
                           <Info
                             onMouseEnter={() => setActiveTooltip('mock')}
@@ -159,18 +159,22 @@ const Hero = () => {
                           {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
                         </span>
                       </div>
-                      <p className="text-[12px] lg:text-[13px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[200px]">
+                      <p className="text-[12px] lg:text-[14px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[220px]">
                         <span className="lg:hidden">Timed IELTS-style practice</span>
                         <span className="hidden lg:inline">Practice in a real IELTS computer-based environment with timer</span>
                       </p>
                     </div>
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0D9488]/70 lg:static lg:translate-y-0 lg:mt-4 lg:mx-auto shrink-0" />
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0D9488]/70 lg:static lg:translate-y-0 lg:mt-6 lg:mx-auto shrink-0" />
                   </button>
                 </div>
+
+                <p className="hidden lg:block text-center text-[13px] text-[#9CA3AF] mt-6 mb-0">
+                  1 free evaluation · No credit card · Results in about 60 seconds
+                </p>
               </div>
             ) : cardView === 'mock' ? (
-              <div className="flex-1 flex flex-col animate-fadeIn">
-                <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 flex flex-col animate-fadeIn min-h-0">
+                <div className="flex items-center gap-3 mb-4 lg:mb-6">
                   <button type="button" onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
                     <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
                   </button>
@@ -180,7 +184,7 @@ const Hero = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 flex-1 min-h-0">
                   {MOCK_OPTIONS.map((opt) => {
                     const isAcademic = opt.examType === 'Academic';
                     return (
@@ -188,7 +192,7 @@ const Hero = () => {
                         key={`${opt.examType}-${opt.taskType}`}
                         type="button"
                         onClick={() => handleStartMock(opt.examType, opt.taskType)}
-                        className={`group text-left rounded-[12px] border p-4 min-h-[88px] cursor-pointer transition-all active:scale-[0.98] hover:shadow-md ${
+                        className={`group text-left rounded-[12px] border p-4 lg:p-5 lg:h-full min-h-[88px] lg:min-h-0 cursor-pointer transition-all active:scale-[0.98] hover:shadow-md flex flex-col justify-center ${
                           isAcademic
                             ? 'border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-white hover:border-[#3B82F6]'
                             : 'border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-white hover:border-[#2DD4BF]'
@@ -197,11 +201,11 @@ const Hero = () => {
                         <p className={`text-[11px] font-bold uppercase tracking-wide mb-1.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`}>
                           {opt.examType}
                         </p>
-                        <p className="text-[14px] font-bold text-[#1a1f36] mb-0.5 leading-tight">
+                        <p className="text-[14px] lg:text-[15px] font-bold text-[#1a1f36] mb-0.5 leading-tight">
                           {opt.label}
                         </p>
                         <p className="text-[12px] text-[#6B7280] m-0">{opt.sublabel}</p>
-                        <ChevronRight className={`w-4 h-4 mt-2 transition-transform group-hover:translate-x-0.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`} />
+                        <ChevronRight className={`w-4 h-4 mt-2 lg:mt-3 transition-transform group-hover:translate-x-0.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`} />
                       </button>
                     );
                   })}
@@ -425,22 +429,22 @@ const Hero = () => {
         </div>
 
         {/* Desktop left copy (hidden on mobile) */}
-        <div className="hidden lg:block w-full order-3 lg:order-1 lg:w-[55%] animate-fadeIn">
-          <div className="inline-flex items-center px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-6">
+        <div className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[55%] animate-fadeIn flex-col justify-center">
+          <div className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-5">
             1 free evaluation · No card required
           </div>
 
-          <h1 className="text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-8 font-['Nunito',_sans-serif]">
+          <h1 className="text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-6 font-['Nunito',_sans-serif]">
             Your IELTS Writing Tutor.<br />
             Band scores, fixes & a plan in<br />
             <span className="text-[#3B82F6]">60 Seconds.</span>
           </h1>
 
-          <p className="text-[17px] text-[#6B7280] leading-[1.6] mb-10 max-w-[540px]">
+          <p className="text-[17px] text-[#6B7280] leading-[1.6] mb-8 max-w-[540px]">
             Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan: 1 full evaluation included.
           </p>
 
-          <div className="space-y-5 mb-10">
+          <div className="space-y-4 mb-8">
             <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Star className="w-5 h-5 text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={2} />
               1 free full report, no credit card
