@@ -1,23 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
-import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
-import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
-import { setPendingGradePayload } from '../utils/authStorage';
-
-const readAsDataURL = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Could not read image.'));
-    reader.readAsDataURL(file);
-  });
-
-const isImageFile = (file) =>
-  file && (file.type?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name || ''));
+import GradeEssayForm from '../components/GradeEssayForm';
 
 const MOCK_OPTIONS = [
   { examType: 'Academic', taskType: 'Task 1', label: 'Task 1', sublabel: 'Report' },
@@ -28,11 +14,10 @@ const MOCK_OPTIONS = [
 
 const Hero = () => {
   const navigate = useNavigate();
-  const { essayData, updateEssayData, setGradingStatus, setSubmissionId } = useGrade();
+  const { updateEssayData } = useGrade();
   const { user } = useAuth();
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [cardView, setCardView] = useState('default'); // 'default', 'mock', 'upload'
-  const [files, setFiles] = useState({ prompt: null, essay: null });
 
   const tooltips = {
     essay: { text: "Paste or upload your IELTS essay (and optional question prompt) to get criterion scores and fixes." },
@@ -46,28 +31,6 @@ const Hero = () => {
     </div>
   );
 
-  const [fileReadError, setFileReadError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [questionText, setQuestionText] = useState('');
-  const [essayText, setEssayText] = useState('');
-  const [questionChartImage, setQuestionChartImage] = useState(null);
-  const promptFileRef = useRef(null);
-  const essayFileRef = useRef(null);
-
-  const handleFileChange = (type, file) => {
-    setFiles(prev => ({ ...prev, [type]: file }));
-    updateEssayData({ [`${type}File`]: file });
-  };
-
-  const removeFile = (type) => {
-    setFiles(prev => ({ ...prev, [type]: null }));
-    updateEssayData({ [`${type}File`]: null });
-    if (type === 'essay') updateEssayData({ essayContent: '' });
-    if (type === 'prompt') updateEssayData({ questionContent: '' });
-  };
-
-  const isUploadFormValid = essayText.trim().length > 0;
-
   const handleStartMock = (examType, taskType) => {
     if (user && (user.credits_remaining ?? 0) <= 0) {
       navigate('/analysis-ready', { state: { outOfCredits: true } });
@@ -77,12 +40,12 @@ const Hero = () => {
     navigate('/mock-exam');
   };
 
+  const isMockMobileFill = cardView === 'mock';
+
   return (
     <header
       id="about"
-      className={`hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center lg:min-h-[700px] ${
-        cardView === 'mock' ? 'min-h-0' : 'min-h-[calc(100dvh-64px)]'
-      }`}
+      className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-stretch gap-0 lg:gap-14">
 
@@ -102,9 +65,13 @@ const Hero = () => {
         )}
 
         {/* Submission card — first interactive surface on mobile */}
-        <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 shrink-0 mb-2.5 lg:mb-0">
+        <div
+          className={`w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 mb-2.5 lg:mb-0 ${
+            isMockMobileFill ? 'flex-1 min-h-0 lg:flex-none lg:shrink-0' : 'shrink-0'
+          }`}
+        >
           <div className={`bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] w-full max-w-[480px] lg:max-w-none lg:h-full flex flex-col transition-all duration-500 ${
-            cardView === 'mock' ? 'p-4 lg:p-8' : 'p-5 pb-6 lg:p-8'
+            cardView === 'mock' ? 'p-4 lg:p-8 flex-1 lg:flex-auto min-h-0' : 'p-5 pb-6 lg:p-8'
           }`}>
             
             {cardView === 'default' ? (
@@ -180,7 +147,7 @@ const Hero = () => {
               </div>
             ) : cardView === 'mock' ? (
               <div className="flex-1 flex flex-col animate-fadeIn min-h-0">
-                <div className="flex items-center gap-2.5 mb-3 lg:mb-6">
+                <div className="flex items-center gap-2.5 mb-3 lg:mb-6 shrink-0">
                   <button type="button" onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors shrink-0">
                     <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
                   </button>
@@ -190,7 +157,7 @@ const Hero = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5 lg:gap-4 flex-1 min-h-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 lg:gap-4 flex-1 min-h-0">
                   {MOCK_OPTIONS.map((opt) => {
                     const isAcademic = opt.examType === 'Academic';
                     return (
@@ -198,7 +165,7 @@ const Hero = () => {
                         key={`${opt.examType}-${opt.taskType}`}
                         type="button"
                         onClick={() => handleStartMock(opt.examType, opt.taskType)}
-                        className={`group text-left rounded-[12px] border p-3 lg:p-5 lg:h-full min-h-0 cursor-pointer transition-all active:scale-[0.98] hover:shadow-md flex flex-col justify-center ${
+                        className={`group text-left rounded-[12px] border p-3.5 lg:p-5 h-full min-h-0 cursor-pointer transition-all active:scale-[0.98] hover:shadow-md flex flex-col justify-center ${
                           isAcademic
                             ? 'border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-white hover:border-[#3B82F6]'
                             : 'border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-white hover:border-[#2DD4BF]'
@@ -207,10 +174,10 @@ const Hero = () => {
                         <p className={`text-[10px] lg:text-[11px] font-bold uppercase tracking-wide mb-1 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`}>
                           {opt.examType}
                         </p>
-                        <p className="text-[13px] lg:text-[15px] font-bold text-[#1a1f36] mb-0 leading-tight">
+                        <p className="text-[14px] lg:text-[15px] font-bold text-[#1a1f36] mb-0 leading-tight">
                           {opt.label}
                         </p>
-                        <p className="text-[11px] lg:text-[12px] text-[#6B7280] m-0 mt-0.5">{opt.sublabel}</p>
+                        <p className="text-[12px] text-[#6B7280] m-0 mt-0.5">{opt.sublabel}</p>
                         <ChevronRight className={`hidden lg:block w-4 h-4 mt-3 transition-transform group-hover:translate-x-0.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`} />
                       </button>
                     );
@@ -218,193 +185,7 @@ const Hero = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col animate-fadeIn">
-                <div className="flex items-center gap-3 mb-6">
-                  <button type="button" onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
-                    <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
-                  </button>
-                  <h3 className="text-[18px] font-bold text-[#1a1f36]">Grade my essay</h3>
-                </div>
-
-                <div className="space-y-4 flex-1">
-                  <p className="text-[12px] text-[#6B7280]">
-                    Task type is detected automatically from your question prompt (or essay if no prompt is provided).
-                  </p>
-
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">
-                      Your Question / Prompt <span className="text-[#9CA3AF] font-normal">(recommended)</span>
-                    </label>
-                    <div className="relative">
-                      <textarea
-                        value={questionText}
-                        onChange={(e) => setQuestionText(e.target.value)}
-                        placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
-                        rows={3}
-                        className="w-full min-h-[72px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => promptFileRef.current?.click()}
-                        className="absolute right-3 top-3 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
-                      >
-                        <Paperclip size={16} />
-                      </button>
-                      <input
-                        ref={promptFileRef}
-                        type="file"
-                        accept={UPLOAD_ACCEPT}
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files[0];
-                          e.target.value = '';
-                          if (!file) return;
-                          setFileReadError('');
-                          try {
-                            if (isImageFile(file)) {
-                              setQuestionChartImage(await readAsDataURL(file));
-                            } else {
-                              setQuestionChartImage(null);
-                            }
-                            const text = normalizeParagraphBreaks(await extractFileText(file));
-                            setQuestionText(text.trim());
-                          } catch (err) {
-                            setFileReadError(err.message || 'Could not read the question file.');
-                          }
-                        }}
-                      />
-                    </div>
-                    {questionChartImage && (
-                      <p className="text-[11px] text-[#059669] mt-1">
-                        Question image retained for chart grading (not shown in the text box).
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Your Essay</label>
-                    <div className="relative">
-                      <textarea
-                        value={essayText}
-                        onChange={(e) => setEssayText(e.target.value)}
-                        placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
-                        rows={5}
-                        className="w-full min-h-[120px] px-4 py-2.5 pr-11 bg-white border border-[#E5E7EB] rounded-[10px] text-[13px] text-[#1a1f36] placeholder-[#D0D5DD] outline-none focus:border-[#3B82F6] transition-all resize-y"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => essayFileRef.current?.click()}
-                        className="absolute right-3 top-3 text-[#6B7280] hover:text-[#1a1f36] transition-colors p-0.5"
-                      >
-                        <Paperclip size={16} />
-                      </button>
-                      <input
-                        ref={essayFileRef}
-                        type="file"
-                        accept={UPLOAD_ACCEPT}
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files[0];
-                          e.target.value = '';
-                          if (!file) return;
-                          setFileReadError('');
-                          try {
-                            const text = normalizeParagraphBreaks(await extractFileText(file));
-                            setEssayText(text.trim());
-                          } catch (err) {
-                            setFileReadError(err.message || 'Could not read file.');
-                          }
-                        }}
-                      />
-                    </div>
-                    {fileReadError && (
-                      <p className="text-[11px] text-red-500 mt-1">{fileReadError}</p>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  onClick={async () => {
-                    if (!essayText.trim()) return;
-                    setFileReadError('');
-                    setIsSubmitting(true);
-                    try {
-                      const detectSource = (questionText || essayText).trim();
-                      const detected = await api.detectTask(detectSource);
-                      const promptForGrading = normalizeParagraphBreaks(
-                        (questionText || detected.prompt || '').trim(),
-                      );
-                      const essayForGrading = normalizeParagraphBreaks(essayText);
-                      const gradePayload = {
-                        essayContent: essayForGrading,
-                        questionContent: promptForGrading,
-                        examType: detected.exam_type,
-                        taskType: detected.task_type,
-                        bulletPoints: detected.bulletPoints || [],
-                        letterType: detected.letterType || null,
-                        openingLine: detected.openingLine || '',
-                        chartType: detected.chartType || null,
-                        taskVariant: detected.task || null,
-                        chartImage:
-                          detected.task === 'task1-report' ? questionChartImage : null,
-                        timeSpentSeconds: 0,
-                      };
-                      updateEssayData(gradePayload);
-
-                      if (!user) {
-                        setPendingGradePayload(gradePayload);
-                        setIsSubmitting(false);
-                        navigate('/login', {
-                          state: { from: { pathname: '/analysis-ready' } },
-                        });
-                        return;
-                      }
-                      if (user.credits_remaining > 0) {
-                        const res = await api.submitAttempt({
-                          exam_type: detected.exam_type,
-                          task_type: detected.task_type,
-                          essay_content: essayForGrading,
-                          question_text: promptForGrading,
-                          bullet_points: detected.bulletPoints || [],
-                          letter_type: detected.letterType || undefined,
-                          opening_line: detected.openingLine || undefined,
-                          chart_type: detected.chartType || undefined,
-                          chart_image:
-                            detected.task === 'task1-report' && questionChartImage
-                              ? questionChartImage
-                              : undefined,
-                          time_spent_seconds: 0,
-                        });
-                        setSubmissionId(res.submission_id);
-                        setGradingStatus('processing');
-                        navigate('/analysis-ready');
-                      } else {
-                        navigate('/analysis-ready');
-                      }
-                    } catch (err) {
-                      if (err.message && err.message.includes('Insufficient evaluation credits')) {
-                        navigate('/analysis-ready', { state: { outOfCredits: true } });
-                      } else {
-                        setFileReadError(err.message || 'Submission failed. Please try again.');
-                        setIsSubmitting(false);
-                      }
-                    }
-                  }}
-                  disabled={!isUploadFormValid || isSubmitting}
-                  className={`w-full h-[50px] rounded-[10px] font-bold text-[15px] mt-6 transition-all ${
-                    isUploadFormValid && !isSubmitting
-                      ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46] shadow-lg'
-                      : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
-                  }`}
-                >
-                  {isSubmitting ? 'Analyzing…' : user ? 'Analyze My Essay' : 'Get my free tutor report'}
-                </button>
-                {!user && (
-                  <p className="text-[12px] text-[#6B7280] text-center mt-3">
-                    Free account includes 1 full evaluation. No card required.
-                  </p>
-                )}
-              </div>
+              <GradeEssayForm variant="card" onBack={() => setCardView('default')} />
             )}
           </div>
         </div>

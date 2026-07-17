@@ -37,6 +37,7 @@ import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import UpgradePage from './pages/UpgradePage';
 import SampleReportPage from './pages/SampleReportPage';
 import FeaturesPage from './pages/FeaturesPage';
+import GradeEssayPage from './pages/GradeEssayPage';
 
 // ── Protected Functional Pages ────────────────────────────────────────────────
 import SelectionPage from './pages/SelectionPage';
@@ -73,6 +74,7 @@ const SEO_MARKETING_ROUTES = [
   '/cookies',
   '/sample-report',
   '/features',
+  '/grade-my-essay',
   ...toolPages.map((p) => p.path),
 ];
 
@@ -182,6 +184,7 @@ function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/sample-report" element={<SampleReportPage />} />
         <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/grade-my-essay" element={<GradeEssayPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
 
