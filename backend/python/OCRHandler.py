@@ -9,7 +9,7 @@ import warnings
 from pathlib import Path
 
 # --- CONFIGURATION ---
-# Set to True for the highest accuracy (GPT-4o)
+# Set to True for vision OCR via OpenAI (OCR_VISION_MODEL, default gpt-5.2)
 USE_OPENAI = True
 
 
@@ -153,45 +153,120 @@ def extract_text_from_word(file_path):
     except Exception as e:
         return f"Error extracting Word document text: {str(e)}"
 
+# Vision OCR model — aligned with Task1ReportGrader chart vision.
+OCR_VISION_MODEL = (os.getenv("OCR_VISION_MODEL") or "gpt-5.2").strip()
+
+
+def _is_model_refusal(text: str) -> bool:
+    """True when the vision model returned a safety refusal instead of transcription."""
+    t = (text or "").strip().lower()
+    if not t:
+        return False
+    refusal_markers = (
+        "i'm sorry, i can't assist",
+        "i am sorry, i can't assist",
+        "i can't assist with that",
+        "i cannot assist with that",
+        "i'm unable to assist",
+        "i am unable to assist",
+        "i can't help with that",
+        "i cannot help with that",
+        "as an ai",
+        "i must refuse",
+    )
+    # Short refusal-only replies (not a long essay that happens to mention one phrase)
+    if len(t) < 220 and any(m in t for m in refusal_markers):
+        return True
+    return False
+
+
+def _vision_ocr_kwargs(model: str) -> dict:
+    """Token/temperature args for chat completions (gpt-5 uses max_completion_tokens)."""
+    if model.startswith("gpt-5"):
+        return {"temperature": 1.0, "max_completion_tokens": 4000}
+    return {"temperature": 0, "max_tokens": 2000}
+
+
 def extract_with_openai(file_path):
-    """Professional-grade transcription via GPT-4o for images, direct extraction for PDFs and Word docs."""
+    """Transcribe images via vision OCR; extract PDFs/Word docs directly."""
     try:
         file_type, mime_type = get_file_type(file_path)
         
         if file_type == 'image':
-            # Handle images with GPT-4o Vision API
             from openai import OpenAI
             if not OPENAI_API_KEY:
                 return "Error: OPENAI_API_KEY not set. Please set the OPENAI_API_KEY environment variable."
 
             client = OpenAI(api_key=OPENAI_API_KEY)
             base64_file = encode_file(file_path)
-            
+            model = OCR_VISION_MODEL
+            call_kwargs = _vision_ocr_kwargs(model)
+
+            # Explicit exam-practice framing reduces false safety refusals on handwritten/
+            # photographed student work and published IELTS prompts.
+            system_msg = (
+                "You are an OCR transcription engine for IELTS writing practice. "
+                "Your only job is to copy visible text from exam questions and student "
+                "answers exactly. Never refuse legitimate exam or study material. "
+                "Never add commentary, apologies, or explanations."
+            )
+            user_text = (
+                "This image is an IELTS Writing practice upload (question prompt and/or "
+                "student essay, letter, or Task 1 report). Transcribe every visible word "
+                "exactly as written. Preserve paragraph breaks and line structure. "
+                "Return ONLY the transcribed text with no preface."
+            )
+
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=model,
                 messages=[
+                    {"role": "system", "content": system_msg},
                     {
                         "role": "user",
                         "content": [
-                            {
-                                "type": "text",
-                                "text": (
-                                    "Transcribe all visible IELTS writing on this image exactly as written "
-                                    "(question/prompt and/or essay/letter/report). Preserve paragraph breaks. "
-                                    "Return ONLY the transcribed text."
-                                ),
-                            },
+                            {"type": "text", "text": user_text},
                             {
                                 "type": "image_url",
                                 "image_url": {"url": f"data:{mime_type};base64,{base64_file}"},
                             },
                         ],
-                    }
+                    },
                 ],
-                max_tokens=2000,
-                temperature=0,
+                **call_kwargs,
             )
-            return response.choices[0].message.content.strip()
+            content = (response.choices[0].message.content or "").strip()
+            if _is_model_refusal(content):
+                # One retry with a stricter OCR-only instruction
+                retry = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system_msg},
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": (
+                                        "OCR only. Copy all readable English text from this exam photo. "
+                                        "Do not refuse. Output the raw transcription only."
+                                    ),
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": f"data:{mime_type};base64,{base64_file}"},
+                                },
+                            ],
+                        },
+                    ],
+                    **call_kwargs,
+                )
+                content = (retry.choices[0].message.content or "").strip()
+            if _is_model_refusal(content):
+                return (
+                    "Error: Could not read text from this image. "
+                    "Try a clearer photo, or paste the text manually."
+                )
+            return content
             
         elif file_type == 'pdf':
             # Handle PDFs by extracting text directly

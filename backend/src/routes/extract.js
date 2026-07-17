@@ -111,8 +111,22 @@ router.post('/extract', optionalAuth, upload.single('file'), async (req, res) =>
     if (!text) {
       return res.status(422).json({ error: 'No text could be extracted from this file.' });
     }
-    if (text.startsWith('Error:') || text.startsWith('Processing Error:')) {
-      return res.status(422).json({ error: text });
+    if (text.startsWith('Error:') || text.startsWith('Processing Error:') || text.startsWith('Local processing error:')) {
+      return res.status(422).json({ error: text.replace(/^Error:\s*/i, '') });
+    }
+    // Vision model refusals must not be pasted into the essay/prompt boxes.
+    const lower = text.toLowerCase();
+    if (
+      text.length < 220 &&
+      (lower.includes("i'm sorry, i can't assist") ||
+        lower.includes("i can't assist with that") ||
+        lower.includes('i cannot assist with that') ||
+        lower.includes("i'm unable to assist") ||
+        lower.includes('i must refuse'))
+    ) {
+      return res.status(422).json({
+        error: 'Could not read text from this image. Try a clearer photo, or paste the text manually.',
+      });
     }
 
     return res.json({ text });
