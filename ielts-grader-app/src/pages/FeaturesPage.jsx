@@ -23,17 +23,17 @@ const FEATURE_GROUPS = [
       {
         icon: FileCheck2,
         title: 'Paste or upload essays',
-        body: 'PDF, Word, images, or typed text — including handwritten essays via OCR.',
+        body: 'PDF, Word, images, or typed text, including handwritten essays via OCR.',
       },
       {
         icon: Target,
         title: 'Four-criterion band scores',
-        body: 'Task Response/Achievement, Coherence, Lexical Resource, and Grammar — scored separately.',
+        body: 'Task Response/Achievement, Coherence, Lexical Resource, and Grammar, scored separately.',
       },
       {
         icon: Wand2,
         title: 'Sentence fix cards',
-        body: 'See the problem, a rewritten sentence, and why it costs marks — not a vague summary.',
+        body: 'See the problem, a rewritten sentence, and why it costs marks, not a vague summary.',
       },
       {
         icon: FileText,
@@ -54,7 +54,7 @@ const FEATURE_GROUPS = [
       {
         icon: Layers,
         title: 'All task types',
-        body: 'Academic charts/maps, GT letters, and Task 2 essays — one workflow for every prompt.',
+        body: 'Academic charts/maps, GT letters, and Task 2 essays, one workflow for every prompt.',
       },
       {
         icon: Sparkles,
@@ -75,7 +75,7 @@ const FEATURE_GROUPS = [
       {
         icon: BookOpen,
         title: 'Personalized learning editions',
-        body: 'Guides built from your recurring mistakes — grammar, vocabulary, and structure.',
+        body: 'Guides built from your recurring mistakes, grammar, vocabulary, and structure.',
       },
       {
         icon: LineChart,
@@ -99,7 +99,7 @@ const FEATURE_GROUPS = [
 const FAQS = [
   {
     q: 'Is the first evaluation free?',
-    a: 'Yes. New accounts get one full evaluation with band scores and fix cards — no credit card required.',
+    a: 'Yes. New accounts get one full evaluation with band scores and fix cards, no credit card required.',
   },
   {
     q: 'Does this replace a human tutor?',
@@ -125,7 +125,7 @@ export default function FeaturesPage() {
       ]}
       hero={{
         eyebrow: 'Product features',
-        title: 'Everything in IELTS AI Tutor — from score to study plan',
+        title: 'Everything in IELTS AI Tutor: from score to study plan',
         subtitle:
           'Band scores, fix cards, mock exams, and personalized learning in one place. Built for students aiming for Band 7+.',
         actions: (
@@ -137,7 +137,7 @@ export default function FeaturesPage() {
       }}
     >
       <SeoHead
-        title="IELTS AI Tutor Features — Reports, Fix Cards & Mock Exams | IELTSGRADER"
+        title="IELTS AI Tutor Features: Reports, Fix Cards & Mock Exams | IELTSGRADER"
         description="Explore IELTSGRADER features: criterion band scores, sentence fix cards, mock writing tests, dual-AI grading, and personalized study plans."
         path="/features"
       />
@@ -200,7 +200,7 @@ export default function FeaturesPage() {
 
         <SeoCta
           title="Try every feature free"
-          subtitle="One full evaluation included — band scores, fix cards, and your first improvement plan."
+          subtitle="One full evaluation included, band scores, fix cards, and your first improvement plan."
           label="Create free account"
           href="/signup"
         />

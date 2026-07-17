@@ -374,7 +374,7 @@ const SelectionPage = () => {
                 onClick={handlePremiumClick}
                 className="w-full bg-[#313E50] text-white py-[14px] rounded-[8px] font-semibold text-[13px] mb-3 hover:bg-[#252f3d] active:bg-[#1a1f36] transition-all"
               >
-                Subscribe — from {SUBSCRIPTION_PLANS.weekly.label}
+                Subscribe from {SUBSCRIPTION_PLANS.weekly.label}
               </button>
               {premiumError && (
                 <p className="text-[13px] text-red-500 font-medium text-center mb-2">{premiumError}</p>

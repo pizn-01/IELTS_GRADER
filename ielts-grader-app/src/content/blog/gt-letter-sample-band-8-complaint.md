@@ -1,5 +1,5 @@
 ---
-title: "GT Letter Sample Band 8 — Complaint Letter with Feedback | IELTS AI Tutor"
+title: "GT Letter Sample Band 8: Complaint Letter with Feedback | IELTS AI Tutor"
 slug: gt-letter-sample-band-8-complaint
 description: "Band 8 IELTS GT complaint letter sample with AI tutor feedback on tone, bullet coverage, and vocabulary."
 keyword: IELTS letter sample band 8
@@ -9,9 +9,9 @@ publishedAt: 2026-07-13
 author: IELTS AI Tutor Team
 ---
 
-# GT Letter Sample Band 8 — Complaint Letter with Feedback
+# GT Letter Sample Band 8: Complaint Letter with Feedback
 
-This **Band 8** General Training complaint letter shows what strong Task Achievement, tone control, and precise vocabulary look like together. Annotations from **IELTS AI Tutor by IELTSGRADER** explain why it scores highly — and what you can borrow for your own practice.
+This **Band 8** General Training complaint letter shows what strong Task Achievement, tone control, and precise vocabulary look like together. Annotations from **IELTS AI Tutor by IELTSGRADER** explain why it scores highly, and what you can borrow for your own practice.
 
 Use the [GT formal letter checklist](/blog/gt-formal-letter-checklist) alongside this model.
 
@@ -33,7 +33,7 @@ Dear Sir or Madam,
 
 I am writing to complain about the poor service I received during my stay at the Grand Harbour Hotel from 12 to 14 June, where I had booked a superior double room for a business trip.
 
-I chose your hotel because it is close to the conference centre and because your website advertised a quiet room with reliable Wi-Fi — both essential for preparing presentations in the evening. Unfortunately, the room I was given faced a busy main road, and the internet connection dropped repeatedly, which made it impossible to upload documents on the first night.
+I chose your hotel because it is close to the conference centre and because your website advertised a quiet room with reliable Wi-Fi, both essential for preparing presentations in the evening. Unfortunately, the room I was given faced a busy main road, and the internet connection dropped repeatedly, which made it impossible to upload documents on the first night.
 
 In addition, housekeeping did not replace towels on the second day, and when I called reception, I was told that staff were short and that I should wait until the following morning. I also ordered a 6:30 a.m. taxi through the front desk, but it did not arrive, causing me to miss the opening session of my conference.
 
@@ -61,7 +61,7 @@ Alex Morgan
 
 | Bullet | Where it is answered | Why it works |
 |--------|----------------------|--------------|
-| Why you were staying | Paragraph 2 opening | Business trip + location/Wi-Fi needs — not just “I stayed there” |
+| Why you were staying | Paragraph 2 opening | Business trip + location/Wi-Fi needs, not just “I stayed there” |
 | Problems experienced | Paragraphs 2–3 | Multiple concrete issues with consequences (missed conference session) |
 | What you want done | Paragraph 4 | Specific, polite requests (partial refund + written explanation + confirmation) |
 
@@ -108,7 +108,7 @@ If that sounds like your drafts, run the [formal letter checklist](/blog/gt-form
 
 ## Fix cards to move toward this level
 
-### Fix card 1 — One paragraph, one job
+### Fix card 1: One paragraph, one job
 
 Opening = purpose + stay dates.  
 Next = reason for stay + first problems.  
@@ -116,11 +116,11 @@ Next = additional problems.
 Next = requests.  
 Close = polite expectation of reply.
 
-### Fix card 2 — Attach a consequence to each major problem
+### Fix card 2: Attach a consequence to each major problem
 
 Problem → effect on you. This upgrades both Task Achievement and Lexical Resource.
 
-### Fix card 3 — Make requests measurable
+### Fix card 3: Make requests measurable
 
 Prefer *partial refund for two nights* over *some compensation*. Prefer *written explanation* over *tell me why*.
 
@@ -144,7 +144,7 @@ Only the situation vocabulary changes. Tone and bullet discipline stay.
 
 ## How IELTS AI Tutor helps GT letters
 
-[IELTS AI Tutor](/ielts-ai-tutor) highlights missing bullet content, tone mismatches, and weak closings — issues that a grammar-only checker can miss. For mixed practice with essays, use a [mock writing test](/ielts-mock-writing-test) if your exam format includes both tasks in one sitting.
+[IELTS AI Tutor](/ielts-ai-tutor) highlights missing bullet content, tone mismatches, and weak closings, issues that a grammar-only checker can miss. For mixed practice with essays, use a [mock writing test](/ielts-mock-writing-test) if your exam format includes both tasks in one sitting.
 
 ## Related reading
 

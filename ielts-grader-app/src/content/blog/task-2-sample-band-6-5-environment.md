@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # Task 2 Sample: Band 6.5 Essay on Environment with Fixes
 
-Band 6.5 is a frequent plateau: stronger than a basic Band 6 script, not yet consistently Band 7. This environment essay shows that middle zone. **IELTS AI Tutor by IELTSGRADER** scores it criterion by criterion and gives fix cards aimed at Coherence and Lexical Resource — the usual levers at this level.
+Band 6.5 is a frequent plateau: stronger than a basic Band 6 script, not yet consistently Band 7. This environment essay shows that middle zone. **IELTS AI Tutor by IELTSGRADER** scores it criterion by criterion and gives fix cards aimed at Coherence and Lexical Resource, the usual levers at this level.
 
 **Prompt:** Some people say that the best way to protect the environment is for governments to impose strict rules and regulations. Others say that individuals should take responsibility. Discuss both views and give your own opinion.
 
@@ -47,25 +47,25 @@ This is a classic plateau profile. See [stuck at Band 6.5](/blog/stuck-at-band-6
 - Concrete policy example (fines for dumping waste)
 - A concession about limits of individual action
 
-You are not starting from zero — you are refining.
+You are not starting from zero, you are refining.
 
-## Fix card 1 — Coherence: tighten the “individuals” paragraph
+## Fix card 1: Coherence: tighten the “individuals” paragraph
 
 **Issue:** The second body paragraph lists several actions (*energy, transport, recycle, consumption*) then jumps to political pressure. It is related, but the paragraph’s main idea blurs.
 
-**Band 6.5 version (compressed):**  
+**Band 6.5 version (compressed):** 
 > People can reduce energy use… recycle… Moreover, public pressure…
 
-**Band 7 direction:** Pick one main individual mechanism per paragraph — either lifestyle change *or* civic pressure — and develop it fully.
+**Band 7 direction:** Pick one main individual mechanism per paragraph, either lifestyle change *or* civic pressure, and develop it fully.
 
-**Stronger topic sentence:**  
+**Stronger topic sentence:** 
 > Individual responsibility matters most in high-frequency household decisions that regulations cannot micromanage every hour of the day.
 
 Then develop energy use and transport only. Move “public pressure” to a short sentence in the opinion paragraph if needed.
 
 **Practice:** In your next essay, label each body paragraph with a three-word job before writing.
 
-## Fix card 2 — Lexical Resource: upgrade safe environment collocations
+## Fix card 2: Lexical Resource: upgrade safe environment collocations
 
 **Repeated / safe phrases in the essay:** *protect the environment*, *strict rules*, *take responsibility*, *important role*
 
@@ -79,23 +79,23 @@ Then develop energy use and transport only. Move “public pressure” to a shor
 | important role | decisive factor, complementary duty, meaningful contribution |
 | change behaviour | shift consumption patterns, alter commuting habits |
 
-**Rewrite snippet:**  
+**Rewrite snippet:** 
 > Binding emissions standards can curb industrial pollution at scale, while households still need to alter commuting habits where public transport exists.
 
 Natural precision beats rare synonyms. More practice: [lexical resource Band 6 to 7](/blog/lexical-resource-band-6-to-7).
 
-## Fix card 3 — Task Response polish: make the “starting point” claim earn its place
+## Fix card 3: Task Response polish: make the “starting point” claim earn its place
 
 The introduction says government regulation is “more effective as a starting point,” but the essay only partly explains *why it must come first*.
 
-**Add one explanatory sentence in the opinion/conclusion zone:**  
+**Add one explanatory sentence in the opinion/conclusion zone:** 
 > Regulation comes first because it changes incentives for large polluters; individual habits then reinforce those gains rather than trying to replace them.
 
 That single clarification can stabilise Task Response at a solid 7 and support an overall move toward 7 if CC and LR also rise.
 
 ## Mini Band 7 rewrite of body 2 (model direction)
 
-> Individual action remains essential in areas that laws cannot supervise continuously, such as household energy use and daily travel choices. When families cut unnecessary electricity consumption or shift short trips to public transport, aggregate demand falls — especially in dense cities. These choices work best, however, when affordable green options already exist; otherwise “personal responsibility” becomes a slogan that ignores unequal access. In short, citizens amplify environmental progress, but they rarely create the system-wide baseline on their own.
+> Individual action remains essential in areas that laws cannot supervise continuously, such as household energy use and daily travel choices. When families cut unnecessary electricity consumption or shift short trips to public transport, aggregate demand falls, especially in dense cities. These choices work best, however, when affordable green options already exist; otherwise “personal responsibility” becomes a slogan that ignores unequal access. In short, citizens amplify environmental progress, but they rarely create the system-wide baseline on their own.
 
 Notice: one main idea, better collocations, clearer logic.
 

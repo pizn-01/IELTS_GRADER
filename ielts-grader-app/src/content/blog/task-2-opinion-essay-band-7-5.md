@@ -19,7 +19,7 @@ Opinion essays (*To what extent do you agree or disagree?*) reward a clear posit
 
 Unpaid community service is sometimes proposed as a mandatory element of secondary education, on the grounds that it builds character and helps local organisations. I largely agree that schools should require a modest amount of structured volunteering, provided the work is meaningful and does not exploit students as free labour.
 
-Compulsory service can develop practical social skills that classrooms alone rarely teach. When teenagers tutor younger children, support elderly residents, or assist at community events, they practise communication, responsibility, and teamwork under real conditions. These experiences also widen students’ understanding of people outside their immediate social circle, which matters in diverse cities. Importantly, because the activity is scheduled through school, participation does not depend only on family networks — a fairness advantage over purely optional volunteering.
+Compulsory service can develop practical social skills that classrooms alone rarely teach. When teenagers tutor younger children, support elderly residents, or assist at community events, they practise communication, responsibility, and teamwork under real conditions. These experiences also widen students’ understanding of people outside their immediate social circle, which matters in diverse cities. Importantly, because the activity is scheduled through school, participation does not depend only on family networks, a fairness advantage over purely optional volunteering.
 
 A second argument for making service compulsory is civic capacity. Local charities and public projects often need reliable helpers for short, well-defined tasks. A school-organised programme can match students to those needs while teaching basic professionalism: punctuality, following briefings, and reflecting on impact afterwards. Over time, this habit of contribution may continue into adulthood, strengthening community resilience in ways that one-off donation drives cannot.
 
@@ -68,25 +68,25 @@ Compare lower-band habits in [Band 6 education sample](/blog/task-2-sample-band-
 
 **TR:** Opinion + scope in one sentence.
 
-> participation does not depend only on family networks — a fairness advantage…
+> participation does not depend only on family networks, a fairness advantage…
 
 **LR + TR:** Explains significance, not only the action.
 
 > I support compulsory service only with safeguards: capped hours, vetted partner organisations…
 
-**TR:** Turns concession into policy detail — highly persuasive for “extent” questions.
+**TR:** Turns concession into policy detail, highly persuasive for “extent” questions.
 
 ## Fix cards if your opinion essays sit at Band 6–7
 
-### Fix card 1 — Decide your extent before you write
+### Fix card 1: Decide your extent before you write
 
 Choose one: strongly agree / largely agree with conditions / largely disagree / strongly disagree. Write it in the introduction and do not drift.
 
-### Fix card 2 — Give each body paragraph one reason
+### Fix card 2: Give each body paragraph one reason
 
 Reason → explanation → example/scenario → mini-link to opinion.
 
-### Fix card 3 — Use the counterargument as a boundary, not a U-turn
+### Fix card 3: Use the counterargument as a boundary, not a U-turn
 
 End concessions with *For these reasons, I still…* or *only if…*.
 
@@ -102,9 +102,9 @@ Write one timed essay, check with the [Task 2 checker](/ielts-task-2-checker), t
 
 ## How to study this sample without memorising it
 
-1. Copy the **structure**, not the sentences.  
-2. Build a personal phrase bank for *conditions* (*provided that*, *only if*, *with safeguards*).  
-3. Write a new essay on a different topic using the same opinion architecture.  
+1. Copy the **structure**, not the sentences. 
+2. Build a personal phrase bank for *conditions* (*provided that*, *only if*, *with safeguards*). 
+3. Write a new essay on a different topic using the same opinion architecture. 
 4. Ask [IELTS AI Tutor](/ielts-ai-tutor) feedback whether your position stayed consistent.
 
 Memorised content that misses a new question will still score poorly on Task Response.

@@ -41,7 +41,7 @@ IELTS Writing averages four criteria, then rounds. A common plateau profile:
 | Lexical Resource | 6 |
 | Grammar | 7 |
 
-Average = 6.5. You feel “almost there” because two criteria already look like 7 — while CC and LR quietly cap you.
+Average = 6.5. You feel “almost there” because two criteria already look like 7, while CC and LR quietly cap you.
 
 Other plateau profiles exist (strong language, weak task; strong structure, weak grammar). The medicine is the same: identify the cap.
 
@@ -97,7 +97,7 @@ Collocations and controlled paraphrase: [LR Band 6→7](/blog/lexical-resource-b
 
 ### If Grammar is the cap
 
-Personal error log only — articles, agreement, tense — not random advanced structures.
+Personal error log only, articles, agreement, tense, not random advanced structures.
 
 ### If Task 1 TA is the cap
 
@@ -112,11 +112,11 @@ Celebrate these earlier wins:
 - You finish Task 2 with a clear plan every time  
 - Task 1 overview becomes automatic  
 
-Overall 7 often appears *after* the bottleneck criterion crosses the line — not before.
+Overall 7 often appears *after* the bottleneck criterion crosses the line, not before.
 
 ## Tutor’s Verdict on motivation
 
-Plateaus feel personal. They are usually mechanical. Candidates who break 6.5 are not always “better at English” in a vague sense — they are better at **closing one gap under timed conditions**.
+Plateaus feel personal. They are usually mechanical. Candidates who break 6.5 are not always “better at English” in a vague sense, they are better at **closing one gap under timed conditions**.
 
 Use [IELTS AI Tutor](/ielts-ai-tutor) for frequent criterion feedback; use a human tutor occasionally if you need live accountability ([AI vs human](/blog/ai-tutor-vs-human-tutor)).
 
@@ -143,7 +143,7 @@ If the same mistake family returns after two sprints, move into a [personalized 
 - Am I practising the correct Task 1 for my module?  
 - Am I judging trends, not one score?  
 
-If any answer is no, that — not “bad luck” — is the plateau.
+If any answer is no, that, not “bad luck”, is the plateau.
 
 ## Case study pattern (composite, not a promise)
 
@@ -155,7 +155,7 @@ A typical plateau breaker looks like this:
 - **Weeks 3–4:** Lexical collocation sprint ([LR guide](/blog/lexical-resource-band-6-to-7))  
 - **Week 4 mock:** overall 7 when LR joins CC at 7  
 
-Notice overall 7 arrived *after* two criterion repairs — not after a new template. Your numbers will differ; the sequence is the lesson.
+Notice overall 7 arrived *after* two criterion repairs, not after a new template. Your numbers will differ; the sequence is the lesson.
 
 ## What to tell yourself on a flat week
 

@@ -1,7 +1,7 @@
 ---
 title: "Band 6 vs Band 7 Task 2: What Your AI Tutor Looks For | IELTS AI Tutor"
 slug: band-6-vs-7-task-2
-description: "The real difference between Band 6 and 7 in IELTS Task 2 — explained by your AI tutor with examples."
+description: "The real difference between Band 6 and 7 in IELTS Task 2, explained by your AI tutor with examples."
 keyword: band 6 vs 7 IELTS writing
 type: guide
 status: published
@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # Band 6 vs Band 7 Task 2: What Your AI Tutor Looks For
 
-The jump from Band 6 to Band 7 in IELTS Task 2 is one of the most common goals — and one of the most misunderstood. Many candidates add longer words, longer essays, and more “Moreover” sentences, then stay stuck at 6 or 6.5.
+The jump from Band 6 to Band 7 in IELTS Task 2 is one of the most common goals, and one of the most misunderstood. Many candidates add longer words, longer essays, and more “Moreover” sentences, then stay stuck at 6 or 6.5.
 
 **IELTS AI Tutor by IELTSGRADER** looks at the same four criteria examiners use. The Band 6→7 difference is usually about **development, control, and precision**, not about sounding more academic for its own sake. This guide shows side-by-side patterns you can copy into your next practice essay.
 
@@ -36,7 +36,7 @@ The opinion is clear, but the paragraph stops at the claim. There is no concrete
 
 ### Band 7 pattern
 
-> Making tuition free can widen access for students from low-income families, who might otherwise abandon higher education to take low-paid work. For example, when fees rise sharply, enrolment among first-generation students often falls first — not because ability drops, but because families cannot absorb the cost. That said, “free” still requires public funding, so governments usually need clear eligibility rules rather than an unlimited open door.
+> Making tuition free can widen access for students from low-income families, who might otherwise abandon higher education to take low-paid work. For example, when fees rise sharply, enrolment among first-generation students often falls first, not because ability drops, but because families cannot absorb the cost. That said, “free” still requires public funding, so governments usually need clear eligibility rules rather than an unlimited open door.
 
 Same topic, clearer development: cause → example → nuance. That is Task Response at Band 7.
 
@@ -52,7 +52,7 @@ The linkers are present, but the paragraph does not progress. Each sentence rest
 
 ### Band 7 pattern
 
-> Technology can improve classroom feedback when teachers use it to track common errors across a cohort. Instead of waiting for end-of-term exams, students receive short practice tasks matched to weak grammar points. As a result, revision becomes targeted rather than generic — provided the tools are used for diagnosis, not only for entertainment.
+> Technology can improve classroom feedback when teachers use it to track common errors across a cohort. Instead of waiting for end-of-term exams, students receive short practice tasks matched to weak grammar points. As a result, revision becomes targeted rather than generic, provided the tools are used for diagnosis, not only for entertainment.
 
 Fewer mechanical transitions; clearer cause-and-effect. Coherence improves because ideas *build*, not because more synonyms of “also” appear.
 
@@ -126,13 +126,13 @@ That is tutoring, not a single unexplained number. For timed conditions, add a [
 
 ## A two-week practice loop to move toward Band 7
 
-**Week 1 — Diagnose and deepen Task Response**
+**Week 1: Diagnose and deepen Task Response**
 
 - Write two timed Task 2 essays (40 minutes, 250+ words)
 - For each body paragraph, force: claim → explanation → example → mini-conclusion
 - Rewrite the weaker essay once after feedback
 
-**Week 2 — Control Coherence and Lexical Resource**
+**Week 2: Control Coherence and Lexical Resource**
 
 - Plan paragraphs with one topic sentence each before writing
 - Replace three repeated nouns/verbs with precise alternatives (not thesaurus spam)
@@ -142,10 +142,10 @@ Track whether your *lowest* criterion rises. That movement matters more than a l
 
 ## Mistakes that look like Band 7 but score Band 6
 
-1. **Memorised introductions** that do not match the question  
-2. **Balanced essays** when the prompt asks for a clear opinion and you never commit  
-3. **Example dumping** (stories with no link back to the argument)  
-4. **Over-complex sentences** that collapse into errors  
+1. **Memorised introductions** that do not match the question 
+2. **Balanced essays** when the prompt asks for a clear opinion and you never commit 
+3. **Example dumping** (stories with no link back to the argument) 
+4. **Over-complex sentences** that collapse into errors 
 5. **Ignoring “discuss both views and give your opinion”** structure
 
 Check full samples at different levels: [Band 6 education](/blog/task-2-sample-band-6-education), [Band 6.5 environment](/blog/task-2-sample-band-6-5-environment), [Band 7 technology](/blog/task-2-sample-band-7-technology), [Band 7.5 opinion](/blog/task-2-opinion-essay-band-7-5).

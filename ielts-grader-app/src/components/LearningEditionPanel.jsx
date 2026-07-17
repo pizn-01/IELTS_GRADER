@@ -97,7 +97,7 @@ export default function LearningEditionPanel({
                     className="flex items-center gap-2 bg-[#2C3E50] hover:bg-[#1D2939] text-white font-bold text-[12px] px-4 py-2.5 rounded-xl disabled:opacity-60"
                   >
                     {busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                    {freeAccess ? 'Generate PDF' : `Get PDF — $${(priceCents / 100).toFixed(0)}`}
+                    {freeAccess ? 'Generate PDF' : `Get PDF ($${(priceCents / 100).toFixed(0)})`}
                   </button>
                 )}
                 {isReady && (
@@ -132,7 +132,7 @@ export default function LearningEditionPanel({
                   <span className="text-[10px] text-gray-400">${(priceCents / 100).toFixed(0)} one-time</span>
                 )}
                 {freeAccess && canGenerate && (
-                  <span className="text-[10px] text-[#1A96F3] font-medium">Free — click to generate</span>
+                  <span className="text-[10px] text-[#1A96F3] font-medium">Free. Click to generate</span>
                 )}
               </div>
             )}

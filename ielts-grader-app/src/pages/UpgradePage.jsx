@@ -197,7 +197,7 @@ const UpgradePage = () => {
             disabled={portalLoading}
             className="w-full h-[52px] bg-[#101828] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 mb-4"
           >
-            {portalLoading ? 'Opening…' : `Upgrade to Monthly — ${SUBSCRIPTION_PLANS.monthly.price}${SUBSCRIPTION_PLANS.monthly.period}`}
+            {portalLoading ? 'Opening…' : `Upgrade to Monthly (${SUBSCRIPTION_PLANS.monthly.price}${SUBSCRIPTION_PLANS.monthly.period})`}
           </button>
         ) : (
           <button
@@ -208,7 +208,7 @@ const UpgradePage = () => {
           >
             {loading
               ? 'Redirecting to Stripe…'
-              : `Subscribe — ${selectedPlan.price}${selectedPlan.period}`}
+              : `Subscribe (${selectedPlan.price}${selectedPlan.period})`}
           </button>
         )}
 

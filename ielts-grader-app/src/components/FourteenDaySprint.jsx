@@ -192,7 +192,7 @@ export default function FourteenDaySprint({
           <div>
             <p className="text-[14px] font-bold text-[#101828]">
               Day {currentDay} of 14
-              <span className="font-medium text-[#667085]"> — follow today&apos;s card below</span>
+              <span className="font-medium text-[#667085]">. Follow today&apos;s card below</span>
             </p>
             <p className="text-[13px] text-[#667085] mt-0.5">
               Your sprint plan is locked until Day 14. Strategy & Fix Cards refresh when you practice.
@@ -235,7 +235,7 @@ export default function FourteenDaySprint({
                   {plan.goalGap !== '—' && (
                     <span>
                       {' '}Latest {plan.latestBand} → goal {plan.targetBand}
-                      {plan.goalGap !== 'Target Reached' ? ` (${plan.goalGap})` : ' — target reached'}.
+                      {plan.goalGap !== 'Target Reached' ? ` (${plan.goalGap})` : ' (target reached)'}.
                     </span>
                   )}
                 </p>

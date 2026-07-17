@@ -98,16 +98,16 @@ const SubscriptionPage = () => {
 
   const statusMessage = (() => {
     if (cancelAtPeriodEnd) {
-      return `Cancellation scheduled — you keep access and remaining credits until ${periodEndLabel}, then credits reset to 0.`;
+      return `Cancellation scheduled. You keep access and remaining credits until ${periodEndLabel}, then credits reset to 0.`;
     }
     if (isSubscribed && isExhausted) {
-      return 'All evaluations used this period — credits reset on renewal.';
+      return 'All evaluations used this period. Credits reset on renewal.';
     }
     if (!isSubscribed && isExhausted) {
       return 'You have used your free evaluation. Subscribe to keep practicing.';
     }
     if (!isSubscribed && remaining > 0) {
-      return `${remaining} free evaluation remaining — no card required until you subscribe.`;
+      return `${remaining} free evaluation remaining. No card required until you subscribe.`;
     }
     if (isLow) {
       return `Only ${remaining} credit${remaining === 1 ? '' : 's'} left this period.`;
@@ -335,7 +335,7 @@ const SubscriptionPage = () => {
               <p className="text-[12px] text-[#667085] leading-relaxed px-1">
                 {isExhausted
                   ? 'Your free credit is used. View Plans to choose Weekly or Monthly and continue grading.'
-                  : 'When you need more practice, View Plans lets you pick Weekly or Monthly — checkout is on the next screen.'}
+                  : 'When you need more practice, View Plans lets you pick Weekly or Monthly. Checkout is on the next screen.'}
               </p>
             )}
           </div>

@@ -143,7 +143,7 @@ function App() {
       try {
         const element = document.querySelector(location.hash);
         if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch { /* invalid selector — ignore */ }
+      } catch { /* invalid selector, ignore */ }
     }, 100);
     return () => clearTimeout(timeout);
   }, [location.hash]);

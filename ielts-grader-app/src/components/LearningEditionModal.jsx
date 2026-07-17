@@ -39,7 +39,7 @@ export default function LearningEditionModal({ isOpen, edition, priceCents, free
                 Personalized Learning
               </p>
               <h2 className="text-[18px] font-bold text-[#101828]">
-                Edition {editionNumber} unlocked — Exams {examRange.start}–{examRange.end}
+                Edition {editionNumber} unlocked: Exams {examRange.start}–{examRange.end}
               </h2>
               <p className="text-[13px] text-[#667085] mt-1 leading-relaxed">
                 Your custom study guide is ready to build from your last 5 graded exams.
@@ -99,7 +99,7 @@ export default function LearningEditionModal({ isOpen, edition, priceCents, free
             >
               <Sparkles size={16} />
               View guide
-              {!freeAccess && priceCents ? ` — $${(priceCents / 100).toFixed(0)}` : ''}
+              {!freeAccess && priceCents ? ` ($${(priceCents / 100).toFixed(0)})` : ''}
             </button>
           </div>
         </div>

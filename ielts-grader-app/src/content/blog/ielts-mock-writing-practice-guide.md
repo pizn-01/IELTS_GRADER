@@ -1,7 +1,7 @@
 ---
 title: "How to Practice IELTS Writing Like the Real Exam | IELTS AI Tutor"
 slug: ielts-mock-writing-practice-guide
-description: "IELTS mock writing practice guide — timing, routine, and how to use AI tutor feedback after each mock test."
+description: "IELTS mock writing practice guide, timing, routine, and how to use AI tutor feedback after each mock test."
 keyword: IELTS mock writing test
 type: guide
 status: published
@@ -34,7 +34,7 @@ Use the [IELTS mock writing test](/ielts-mock-writing-test) when you want a prod
 |------|----------------|---------------|--------------|
 | Task 1 (Academic chart or GT letter) | 20 minutes | 150 | Overview / all bullets first |
 | Task 2 (Essay) | 40 minutes | 250 | Task Response depth over fancy vocab |
-| Total | 60 minutes | — | Do not steal Task 2 time for Task 1 perfection |
+| Total | 60 minutes |, | Do not steal Task 2 time for Task 1 perfection |
 
 Some candidates write Task 2 first. That can work if you still protect Task 1 quality. Pick one order and practise it consistently so test day feels automatic.
 
@@ -65,7 +65,7 @@ Between mocks, do targeted drills (coherence plans, trend vocabulary, letter che
 4. Plan Task 2 (4–5 minutes): position + two body ideas.  
 5. Write Task 2; reserve 3 minutes to check opinion consistency and grammar hotspots.
 
-### After (30–45 minutes) — the part people skip
+### After (30–45 minutes), the part people skip
 
 1. Submit both tasks for feedback ([mock writing test](/ielts-mock-writing-test) flow or separate checks).  
 2. Record four criterion scores for each task.  
@@ -83,7 +83,7 @@ Track a simple mock log:
 |------|-----------------|-----------------|------------|--------------------|
 | | | | Y/N | |
 
-Overall band noise can hide progress. Criterion trends tell the truth — especially if you are on a [6.5 plateau](/blog/stuck-at-band-6-5-plateau).
+Overall band noise can hide progress. Criterion trends tell the truth, especially if you are on a [6.5 plateau](/blog/stuck-at-band-6-5-plateau).
 
 ## Academic vs GT mock setup
 
@@ -95,12 +95,12 @@ Module differences: [Academic vs GT writing](/blog/academic-vs-general-training-
 
 ## Common mock mistakes
 
-1. **Pausing the timer to look up words** — breaks realism  
-2. **Skipping Task 1 overview / letter bullets** — free TA losses  
-3. **Writing Task 2 with no plan** — coherence collapses under pressure  
-4. **Checking the score and moving on** — no rewrite, no learning  
-5. **Changing strategy every mock** — never stabilises timing  
-6. **Only mocking Task 2** — Task 1 still counts toward Writing  
+1. **Pausing the timer to look up words**, breaks realism  
+2. **Skipping Task 1 overview / letter bullets**, free TA losses  
+3. **Writing Task 2 with no plan**, coherence collapses under pressure  
+4. **Checking the score and moving on**, no rewrite, no learning  
+5. **Changing strategy every mock**, never stabilises timing  
+6. **Only mocking Task 2**: Task 1 still counts toward Writing  
 
 ## After the report: a 7-day mini sprint
 

@@ -23,7 +23,7 @@ Skip any stage and you get common failure modes:
 - Report only → insight without action  
 - Random drills only → activity without measurement  
 
-## Stage 1 — Mock exam (Day 0)
+## Stage 1: Mock exam (Day 0)
 
 ### Setup
 
@@ -43,9 +43,9 @@ More timing detail: [mock writing practice guide](/blog/ielts-mock-writing-pract
 
 ### Output of Stage 1
 
-Two completed tasks ready for evaluation — not a feeling, a script.
+Two completed tasks ready for evaluation, not a feeling, a script.
 
-## Stage 2 — Tutor report (Day 0 evening or Day 1)
+## Stage 2: Tutor report (Day 0 evening or Day 1)
 
 Open the report in this order:
 
@@ -68,7 +68,7 @@ Examples:
 
 If everything is “a bit weak,” still pick one. Plateau help: [stuck at 6.5](/blog/stuck-at-band-6-5-plateau).
 
-## Stage 3 — 14-day sprint (Days 1–14)
+## Stage 3: 14-day sprint (Days 1–14)
 
 ### Design principles
 
@@ -103,7 +103,7 @@ If everything is “a bit weak,” still pick one. Plateau help: [stuck at 6.5](
 
 **If TA (charts) is the theme:** overview-first drills + [bar chart sample](/blog/task-1-bar-chart-band-7).
 
-## Stage 4 — Retest and compare (Day 14)
+## Stage 4: Retest and compare (Day 14)
 
 Run another full mock. Compare:
 
@@ -123,7 +123,7 @@ Run another full mock. Compare:
 
 ## Where learning editions fit
 
-After several mocks and sprints, repeated mistake patterns can power [personalized learning editions](/blog/personalized-learning-editions-guide) — curated study paths from your error families ([error taxonomy](/blog/ielts-writing-error-taxonomy)).
+After several mocks and sprints, repeated mistake patterns can power [personalized learning editions](/blog/personalized-learning-editions-guide), curated study paths from your error families ([error taxonomy](/blog/ielts-writing-error-taxonomy)).
 
 The journey stays the same: measure → focus → practise → remeasure.
 
@@ -155,7 +155,7 @@ This is the tutor positioning: tools arranged as a journey, not isolated grades.
 2. Skipping the rewrite of the original mock task  
 3. Doing two full mocks a day (fatigue, no learning)  
 4. Ignoring Task 1 entirely during a Task 2 sprint  
-5. No Day 14 retest — so you never close the loop  
+5. No Day 14 retest, so you never close the loop  
 
 ## Energy and recovery (yes, this counts)
 
@@ -163,7 +163,7 @@ Writing sprints fail when sleep collapses. Keep Days 12–13 lighter on purpose.
 
 ## Handwriting and capture notes
 
-Paper-based candidates should keep OCR clean when uploading sprint work — [handwritten OCR tips](/blog/handwritten-essay-ocr-tips). Otherwise Day 7 “grammar disasters” may be camera problems, not English problems.
+Paper-based candidates should keep OCR clean when uploading sprint work, [handwritten OCR tips](/blog/handwritten-essay-ocr-tips). Otherwise Day 7 “grammar disasters” may be camera problems, not English problems.
 
 ## Next steps
 

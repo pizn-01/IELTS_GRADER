@@ -114,7 +114,7 @@ export function buildSprintPlan({
       focusLabel: e1.label,
       tasks: [
         `Choose a past essay where you scored lowest on ${bottleneckName}.`,
-        `Spend 20 minutes editing one body paragraph only for "${e1.label}" — ignore all other issues for now.`,
+        `Spend 20 minutes editing one body paragraph only for "${e1.label}", ignore all other issues for now.`,
         'Read the revised paragraph aloud to confirm it sounds natural and exam-ready.',
       ],
       outcome: `One body paragraph completely free of "${e1.label}".`,
@@ -123,7 +123,7 @@ export function buildSprintPlan({
       day: 3,
       week: 1,
       phase: PHASES.WRITE,
-      title: 'Applied Writing — Error #1',
+      title: 'Applied Writing: Error #1',
       focusLabel: e1.label,
       tasks: [
         `Write a fresh introduction and one body paragraph for any ${mock.label} prompt.`,
@@ -142,7 +142,7 @@ export function buildSprintPlan({
         errors[1]
           ? `Your second priority Fix Card is "${e2.label}" (${countPhrase(errors[1])}). Highlight it in a different past essay.`
           : `With one dominant error pattern, today extend your "${e1.label}" drill using ${bottleneckName} as your score focus.`,
-        `Rewrite one full paragraph targeting "${e2.label}" only — do not edit for other errors yet.`,
+        `Rewrite one full paragraph targeting "${e2.label}" only, do not edit for other errors yet.`,
         'Compare your rewrite to the original and note what specifically changed.',
       ],
       outcome: `A clean paragraph demonstrating control of "${e2.label}".`,
@@ -151,7 +151,7 @@ export function buildSprintPlan({
       day: 5,
       week: 1,
       phase: PHASES.WRITE,
-      title: 'Applied Writing — Error #2',
+      title: 'Applied Writing: Error #2',
       focusLabel: e2.label,
       tasks: [
         'Build a quick outline: Main idea → Because → Example (one line each).',
@@ -168,7 +168,7 @@ export function buildSprintPlan({
       focusLabel: `${e1.label} + ${e2.label}`,
       tasks: [
         `Write two body paragraphs today. Avoid both "${e1.label}" and "${e2.label}".`,
-        'Ignore the clock today — prioritise quality, accuracy, and applying your Day 1 checklist.',
+        'Ignore the clock today, prioritise quality, accuracy, and applying your Day 1 checklist.',
         `Keep ${strengthName} stable while you lift these two error targets.`,
       ],
       outcome: 'Two high-quality body paragraphs checking both top Fix Cards.',
@@ -183,7 +183,7 @@ export function buildSprintPlan({
       duration: '25–35 min',
       tasks: [
         'Self-grade your Day 6 paragraphs using the checklist you created on Day 1.',
-        `Note whether "${e1.label}" and "${e2.label}" still appear — if yes, rewrite the worst sentence 3 times correctly.`,
+        `Note whether "${e1.label}" and "${e2.label}" still appear, if yes, rewrite the worst sentence 3 times correctly.`,
         'Rest and recharge. Consistent focused practice beats burnout.',
       ],
       outcome: 'A clear picture of Week 1 progress and adjusted priorities for Week 2.',
@@ -205,7 +205,7 @@ export function buildSprintPlan({
             'Write one new sentence that models the correct pattern for this error type.',
           ]
         : [
-            `${bottleneckName}${bottleneckAvg ? ` is averaging ${bottleneckAvg}` : ''} — your primary bottleneck.`,
+            `${bottleneckName}${bottleneckAvg ? ` is averaging ${bottleneckAvg}` : ''}, your primary bottleneck.`,
             `Select your weakest paragraph and upgrade it specifically for ${bottleneckName}.`,
             `List two concrete habits that would lift ${bottleneckName} in your next essay.`,
           ],
@@ -235,9 +235,9 @@ export function buildSprintPlan({
       focusLabel: 'Task Response & Ideas',
       focusType: 'strategy',
       tasks: [
-        'Step 1: Fix task response — answer all parts of the prompt with a clear position.',
-        'Step 2: Expand ideas — add because + example to any underdeveloped point.',
-        `Step 3: Upgrade lexis — remove repetition; target "${e1.label}" if it is a vocabulary issue.`,
+        'Step 1: Fix task response, answer all parts of the prompt with a clear position.',
+        'Step 2: Expand ideas, add because + example to any underdeveloped point.',
+        `Step 3: Upgrade lexis, remove repetition; target "${e1.label}" if it is a vocabulary issue.`,
       ],
       outcome: 'A rewritten paragraph with stronger task response, ideas, and word choice.',
     }),
@@ -249,8 +249,8 @@ export function buildSprintPlan({
       focusLabel: 'Cohesion & Grammar',
       focusType: 'strategy',
       tasks: [
-        'Step 4: Tighten cohesion — improve referencing (this/these/it) and logical links (however, therefore).',
-        'Step 5: Grammar sweep — SVA, articles, punctuation; re-check your top two Fix Cards.',
+        'Step 4: Tighten cohesion, improve referencing (this/these/it) and logical links (however, therefore).',
+        'Step 5: Grammar sweep: SVA, articles, punctuation; re-check your top two Fix Cards.',
         `Read the paragraph aloud and confirm ${strengthName} still reads naturally.`,
       ],
       outcome: 'A polished paragraph with improved cohesion and grammatical accuracy.',
@@ -266,7 +266,7 @@ export function buildSprintPlan({
       tasks: [
         `Write a full ${mock.label} ${mock.essayType} in exactly ${mock.minutes} minutes (${mock.wordHint}).`,
         `Save 6 minutes at the end for your checklist: ${topChecklist}.`,
-        'No dictionary, notes, or grammar checkers — treat this exactly like the real exam.',
+        'No dictionary, notes, or grammar checkers, treat this exactly like the real exam.',
       ],
       outcome: `One completed ${mock.label} ${mock.essayType} under strict exam conditions.`,
     }),
@@ -297,7 +297,7 @@ export function buildSprintPlan({
         `Sprint retrospective: latest band ${latestLabel}, goal Band ${targetLabel} (${goalGap}).`,
         `Plan next steps: maintain ${strengthName} while continuing to reduce "${e1.label}"${errors[1] ? ` and "${e2.label}"` : ''}.`,
       ],
-      outcome: `Sprint complete — final mock submitted and a clear plan to close ${goalGap} to your goal.`,
+      outcome: `Sprint complete, final mock submitted and a clear plan to close ${goalGap} to your goal.`,
     }),
   ];
 
@@ -315,8 +315,8 @@ export function buildSprintPlan({
       type: e.type,
     })),
     weeks: [
-      { label: 'Week 1 — Fix Card Focus', subtitle: 'Diagnose and drill your top priority errors', days: week1Days },
-      { label: 'Week 2 — Integration & Exam Simulation', subtitle: 'Criterion lift, rewrite recipe, and timed mocks', days: week2Days },
+      { label: 'Week 1: Fix Card Focus', subtitle: 'Diagnose and drill your top priority errors', days: week1Days },
+      { label: 'Week 2: Integration & Exam Simulation', subtitle: 'Criterion lift, rewrite recipe, and timed mocks', days: week2Days },
     ],
   };
 }

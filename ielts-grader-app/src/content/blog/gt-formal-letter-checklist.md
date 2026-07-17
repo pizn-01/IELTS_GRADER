@@ -1,7 +1,7 @@
 ---
 title: "GT Formal Letter Checklist: What Examiners Want | IELTS AI Tutor"
 slug: gt-formal-letter-checklist
-description: "IELTS GT formal letter checklist — tone, bullet points, opening and closing. AI tutor tips for Task 1 letters."
+description: "IELTS GT formal letter checklist, tone, bullet points, opening and closing. AI tutor tips for Task 1 letters."
 keyword: IELTS formal letter
 type: guide
 status: published
@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # GT Formal Letter Checklist: What Examiners Want
 
-General Training Task 1 is a letter — and formal letters are where many candidates lose easy marks. They write a friendly email voice, miss a bullet point, or forget a clear purpose. This checklist from **IELTS AI Tutor by IELTSGRADER** is designed for complaint, request, application, and formal enquiry letters.
+General Training Task 1 is a letter, and formal letters are where many candidates lose easy marks. They write a friendly email voice, miss a bullet point, or forget a clear purpose. This checklist from **IELTS AI Tutor by IELTSGRADER** is designed for complaint, request, application, and formal enquiry letters.
 
 Use it before you submit practice letters to the [essay checker](/ielts-essay-checker), and compare with a high-band model such as the [Band 8 complaint letter](/blog/gt-letter-sample-band-8-complaint).
 
@@ -52,7 +52,7 @@ If the prompt says you are writing to a friend, switch to informal style instead
 
 ### D. Formal language
 
-- [ ] Full forms preferred in most places (*I am*, not *I’m* — contractions are often too casual)
+- [ ] Full forms preferred in most places (*I am*, not *I’m*, contractions are often too casual)
 - [ ] Polite modality where appropriate (*I would be grateful if…*, *Could you please…*)
 - [ ] Precise vocabulary for the situation (complaint, refund, appointment, documentation)
 - [ ] No chatty fillers (*anyway*, *by the way*, emoji-style emphasis)
@@ -79,7 +79,7 @@ Examiners score Task Achievement on whether you cover the required information. 
 1. Underline the three bullets in the prompt.
 2. Number them 1–3 in your plan.
 3. Tick each after you write it.
-4. Spend your last two minutes checking ticks — not adding fancy vocabulary.
+4. Spend your last two minutes checking ticks, not adding fancy vocabulary.
 
 ## Tone bank: formal phrases that sound natural
 
@@ -109,7 +109,7 @@ Examiners score Task Achievement on whether you cover the required information. 
 - I look forward to hearing from you at your earliest convenience.
 - Please do not hesitate to contact me on [details] should you require further information.
 
-Use two or three of these — not all of them stacked in one paragraph.
+Use two or three of these, not all of them stacked in one paragraph.
 
 ## What “enough detail” looks like
 
@@ -154,9 +154,9 @@ If unsure, check the recipient relationship in the prompt first.
 
 1. Write two formal letters per week from past-style prompts.  
 2. Submit via the [essay checker](/ielts-essay-checker) and read Task Achievement notes first.  
-3. Rewrite any letter that missed a bullet — even if grammar was strong.  
+3. Rewrite any letter that missed a bullet, even if grammar was strong.  
 4. Compare your complaint structure to the [Band 8 sample](/blog/gt-letter-sample-band-8-complaint).  
-5. If you also take Academic-style essays, keep modules clear — see [Academic vs GT writing](/blog/academic-vs-general-training-writing).
+5. If you also take Academic-style essays, keep modules clear, see [Academic vs GT writing](/blog/academic-vs-general-training-writing).
 
 [IELTS AI Tutor](/ielts-ai-tutor) is useful here because GT letters fail on task coverage and tone as often as on grammar. Fix cards can target those directly.
 

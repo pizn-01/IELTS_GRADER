@@ -563,7 +563,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
         <div className={`px-8 py-1.5 text-[12px] font-medium flex items-center gap-2 border-t ${extractError ? 'bg-red-50 border-red-100 text-red-500' : 'bg-[#F0F9FF] border-[#DBEAFE] text-[#1A96F3]'}`}>
           {extractError
             ? <><X size={13} className="shrink-0" />{extractError}</>
-            : <><Paperclip size={13} className="shrink-0" />{attachedFile.name} — imported</>
+            : <><Paperclip size={13} className="shrink-0" />{attachedFile.name} (imported)</>
           }
         </div>
       )}

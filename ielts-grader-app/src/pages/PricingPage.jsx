@@ -158,7 +158,7 @@ const PricingPage = () => {
             
             <h2 className="text-[22px] font-bold text-[#1a1f36] mb-2">Subscribe to Premium</h2>
             <p className="text-[14px] text-[#6B7280] mb-8 leading-relaxed">
-              Weekly Sprint ({WEEKLY.label} — {WEEKLY.credits} exams) or Monthly Mastery ({MONTHLY.label} — {MONTHLY.credits} exams). Cancel anytime.
+              Weekly Sprint ({WEEKLY.label}, {WEEKLY.credits} exams) or Monthly Mastery ({MONTHLY.label}, {MONTHLY.credits} exams). Cancel anytime.
             </p>
 
             <button 

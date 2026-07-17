@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # Personalized Learning Editions: Study Paths from Your Mistakes
 
-Generic IELTS advice fails for a simple reason: your bottleneck is not everyone else’s. **Learning editions** — study paths built from your repeated mistake patterns — are how a tutor product personalises practice without pretending every student needs the same 50 tips.
+Generic IELTS advice fails for a simple reason: your bottleneck is not everyone else’s. **Learning editions**, study paths built from your repeated mistake patterns, are how a tutor product personalises practice without pretending every student needs the same 50 tips.
 
 This guide from **IELTS AI Tutor by IELTSGRADER** explains what learning editions are, how mistake patterns feed them, and how to use them alongside mocks and checkers.
 
@@ -127,10 +127,10 @@ Use criterion movement, not vibes:
 |--------|---------|
 | Target criterion up on 2 checks | Transfer happening |
 | Fix cards change topic | Old pattern fading |
-| Same fix cards return | Drills too passive — write more |
-| Overall up, target flat | Lucky variance — stay on theme |
+| Same fix cards return | Drills too passive, write more |
+| Overall up, target flat | Lucky variance, stay on theme |
 
-Borderline overall scores need calm interpretation — [dual grading explained](/blog/dual-ai-grading-explained), [6.5 plateau](/blog/stuck-at-band-6-5-plateau).
+Borderline overall scores need calm interpretation, [dual grading explained](/blog/dual-ai-grading-explained), [6.5 plateau](/blog/stuck-at-band-6-5-plateau).
 
 ## Building a manual edition if you are just starting
 

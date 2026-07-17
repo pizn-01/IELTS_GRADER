@@ -29,7 +29,7 @@ const wrap = (title, body, ctaText, ctaHref, note) => `
   ${ctaHref ? `<p style="font-size:12px;color:#9CA3AF;margin:20px 0 0;line-height:1.6;word-break:break-all;">Or paste this link into your browser:<br/><a href="${ctaHref}" style="color:#3B82F6;">${ctaHref}</a></p>` : ''}
   ${note ? `<p style="font-size:12px;color:#9CA3AF;margin:20px 0 0;line-height:1.6;">${note}</p>` : ''}
   <hr style="border:none;border-top:1px solid #E5E7EB;margin:28px 0;"/>
-  <p style="font-size:12px;color:#D1D5DB;margin:0;">IELTS Grader — AI-powered IELTS writing feedback<br/>Questions? Reply to this email.</p>
+  <p style="font-size:12px;color:#D1D5DB;margin:0;">IELTS Grader: AI-powered IELTS writing feedback<br/>Questions? Reply to this email.</p>
 </td></tr>
 </table>
 </td></tr>
@@ -131,7 +131,7 @@ async function sendVerificationEmail(email, fullName, token, { idempotencyKey } 
     '',
     'This link expires in 24 hours. If you did not create an account, you can ignore this email.',
     '',
-    '— IELTS Grader',
+    '- IELTS Grader',
   ].join('\n');
 
   try {
@@ -170,7 +170,7 @@ async function sendPasswordResetEmail(email, fullName, token, { idempotencyKey }
     '',
     'This link expires in 1 hour. If you did not request a password reset, you can ignore this email.',
     '',
-    '— IELTS Grader',
+    '- IELTS Grader',
   ].join('\n');
 
   try {

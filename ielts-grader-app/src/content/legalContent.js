@@ -1,7 +1,7 @@
 export const legalPages = {
   terms: {
     title: 'Terms of Service | IELTS AI Tutor by IELTSGRADER',
-    description: 'Terms of Service for IELTS AI Tutor by IELTSGRADER — accounts, subscriptions, AI feedback limitations, acceptable use, and liability.',
+    description: 'Terms of Service for IELTS AI Tutor by IELTSGRADER: accounts, subscriptions, AI feedback limitations, acceptable use, and liability.',
     heading: 'Terms of Service',
     updatedAt: 'July 10, 2026',
     draft: false,
@@ -80,7 +80,7 @@ export const legalPages = {
   },
   privacy: {
     title: 'Privacy Policy | IELTS AI Tutor by IELTSGRADER',
-    description: 'Privacy Policy for IELTS AI Tutor by IELTSGRADER — what data we collect, how we use it, processors, retention, and your rights.',
+    description: 'Privacy Policy for IELTS AI Tutor by IELTSGRADER: what data we collect, how we use it, processors, retention, and your rights.',
     heading: 'Privacy Policy',
     updatedAt: 'July 10, 2026',
     draft: false,
@@ -156,7 +156,7 @@ export const legalPages = {
   },
   cookies: {
     title: 'Cookie Policy | IELTS AI Tutor by IELTSGRADER',
-    description: 'Cookie Policy for IELTS AI Tutor by IELTSGRADER — essential, functional, and analytics cookies, and how to manage them.',
+    description: 'Cookie Policy for IELTS AI Tutor by IELTSGRADER: essential, functional, and analytics cookies, and how to manage them.',
     heading: 'Cookie Policy',
     updatedAt: 'July 10, 2026',
     draft: false,
@@ -172,20 +172,20 @@ export const legalPages = {
       {
         heading: '3. Types of cookies we use',
         items: [
-          'Essential — authentication session, security, load balancing, and core functionality. The Service cannot work properly without these.',
-          'Functional — remember UI preferences and similar settings where enabled.',
-          'Analytics — help us understand traffic and feature usage so we can improve the product (only if analytics is enabled for your visit).',
-          'Payment / fraud — Stripe may set cookies during checkout to process payments and prevent fraud.',
-          'OAuth — Google may set cookies if you choose Google sign-in.',
+          'Essential: authentication session, security, load balancing, and core functionality. The Service cannot work properly without these.',
+          'Functional: remember UI preferences and similar settings where enabled.',
+          'Analytics: help us understand traffic and feature usage so we can improve the product (only if analytics is enabled for your visit).',
+          'Payment / fraud: Stripe may set cookies during checkout to process payments and prevent fraud.',
+          'OAuth: Google may set cookies if you choose Google sign-in.',
         ],
       },
       {
         heading: '4. Cookie details (typical)',
         items: [
-          'Session / auth tokens — identify your logged-in session (essential).',
-          'CSRF / security cookies — protect forms and API requests (essential).',
-          'Preference keys — store non-sensitive UI choices (functional).',
-          'Attribution / UTM storage — remember how you found the Service for product analytics (analytics/functional).',
+          'Session / auth tokens: identify your logged-in session (essential).',
+          'CSRF / security cookies: protect forms and API requests (essential).',
+          'Preference keys: store non-sensitive UI choices (functional).',
+          'Attribution / UTM storage: remember how you found the Service for product analytics (analytics/functional).',
         ],
       },
       {

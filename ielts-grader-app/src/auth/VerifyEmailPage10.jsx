@@ -109,7 +109,7 @@ const VerifyEmailPage10 = () => {
           {checking
             ? 'Checking…'
             : isAuthenticated
-              ? "I've verified — Continue"
+              ? "I've verified. Continue"
               : 'Sign In'}
         </button>
       </div>

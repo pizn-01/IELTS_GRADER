@@ -1,7 +1,7 @@
 ---
 title: "Task Response vs Task Achievement: IELTS Writing Decoded | IELTS AI Tutor"
 slug: task-response-vs-achievement
-description: "Task Response vs Task Achievement explained — how IELTS Task 1 and Task 2 differ, with tutor examples and fixes."
+description: "Task Response vs Task Achievement explained, how IELTS Task 1 and Task 2 differ, with tutor examples and fixes."
 keyword: Task Response vs Task Achievement
 type: guide
 status: published
@@ -11,14 +11,14 @@ author: IELTS AI Tutor Team
 
 # Task Response vs Task Achievement: IELTS Writing Decoded
 
-Candidates often mix up **Task Response (TR)** and **Task Achievement (TA)**. They are sibling criteria — both ask “Did you do the task?” — but they apply to different Writing tasks and reward different behaviours.
+Candidates often mix up **Task Response (TR)** and **Task Achievement (TA)**. They are sibling criteria, both ask “Did you do the task?”, but they apply to different Writing tasks and reward different behaviours.
 
 **IELTS AI Tutor by IELTSGRADER** breaks them down so you can stop studying the wrong checklist.
 
 ## The one-sentence difference
 
-- **Task Achievement (TA)** — used for **Task 1** (Academic visuals or GT letters): Did you cover the required information accurately and appropriately?  
-- **Task Response (TR)** — used for **Task 2** essays: Did you answer the question with a clear, developed position and relevant ideas?
+- **Task Achievement (TA)**, used for **Task 1** (Academic visuals or GT letters): Did you cover the required information accurately and appropriately?  
+- **Task Response (TR)**, used for **Task 2** essays: Did you answer the question with a clear, developed position and relevant ideas?
 
 Both sit beside Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy. Overview of all four: [how IELTS writing is scored](/blog/how-ielts-writing-is-scored).
 
@@ -74,7 +74,7 @@ TR asks whether your essay:
 
 1. Addresses every part of the prompt  
 2. Presents a clear position throughout (when required)  
-3. Develops ideas with support — not only statements  
+3. Develops ideas with support, not only statements  
 4. Stays relevant from introduction to conclusion  
 
 ### Prompt types and TR traps
@@ -113,7 +113,7 @@ Position exists; development does not.
 
 ### Task 2 TR stronger
 
-> I agree that expanding access to secondary education supports social mobility, because qualifications increasingly gatekeep stable employment. When fees or distance block attendance, lower-income students exit earlier — not from lack of ability, but from constrained options.
+> I agree that expanding access to secondary education supports social mobility, because qualifications increasingly gatekeep stable employment. When fees or distance block attendance, lower-income students exit earlier, not from lack of ability, but from constrained options.
 
 ## Why people confuse TR and TA
 
@@ -144,7 +144,7 @@ Your tutor report should label them correctly by task type. If you are choosing 
 
 ## How IELTS AI Tutor scores these
 
-[IELTS AI Tutor](/ielts-ai-tutor) evaluates Task 1 with an Achievement lens (overview/bullets/tone/coverage) and Task 2 with a Response lens (question coverage, position, development). Fix cards often target exactly these failures — which appear in the [error taxonomy](/blog/ielts-writing-error-taxonomy) as TR/TA items.
+[IELTS AI Tutor](/ielts-ai-tutor) evaluates Task 1 with an Achievement lens (overview/bullets/tone/coverage) and Task 2 with a Response lens (question coverage, position, development). Fix cards often target exactly these failures, which appear in the [error taxonomy](/blog/ielts-writing-error-taxonomy) as TR/TA items.
 
 ## Mini self-check before you submit
 
@@ -156,6 +156,6 @@ If any answer is no, fix that before polishing vocabulary.
 
 ## Next steps
 
-Use **Achievement** language for Task 1 and **Response** language for Task 2 — then practise the matching checklist.
+Use **Achievement** language for Task 1 and **Response** language for Task 2, then practise the matching checklist.
 
 Diagnose with the [essay checker](/ielts-essay-checker), run a full timed set on the [mock writing test](/ielts-mock-writing-test), explore [IELTS AI Tutor](/ielts-ai-tutor), and [signup](/signup) via [pricing](/pricing) when you want repeated criterion tracking.

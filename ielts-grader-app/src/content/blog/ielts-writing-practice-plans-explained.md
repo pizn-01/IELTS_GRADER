@@ -1,7 +1,7 @@
 ---
 title: "IELTS Writing Practice Plans Explained: Free, Weekly, Monthly | IELTS AI Tutor"
 slug: ielts-writing-practice-plans-explained
-description: "Educational guide to IELTS AI Tutor practice plans — free diagnosis, weekly sprints, and monthly mastery — without hype."
+description: "Educational guide to IELTS AI Tutor practice plans, free diagnosis, weekly sprints, and monthly mastery, without hype."
 keyword: IELTS writing practice plans
 type: guide
 status: published
@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # IELTS Writing Practice Plans Explained: Free, Weekly, Monthly
 
-Practice plans should match how you learn — not how loud an advert is. **IELTS AI Tutor by IELTSGRADER** offers different intensities of Writing tutoring so you can diagnose once, sprint weekly, or train consistently for a month. This educational guide explains the logic behind free vs weekly vs monthly practice so you can choose calmly.
+Practice plans should match how you learn, not how loud an advert is. **IELTS AI Tutor by IELTSGRADER** offers different intensities of Writing tutoring so you can diagnose once, sprint weekly, or train consistently for a month. This educational guide explains the logic behind free vs weekly vs monthly practice so you can choose calmly.
 
 Always confirm current details on [pricing](/pricing). Plan names and limits can evolve; the learning design below is what matters.
 
@@ -134,18 +134,18 @@ Trust context: [is AI tutoring accurate?](/blog/is-ai-ielts-tutoring-accurate), 
 
 ## Sample student paths (illustrative)
 
-### Path A — Busy professional, test in 5 weeks
+### Path A: Busy professional, test in 5 weeks
 
 Week 0: free diagnosis.  
 Weeks 1–4: weekly sprint intensity; one mock per week; Coherence then Task Response themes.
 
-### Path B — Student with 3 months
+### Path B: Student with 3 months
 
 Month 1: monthly consistency; build Task 1 + Task 2 balance ([Academic vs GT](/blog/academic-vs-general-training-writing)).  
 Month 2: learning edition on recurring LR/CC issues.  
 Month 3: mock-heavy taper.
 
-### Path C — Budget-first
+### Path C: Budget-first
 
 Free check → 14 days self-drills using blog plans → paid burst for two weeks of checks before the exam.
 

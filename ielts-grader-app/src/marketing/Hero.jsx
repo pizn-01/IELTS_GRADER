@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronDown, ChevronLeft, Paperclip } from 'lucide-react';
+import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -19,13 +19,18 @@ const readAsDataURL = (file) =>
 const isImageFile = (file) =>
   file && (file.type?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name || ''));
 
+const MOCK_OPTIONS = [
+  { examType: 'Academic', taskType: 'Task 1', label: 'Academic · Task 1', sublabel: 'Report' },
+  { examType: 'Academic', taskType: 'Task 2', label: 'Academic · Task 2', sublabel: 'Essay' },
+  { examType: 'General', taskType: 'Task 1', label: 'General · Task 1', sublabel: 'Letter' },
+  { examType: 'General', taskType: 'Task 2', label: 'General · Task 2', sublabel: 'Essay' },
+];
 
 const Hero = () => {
   const navigate = useNavigate();
   const { essayData, updateEssayData, setGradingStatus, setSubmissionId } = useGrade();
   const { user } = useAuth();
   const [activeTooltip, setActiveTooltip] = useState(null);
-  const [selectedOption, setSelectedOption] = useState(null);
   const [cardView, setCardView] = useState('default'); // 'default', 'mock', 'upload'
   const [files, setFiles] = useState({ prompt: null, essay: null });
 
@@ -63,12 +68,13 @@ const Hero = () => {
 
   const isUploadFormValid = essayText.trim().length > 0;
 
-  const handleOptionSelect = (option) => {
-    setSelectedOption(option);
-    // Mobile: one tap opens the flow; desktop keeps select → Start
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
-      setCardView(option);
+  const handleStartMock = (examType, taskType) => {
+    if (user && (user.credits_remaining ?? 0) <= 0) {
+      navigate('/analysis-ready', { state: { outOfCredits: true } });
+      return;
     }
+    updateEssayData({ examType, taskType });
+    navigate('/mock-exam');
   };
 
   return (
@@ -76,7 +82,7 @@ const Hero = () => {
       id="about"
       className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-20">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-16">
 
         {/* Mobile: compact headline above the card */}
         <div className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5">
@@ -93,150 +99,118 @@ const Hero = () => {
 
         {/* Submission card — first interactive surface on mobile */}
         <div className="w-full order-2 lg:order-2 lg:w-[45%] flex flex-col items-center lg:items-end animate-fadeInUp animate-delay-50 shrink-0 mb-2.5 lg:mb-0">
-          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-5 pb-6 lg:p-7 w-full max-w-[480px] flex flex-col transition-all duration-500">
+          <div className="bg-white/95 rounded-[18px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] p-5 pb-6 lg:p-8 w-full max-w-[480px] lg:max-w-[520px] flex flex-col transition-all duration-500 min-h-[280px] lg:min-h-[320px]">
             
             {cardView === 'default' ? (
               <div className="flex-1 flex flex-col animate-fadeIn">
-                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-6 tracking-[-0.01em]">Start your free tutor report</h3>
-                
-                <div 
-                  onClick={() => handleOptionSelect('upload')} 
-                  className={`group border rounded-[12px] py-6 px-3.5 min-h-[96px] lg:min-h-0 lg:py-5 lg:p-5 mb-3 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
-                    selectedOption === 'upload' 
-                      ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
-                      : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
-                  }`}
-                >
-                  <div className="flex shrink-0 lg:justify-center lg:mb-3 lg:w-full">
-                    <div className="w-11 h-11 lg:w-10 lg:h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
-                      <FileCheck2 className="w-5 h-5 transition-colors text-[#3B82F6]" />
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1 lg:w-full">
-                    <div className="flex items-center gap-2 mb-1 lg:mb-1 lg:justify-center">
-                      <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'upload' ? 'text-[#1a1f36]' : 'text-[#374151] group-hover:text-[#1a1f36]'}`}>Grade my essay</span>
-                      <span className="relative flex items-center">
-                        <Info 
-                          onMouseEnter={() => setActiveTooltip('upload')}
-                          onMouseLeave={() => setActiveTooltip(null)}
-                          onClick={(e) => e.stopPropagation()}
-                          className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'upload' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
-                        />
-                        {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
-                      </span>
-                    </div>
-                    <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-snug lg:leading-relaxed max-w-[320px] m-0 lg:mx-auto">Paste or upload your essay for a band score and fixes</p>
-                  </div>
-                </div>
+                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-5 tracking-[-0.01em]">Start your free tutor report</h3>
 
-                <div 
-                  onClick={() => handleOptionSelect('mock')} 
-                  className={`group border rounded-[12px] py-6 px-3.5 min-h-[96px] lg:min-h-0 lg:py-5 lg:p-5 mb-0 lg:mb-3 cursor-pointer transition-all active:scale-[0.98] active:bg-[#F8FAFC] relative bg-white flex items-center gap-3.5 text-left lg:flex-col lg:text-center lg:gap-0 ${
-                    selectedOption === 'mock' 
-                      ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.08)]' 
-                      : 'border-[#E8ECF1] hover:border-[#3B82F6] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]'
-                  }`}
-                >
-                  <div className="flex shrink-0 lg:justify-center lg:mb-3 lg:w-full">
-                    <div className="w-11 h-11 lg:w-10 lg:h-10 rounded-[10px] flex items-center justify-center transition-colors bg-[#EFF6FF]">
-                      <Clock className="w-5 h-5 transition-colors text-[#3B82F6]" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setCardView('upload')}
+                    className="group relative flex items-center gap-3.5 lg:flex-col lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-[#F8FAFC] p-4 lg:p-5 min-h-[104px] lg:min-h-[200px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+                  >
+                    <div className="flex shrink-0 lg:justify-center lg:mb-4 lg:w-full">
+                      <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
+                        <FileCheck2 className="w-6 h-6 text-[#3B82F6]" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="min-w-0 flex-1 lg:w-full">
-                    <div className="flex items-center gap-2 mb-1 lg:mb-1 lg:justify-center">
-                      <span className={`text-[15px] lg:text-[16px] font-bold transition-colors ${selectedOption === 'mock' ? 'text-[#1a1f36]' : 'text-[#374151] group-hover:text-[#1a1f36]'}`}>Mock Exam</span>
-                      <span className="relative flex items-center">
-                        <Info 
-                          onMouseEnter={() => setActiveTooltip('mock')}
-                          onMouseLeave={() => setActiveTooltip(null)}
-                          onClick={(e) => e.stopPropagation()}
-                          className={`w-[14px] h-[14px] cursor-help transition-colors ${selectedOption === 'mock' ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#3B82F6]'}`} 
-                        />
-                        {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
-                      </span>
+                    <div className="min-w-0 flex-1 lg:w-full">
+                      <div className="flex items-center gap-2 mb-1 lg:mb-1.5 lg:justify-center">
+                        <span className="text-[15px] lg:text-[16px] font-bold text-[#1a1f36]">Grade my essay</span>
+                        <span className="relative flex items-center">
+                          <Info
+                            onMouseEnter={() => setActiveTooltip('upload')}
+                            onMouseLeave={() => setActiveTooltip(null)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-[14px] h-[14px] cursor-help text-[#9CA3AF] group-hover:text-[#3B82F6] transition-colors"
+                          />
+                          {activeTooltip === 'upload' && <Tooltip text={tooltips.essay.text} />}
+                        </span>
+                      </div>
+                      <p className="text-[12px] lg:text-[13px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[200px]">
+                        Paste or upload your essay for a band score and fixes
+                      </p>
                     </div>
-                    <p className="text-[12px] lg:text-[13px] text-[#9CA3AF] leading-snug lg:leading-relaxed max-w-[320px] m-0 lg:mx-auto">
-                      <span className="lg:hidden">Timed IELTS-style practice</span>
-                      <span className="hidden lg:inline">Practice in a real IELTS computer-based environment with timer</span>
-                    </p>
-                  </div>
-                </div>
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3B82F6]/70 lg:static lg:translate-y-0 lg:mt-4 lg:mx-auto shrink-0" />
+                  </button>
 
-                <button 
-                  onClick={() => selectedOption && setCardView(selectedOption)} 
-                  disabled={!selectedOption}
-                  className={`hidden lg:block w-full h-[50px] rounded-[10px] font-bold text-[16px] mt-2 transition-all shadow-md active:scale-[0.98] ${
-                    selectedOption ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46]' : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
-                  }`}
-                >
-                  Start free evaluation
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setCardView('mock')}
+                    className="group relative flex items-center gap-3.5 lg:flex-col lg:gap-0 text-left lg:text-center rounded-[14px] border border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-[#F8FAFC] p-4 lg:p-5 min-h-[104px] lg:min-h-[200px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
+                  >
+                    <div className="flex shrink-0 lg:justify-center lg:mb-4 lg:w-full">
+                      <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
+                        <Clock className="w-6 h-6 text-[#0D9488]" />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1 lg:w-full">
+                      <div className="flex items-center gap-2 mb-1 lg:mb-1.5 lg:justify-center">
+                        <span className="text-[15px] lg:text-[16px] font-bold text-[#1a1f36]">Mock Exam</span>
+                        <span className="relative flex items-center">
+                          <Info
+                            onMouseEnter={() => setActiveTooltip('mock')}
+                            onMouseLeave={() => setActiveTooltip(null)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-[14px] h-[14px] cursor-help text-[#9CA3AF] group-hover:text-[#0D9488] transition-colors"
+                          />
+                          {activeTooltip === 'mock' && <Tooltip text={tooltips.mock.text} />}
+                        </span>
+                      </div>
+                      <p className="text-[12px] lg:text-[13px] text-[#6B7280] leading-snug lg:leading-relaxed m-0 lg:mx-auto lg:max-w-[200px]">
+                        <span className="lg:hidden">Timed IELTS-style practice</span>
+                        <span className="hidden lg:inline">Practice in a real IELTS computer-based environment with timer</span>
+                      </p>
+                    </div>
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0D9488]/70 lg:static lg:translate-y-0 lg:mt-4 lg:mx-auto shrink-0" />
+                  </button>
+                </div>
               </div>
             ) : cardView === 'mock' ? (
               <div className="flex-1 flex flex-col animate-fadeIn">
-                <div className="flex items-center gap-3 mb-6">
-                  <button onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <button type="button" onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
                     <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
                   </button>
-                  <h3 className="text-[18px] font-bold text-[#1a1f36]">Mock Exam</h3>
-                </div>
-
-                <div className="space-y-5 flex-1">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Exam Type</label>
-                    <div className="relative">
-                      <select 
-                        value={essayData.examType}
-                        onChange={(e) => updateEssayData({ examType: e.target.value })}
-                        className="w-full h-[46px] px-4 bg-white border border-[#E5E7EB] rounded-[8px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
-                      >
-                        <option value="">Select</option>
-                        <option value="Academic">Academic</option>
-                        <option value="General">General</option>
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#4B5563] mb-1.5">Task Type</label>
-                    <div className="relative">
-                      <select 
-                        value={essayData.taskType}
-                        onChange={(e) => updateEssayData({ taskType: e.target.value })}
-                        className="w-full h-[46px] px-4 bg-white border border-[#E5E7EB] rounded-[8px] text-[14px] text-[#1a1f36] appearance-none focus:border-[#3B82F6] outline-none transition-all cursor-pointer"
-                      >
-                        <option value="">Select</option>
-                        <option value="Task 1">Task 1</option>
-                        <option value="Task 2">Task 2</option>
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
-                    </div>
+                    <h3 className="text-[18px] font-bold text-[#1a1f36]">Mock Exam</h3>
+                    <p className="text-[12px] text-[#6B7280] m-0 mt-0.5">Pick a task to start timed practice</p>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    if (user && (user.credits_remaining ?? 0) <= 0) {
-                      navigate('/analysis-ready', { state: { outOfCredits: true } });
-                      return;
-                    }
-                    navigate('/mock-exam');
-                  }}
-                  disabled={!essayData.examType || !essayData.taskType}
-                  className={`w-full h-[50px] rounded-[8px] font-bold text-[15px] mt-8 transition-all ${
-                    (essayData.examType && essayData.taskType)
-                      ? 'bg-[#1a1f36] text-white hover:bg-[#2a2f46] shadow-lg' 
-                      : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
-                  }`}
-                >
-                  Start Mock Exam
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                  {MOCK_OPTIONS.map((opt) => {
+                    const isAcademic = opt.examType === 'Academic';
+                    return (
+                      <button
+                        key={`${opt.examType}-${opt.taskType}`}
+                        type="button"
+                        onClick={() => handleStartMock(opt.examType, opt.taskType)}
+                        className={`group text-left rounded-[12px] border p-4 min-h-[88px] cursor-pointer transition-all active:scale-[0.98] hover:shadow-md ${
+                          isAcademic
+                            ? 'border-[#BFDBFE] bg-gradient-to-b from-[#EFF6FF] to-white hover:border-[#3B82F6]'
+                            : 'border-[#99F6E4] bg-gradient-to-b from-[#F0FDFA] to-white hover:border-[#2DD4BF]'
+                        }`}
+                      >
+                        <p className={`text-[11px] font-bold uppercase tracking-wide mb-1.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`}>
+                          {opt.examType}
+                        </p>
+                        <p className="text-[14px] font-bold text-[#1a1f36] mb-0.5 leading-tight">
+                          {opt.label}
+                        </p>
+                        <p className="text-[12px] text-[#6B7280] m-0">{opt.sublabel}</p>
+                        <ChevronRight className={`w-4 h-4 mt-2 transition-transform group-hover:translate-x-0.5 ${isAcademic ? 'text-[#3B82F6]' : 'text-[#0D9488]'}`} />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="flex-1 flex flex-col animate-fadeIn">
                 <div className="flex items-center gap-3 mb-6">
-                  <button onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
+                  <button type="button" onClick={() => setCardView('default')} className="p-1.5 hover:bg-[#F3F4F6] rounded-full transition-colors">
                     <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
                   </button>
                   <h3 className="text-[18px] font-bold text-[#1a1f36]">Grade my essay</h3>
@@ -438,11 +412,11 @@ const Hero = () => {
           </div>
           <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
             <Star className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            <span>1 free full report — no credit card</span>
+            <span>1 free full report, no credit card</span>
           </div>
           <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
             <Zap className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-            <span>Criterion scores + fixes — not just a band</span>
+            <span>Criterion scores + fixes, not just a band</span>
           </div>
           <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
             <ShieldCheck className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
@@ -463,17 +437,17 @@ const Hero = () => {
           </h1>
 
           <p className="text-[17px] text-[#6B7280] leading-[1.6] mb-10 max-w-[540px]">
-            Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan — 1 full evaluation included.
+            Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan: 1 full evaluation included.
           </p>
 
           <div className="space-y-5 mb-10">
             <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Star className="w-5 h-5 text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={2} />
-              1 free full report — no credit card
+              1 free full report, no credit card
             </div>
             <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <Zap className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
-              Criterion scores + sentence fixes — not just a band
+              Criterion scores + sentence fixes, not just a band
             </div>
             <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
               <ShieldCheck className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />

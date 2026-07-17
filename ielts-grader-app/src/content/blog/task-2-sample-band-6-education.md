@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # IELTS Task 2 Sample: Band 6 Essay on Education
 
-This sample shows a realistic **Band 6** Task 2 essay — clear enough to communicate, but under-developed for Band 7. **IELTS AI Tutor by IELTSGRADER** breaks it down by criterion, then offers three fix cards you can apply to your own writing.
+This sample shows a realistic **Band 6** Task 2 essay, clear enough to communicate, but under-developed for Band 7. **IELTS AI Tutor by IELTSGRADER** breaks it down by criterion, then offers three fix cards you can apply to your own writing.
 
 **Prompt:** Some people believe university education should be free for everyone. To what extent do you agree or disagree?
 
@@ -44,24 +44,24 @@ This is a common profile: communicative and organised enough for 6, but not exte
 
 ## Why this stays at Band 6
 
-1. **Thin development** — “some countries” and “better job” are not specific enough to lift Task Response.
-2. **Repetition** — key nouns recycle without paraphrase, which caps Lexical Resource.
-3. **Safe grammar** — accuracy is decent, but range does not show confident complex structures.
-4. **Generic conclusion** — restates the opinion without sharpening the argument.
+1. **Thin development**, “some countries” and “better job” are not specific enough to lift Task Response.
+2. **Repetition**, key nouns recycle without paraphrase, which caps Lexical Resource.
+3. **Safe grammar**, accuracy is decent, but range does not show confident complex structures.
+4. **Generic conclusion**, restates the opinion without sharpening the argument.
 
 None of these are “bad English.” They are Band 6 habits.
 
-## Fix card 1 — Task Response: replace vague claims with concrete support
+## Fix card 1: Task Response: replace vague claims with concrete support
 
-**Weak (from essay):**  
+**Weak (from essay):** 
 > For example, some countries that support students financially have a strong economy and a high level of knowledge in society.
 
-**Stronger Band 7 direction:**  
+**Stronger Band 7 direction:** 
 > For example, where governments expand need-based grants rather than blanket free tuition, enrolment among lower-income students tends to rise without removing all cost signals that encourage course completion.
 
-**Practice drill:** In your next essay, every body paragraph must include one specific mechanism (policy, group, or consequence) — not “some countries” alone.
+**Practice drill:** In your next essay, every body paragraph must include one specific mechanism (policy, group, or consequence), not “some countries” alone.
 
-## Fix card 2 — Lexical Resource: break the repetition loop
+## Fix card 2: Lexical Resource: break the repetition loop
 
 **Weak pattern:** *free / university / education / students* repeated throughout.
 
@@ -75,25 +75,25 @@ None of these are “bad English.” They are Band 6 habits.
 | important | essential, decisive, high-stakes |
 | problems | drawbacks, fiscal pressure, unintended consequences |
 
-**Practice drill:** Rewrite one body paragraph using at least five alternatives from a topic bank — but only where meaning stays natural. See also [lexical resource Band 6 to 7](/blog/lexical-resource-band-6-to-7).
+**Practice drill:** Rewrite one body paragraph using at least five alternatives from a topic bank, but only where meaning stays natural. See also [lexical resource Band 6 to 7](/blog/lexical-resource-band-6-to-7).
 
-## Fix card 3 — Coherence: give each paragraph a sharper job
+## Fix card 3: Coherence: give each paragraph a sharper job
 
-**Weak topic sentence:**  
+**Weak topic sentence:** 
 > On the one hand, free university education can help students from poor families.
 
-**Stronger topic sentence:**  
+**Stronger topic sentence:** 
 > The strongest argument for removing tuition fees is equal access for students who cannot borrow or self-fund.
 
 Then keep the whole paragraph on **access**, and move funding problems to the second body paragraph only. That cleaner division improves Coherence without adding fancy connectors. For structured practice, use the [14-day Coherence plan](/blog/coherence-cohesion-14-day-plan).
 
 ## Band 7 rewrite direction (opening + one body)
 
-You do not need a perfect script to learn — you need a clearer target:
+You do not need a perfect script to learn, you need a clearer target:
 
 > Whether higher education should be universally tuition-free is ultimately a question of fairness versus fiscal sustainability. I agree that cost should not exclude capable students, but I do not support making every degree entirely free regardless of need or course type.
 >
-> Waiving fees can transform access for applicants from low-income households, who may otherwise enter work early to support their families. Targeted public funding — scholarships, income-contingent loans, or free tuition for shortage fields — widens opportunity while still rationing limited budgets. In that sense, affordability matters more than a single slogan of “free for everyone.”
+> Waiving fees can transform access for applicants from low-income households, who may otherwise enter work early to support their families. Targeted public funding, scholarships, income-contingent loans, or free tuition for shortage fields, widens opportunity while still rationing limited budgets. In that sense, affordability matters more than a single slogan of “free for everyone.”
 
 Notice: clearer scope, more precise lexis, and development beyond a single claim.
 

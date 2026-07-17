@@ -1,7 +1,7 @@
 ---
 title: "14-Day Plan to Improve Coherence & Cohesion | IELTS AI Tutor"
 slug: coherence-cohesion-14-day-plan
-description: "A 14-day IELTS AI Tutor plan to fix paragraph logic, topic sentences, and linking — target Coherence & Cohesion."
+description: "A 14-day IELTS AI Tutor plan to fix paragraph logic, topic sentences, and linking, target Coherence & Cohesion."
 keyword: coherence cohesion IELTS
 type: plan
 status: published
@@ -24,38 +24,38 @@ Submit one recent Task 2 essay and note:
 
 If Task Response is much lower than CC, fix idea development first using [Band 6 vs 7 Task 2](/blog/band-6-vs-7-task-2). This plan assumes CC is the priority.
 
-**Daily time:** 35–50 minutes.  
+**Daily time:** 35–50 minutes. 
 **Tools:** timer, notebook or doc, [Task 2 checker](/ielts-task-2-checker) on Days 7 and 14.
 
 ---
 
-## Week 1 — Structure and topic sentences
+## Week 1: Structure and topic sentences
 
-### Day 1 — Map the four-paragraph job list
+### Day 1: Map the four-paragraph job list
 
 **Focus:** Every paragraph has one job.
 
 **Drill:** For a discuss-both-views prompt, write only a plan:
 
-1. Introduction — paraphrase + outline + opinion (if required)
-2. Body 1 — View A / reason 1
-3. Body 2 — View B / reason 2
-4. Conclusion — summary + opinion restated
+1. Introduction, paraphrase + outline + opinion (if required)
+2. Body 1: View A / reason 1
+3. Body 2: View B / reason 2
+4. Conclusion, summary + opinion restated
 
 **Output:** One planning template you will reuse all fortnight.
 
-### Day 2 — Topic sentence clinic
+### Day 2: Topic sentence clinic
 
 **Focus:** First sentence of each body paragraph states the paragraph’s main idea.
 
 **Drill:** Take three old essays. Rewrite only the topic sentences so a stranger could predict the paragraph content.
 
-**Weak:** *Firstly, there are many advantages.*  
+**Weak:** *Firstly, there are many advantages.* 
 **Strong:** *One clear advantage of remote work is the reduction in daily commuting time.*
 
 **Output:** Six upgraded topic sentences.
 
-### Day 3 — One idea per paragraph
+### Day 3: One idea per paragraph
 
 **Focus:** Split mixed paragraphs.
 
@@ -63,7 +63,7 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** Before/after paragraph pair.
 
-### Day 4 — PEEL without the acronym obsession
+### Day 4: PEEL without the acronym obsession
 
 **Focus:** Claim → Explain → Example → Link back.
 
@@ -71,18 +71,18 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** One controlled paragraph. Optional: check it with the [essay checker](/ielts-essay-checker) for CC notes only.
 
-### Day 5 — Referencing instead of repeating
+### Day 5: Referencing instead of repeating
 
 **Focus:** *this, these, such, the former, this approach*
 
 **Drill:** Rewrite a repetitive paragraph, replacing repeated nouns with precise references.
 
-**Weak:** *Online courses help students. Online courses are flexible. Online courses are cheap.*  
+**Weak:** *Online courses help students. Online courses are flexible. Online courses are cheap.* 
 **Strong:** *Online courses help students because they are flexible and often more affordable. This combination matters for learners who work part-time.*
 
 **Output:** One rewritten paragraph with at least four reference links.
 
-### Day 6 — Stop mechanical “Moreover / Furthermore” chains
+### Day 6: Stop mechanical “Moreover / Furthermore” chains
 
 **Focus:** Meaning-based transitions.
 
@@ -90,7 +90,7 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** One paragraph that still feels connected.
 
-### Day 7 — Timed essay + CC review
+### Day 7: Timed essay + CC review
 
 **Focus:** Apply Week 1 under pressure.
 
@@ -106,9 +106,9 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 ---
 
-## Week 2 — Flow, cohesion devices, and transfer
+## Week 2: Flow, cohesion devices, and transfer
 
-### Day 8 — Introduction → body bridge
+### Day 8: Introduction → body bridge
 
 **Focus:** The last sentence of the introduction should set up what follows without announcing “This essay will…”
 
@@ -116,7 +116,7 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** Five intro endings.
 
-### Day 9 — Inside-paragraph order
+### Day 9: Inside-paragraph order
 
 **Focus:** General → specific → significance.
 
@@ -124,7 +124,7 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** Reordered paragraph + one-sentence explanation of the new order.
 
-### Day 10 — Contrast paragraphs that do not collide
+### Day 10: Contrast paragraphs that do not collide
 
 **Focus:** “On the one hand / on the other hand” used with real opposition.
 
@@ -132,15 +132,15 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** Paired contrast paragraphs.
 
-### Day 11 — Cohesion for opinion essays
+### Day 11: Cohesion for opinion essays
 
 **Focus:** Keep your position visible without repeating “I think” every line.
 
-**Drill:** Write an agree/disagree body paragraph that maintains stance through language like *this policy, such a limit, that risk* — not repeated “I believe.”
+**Drill:** Write an agree/disagree body paragraph that maintains stance through language like *this policy, such a limit, that risk*, not repeated “I believe.”
 
 **Output:** One stance-consistent paragraph. Compare with [Band 7.5 opinion sample](/blog/task-2-opinion-essay-band-7-5).
 
-### Day 12 — Conclusions that do not add new ideas
+### Day 12: Conclusions that do not add new ideas
 
 **Focus:** Summarise and close.
 
@@ -148,7 +148,7 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** Three clean conclusions.
 
-### Day 13 — Full rewrite of Day 7 essay
+### Day 13: Full rewrite of Day 7 essay
 
 **Focus:** Transfer learning.
 
@@ -156,7 +156,7 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 **Output:** Rewrite ready for final check.
 
-### Day 14 — Second timed essay + compare
+### Day 14: Second timed essay + compare
 
 **Focus:** Measure CC movement.
 
@@ -189,10 +189,10 @@ If Task Response is much lower than CC, fix idea development first using [Band 6
 
 You do not need artistic transitions. You need:
 
-1. A reader who can predict each paragraph from its first sentence  
-2. Ideas that progress instead of restarting  
-3. References that point clearly  
-4. A conclusion that closes the same argument you opened  
+1. A reader who can predict each paragraph from its first sentence 
+2. Ideas that progress instead of restarting 
+3. References that point clearly 
+4. A conclusion that closes the same argument you opened 
 
 Compare undeveloped Band 6 organisation in the [education sample](/blog/task-2-sample-band-6-education) with cleaner progression in the [technology Band 7 sample](/blog/task-2-sample-band-7-technology). Notice that Band 7 uses fewer decorative linkers, not more.
 
@@ -229,16 +229,16 @@ Academic Task 1 coherence means overview → grouped details → comparisons, no
 
 ## How this plan fits IELTS AI Tutor
 
-Coherence problems are pattern problems. After a few submissions, [IELTS AI Tutor](/ielts-ai-tutor) can surface repeated CC issues — weak topic sentences, mixed paragraphs, overused connectors — and turn them into learning focus. If you want a productised version of diagnose → plan → sprint, read [mock exam to 14-day sprint](/blog/mock-exam-to-14-day-sprint) and [personalized learning editions](/blog/personalized-learning-editions-guide).
+Coherence problems are pattern problems. After a few submissions, [IELTS AI Tutor](/ielts-ai-tutor) can surface repeated CC issues, weak topic sentences, mixed paragraphs, overused connectors, and turn them into learning focus. If you want a productised version of diagnose → plan → sprint, read [mock exam to 14-day sprint](/blog/mock-exam-to-14-day-sprint) and [personalized learning editions](/blog/personalized-learning-editions-guide).
 
 When you submit on Days 7 and 14, read Coherence comments first. Ignore the temptation to chase Lexical Resource synonyms until paragraph logic is stable. Taxonomy codes for CC issues live in [writing error taxonomy](/blog/ielts-writing-error-taxonomy).
 
 ## After Day 14
 
-- If CC rose but TR is now lowest, switch to idea-development drills using [Band 6 vs 7 Task 2](/blog/band-6-vs-7-task-2).  
-- If CC is still flat, slow down planning: spend 8 minutes outlining before every timed essay for one more week.  
-- If overall remains 6.5 with CC as the cap, repeat Days 2–7 only before another full fortnight — see [plateau guide](/blog/stuck-at-band-6-5-plateau).  
-- If CC improved under untimed conditions but fell in the timed Day 14 essay, your issue is performance, not knowledge — add two partial timed tasks next week.
+- If CC rose but TR is now lowest, switch to idea-development drills using [Band 6 vs 7 Task 2](/blog/band-6-vs-7-task-2). 
+- If CC is still flat, slow down planning: spend 8 minutes outlining before every timed essay for one more week. 
+- If overall remains 6.5 with CC as the cap, repeat Days 2–7 only before another full fortnight, see [plateau guide](/blog/stuck-at-band-6-5-plateau). 
+- If CC improved under untimed conditions but fell in the timed Day 14 essay, your issue is performance, not knowledge, add two partial timed tasks next week.
 
 ## Next steps
 

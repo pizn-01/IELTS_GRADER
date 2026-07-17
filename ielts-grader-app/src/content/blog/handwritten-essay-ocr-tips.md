@@ -1,7 +1,7 @@
 ---
 title: "Handwritten IELTS Essays: OCR Tips for Clear AI Feedback | IELTS AI Tutor"
 slug: handwritten-essay-ocr-tips
-description: "How to photograph or scan handwritten IELTS essays for accurate OCR and better AI tutor feedback — practical tips from IELTS AI Tutor."
+description: "How to photograph or scan handwritten IELTS essays for accurate OCR and better AI tutor feedback, practical tips from IELTS AI Tutor."
 keyword: handwritten IELTS essay OCR
 type: guide
 status: published
@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # Handwritten IELTS Essays: OCR Tips for Clear AI Feedback
 
-If you take paper-based IELTS — or simply prefer handwriting practice — you may upload photos of essays for AI feedback. **OCR** (optical character recognition) turns handwriting into text. When the scan is poor, feedback quality drops for reasons that have nothing to do with your English.
+If you take paper-based IELTS, or simply prefer handwriting practice, you may upload photos of essays for AI feedback. **OCR** (optical character recognition) turns handwriting into text. When the scan is poor, feedback quality drops for reasons that have nothing to do with your English.
 
 This practical guide from **IELTS AI Tutor by IELTSGRADER** helps you capture scripts so your tutor report reflects your writing, not camera noise.
 
@@ -43,7 +43,7 @@ Fix the capture first; then trust the [essay checker](/ielts-essay-checker) note
 - Avoid writing over erasures; strike lightly and rewrite beside if needed  
 - Do not use extreme cursive joins that merge words  
 
-Legibility helps official examiners too — OCR tips are also exam tips.
+Legibility helps official examiners too: OCR tips are also exam tips.
 
 ## Lighting and camera checklist
 
@@ -55,7 +55,7 @@ Before you tap the shutter:
 - [ ] Phone camera lens clean  
 - [ ] Page fills the frame without cutting margins  
 - [ ] Camera parallel to the page (not angled)  
-- [ ] Image sharp — tap to focus on the text  
+- [ ] Image sharp, tap to focus on the text  
 
 Avoid photographing under yellow night lights if the text becomes muddy.
 
@@ -79,7 +79,7 @@ Never submit blindly. Spend two minutes on a **human proof of the OCR**:
 3. Restore missing line breaks between paragraphs if the tool mashed them together.  
 4. Fix obvious misreads (*modem* → *modern*, *tile* → *the*).  
 
-You are not “cheating” by correcting OCR — you are ensuring the tutor grades *your* essay. Do not rewrite the essay into a better version during this step if you want an accurate diagnosis of the handwritten attempt.
+You are not “cheating” by correcting OCR, you are ensuring the tutor grades *your* essay. Do not rewrite the essay into a better version during this step if you want an accurate diagnosis of the handwritten attempt.
 
 ## Common OCR failure patterns
 
@@ -104,7 +104,7 @@ Then upload for feedback using the checklist above. Pair with [mock writing prac
 
 ## Computer-delivered candidates
 
-If your official test is computer-delivered, prioritise typed practice. You can still handwriting-brainstorm plans on paper, then type the essay for checking — reducing OCR risk entirely.
+If your official test is computer-delivered, prioritise typed practice. You can still handwriting-brainstorm plans on paper, then type the essay for checking, reducing OCR risk entirely.
 
 Match practice medium to test medium when it counts.
 

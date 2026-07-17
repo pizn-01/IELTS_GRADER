@@ -31,8 +31,8 @@ export default function LearningMaterialPromo() {
   if (!hasUnlocked && !nearUnlock) return null;
 
   const message = hasUnlocked
-    ? `Edition ${maxUnlockedEdition} is ready — preview your error patterns and generate your free personalized PDF.`
-    : `${progressToNextEdition.completed} of 5 exams done — unlock your first Personalized Learning guide soon.`;
+    ? `Edition ${maxUnlockedEdition} is ready. Preview your error patterns and generate your free personalized PDF.`
+    : `${progressToNextEdition.completed} of 5 exams done. Unlock your first Personalized Learning guide soon.`;
 
   return (
     <div className="mt-8 bg-gradient-to-r from-[#EFF6FF] to-[#F0FDF4] border border-[#BFDBFE] rounded-[16px] px-5 py-4 flex items-center gap-4">

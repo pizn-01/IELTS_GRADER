@@ -16,7 +16,7 @@ const FAQ = () => {
     },
     {
       q: 'How accurate is the AI?',
-      a: "Every essay is graded by our Dual-AI Engine — a primary examiner model that scores your writing in detail, cross-checked by a second, independent model against official IELTS band descriptors. This keeps your band scores consistent and reliable, not just a single AI's guess."
+      a: "Every essay is graded by our Dual-AI Engine, a primary examiner model that scores your writing in detail, cross-checked by a second, independent model against official IELTS band descriptors. This keeps your band scores consistent and reliable, not just a single AI's guess."
     },
     {
       q: "What's the difference between Academic and General Training?",
@@ -28,19 +28,19 @@ const FAQ = () => {
     },
     {
       q: 'What exactly is in my evaluation report?',
-      a: 'Your report includes an overall band score plus individual bands for Task Response, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy — along with strengths, weaknesses, high-impact fixes, sentence-by-sentence error corrections, a Band 8+ model answer, and a full vocabulary and grammar breakdown.'
+      a: 'Your report includes an overall band score plus individual bands for Task Response, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy, along with strengths, weaknesses, high-impact fixes, sentence-by-sentence error corrections, a Band 8+ model answer, and a full vocabulary and grammar breakdown.'
     },
     {
       q: 'How long does it take to get my results?',
-      a: 'Most evaluations are ready in under 60 seconds. Paste or upload your essay (or finish a mock exam), and your full report — band scores, fix cards, and all — is generated automatically.'
+      a: 'Most evaluations are ready in under 60 seconds. Paste or upload your essay (or finish a mock exam), and your full report (band scores, fix cards, and all) is generated automatically.'
     },
     {
       q: 'How do credits and pricing work?',
-      a: 'Every account starts with 1 free evaluation credit. After that, you can choose a plan on our Pricing page — from a fixed number of evaluations per week to unlimited monthly access — depending on how intensively you want to practice.'
+      a: 'Every account starts with 1 free evaluation credit. After that, you can choose a plan on our Pricing page, from a fixed number of evaluations per week to unlimited monthly access, depending on how intensively you want to practice.'
     },
     {
       q: 'Can I practice under real exam conditions?',
-      a: "Yes — our Mock Exam mode simulates the real computer-based IELTS writing test, complete with timing, so you can build the speed and stamina you'll need on test day, not just get feedback on writing you already had time to polish."
+      a: "Yes. Our Mock Exam mode simulates the real computer-based IELTS writing test, complete with timing, so you can build the speed and stamina you'll need on test day, not just get feedback on writing you already had time to polish."
     },
     {
       q: 'Is my writing and personal data kept private?',

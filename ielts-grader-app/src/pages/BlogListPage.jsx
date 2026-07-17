@@ -27,7 +27,7 @@ export default function BlogListPage() {
         eyebrow: 'IELTS AI Tutor by IELTSGRADER',
         title: 'IELTS Writing Blog',
         subtitle:
-          'Guides, scored samples, and study plans from your AI writing tutor — built to help you move from feedback to a higher band.',
+          'Guides, scored samples, and study plans from your AI writing tutor, built to help you move from feedback to a higher band.',
         actions: (
           <>
             <SeoPrimaryButton to="/ielts-essay-checker">Check your essay free</SeoPrimaryButton>
@@ -37,7 +37,7 @@ export default function BlogListPage() {
       }}
     >
       <SeoHead
-        title="IELTS Writing Blog — Tips, Samples & AI Tutor Guides | IELTSGRADER"
+        title="IELTS Writing Blog: Tips, Samples & AI Tutor Guides | IELTSGRADER"
         description="IELTS writing guides, band score samples, and study plans from your AI tutor. Task 1, Task 2, mock exams, error taxonomy, and more."
         path="/blog"
       />

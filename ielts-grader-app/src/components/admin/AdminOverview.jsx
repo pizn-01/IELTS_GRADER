@@ -292,7 +292,7 @@ export default function AdminOverview({ onNavigateTab }) {
         <div className="lg:col-span-1">
           <DashboardPanel title={`Needs attention · ${periodShort}`}>
             {!needsAttention ? (
-              <p className="text-[12px] text-gray-400 py-2">All clear — nothing needs attention.</p>
+              <p className="text-[12px] text-gray-400 py-2">All clear. Nothing needs attention.</p>
             ) : (
               <>
                 <AttentionRow

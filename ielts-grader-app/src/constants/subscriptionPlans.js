@@ -20,7 +20,7 @@ export const SUBSCRIPTION_PLANS = {
 
 export const SUBSCRIPTION_FEATURES = [
   '20 full evaluations per week (Weekly) or 100 per month (Monthly)',
-  'All task types — Academic & General Training',
+  'All task types: Academic & General Training',
   'Detailed band report, fix cards & grammar analysis',
   'Personalized learning guides',
 ];

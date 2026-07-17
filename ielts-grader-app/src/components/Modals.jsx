@@ -127,7 +127,7 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
   if (credits !== null && credits > 2) return null; // hide when user has enough credits
 
   const message = credits === 0
-    ? `You've used all your evaluation credits. Subscribe to keep practicing — Weekly ${WEEKLY.label} (${WEEKLY.credits} exams) or Monthly ${MONTHLY.label} (${MONTHLY.credits} exams).`
+    ? `You've used all your evaluation credits. Subscribe to keep practicing: Weekly ${WEEKLY.label} (${WEEKLY.credits} exams) or Monthly ${MONTHLY.label} (${MONTHLY.credits} exams).`
     : `Only ${credits} evaluation credit${credits === 1 ? '' : 's'} remaining. Subscribe to Monthly Mastery for ${MONTHLY.credits} exams/month.`;
 
   return (

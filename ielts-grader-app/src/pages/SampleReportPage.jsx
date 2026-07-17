@@ -8,7 +8,7 @@ const REPORT_SHOTS = [
     src: '/images/Group 1597890526.png',
     alt: 'IELTS writing report mockup showing band scores and fix cards',
     title: 'Full report at a glance',
-    body: 'Overall band, four criterion scores, and sentence-level fix cards in one view — the same layout you get after every evaluation.',
+    body: 'Overall band, four criterion scores, and sentence-level fix cards in one view. The same layout you get after every evaluation.',
   },
   {
     src: '/images/Overview.png',
@@ -20,7 +20,7 @@ const REPORT_SHOTS = [
     src: '/images/features-cards.png',
     alt: 'Sample fix cards and writing feedback cards from an IELTS report',
     title: 'Fix cards & rewrites',
-    body: 'Each weak sentence becomes a card with the issue, a clearer rewrite, and why it matters for your band — not a vague comment at the end.',
+    body: 'Each weak sentence becomes a card with the issue, a clearer rewrite, and why it matters for your band. Not a vague comment at the end.',
   },
 ];
 
@@ -45,7 +45,7 @@ export default function SampleReportPage() {
         eyebrow: 'Sample report',
         title: 'See exactly what your IELTS writing report looks like',
         subtitle:
-          'Stop guessing. Here is the same report design students get after uploading an essay — band scores, fix cards, and a clear path to Band 7.5+.',
+          'Stop guessing. Here is the same report design students get after uploading an essay: band scores, fix cards, and a clear path to Band 7.5+.',
         actions: (
           <>
             <SeoPrimaryButton to="/signup">Get your free report</SeoPrimaryButton>
@@ -56,7 +56,7 @@ export default function SampleReportPage() {
     >
       <SeoHead
         title="Sample IELTS Writing Report | IELTS AI Tutor by IELTSGRADER"
-        description="Preview a real IELTSGRADER writing report: criterion band scores, sentence fix cards, vocabulary notes, and model answers — before you submit your own essay."
+        description="Preview a real IELTSGRADER writing report: criterion band scores, sentence fix cards, vocabulary notes, and model answers before you submit your own essay."
         path="/sample-report"
       />
 
@@ -66,7 +66,7 @@ export default function SampleReportPage() {
             What you get in every report
           </h2>
           <p className="text-[16px] text-[#6B7280] leading-relaxed mb-8 max-w-2xl">
-            Built to match how IELTS writing is scored — so practice feedback maps to the criteria examiners use.
+            Built to match how IELTS writing is scored, so practice feedback maps to the criteria examiners use.
           </p>
           <ul className="grid sm:grid-cols-2 gap-3 list-none p-0 m-0">
             {HIGHLIGHTS.map((item) => (
@@ -130,7 +130,7 @@ export default function SampleReportPage() {
 
         <SeoCta
           title="Ready for your own report?"
-          subtitle="Paste or upload an essay and get the same band breakdown and fix cards in about 60 seconds — first evaluation free."
+          subtitle="Paste or upload an essay and get the same band breakdown and fix cards in about 60 seconds. First evaluation free."
           label="Start free evaluation"
           href="/signup"
         />

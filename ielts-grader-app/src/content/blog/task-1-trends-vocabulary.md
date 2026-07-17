@@ -1,7 +1,7 @@
 ---
 title: "Academic Task 1: Describe Trends Without Repeating Vocabulary | IELTS AI Tutor"
 slug: task-1-trends-vocabulary
-description: "12 ways to describe trends in IELTS Academic Task 1 without repeating 'increase' and 'decrease' — from your AI tutor."
+description: "12 ways to describe trends in IELTS Academic Task 1 without repeating 'increase' and 'decrease', from your AI tutor."
 keyword: IELTS Task 1 trends
 type: guide
 status: published
@@ -13,7 +13,7 @@ author: IELTS AI Tutor Team
 
 In Academic Task 1, candidates often lose Lexical Resource marks for one simple reason: they write *increase* and *decrease* eight times. Examiners have read thousands of scripts; repetition stands out.
 
-This guide from **IELTS AI Tutor by IELTSGRADER** gives you precise trend language, example sentences, and a practice method so your overview and details sound controlled — not copy-pasted from a memorised list.
+This guide from **IELTS AI Tutor by IELTSGRADER** gives you precise trend language, example sentences, and a practice method so your overview and details sound controlled, not copy-pasted from a memorised list.
 
 ## What “good” trend vocabulary actually means
 
@@ -50,11 +50,11 @@ If you need a full model, see the [Band 7 bar chart sample](/blog/task-1-bar-cha
 
 ## 3. Verbs for stability and fluctuation
 
-- **remain stable / remain steady / stay constant** — little change
-- **level off / plateau** — rise or fall then flatten
-- **fluctuate** — repeated ups and downs
-- **vary** — differences between categories (not always a time trend)
-- **hover around** — stay near a value with small movement
+- **remain stable / remain steady / stay constant**, little change
+- **level off / plateau**, rise or fall then flatten
+- **fluctuate**, repeated ups and downs
+- **vary**, differences between categories (not always a time trend)
+- **hover around**, stay near a value with small movement
 
 **Example:** After climbing to 60%, the proportion **levelled off** for the next three years.
 
@@ -95,7 +95,7 @@ Accuracy here also supports Task Achievement.
 
 Trend vocabulary alone is not enough. Compare:
 
-- **while / whereas** — X rose, whereas Y fell
+- **while / whereas**: X rose, whereas Y fell
 - **compared with / relative to**
 - **the largest increase** / **the most marked decline**
 - **twice as high as** / **three times higher than** (check the data)
@@ -164,13 +164,13 @@ For exam simulation with Task 2, use the [mock writing test](/ielts-mock-writing
 
 ## How your AI tutor helps with trend language
 
-[IELTS AI Tutor](/ielts-ai-tutor) flags repeated verbs, imprecise degree words (*skyrocket* for a small rise), and missing overviews — all of which affect Lexical Resource and Task Achievement. Fix cards often suggest natural alternatives in context, which is more useful than a static synonym list.
+[IELTS AI Tutor](/ielts-ai-tutor) flags repeated verbs, imprecise degree words (*skyrocket* for a small rise), and missing overviews, all of which affect Lexical Resource and Task Achievement. Fix cards often suggest natural alternatives in context, which is more useful than a static synonym list.
 
 ## Common Task 1 vocabulary mistakes
 
 1. Describing every year instead of selecting key trends  
 2. Using *percent* and *percentage points* interchangeably  
-3. Inventing reasons (*because of the economy*) — Task 1 is description, not opinion  
+3. Inventing reasons (*because of the economy*): Task 1 is description, not opinion  
 4. Copying the question rubric word-for-word without paraphrase  
 5. Mixing past and present tense randomly (match the time period on the chart)
 

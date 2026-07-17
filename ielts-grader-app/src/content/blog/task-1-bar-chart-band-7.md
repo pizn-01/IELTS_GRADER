@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # Task 1 Bar Chart Sample Answer Band 7 with Tutor Notes
 
-Academic Task 1 rewards a clear overview, accurate data selection, and controlled comparisons — not a catalogue of every bar. This **Band 7** sample from **IELTS AI Tutor by IELTSGRADER** shows a full report with tutor notes on what examiners look for.
+Academic Task 1 rewards a clear overview, accurate data selection, and controlled comparisons, not a catalogue of every bar. This **Band 7** sample from **IELTS AI Tutor by IELTSGRADER** shows a full report with tutor notes on what examiners look for.
 
 ## The task (practice prompt)
 
@@ -86,15 +86,15 @@ Comparisons are the point of a multi-category bar chart. See more options in [tr
 
 ## Fix cards if your Task 1 is stuck at Band 6
 
-### Fix card 1 — Write the overview before the details
+### Fix card 1: Write the overview before the details
 
 After reading the chart for one minute, write two overview sentences with **no more than one number** (or none). Then write details.
 
-### Fix card 2 — Group by story, not by year only
+### Fix card 2: Group by story, not by year only
 
 Instead of “2000 paragraph, 2010 paragraph, 2020 paragraph” with no thread, group by *who changed most* vs *who stayed high*.
 
-### Fix card 3 — Replace repeated *increase*
+### Fix card 3: Replace repeated *increase*
 
 Use *climb, rise, edge up, grow* and noun forms (*growth, upward trend*) where accurate. Keep degree words honest (*slightly* vs *sharply*).
 
@@ -121,7 +121,7 @@ Redraw the table with different numbers and rewrite the overview only. Or conver
 
 ## How IELTS AI Tutor scores Task 1
 
-The tutor checks for overview quality, coverage of main features, comparison, and language control — aligned to public band descriptors. Submit Academic Task 1 through the [essay checker](/ielts-essay-checker) and read criterion notes before your next timed attempt. Learn more at [IELTS AI Tutor](/ielts-ai-tutor).
+The tutor checks for overview quality, coverage of main features, comparison, and language control, aligned to public band descriptors. Submit Academic Task 1 through the [essay checker](/ielts-essay-checker) and read criterion notes before your next timed attempt. Learn more at [IELTS AI Tutor](/ielts-ai-tutor).
 
 ## Related reading
 

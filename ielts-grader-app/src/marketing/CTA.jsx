@@ -13,7 +13,7 @@ const CTA = () => {
               href="#"
               className="inline-block bg-[#1a1f36] text-white px-8 py-4 rounded-[12px] text-[16px] font-bold no-underline hover:bg-[#2a2f46] transition-all shadow-md active:scale-[0.98]"
             >
-              Get started — it's free!
+              Get started. It's free!
             </a>
           </div>
 

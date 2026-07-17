@@ -1,7 +1,7 @@
 ---
 title: "From Feedback to Study Plan: Using Your IELTS AI Tutor Report | IELTS AI Tutor"
 slug: feedback-to-study-plan
-description: "Turn IELTS AI Tutor feedback into a study plan — prioritize criteria, schedule rewrites, and track band progress."
+description: "Turn IELTS AI Tutor feedback into a study plan, prioritize criteria, schedule rewrites, and track band progress."
 keyword: IELTS writing study plan
 type: guide
 status: published
@@ -24,7 +24,7 @@ Opening a report and reading “Band 6.5” does not improve Coherence. Improvem
 
 Your AI tutor report is the input. The study plan is the output.
 
-## Step 1 — Read the report in the right order
+## Step 1: Read the report in the right order
 
 Ignore the overall band for five minutes. Look at:
 
@@ -35,11 +35,11 @@ Ignore the overall band for five minutes. Look at:
 | 3 | Second-lowest criterion | Backup focus if time allows |
 | 4 | Overall band | Context only |
 
-If Task Response is 6 and Grammar is 7.5, grammar drills are not your priority — even if error highlighting feels satisfying.
+If Task Response is 6 and Grammar is 7.5, grammar drills are not your priority, even if error highlighting feels satisfying.
 
 Refresh criteria meanings in [how IELTS writing is scored](/blog/how-ielts-writing-is-scored).
 
-## Step 2 — Translate scores into a weekly goal
+## Step 2: Translate scores into a weekly goal
 
 Use one sentence:
 
@@ -54,7 +54,7 @@ Examples:
 
 One goal beats five vague intentions.
 
-## Step 3 — Build a 7-day plan from fix cards
+## Step 3: Build a 7-day plan from fix cards
 
 ### Template
 
@@ -78,7 +78,7 @@ Borrow structure from the [14-day Coherence plan](/blog/coherence-cohesion-14-da
 
 Study [Band 6 vs 7](/blog/band-6-vs-7-task-2) examples; practise claim → explain → example; rewrite one thin body paragraph daily for four days.
 
-## Step 4 — Always schedule a rewrite
+## Step 4: Always schedule a rewrite
 
 Feedback without rewrite is entertainment.
 
@@ -90,7 +90,7 @@ Feedback without rewrite is entertainment.
 
 Then write a **new** timed prompt so you transfer the skill beyond one essay.
 
-## Step 5 — Use mocks as checkpoints, not daily fuel
+## Step 5: Use mocks as checkpoints, not daily fuel
 
 Full mocks are for measurement and timing. Daily work should be targeted.
 
@@ -102,7 +102,7 @@ Recommended rhythm:
 
 Details: [mock writing practice guide](/blog/ielts-mock-writing-practice-guide) and [mock exam to 14-day sprint](/blog/mock-exam-to-14-day-sprint).
 
-## Step 6 — Track progress in a simple log
+## Step 6: Track progress in a simple log
 
 | Week | Target criterion | Start | End | Notes |
 |------|------------------|-------|-----|-------|
@@ -125,25 +125,25 @@ That is the tutor positioning: feedback that leads somewhere.
 
 ## Sample plans by profile
 
-### Profile A — Strong grammar, weak structure
+### Profile A: Strong grammar, weak structure
 
 - Priority: Coherence  
 - Tools: paragraph job maps, [CC 14-day plan](/blog/coherence-cohesion-14-day-plan)  
 - Avoid: advanced grammar YouTube rabbit holes  
 
-### Profile B — Good ideas, repetitive vocabulary
+### Profile B: Good ideas, repetitive vocabulary
 
 - Priority: Lexical Resource  
 - Tools: [trends vocabulary](/blog/task-1-trends-vocabulary) (Task 1), [LR Band 6→7](/blog/lexical-resource-band-6-to-7)  
 - Avoid: thesaurus stuffing  
 
-### Profile C — Misses parts of the question / bullets
+### Profile C: Misses parts of the question / bullets
 
 - Priority: TR or TA  
 - Tools: bullet ticks for GT ([letter checklist](/blog/gt-formal-letter-checklist)), overview-first for Academic Task 1, opinion consistency checks for Task 2  
 - Avoid: writing longer introductions  
 
-### Profile D — Everything around 6.5
+### Profile D: Everything around 6.5
 
 - Priority: lowest criterion this week only  
 - Tools: weekly mock + surgical drills  

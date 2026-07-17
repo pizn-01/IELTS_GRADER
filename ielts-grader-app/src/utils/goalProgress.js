@@ -23,8 +23,8 @@ export function dashboardGoalSubtitle({ latestBand, targetBand, creditsRemaining
   const credits = `${creditsRemaining} evaluation credit${creditsRemaining === 1 ? '' : 's'} remaining`;
 
   if (latestBand != null && Number(latestBand) >= Number(targetBand)) {
-    return `You've reached Band ${bandLabel}! — ${credits}.`;
+    return `You've reached Band ${bandLabel}!, ${credits}.`;
   }
 
-  return `You're on track for Band ${bandLabel} — ${credits}.`;
+  return `You're on track for Band ${bandLabel}, ${credits}.`;
 }

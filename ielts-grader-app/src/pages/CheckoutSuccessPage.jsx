@@ -91,7 +91,7 @@ const CheckoutSuccessPage = () => {
             </div>
             <h1 className="text-[24px] font-bold text-[#1a1f36] mb-2">Payment received</h1>
             <p className="text-[14px] text-[#4B5563] mb-6">
-              Your payment was processed. Credits may take a moment to appear — refresh your dashboard if they haven't shown up yet.
+              Your payment was processed. Credits may take a moment to appear. Refresh your dashboard if they haven't shown up yet.
             </p>
             <button
               onClick={() => navigate('/dashboard')}

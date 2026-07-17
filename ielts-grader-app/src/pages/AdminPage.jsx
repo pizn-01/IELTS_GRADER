@@ -220,7 +220,7 @@ const UsersTab = () => {
           <div className="relative bg-white rounded-[20px] w-[380px] p-7 shadow-2xl space-y-5">
             <h3 className="text-[16px] font-bold text-[#101828]">Delete User</h3>
             <p className="text-[13px] text-gray-500 leading-relaxed">
-              Are you sure you want to permanently delete <span className="font-bold text-[#101828]">{deleting.full_name || deleting.email}</span>? This cannot be undone — all their data will be removed.
+              Are you sure you want to permanently delete <span className="font-bold text-[#101828]">{deleting.full_name || deleting.email}</span>? This cannot be undone. All their data will be removed.
             </p>
             <div className="flex gap-3 pt-2">
               <button onClick={() => setDeleting(null)} className="flex-1 h-[40px] border border-gray-200 rounded-[10px] text-[13px] font-bold text-gray-500">Cancel</button>
@@ -235,7 +235,7 @@ const UsersTab = () => {
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditing(null)} />
           <div className="relative bg-white rounded-[20px] w-[380px] p-7 shadow-2xl space-y-5">
-            <h3 className="text-[16px] font-bold text-[#101828]">Edit — {editing.full_name || editing.email}</h3>
+            <h3 className="text-[16px] font-bold text-[#101828]">Edit: {editing.full_name || editing.email}</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-[12px] font-bold text-gray-500 block mb-1">Credits Remaining</label>
@@ -1756,7 +1756,7 @@ const TasksTab = () => {
             </p>
             {(deletingTask.usage_count ?? 0) > 0 && (
               <p className="text-[12px] text-amber-600 bg-amber-50 rounded-[8px] px-3 py-2 mt-3">
-                {deletingTask.usage_count} submission{deletingTask.usage_count !== 1 ? 's' : ''} reference this task — they will keep their scores but lose the task link.
+                {deletingTask.usage_count} submission{deletingTask.usage_count !== 1 ? 's' : ''} reference this task. They will keep their scores but lose the task link.
               </p>
             )}
             <div className="flex gap-3 mt-5">

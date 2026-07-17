@@ -1,7 +1,7 @@
 ---
 title: "Academic vs General Training Writing: Which Path and How to Practise | IELTS AI Tutor"
 slug: academic-vs-general-training-writing
-description: "Academic vs General Training IELTS Writing compared — Task 1 differences, shared Task 2 skills, and how to practise with an AI tutor."
+description: "Academic vs General Training IELTS Writing compared: Task 1 differences, shared Task 2 skills, and how to practise with an AI tutor."
 keyword: Academic vs General Training IELTS Writing
 type: comparison
 status: published
@@ -11,7 +11,7 @@ author: IELTS AI Tutor Team
 
 # Academic vs General Training Writing: Which Path and How to Practise
 
-IELTS Writing is not identical for every candidate. **Academic** and **General Training (GT)** share Task 2 essay skills and the same four scoring criteria — but Task 1 is a different genre. Choosing the wrong practice materials wastes weeks.
+IELTS Writing is not identical for every candidate. **Academic** and **General Training (GT)** share Task 2 essay skills and the same four scoring criteria, but Task 1 is a different genre. Choosing the wrong practice materials wastes weeks.
 
 This comparison from **IELTS AI Tutor by IELTSGRADER** clarifies the differences and how to train for your module.
 
@@ -25,7 +25,7 @@ This comparison from **IELTS AI Tutor by IELTSGRADER** clarifies the differences
 | Timing | 60 minutes total | 60 minutes total |
 | Word counts | 150+ / 250+ | 150+ / 250+ |
 
-Which module you take depends on your institution, visa, or professional requirement — not on which feels easier.
+Which module you take depends on your institution, visa, or professional requirement, not on which feels easier.
 
 ## Task 1: the real fork in the road
 
@@ -59,13 +59,13 @@ Both modules require:
 - Precise vocabulary  
 - Controlled grammar  
 
-GT Task 2 topics can feel more practical (work, community, daily life), while Academic topics may lean more abstract — but the essay skills transfer. Samples across bands help both audiences: [Band 6 education](/blog/task-2-sample-band-6-education), [Band 7 technology](/blog/task-2-sample-band-7-technology), [Band 7.5 opinion](/blog/task-2-opinion-essay-band-7-5).
+GT Task 2 topics can feel more practical (work, community, daily life), while Academic topics may lean more abstract, but the essay skills transfer. Samples across bands help both audiences: [Band 6 education](/blog/task-2-sample-band-6-education), [Band 7 technology](/blog/task-2-sample-band-7-technology), [Band 7.5 opinion](/blog/task-2-opinion-essay-band-7-5).
 
 ## Scoring: same engine, different Task 1 evidence
 
 Your Writing band averages four criteria. The names Task Achievement vs Task Response depend on the task, not the module brand. Full primer: [how IELTS writing is scored](/blog/how-ielts-writing-is-scored).
 
-That means a GT candidate with perfect essays but incomplete letters can still be capped — and an Academic candidate with strong essays but no overview faces the same logic.
+That means a GT candidate with perfect essays but incomplete letters can still be capped, and an Academic candidate with strong essays but no overview faces the same logic.
 
 ## Which module should you take?
 
@@ -75,7 +75,7 @@ You usually do **not** choose freely. Check:
 - Immigration guidance for your destination  
 - The module on your registration confirmation  
 
-If you truly have a choice, decide based on requirements and your strengths — not on blog myths that “GT is always easier.” GT letters demand precise task coverage; Academic visuals demand data literacy. Different hard.
+If you truly have a choice, decide based on requirements and your strengths, not on blog myths that “GT is always easier.” GT letters demand precise task coverage; Academic visuals demand data literacy. Different hard.
 
 ## Practice plans by module
 
@@ -127,7 +127,7 @@ Confirm you select the correct task type when submitting so Task Achievement vs 
 
 ## Topic difficulty myths
 
-“GT is easier” usually means “GT Task 1 feels more familiar than charts.” That familiarity disappears when a formal letter needs three detailed bullets and precise tone. Likewise, “Academic is harder” often means discomfort with data language — which improves quickly with [trends vocabulary](/blog/task-1-trends-vocabulary) drills.
+“GT is easier” usually means “GT Task 1 feels more familiar than charts.” That familiarity disappears when a formal letter needs three detailed bullets and precise tone. Likewise, “Academic is harder” often means discomfort with data language, which improves quickly with [trends vocabulary](/blog/task-1-trends-vocabulary) drills.
 
 Task 2 difficulty depends more on your idea development and coherence than on the module label. A GT candidate still needs Band 7 essay skills for a Band 7 Writing score.
 
@@ -150,7 +150,7 @@ If you must switch:
 - Take a diagnostic mock in the new format immediately  
 - Rebuild a 14-day sprint around the new Task 1 weakness ([mock to sprint](/blog/mock-exam-to-14-day-sprint))  
 
-Learning editions can pivot to letter or chart patterns — [personalized learning editions](/blog/personalized-learning-editions-guide).
+Learning editions can pivot to letter or chart patterns, [personalized learning editions](/blog/personalized-learning-editions-guide).
 
 ## Next steps
 

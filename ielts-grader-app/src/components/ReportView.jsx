@@ -601,7 +601,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                       <h3 className="text-[16px] font-bold text-[#101828] mb-1">Weaknesses</h3>
                       <p className="text-[14px] text-gray-500">Areas for improvement</p>
                     </div>
-                    <div className="p-4 md:p-8"><ul className="space-y-4 md:space-y-5">{(data?.weaknesses || ["Data accuracy issues — numerical values don't match reference", "Coverage gaps — misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-3 md:gap-4"><div className="mt-1 text-[#FF4D4D] shrink-0"><TrendingDown size={18} /></div><span className="text-[13px] md:text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-4 md:p-8"><ul className="space-y-4 md:space-y-5">{(data?.weaknesses || ["Data accuracy issues, numerical values don't match reference", "Coverage gaps, misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-3 md:gap-4"><div className="mt-1 text-[#FF4D4D] shrink-0"><TrendingDown size={18} /></div><span className="text-[13px] md:text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
                 </div>
 
@@ -1259,7 +1259,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         </div>
                         <p className="text-[14px] text-[#475467]">
                           <span className="font-bold text-[#101828]">Explanation:</span> {item.explanation_depth}
-                          {item.explanation_note && <em className="ml-1">— {item.explanation_note}</em>}
+                          {item.explanation_note && <em className="ml-1">({item.explanation_note})</em>}
                         </p>
                         {(item.missing_elements || []).length > 0 && (
                           <div className="bg-[#FEF2F2] rounded-[10px] p-4">
@@ -1419,7 +1419,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 <p className="text-[14px] text-[#475467]"><span className="font-bold text-[#101828]">Main Trends Captured:</span> {overview.main_trends_captured || 'N/A'}</p>
                 <p className="text-[14px] text-[#475467]">
                   <span className="font-bold text-[#101828]">Specific Data in Overview:</span>{' '}
-                  {overview.specific_data_in_overview ? <span className="text-[#EA4335] font-bold">Yes — remove data</span> : <span className="text-[#00C9B1] font-bold">No — correct</span>}
+                  {overview.specific_data_in_overview ? <span className="text-[#EA4335] font-bold">Yes: remove data</span> : <span className="text-[#00C9B1] font-bold">No: correct</span>}
                 </p>
                 <p className="text-[14px] text-[#475467]">
                   <span className="font-bold text-[#101828]">Consistent with Body:</span>{' '}
@@ -1566,7 +1566,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                         </div>
                         <p className="text-[14px] text-[#475467]">
                           <span className="font-bold">Specificity:</span> {bullet.specificity_level}
-                          {bullet.specificity_note && <span className="ml-1">— {bullet.specificity_note}</span>}
+                          {bullet.specificity_note && <span className="ml-1">({bullet.specificity_note})</span>}
                         </p>
                         {(bullet.missing_elements || []).length > 0 && <BulletList items={bullet.missing_elements} colorClass="text-[#EA4335]" />}
                         {bullet.recommendation && (
@@ -1584,7 +1584,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                     <h4 className="text-[15px] font-bold text-[#101828]">Closing Quality</h4>
                     <StarRating count={closing.overall_quality_stars || 0} />
                   </div>
-                  <p className="text-[14px] text-[#475467]"><span className="font-bold">Sign-off:</span> {closing.signoff_used || 'N/A'} — {closing.signoff_appropriate}</p>
+                  <p className="text-[14px] text-[#475467]"><span className="font-bold">Sign-off:</span> {closing.signoff_used || 'N/A'} ({closing.signoff_appropriate})</p>
                   {closing.recommendation && (
                     <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px] mt-4">{closing.recommendation}</div>
                   )}
@@ -1633,7 +1633,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               <div className="space-y-6">
                 {fallacies.map((f, i) => (
                   <div key={i} className="space-y-3 border-b border-[#E5E7EB] last:border-0 pb-6 last:pb-0">
-                    <h4 className="text-[15px] font-bold text-[#EA4335]">{f.type}{f.location ? ` — ${f.location}` : ''}</h4>
+                    <h4 className="text-[15px] font-bold text-[#EA4335]">{f.type}{f.location ? ` (${f.location})` : ''}</h4>
                     {f.problematic_text && (
                       <div className="bg-[#FEF2F2] border border-[#FEE2E2] rounded-[10px] p-4 text-[15px] font-semibold">"{f.problematic_text}"</div>
                     )}
@@ -1713,7 +1713,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                   <p className="text-[14px] text-[#475467]"><span className="font-bold text-[#101828]">Devices Used:</span> {cohesion.devices_used.join(', ')}</p>
                 )}
                 {(cohesion.devices_overused || []).map((d, i) => (
-                  <p key={i} className="text-[14px] text-[#EA4335]"><span className="font-bold">{d.device || d}</span>{d.count ? ` (${d.count}×)` : ''}{d.suggestion ? ` — ${d.suggestion}` : ''}</p>
+                  <p key={i} className="text-[14px] text-[#EA4335]"><span className="font-bold">{d.device || d}</span>{d.count ? ` (${d.count}×)` : ''}{d.suggestion ? `, ${d.suggestion}` : ''}</p>
                 ))}
                 {(cohesion.devices_underused || []).length > 0 && (
                   <div>
@@ -1723,7 +1723,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                 )}
                 {(cohesion.pronoun_reference_analysis || []).map((p, i) => (
                   <div key={i} className="border border-[#E5E7EB] rounded-[10px] p-4">
-                    <p className="text-[14px] font-bold text-[#101828]">"{p.pronoun}" — {p.clarity}</p>
+                    <p className="text-[14px] font-bold text-[#101828]">"{p.pronoun}" ({p.clarity})</p>
                     {p.context && <p className="text-[13px] text-[#475467] mt-1">{p.context}</p>}
                   </div>
                 ))}

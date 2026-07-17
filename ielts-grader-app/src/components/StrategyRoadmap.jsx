@@ -30,14 +30,14 @@ export default function StrategyRoadmap({
             <span className="text-[12px] font-bold text-[#047857] uppercase tracking-wider">Strongest area</span>
             <p className="text-[16px] font-semibold text-[#101828] mt-2">{strongestCrit.name}</p>
             {strongestCrit.avg != null && (
-              <p className="text-[13px] text-[#667085] mt-1">Avg {strongestCrit.avg.toFixed(1)} — keep stable while lifting weaker areas.</p>
+              <p className="text-[13px] text-[#667085] mt-1">Avg {strongestCrit.avg.toFixed(1)}. Keep stable while lifting weaker areas.</p>
             )}
           </div>
           <div className="bg-[#FFF1F3] border border-[#FECDD6] rounded-[14px] p-5">
             <span className="text-[12px] font-bold text-[#C01048] uppercase tracking-wider">Primary bottleneck</span>
             <p className="text-[16px] font-semibold text-[#101828] mt-2">{bottleneckCrit.name}</p>
             {bottleneckCrit.avg != null && (
-              <p className="text-[13px] text-[#667085] mt-1">Avg {bottleneckCrit.avg.toFixed(1)} — focus here for the fastest band gain.</p>
+              <p className="text-[13px] text-[#667085] mt-1">Avg {bottleneckCrit.avg.toFixed(1)}. Focus here for the fastest band gain.</p>
             )}
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function StrategyRoadmap({
                 <>
                   Focus on your top {Math.min(2, frequentErrors.length)} Fix Card
                   {frequentErrors.length !== 1 ? 's' : ''} for 7 days
-                  {top1 && <> — <strong className="text-[#101828]">{top1}</strong></>}
+                  {top1 && <>: <strong className="text-[#101828]">{top1}</strong></>}
                   {top2 && <>, <strong className="text-[#101828]">{top2}</strong></>}.
                 </>
               ) : (

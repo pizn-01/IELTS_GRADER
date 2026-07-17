@@ -1,5 +1,5 @@
 ---
-title: "IELTS Task 2 Sample Essay Band 7 — Annotated by Your Tutor | IELTS AI Tutor"
+title: "IELTS Task 2 Sample Essay Band 7: Annotated by Your Tutor | IELTS AI Tutor"
 slug: task-2-sample-band-7-technology
 description: "Band 7 IELTS Task 2 sample on technology with AI tutor annotations on strengths and next steps to Band 8."
 keyword: IELTS Task 2 band 7
@@ -9,9 +9,9 @@ publishedAt: 2026-07-10
 author: IELTS AI Tutor Team
 ---
 
-# IELTS Task 2 Sample Essay Band 7 — Annotated by Your Tutor
+# IELTS Task 2 Sample Essay Band 7: Annotated by Your Tutor
 
-This **Band 7** Task 2 sample shows what “good enough for 7” looks like in practice: a clear position, developed ideas, natural academic vocabulary, and controlled grammar — without needing rare words in every sentence. Annotations from **IELTS AI Tutor by IELTSGRADER** explain why each part works and what still separates Band 7 from Band 8.
+This **Band 7** Task 2 sample shows what “good enough for 7” looks like in practice: a clear position, developed ideas, natural academic vocabulary, and controlled grammar, without needing rare words in every sentence. Annotations from **IELTS AI Tutor by IELTSGRADER** explain why each part works and what still separates Band 7 from Band 8.
 
 **Prompt:** Some people think that technology has made life more complicated. Others believe it has made life easier. Discuss both views and give your own opinion.
 
@@ -25,7 +25,7 @@ Those who argue that technology complicates life often point to constant connect
 
 On the other hand, technology removes friction from many essential activities. Online banking, navigation apps, and remote communication save time that previous generations spent travelling, waiting in queues, or posting documents. Students can access lectures and practice materials without living near a major library, and patients can book appointments or receive reminders that reduce missed care. These gains are not trivial: they convert hours of logistics into minutes. The key point is not that technology is perfect, but that it reduces effort for high-frequency tasks.
 
-In my view, technology makes life easier in practical terms, but it can feel more complicated when users allow tools to dictate their attention. The same smartphone that simplifies travel planning can also interrupt deep work every few minutes. Therefore, the outcome depends less on technology itself and more on habits — turning off non-essential alerts, limiting multitasking, and choosing fewer apps that genuinely help. Used selectively, technology is a net simplification; used without limits, it becomes noise.
+In my view, technology makes life easier in practical terms, but it can feel more complicated when users allow tools to dictate their attention. The same smartphone that simplifies travel planning can also interrupt deep work every few minutes. Therefore, the outcome depends less on technology itself and more on habits, turning off non-essential alerts, limiting multitasking, and choosing fewer apps that genuinely help. Used selectively, technology is a net simplification; used without limits, it becomes noise.
 
 In conclusion, both views are understandable: digital life introduces new pressures, yet it also removes many traditional barriers. On balance, I believe technology makes everyday life easier, provided people manage their digital habits deliberately rather than accepting every new tool by default.
 
@@ -52,7 +52,7 @@ In conclusion, both views are understandable: digital life introduces new pressu
 
 > While digital tools can create new forms of complexity, I believe that, overall, technology makes life easier when it is used with clear boundaries.
 
-**Why it works:** Opinion is previewed early — helpful for Task Response — with a condition (*clear boundaries*) that the conclusion will echo.
+**Why it works:** Opinion is previewed early, helpful for Task Response, with a condition (*clear boundaries*) that the conclusion will echo.
 
 ### View 1 paragraph
 
@@ -72,7 +72,7 @@ In conclusion, both views are understandable: digital life introduces new pressu
 
 > These gains are not trivial: they convert hours of logistics into minutes.
 
-**Strength:** Evaluative sentence that explains significance — more than listing benefits.
+**Strength:** Evaluative sentence that explains significance, more than listing benefits.
 
 ### Opinion paragraph
 
@@ -95,20 +95,20 @@ Band 8 scripts typically show:
 - Ideas that feel insightful rather than solidly competent
 - Cohesion that is subtle and effortless throughout
 
-This Band 7 essay is clear and well developed, but a few sentences are still fairly general (*patients can book appointments*), and lexical resource, while strong, is not exceptionally wide. That is a healthy Band 7 — not a failure.
+This Band 7 essay is clear and well developed, but a few sentences are still fairly general (*patients can book appointments*), and lexical resource, while strong, is not exceptionally wide. That is a healthy Band 7, not a failure.
 
 ## Fix cards if you are aiming from 6 → 7 using this model
 
-### Fix card A — Give each view a real mechanism
+### Fix card A: Give each view a real mechanism
 
-Do not write “Technology is complicated because life is busy.”  
+Do not write “Technology is complicated because life is busy.” 
 Write *what* creates complexity (notifications, tool-switching, learning curves).
 
-### Fix card B — End body paragraphs with significance
+### Fix card B: End body paragraphs with significance
 
 After examples, add one sentence: why the example matters to the argument.
 
-### Fix card C — Make your opinion a synthesis
+### Fix card C: Make your opinion a synthesis
 
 On discuss-both-views prompts, your opinion paragraph should weigh both sides, not pretend the other view never existed.
 

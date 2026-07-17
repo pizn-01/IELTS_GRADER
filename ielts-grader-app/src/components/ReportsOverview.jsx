@@ -445,7 +445,7 @@ const ReportsOverview = ({ onBack }) => {
                     <div key={i} className="p-2.5 bg-[#F0FDF9] rounded-lg border border-[#CCFBEF]">
                       <p className="text-[11px] leading-snug">
                         <span className="font-bold text-[#30C3A9]">{c.name}:</span>{' '}
-                        <span className="font-bold text-[#101828]">avg {c.band} — keep this stable while lifting weaker areas.</span>
+                        <span className="font-bold text-[#101828]">avg {c.band}. Keep this stable while lifting weaker areas.</span>
                       </p>
                     </div>
                   ))}
@@ -538,10 +538,10 @@ const ReportsOverview = ({ onBack }) => {
           </div>
         : activeTab === "Fix Cards" ?
           <div className="space-y-8">
-            {/* Fix Cards-Priority Errors — from real API data */}
+            {/* Fix Cards: Priority Errors — from real API data */}
             <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
                <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
-                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Fix Cards — Priority Errors</h3>
+                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Fix Cards: Priority Errors</h3>
                  <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Your most frequent error patterns across all submissions.</p>
                </div>
                <div className="p-4 md:p-8 space-y-3 md:space-y-4">
