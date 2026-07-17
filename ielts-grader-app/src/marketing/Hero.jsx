@@ -47,7 +47,7 @@ const Hero = () => {
       id="about"
       className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-stretch gap-0 lg:gap-14">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[80px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-8">
 
         {/* Mobile: compact headline above the card (hidden on mock so all 4 tasks fit) */}
         {cardView !== 'mock' && (
@@ -66,12 +66,12 @@ const Hero = () => {
 
         {/* Submission card — first interactive surface on mobile */}
         <div
-          className={`w-full order-2 lg:order-2 lg:w-[40%] flex flex-col items-center lg:items-stretch lg:justify-center animate-fadeInUp animate-delay-50 mb-2.5 lg:mb-0 ${
+          className={`w-full order-2 lg:order-2 lg:w-[38%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 mb-2.5 lg:mb-0 ${
             isMockMobileFill ? 'flex-1 min-h-0 lg:flex-none lg:shrink-0' : 'shrink-0'
           }`}
         >
-          <div className={`bg-white/95 rounded-[16px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] w-full max-w-[420px] lg:max-w-[400px] lg:ml-auto flex flex-col transition-all duration-500 ${
-            cardView === 'mock' ? 'p-4 lg:p-6 flex-1 lg:flex-auto min-h-0 lg:max-w-none lg:h-full' : 'p-4 pb-5 lg:p-5'
+          <div className={`bg-white/95 rounded-[16px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] w-full max-w-[420px] lg:max-w-none flex flex-col transition-all duration-500 ${
+            cardView === 'mock' ? 'p-4 lg:p-6 flex-1 lg:flex-auto min-h-0 lg:h-full' : 'p-4 pb-5 lg:p-5'
           }`}>
             
             {cardView === 'default' ? (
@@ -222,18 +222,18 @@ const Hero = () => {
         )}
 
         {/* Desktop left copy (hidden on mobile) */}
-        <div className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[55%] animate-fadeIn flex-col justify-center">
-          <div className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-5">
+        <div className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[58%] animate-fadeIn flex-col justify-center">
+          <div className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-4">
             1 free evaluation · No card required
           </div>
 
-          <h1 className="text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-6 font-['Nunito',_sans-serif]">
+          <h1 className="text-[40px] xl:text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-5 font-['Nunito',_sans-serif]">
             Your IELTS Writing Tutor.<br />
             Band scores, fixes & a plan in<br />
             <span className="text-[#3B82F6]">60 Seconds.</span>
           </h1>
 
-          <p className="text-[17px] text-[#6B7280] leading-[1.6] mb-8 max-w-[540px]">
+          <p className="text-[16px] text-[#6B7280] leading-[1.55] mb-6 max-w-[480px]">
             Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan: 1 full evaluation included.
           </p>
 
