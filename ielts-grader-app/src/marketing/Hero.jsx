@@ -112,11 +112,11 @@ const Hero = () => {
                   <button
                     type="button"
                     onClick={() => setCardView('mock')}
-                    className="group relative flex items-center gap-3 text-left rounded-[12px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-3.5 min-h-[80px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
+                    className="group relative flex items-center gap-3 text-left rounded-[12px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-4 min-h-[104px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
                   >
                     <div className="flex shrink-0">
-                      <div className="w-11 h-11 rounded-[11px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
-                        <Clock className="w-5 h-5 text-[#0D9488]" />
+                      <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
+                        <Clock className="w-6 h-6 text-[#0D9488]" />
                       </div>
                     </div>
                     <div className="min-w-0 flex-1 pr-5">
