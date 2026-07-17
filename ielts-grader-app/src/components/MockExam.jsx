@@ -554,6 +554,10 @@ const MockExam = ({ examType, taskType, onExit }) => {
             value={essay}
             onChange={(e) => setEssay(e.target.value)}
             disabled={showTimeUp || isGrading}
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            autoComplete="off"
           />
         </div>
       </div>

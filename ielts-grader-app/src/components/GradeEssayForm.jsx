@@ -217,6 +217,10 @@ export default function GradeEssayForm({
               onChange={(e) => setEssayText(e.target.value)}
               placeholder="Start writing your essay here..."
               className="flex-1 p-4 md:p-10 outline-none text-[15px] md:text-[16px] text-[#475467] leading-[1.8] font-normal resize-none placeholder:text-gray-300 custom-scrollbar min-h-0"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+              autoComplete="off"
             />
           </div>
         </div>
@@ -376,6 +380,10 @@ export default function GradeEssayForm({
               placeholder="Type, paste, or upload PDF / DOCX / image (paragraphs preserved)"
               rows={5}
               className={essayTextareaClass}
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+              autoComplete="off"
             />
             <button
               type="button"
