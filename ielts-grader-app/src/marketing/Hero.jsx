@@ -222,7 +222,7 @@ const Hero = () => {
         )}
 
         {/* Desktop left copy (hidden on mobile) */}
-        <div className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[58%] animate-fadeIn flex-col justify-center">
+        <div className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[54%] animate-fadeIn flex-col justify-center">
           <div className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-4">
             1 free evaluation · No card required
           </div>
