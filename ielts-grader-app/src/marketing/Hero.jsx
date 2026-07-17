@@ -189,7 +189,7 @@ const Hero = () => {
                 variant="card"
                 onBack={() => setCardView('default')}
                 showMaximize
-                onMaximize={() => navigate('/grade-my-essay')}
+                onMaximize={(draft) => navigate('/grade-my-essay', { state: draft })}
               />
             )}
           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ChevronLeft, Paperclip, Maximize2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -24,7 +24,7 @@ const isImageFile = (file) =>
  * @param {'card' | 'page'} variant
  * @param {() => void} [onBack] shown only for card variant
  * @param {boolean} [showMaximize]
- * @param {() => void} [onMaximize]
+ * @param {(draft: { questionText: string, essayText: string, questionChartImage: string|null }) => void} [onMaximize]
  * @param {boolean} [hidePageTitle] when page chrome provides the title
  */
 export default function GradeEssayForm({
@@ -35,14 +35,22 @@ export default function GradeEssayForm({
   hidePageTitle = false,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { updateEssayData, setGradingStatus, setSubmissionId } = useGrade();
   const { user } = useAuth();
 
+  const draft =
+    variant === 'page' && location.state && typeof location.state === 'object'
+      ? location.state
+      : null;
+
   const [fileReadError, setFileReadError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [questionText, setQuestionText] = useState('');
-  const [essayText, setEssayText] = useState('');
-  const [questionChartImage, setQuestionChartImage] = useState(null);
+  const [questionText, setQuestionText] = useState(draft?.questionText || '');
+  const [essayText, setEssayText] = useState(draft?.essayText || '');
+  const [questionChartImage, setQuestionChartImage] = useState(
+    draft?.questionChartImage || null,
+  );
   const promptFileRef = useRef(null);
   const essayFileRef = useRef(null);
 
@@ -270,10 +278,17 @@ export default function GradeEssayForm({
           <ChevronLeft className="w-5 h-5 text-[#1a1f36]" />
         </button>
         <h3 className="text-[18px] font-bold text-[#1a1f36] flex-1">Grade my essay</h3>
-        {showMaximize && onMaximize && (
+        {showMaximize && (
           <button
             type="button"
-            onClick={onMaximize}
+            onClick={() => {
+              const payload = { questionText, essayText, questionChartImage };
+              if (onMaximize) {
+                onMaximize(payload);
+              } else {
+                navigate('/grade-my-essay', { state: payload });
+              }
+            }}
             title="Open full editor"
             className="p-1.5 hover:bg-[#EFF6FF] rounded-full transition-colors text-[#6B7280] hover:text-[#3B82F6]"
           >
