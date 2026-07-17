@@ -82,11 +82,11 @@ const Hero = () => {
                   <button
                     type="button"
                     onClick={() => setCardView('upload')}
-                    className="group relative flex items-center gap-3 text-left rounded-[12px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-3.5 min-h-[80px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+                    className="group relative flex items-center gap-3 text-left rounded-[12px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-4 min-h-[104px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
                   >
                     <div className="flex shrink-0">
-                      <div className="w-11 h-11 rounded-[11px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
-                        <FileCheck2 className="w-5 h-5 text-[#3B82F6]" />
+                      <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
+                        <FileCheck2 className="w-6 h-6 text-[#3B82F6]" />
                       </div>
                     </div>
                     <div className="min-w-0 flex-1 pr-5">
