@@ -76,13 +76,13 @@ const Hero = () => {
             
             {cardView === 'default' ? (
               <div className="flex-1 flex flex-col animate-fadeIn min-h-0">
-                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-6 tracking-[-0.01em]">Start your free tutor report</h3>
+                <h3 className="text-[17px] lg:text-[20px] font-bold text-[#1a1f36] mb-4 lg:mb-5 tracking-[-0.01em] shrink-0">Start your free tutor report</h3>
 
-                <div className="flex flex-col gap-3 lg:gap-3.5 flex-1 min-h-0 justify-center">
+                <div className="flex flex-col gap-3 lg:gap-3.5 flex-1 min-h-0">
                   <button
                     type="button"
                     onClick={() => setCardView('upload')}
-                    className="group relative flex items-center gap-3.5 text-left rounded-[14px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-4 lg:p-5 min-h-[96px] lg:min-h-[108px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+                    className="group relative flex flex-1 items-center gap-3.5 text-left rounded-[14px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-4 lg:p-6 min-h-[96px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
                   >
                     <div className="flex shrink-0">
                       <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-[12px] lg:rounded-[14px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
@@ -112,7 +112,7 @@ const Hero = () => {
                   <button
                     type="button"
                     onClick={() => setCardView('mock')}
-                    className="group relative flex items-center gap-3.5 text-left rounded-[14px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-4 lg:p-5 min-h-[96px] lg:min-h-[108px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
+                    className="group relative flex flex-1 items-center gap-3.5 text-left rounded-[14px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-4 lg:p-6 min-h-[96px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
                   >
                     <div className="flex shrink-0">
                       <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-[12px] lg:rounded-[14px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
@@ -140,7 +140,7 @@ const Hero = () => {
                   </button>
                 </div>
 
-                <p className="hidden lg:block text-center text-[13px] text-[#9CA3AF] mt-6 mb-0">
+                <p className="hidden lg:block text-center text-[13px] text-[#9CA3AF] mt-5 mb-0 shrink-0">
                   1 free evaluation · No credit card · Results in about 60 seconds
                 </p>
               </div>
