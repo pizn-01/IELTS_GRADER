@@ -28,7 +28,7 @@ export function BandSnapshot({ avgBands }) {
   const offset = circumference * (1 - pct);
 
   return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFBFC] p-4 flex-1 flex flex-col justify-center min-h-[160px]">
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFBFC] p-4 shrink-0 md:flex-1 md:min-h-0 flex flex-col justify-center min-h-[160px]">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">
         Average bands · this edition
       </p>
@@ -89,7 +89,7 @@ export function ErrorsByAreaChart({ errorsByCriteria }) {
   const max = items.reduce((m, e) => Math.max(m, e.count), 1);
 
   return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFBFC] p-4 flex-1 flex flex-col min-h-[140px]">
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFBFC] p-4 shrink-0 md:flex-1 md:min-h-0 flex flex-col min-h-[140px]">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">
         Errors by criterion
       </p>

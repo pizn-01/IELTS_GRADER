@@ -106,7 +106,7 @@ export default function PersonalizedLearningPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-56px)] flex flex-col overflow-hidden">
+    <div className="h-[calc(100vh-56px)] flex flex-col overflow-y-auto lg:overflow-hidden">
       {/* Hero — compact */}
       <div className="relative overflow-hidden border-b border-[#E5E7EB]/60 shrink-0">
         <div
@@ -150,7 +150,7 @@ export default function PersonalizedLearningPage() {
       </div>
 
       {/* Main canvas */}
-      <div className="flex-1 flex flex-col max-w-[1440px] mx-auto w-full px-4 md:px-6 py-3 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col max-w-[1440px] mx-auto w-full px-4 md:px-6 py-3 min-h-0 lg:overflow-hidden">
         {error && (
           <div className="mb-2 shrink-0 flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 rounded-xl px-3 py-2 text-[12px]">
             <AlertCircle size={14} />
@@ -169,7 +169,7 @@ export default function PersonalizedLearningPage() {
             <p className="text-gray-400 text-[12px] mt-1">All task types count toward your progress.</p>
           </div>
         ) : (
-          <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4 flex flex-col flex-1 min-h-0 gap-3 overflow-hidden">
+          <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4 flex flex-col flex-1 min-h-0 gap-3 lg:overflow-hidden">
             {/* Edition pills */}
             <div className="flex flex-wrap gap-1.5 shrink-0">
               {unlockedEditions.map((ed) => (
@@ -192,7 +192,7 @@ export default function PersonalizedLearningPage() {
             </div>
 
             <LearningEditionPanel
-              className="flex-1 min-h-[400px]"
+              className="flex-1 min-h-0"
               edition={activeEdition}
               freeAccess={data?.freeAccess}
               priceCents={data?.priceCents}
