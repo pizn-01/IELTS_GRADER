@@ -19,4 +19,17 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-module.exports = { authenticateToken };
+/** Attach req.user when a valid JWT is present; otherwise continue as guest. */
+const optionalAuth = (req, _res, next) => {
+  const authHeader = req.headers['authorization'] || req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return next();
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+  } catch {
+    // Ignore invalid/expired token — treat as guest
+  }
+  next();
+};
+
+module.exports = { authenticateToken, optionalAuth };

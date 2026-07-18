@@ -1,6 +1,6 @@
 const express = require('express');
 const { supabaseAdmin } = require('../services/supabase');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -32,12 +32,12 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // ─── GET /api/tasks/next ──────────────────────────────────────────────────────
-// Returns one task the user hasn't been assigned yet (or the least-recently
-// assigned one if all have been seen). Records the assignment.
+// Auth: optional. Guests get a random active task (no assignment tracking).
+// Logged-in users get unseen-first / LRU selection and assignment records.
 // ?exam_type=Academic&task_type=Task+2&session_type=mock&exclude_task_id=<uuid>
-router.get('/next', authenticateToken, async (req, res) => {
+router.get('/next', optionalAuth, async (req, res) => {
   const { exam_type = 'Academic', task_type = 'Task 2', session_type = 'mock', exclude_task_id } = req.query;
-  const userId = req.user.userId;
+  const userId = req.user?.userId || null;
 
   try {
     // 1. All active tasks for this exam/type
@@ -51,6 +51,16 @@ router.get('/next', authenticateToken, async (req, res) => {
     if (tasksErr) throw tasksErr;
     if (!allTasks || allTasks.length === 0) {
       return res.status(404).json({ error: 'No active tasks found for this exam type.' });
+    }
+
+    const pool = allTasks.filter(t => t.id !== exclude_task_id);
+
+    // Guest path: random from full active pool (exclude current only)
+    if (!userId) {
+      const candidate = pool.length > 0
+        ? pool[Math.floor(Math.random() * pool.length)]
+        : allTasks[Math.floor(Math.random() * allTasks.length)];
+      return res.json({ data: candidate });
     }
 
     // 2. Tasks already assigned to this user for the same exam/type
@@ -71,7 +81,6 @@ router.get('/next', authenticateToken, async (req, res) => {
 
     // 3. Pick from unseen tasks first; fall back to least-recently assigned
     let candidate;
-    const pool = allTasks.filter(t => t.id !== exclude_task_id);
     const unseen = pool.filter(t => !assignedIds.has(t.id));
 
     if (unseen.length > 0) {
