@@ -229,7 +229,9 @@ const Hero = () => {
 
             {cardView === 'default' ? (
               <div className="flex flex-col animate-fadeIn">
-                <h3 className="text-[16px] lg:text-[18px] font-bold text-[#1a1f36] mb-3 tracking-[-0.01em] shrink-0">Start your free tutor report</h3>
+                <h3 className="text-[16px] lg:text-[18px] font-bold text-[#1a1f36] mb-3 tracking-[-0.01em] shrink-0">
+                  Start your <span className="text-[#3B82F6]">free</span> tutor report
+                </h3>
 
                 <div className="flex flex-col gap-2.5">
                   <button
