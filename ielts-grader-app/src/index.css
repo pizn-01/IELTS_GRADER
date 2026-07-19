@@ -131,6 +131,16 @@ html.lenis body {
   to { stroke-dashoffset: -20; }
 }
 
+@keyframes heroSlideEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroCtaPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.03); }
+}
+
 /* --- Animation Utility Classes --- */
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out;
@@ -138,6 +148,14 @@ html.lenis body {
 
 .animate-fadeInUp {
   animation: fadeInUp 0.45s ease-out both;
+}
+
+.hero-slide-enter {
+  animation: heroSlideEnter 0.45s ease-out both;
+}
+
+.hero-cta-pulse {
+  animation: heroCtaPulse 2s ease-in-out infinite;
 }
 
 .animate-delay-50 {
@@ -156,7 +174,9 @@ html.lenis body {
   .animate-fadeIn,
   .animate-fadeInUp,
   .animate-slideDown,
-  .animate-in {
+  .animate-in,
+  .hero-slide-enter,
+  .hero-cta-pulse {
     animation: none !important;
   }
 }

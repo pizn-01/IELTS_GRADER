@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Target, PenLine } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -12,16 +12,122 @@ const MOCK_OPTIONS = [
   { examType: 'General', taskType: 'Task 2', label: 'Task 2', sublabel: 'Essay' },
 ];
 
+const SLIDE_INTERVAL_MS = 4000;
+
+const HERO_SLIDES = [
+  {
+    id: 'speed',
+    cue: 'both',
+    badge: '1 free evaluation · No card required',
+    mobileBadge: 'Free · No card',
+    lines: ['Band scores, fixes & a plan in', '60 Seconds.'],
+    accentWord: '60 Seconds.',
+    support:
+      'Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan: 1 full evaluation included.',
+    chip: { Icon: Star, text: '1 free full report, no credit card', iconClass: 'text-[#F59E0B]', fill: '#F59E0B' },
+    accent: '#3B82F6',
+    mobileSub: (
+      <>
+        Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
+      </>
+    ),
+  },
+  {
+    id: 'fixes',
+    cue: 'grade',
+    badge: 'Sentence-level tutor report',
+    mobileBadge: 'Sentence-level fixes',
+    lines: ['Stop chasing a number.', 'See the exact sentences', 'costing you band points.'],
+    accentWord: 'band points.',
+    support:
+      'Criterion scores plus rewrite cards for Task 1 & 2 — so you know what to change, not just what you scored.',
+    chip: { Icon: PenLine, text: 'Criterion scores + sentence fixes, not just a band', iconClass: 'text-[#F59E0B]', fill: null },
+    accent: '#F59E0B',
+    mobileSub: (
+      <>
+        See the sentences <span className="text-[#3B82F6]">costing you band points.</span>
+      </>
+    ),
+  },
+  {
+    id: 'mock',
+    cue: 'mock',
+    badge: 'Exam-day simulation',
+    mobileBadge: 'Timed mock exam',
+    lines: ['Practice like it’s test day.', 'Timed mock. Real conditions.', 'Instant tutor report.'],
+    accentWord: 'Instant tutor report.',
+    support:
+      'Sit a computer-based IELTS mock with a real timer, then get the same criterion scores and fixes as a live evaluation.',
+    chip: { Icon: Clock, text: 'Timed mock under real exam conditions', iconClass: 'text-[#0D9488]', fill: null },
+    accent: '#0D9488',
+    mobileSub: (
+      <>
+        Timed mock. Real conditions. <span className="text-[#3B82F6]">Instant report.</span>
+      </>
+    ),
+  },
+  {
+    id: 'plan',
+    cue: 'both',
+    badge: 'Personalized next steps',
+    mobileBadge: 'Your band plan',
+    lines: ['Know your next move.', 'A clear plan to climb', 'toward Band 7+.'],
+    accentWord: 'Band 7+.',
+    support:
+      'Weakest criteria ranked, prioritized fixes, and what to practice next — a clear path toward your target band.',
+    chip: { Icon: Target, text: 'Personalized next steps toward your target band', iconClass: 'text-[#6366F1]', fill: null },
+    accent: '#6366F1',
+    mobileSub: (
+      <>
+        A clear plan to climb toward <span className="text-[#3B82F6]">Band 7+.</span>
+      </>
+    ),
+  },
+];
+
 const Hero = () => {
   const navigate = useNavigate();
   const { updateEssayData } = useGrade();
   const { user } = useAuth();
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [cardView, setCardView] = useState('default'); // 'default', 'mock', 'upload'
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  const slide = HERO_SLIDES[slideIndex];
+  const cueGrade = slide.cue === 'grade';
+  const cueMock = slide.cue === 'mock';
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReduceMotion(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion || paused || cardView !== 'default') return undefined;
+    const id = setInterval(() => {
+      setSlideIndex((i) => (i + 1) % HERO_SLIDES.length);
+    }, SLIDE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [reduceMotion, paused, cardView]);
+
+  const goToSlide = useCallback((i) => {
+    setSlideIndex(i);
+  }, []);
+
+  const onSpotlightEnter = () => setPaused(true);
+  const onSpotlightLeave = (e) => {
+    if (e?.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return;
+    setPaused(false);
+  };
 
   const tooltips = {
-    essay: { text: "Paste or upload your IELTS essay (and optional question prompt) to get criterion scores and fixes." },
-    mock: { text: "Practice under exam conditions to simulate a real computer-based IELTS environment." }
+    essay: { text: 'Paste or upload your IELTS essay (and optional question prompt) to get criterion scores and fixes.' },
+    mock: { text: 'Practice under exam conditions to simulate a real computer-based IELTS environment.' },
   };
 
   const Tooltip = ({ text }) => (
@@ -41,6 +147,17 @@ const Hero = () => {
   };
 
   const isMockMobileFill = cardView === 'mock';
+  const ChipIcon = slide.chip.Icon;
+
+  const renderHeadlineLines = (lines, accentWord, className) => (
+    <div className={className} aria-live="polite">
+      {lines.map((line) => (
+        <span key={line} className="block">
+          {line === accentWord ? <span className="text-[#3B82F6]">{line}</span> : line}
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <header
@@ -49,18 +166,46 @@ const Hero = () => {
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[80px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-8">
 
-        {/* Mobile: compact headline above the card (hidden on mock so all 4 tasks fit) */}
+        {/* Mobile: compact rotating headline above the card */}
         {cardView !== 'mock' && (
-          <div className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5">
-            <div className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide">
-              Free · No card
+          <div
+            className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5"
+            onMouseEnter={onSpotlightEnter}
+            onMouseLeave={onSpotlightLeave}
+            onFocus={onSpotlightEnter}
+            onBlur={onSpotlightLeave}
+          >
+            <div
+              key={`m-badge-${slide.id}`}
+              className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide hero-slide-enter"
+            >
+              {slide.mobileBadge}
             </div>
             <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
-              Your IELTS Writing Tutor.<br />
-              <span className="font-semibold text-[#374151]">
-                Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
-              </span>
+              Your IELTS Writing Tutor.
             </h1>
+            <p
+              key={`m-sub-${slide.id}`}
+              className="mt-1.5 mb-0 text-[15px] sm:text-[17px] font-semibold text-[#374151] leading-snug hero-slide-enter"
+              aria-live="polite"
+            >
+              {slide.mobileSub}
+            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-3" role="tablist" aria-label="Marketing messages">
+              {HERO_SLIDES.map((s, i) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === slideIndex}
+                  aria-label={`Message ${i + 1}`}
+                  onClick={() => goToSlide(i)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === slideIndex ? 'w-5 bg-[#3B82F6]' : 'w-1.5 bg-[#D1D5DB] hover:bg-[#9CA3AF]'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -69,11 +214,15 @@ const Hero = () => {
           className={`w-full order-2 lg:order-2 lg:w-[42%] flex flex-col items-center lg:items-stretch animate-fadeInUp animate-delay-50 mb-2.5 lg:mb-0 ${
             isMockMobileFill ? 'flex-1 min-h-0 lg:flex-none lg:shrink-0' : 'shrink-0'
           }`}
+          onMouseEnter={onSpotlightEnter}
+          onMouseLeave={onSpotlightLeave}
+          onFocus={onSpotlightEnter}
+          onBlur={onSpotlightLeave}
         >
           <div className={`bg-white/95 rounded-[16px] border border-[#E8ECF1] shadow-[0_12px_40px_rgba(26,31,54,0.06)] w-full max-w-[462px] lg:max-w-none flex flex-col transition-all duration-500 ${
             cardView === 'mock' ? 'p-4 lg:p-6 flex-1 lg:flex-auto min-h-0 lg:h-full' : 'p-4 pb-5 lg:p-5'
           }`}>
-            
+
             {cardView === 'default' ? (
               <div className="flex flex-col animate-fadeIn">
                 <h3 className="text-[16px] lg:text-[18px] font-bold text-[#1a1f36] mb-3 tracking-[-0.01em] shrink-0">Start your free tutor report</h3>
@@ -82,7 +231,11 @@ const Hero = () => {
                   <button
                     type="button"
                     onClick={() => setCardView('upload')}
-                    className="group relative flex items-center gap-3.5 text-left rounded-[12px] border border-[#BFDBFE] bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-5 min-h-[136px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+                    className={`group relative flex items-center gap-3.5 text-left rounded-[12px] border bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] p-5 min-h-[136px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)] ${
+                      cueGrade
+                        ? 'border-[#3B82F6] ring-2 ring-[#3B82F6]/35 shadow-[0_8px_24px_rgba(59,130,246,0.18)] hero-cta-pulse'
+                        : 'border-[#BFDBFE]'
+                    }`}
                   >
                     <div className="flex shrink-0">
                       <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#BFDBFE]/60">
@@ -112,7 +265,11 @@ const Hero = () => {
                   <button
                     type="button"
                     onClick={() => setCardView('mock')}
-                    className="group relative flex items-center gap-3.5 text-left rounded-[12px] border border-[#99F6E4] bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-5 min-h-[136px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)]"
+                    className={`group relative flex items-center gap-3.5 text-left rounded-[12px] border bg-gradient-to-r from-[#F0FDFA] to-[#F8FAFC] p-5 min-h-[136px] cursor-pointer transition-all active:scale-[0.98] hover:border-[#2DD4BF] hover:shadow-[0_8px_24px_rgba(45,212,191,0.12)] ${
+                      cueMock
+                        ? 'border-[#2DD4BF] ring-2 ring-[#2DD4BF]/40 shadow-[0_8px_24px_rgba(45,212,191,0.18)] hero-cta-pulse'
+                        : 'border-[#99F6E4]'
+                    }`}
                   >
                     <div className="flex shrink-0">
                       <div className="w-12 h-12 rounded-[12px] flex items-center justify-center bg-white shadow-sm border border-[#99F6E4]/60">
@@ -206,9 +363,16 @@ const Hero = () => {
               <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
               <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
             </div>
-            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-              <Star className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-              <span>1 free full report, no credit card</span>
+            <div
+              key={`m-chip-${slide.id}`}
+              className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-enter"
+            >
+              <ChipIcon
+                className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
+                strokeWidth={2}
+                {...(slide.chip.fill ? { fill: slide.chip.fill } : {})}
+              />
+              <span>{slide.chip.text}</span>
             </div>
             <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
               <Zap className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
@@ -221,52 +385,104 @@ const Hero = () => {
           </div>
         )}
 
-        {/* Desktop left copy (hidden on mobile) */}
-        <div className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[54%] animate-fadeIn flex-col justify-center">
-          <div className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-4">
-            1 free evaluation · No card required
-          </div>
+        {/* Desktop left spotlight (hidden on mobile) */}
+        <div
+          className="hidden lg:flex w-full order-3 lg:order-1 lg:w-[54%] animate-fadeIn flex-col justify-center"
+          onMouseEnter={onSpotlightEnter}
+          onMouseLeave={onSpotlightLeave}
+          onFocus={onSpotlightEnter}
+          onBlur={onSpotlightLeave}
+        >
+          <div className="flex gap-5 items-stretch">
+            <div
+              className="w-[3px] rounded-full shrink-0 self-stretch min-h-[280px] transition-colors duration-500"
+              style={{ backgroundColor: slide.accent }}
+              aria-hidden="true"
+            />
 
-          <h1 className="text-[40px] xl:text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] mb-5 font-['Nunito',_sans-serif]">
-            Your IELTS Writing Tutor.<br />
-            Band scores, fixes & a plan in<br />
-            <span className="text-[#3B82F6]">60 Seconds.</span>
-          </h1>
-
-          <p className="text-[16px] text-[#6B7280] leading-[1.55] mb-6 max-w-[480px]">
-            Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan: 1 full evaluation included.
-          </p>
-
-          <div className="space-y-4 mb-8">
-            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
-              <Star className="w-5 h-5 text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={2} />
-              1 free full report, no credit card
-            </div>
-            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
-              <Zap className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
-              Criterion scores + sentence fixes, not just a band
-            </div>
-            <div className="flex items-center gap-4 text-[16px] font-medium text-[#1a1f36]">
-              <ShieldCheck className="w-5 h-5 text-[#2DD4BF] shrink-0" strokeWidth={2} />
-              Personalized next steps toward your target band
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-3">
-              {[ 'photo-1534528741775-53994a69daeb', 'photo-1506794778202-cad84cf45f1d', 'photo-1494790108377-be9c29b29330', 'photo-1500648767791-00dcc994a43e' ].map((id, i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
-                  <img src={`https://images.unsplash.com/${id}?w=100&h=100&fit=crop`} alt="User" className="w-full h-full object-cover" />
+            <div className="min-w-0 flex-1 flex flex-col">
+              <div className="min-h-[320px] flex flex-col">
+                <div
+                  key={`badge-${slide.id}`}
+                  className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-4 hero-slide-enter"
+                >
+                  {slide.badge}
                 </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-2.5">
-              <div className="flex gap-0.5">
-                {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-[#F59E0B]" fill="#F59E0B" />)}
+
+                <h1 className="text-[40px] xl:text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+                  Your IELTS Writing Tutor.
+                </h1>
+
+                <div key={`lines-${slide.id}`} className="hero-slide-enter mt-1 mb-5">
+                  {renderHeadlineLines(
+                    slide.lines,
+                    slide.accentWord,
+                    "text-[40px] xl:text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] font-['Nunito',_sans-serif]"
+                  )}
+                </div>
+
+                <p
+                  key={`support-${slide.id}`}
+                  className="text-[16px] text-[#6B7280] leading-[1.55] mb-6 max-w-[480px] hero-slide-enter m-0"
+                >
+                  {slide.support}
+                </p>
+
+                <div
+                  key={`chip-${slide.id}`}
+                  className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/80 border border-[#E8ECF1] shadow-[0_4px_16px_rgba(26,31,54,0.04)] mb-6 hero-slide-enter"
+                >
+                  <ChipIcon
+                    className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
+                    strokeWidth={2}
+                    {...(slide.chip.fill ? { fill: slide.chip.fill } : {})}
+                  />
+                  <span className="text-[15px] font-medium text-[#1a1f36]">{slide.chip.text}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[15px] font-bold text-[#1a1f36]">4.9/5</span>
-                <span className="text-[14px] text-[#9CA3AF]">from 2,400+ reviews</span>
+
+              <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-1.5" role="tablist" aria-label="Marketing messages">
+                  {HERO_SLIDES.map((s, i) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={i === slideIndex}
+                      aria-label={`Message ${i + 1}: ${s.badge}`}
+                      onClick={() => goToSlide(i)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        i === slideIndex ? 'w-6' : 'w-2 bg-[#D1D5DB] hover:bg-[#9CA3AF]'
+                      }`}
+                      style={i === slideIndex ? { backgroundColor: slide.accent } : undefined}
+                    />
+                  ))}
+                </div>
+                <span className="text-[13px] text-[#9CA3AF] flex items-center gap-1">
+                  Start free on the right
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex -space-x-3">
+                  {['photo-1534528741775-53994a69daeb', 'photo-1506794778202-cad84cf45f1d', 'photo-1494790108377-be9c29b29330', 'photo-1500648767791-00dcc994a43e'].map((id, i) => (
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
+                      <img src={`https://images.unsplash.com/${id}?w=100&h=100&fit=crop`} alt="User" className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className="w-4 h-4 text-[#F59E0B]" fill="#F59E0B" />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[15px] font-bold text-[#1a1f36]">4.9/5</span>
+                    <span className="text-[14px] text-[#9CA3AF]">from 2,400+ reviews</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
