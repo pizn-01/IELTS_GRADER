@@ -40,7 +40,7 @@ const HERO_SLIDES = [
     lines: ['Stop chasing a number.', 'See the exact sentences', 'costing you band points.'],
     accentWord: 'band points.',
     support:
-      'Criterion scores plus rewrite cards for Task 1 & 2 — so you know what to change, not just what you scored.',
+      'Criterion scores plus rewrite cards for Task 1 & 2, so you know what to change, not just what you scored.',
     chip: { Icon: PenLine, text: 'Criterion scores + sentence fixes, not just a band', iconClass: 'text-[#F59E0B]', fill: null },
     accent: '#F59E0B',
     mobileSub: (
@@ -74,7 +74,7 @@ const HERO_SLIDES = [
     lines: ['Know your next move.', 'A clear plan to climb', 'toward Band 7+.'],
     accentWord: 'Band 7+.',
     support:
-      'Weakest criteria ranked, prioritized fixes, and what to practice next — a clear path toward your target band.',
+      'Weakest criteria ranked, prioritized fixes, and what to practice next: a clear path toward your target band.',
     chip: { Icon: Target, text: 'Personalized next steps toward your target band', iconClass: 'text-[#6366F1]', fill: null },
     accent: '#6366F1',
     mobileSub: (
