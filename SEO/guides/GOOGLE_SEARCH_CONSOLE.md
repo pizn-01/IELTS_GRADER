@@ -4,7 +4,8 @@
 
 1. Go to [Google Search Console](https://search.google.com/search-console)
 2. Click **Add property**
-3. Choose **URL prefix**: `https://ieltsgrader.com`
+3. Choose **URL prefix**: `https://www.ieltsgrader.com`  
+   (Vercel redirects apex `ieltsgrader.com` → `www`. Use the www property so you don’t inspect redirecting URLs.)
 
 ## Step 2: Verify ownership
 
@@ -34,11 +35,11 @@ python3 SEO/scripts/generate_sitemap.py
 
 ## Step 4: Request indexing (key URLs)
 
-Use **URL Inspection** for each:
-- `https://ieltsgrader.com/`
-- `https://ieltsgrader.com/ielts-ai-tutor`
-- `https://ieltsgrader.com/ielts-essay-checker`
-- `https://ieltsgrader.com/blog`
+Use **URL Inspection** for each (www only — apex redirects):
+- `https://www.ieltsgrader.com/`
+- `https://www.ieltsgrader.com/ielts-ai-tutor`
+- `https://www.ieltsgrader.com/ielts-essay-checker`
+- `https://www.ieltsgrader.com/blog`
 
 ## Bing Webmaster Tools
 

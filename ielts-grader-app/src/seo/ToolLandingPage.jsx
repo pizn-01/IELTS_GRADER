@@ -21,11 +21,11 @@ export default function ToolLandingPage({ page }) {
     '@type': 'WebPage',
     name: page.h1,
     description: page.description,
-    url: `https://ieltsgrader.com${page.path}`,
+    url: `https://www.ieltsgrader.com${page.path}`,
     isPartOf: {
       '@type': 'WebSite',
       name: 'IELTS AI Tutor by IELTSGRADER',
-      url: 'https://ieltsgrader.com',
+      url: 'https://www.ieltsgrader.com',
     },
   };
 

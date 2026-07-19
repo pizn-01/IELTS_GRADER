@@ -44,22 +44,22 @@ export default function BlogPostPage() {
     publisher: {
       '@type': 'Organization',
       name: 'IELTSGRADER',
-      url: 'https://ieltsgrader.com',
+      url: 'https://www.ieltsgrader.com',
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://ieltsgrader.com${path}`,
+      '@id': `https://www.ieltsgrader.com${path}`,
     },
-    image: 'https://ieltsgrader.com/og-image.jpg',
+    image: 'https://www.ieltsgrader.com/og-image.jpg',
   };
 
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://ieltsgrader.com/' },
-      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://ieltsgrader.com/blog' },
-      { '@type': 'ListItem', position: 3, name: titleClean, item: `https://ieltsgrader.com${path}` },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.ieltsgrader.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.ieltsgrader.com/blog' },
+      { '@type': 'ListItem', position: 3, name: titleClean, item: `https://www.ieltsgrader.com${path}` },
     ],
   };
 

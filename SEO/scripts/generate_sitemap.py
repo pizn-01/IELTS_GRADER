@@ -4,7 +4,7 @@
 from datetime import date
 from pathlib import Path
 
-BASE_URL = "https://ieltsgrader.com"
+BASE_URL = "https://www.ieltsgrader.com"
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 APP_PUBLIC = REPO_ROOT / "ielts-grader-app" / "public"
 BLOG_SRC = REPO_ROOT / "ielts-grader-app" / "src" / "content" / "blog"

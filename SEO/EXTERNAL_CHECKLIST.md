@@ -11,7 +11,7 @@ Agent Phase 2 work is done (design, legal, blog depth, tool pages, navbar Blog, 
 - [ ] **GSC** — verify `www.ieltsgrader.com` ([guides/GOOGLE_SEARCH_CONSOLE.md](guides/GOOGLE_SEARCH_CONSOLE.md))
 - [ ] **Bing** — import from GSC
 - [ ] **Submit sitemap:** `https://www.ieltsgrader.com/sitemap.xml`
-- [ ] **Request indexing** for `/`, `/ielts-ai-tutor`, `/ielts-essay-checker`, `/blog`, top 5 posts
+- [ ] **Request indexing** for www URLs only (`/`, `/ielts-ai-tutor`, `/ielts-essay-checker`, `/blog`, top posts) — apex redirects and will show “Page with redirect”
 
 ## Remaining — trust & brand
 - [ ] **Claims decision** — keep / soften / replace “10k students / 4.9 rating”

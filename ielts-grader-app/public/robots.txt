@@ -11,4 +11,4 @@ Disallow: /upgrade
 Disallow: /analysis-ready
 Disallow: /selection
 
-Sitemap: https://ieltsgrader.com/sitemap.xml
+Sitemap: https://www.ieltsgrader.com/sitemap.xml
