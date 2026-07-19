@@ -153,7 +153,11 @@ const Hero = () => {
     <div className={className} aria-live="polite">
       {lines.map((line) => (
         <span key={line} className="block">
-          {line === accentWord ? <span className="text-[#3B82F6]">{line}</span> : line}
+          {line === accentWord ? (
+            <span className="font-semibold text-[#3B82F6]">{line}</span>
+          ) : (
+            line
+          )}
         </span>
       ))}
     </div>
@@ -186,7 +190,7 @@ const Hero = () => {
             </h1>
             <p
               key={`m-sub-${slide.id}`}
-              className="mt-1.5 mb-0 text-[15px] sm:text-[17px] font-semibold text-[#374151] leading-snug hero-slide-enter"
+              className="mt-2 mb-0 text-[14px] sm:text-[16px] font-medium text-[#6B7280] leading-snug hero-slide-enter"
               aria-live="polite"
             >
               {slide.mobileSub}
@@ -407,11 +411,11 @@ const Hero = () => {
                   Your IELTS Writing Tutor.
                 </h1>
 
-                <div key={`lines-${slide.id}`} className="hero-slide-enter mt-1 mb-5">
+                <div key={`lines-${slide.id}`} className="hero-slide-enter mt-3 mb-5">
                   {renderHeadlineLines(
                     slide.lines,
                     slide.accentWord,
-                    "text-[40px] xl:text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] font-['Nunito',_sans-serif]"
+                    "text-[24px] xl:text-[26px] font-medium text-[#4B5563] leading-[1.3] tracking-[-0.015em] font-['Nunito',_sans-serif] max-w-[520px]"
                   )}
                 </div>
 
