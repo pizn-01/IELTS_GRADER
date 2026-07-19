@@ -128,7 +128,7 @@ export function TopMistakesList({ topErrors }) {
   }
 
   return (
-    <ul className="flex-1 lg:min-h-0 lg:overflow-y-auto space-y-2 pr-1">
+    <ul className="flex-1 lg:min-h-0 overflow-y-auto max-h-[200px] lg:max-h-none space-y-2 pr-1">
       {topErrors.slice(0, 8).map((e, i) => {
         const meta = CRITERIA_SHORT[e.criteria] || { label: '—', color: '#94A3B8' };
         return (

@@ -80,13 +80,13 @@ export default function LearningEditionPanel({
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 lg:flex-1 lg:min-h-0">
+            <div className="flex flex-col gap-3 lg:flex-1 lg:min-h-0 order-2 lg:order-none">
               <BandSnapshot avgBands={preview?.avgBands} />
               <ErrorsByAreaChart errorsByCriteria={preview?.errorsByCriteria} />
             </div>
           )}
 
-          <div className="shrink-0 relative z-[1] bg-white pt-3 mt-1 border-t border-gray-100 space-y-2">
+          <div className="shrink-0 relative z-[1] bg-white space-y-2 order-1 lg:order-none lg:pt-3 lg:mt-1 lg:border-t lg:border-gray-100">
             {!locked && (
               <div className="flex flex-wrap items-center gap-2">
                 {canGenerate && (
