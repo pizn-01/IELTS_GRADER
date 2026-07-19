@@ -20,6 +20,7 @@ STATIC_ROUTES = [
     "/ielts-writing-band-score",
     "/ielts-mock-writing-test",
     "/grade-my-essay",
+    "/mock-exam",
     "/blog",
     "/terms",
     "/privacy",
@@ -35,6 +36,7 @@ PRIORITY = {
     "/ielts-writing-band-score": "0.8",
     "/ielts-mock-writing-test": "0.8",
     "/grade-my-essay": "0.9",
+    "/mock-exam": "0.8",
     "/blog": "0.8",
     "/pricing": "0.7",
 }
