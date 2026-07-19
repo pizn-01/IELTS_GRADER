@@ -393,13 +393,7 @@ const Hero = () => {
           onFocus={onSpotlightEnter}
           onBlur={onSpotlightLeave}
         >
-          <div className="flex gap-5 items-stretch">
-            <div
-              className="w-[3px] rounded-full shrink-0 self-stretch min-h-[280px] transition-colors duration-500"
-              style={{ backgroundColor: slide.accent }}
-              aria-hidden="true"
-            />
-
+          <div className="flex items-stretch">
             <div className="min-w-0 flex-1 flex flex-col">
               <div className="min-h-[320px] flex flex-col">
                 <div
