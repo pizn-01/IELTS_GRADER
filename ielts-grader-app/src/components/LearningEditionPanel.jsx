@@ -45,10 +45,10 @@ export default function LearningEditionPanel({
   const canRetry = status === 'failed';
 
   return (
-    <div className={`bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 lg:min-h-[400px] ${className}`}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#E5E7EB] flex-1 min-h-0 lg:grid-rows-1">
+    <div className={`bg-white rounded-[20px] border border-[#E5E7EB] shadow-sm overflow-hidden flex-1 flex flex-col lg:min-h-[400px] ${className}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#E5E7EB] flex-1 lg:min-h-0 lg:grid-rows-1">
         {/* Left: mistake details (text) */}
-        <div className="p-5 md:p-6 flex flex-col gap-3 lg:h-full min-h-0">
+        <div className="p-5 md:p-6 flex flex-col gap-3 lg:h-full lg:min-h-0">
           <div className="flex items-center justify-between gap-2 shrink-0">
             <div>
               <h3 className="text-[15px] font-bold text-[#101828]">
@@ -72,7 +72,7 @@ export default function LearningEditionPanel({
         </div>
 
         {/* Right: band + error distribution charts + CTA */}
-        <div className="p-5 md:p-6 flex flex-col gap-4 lg:h-full min-h-0">
+        <div className="p-5 md:p-6 flex flex-col gap-4 lg:h-full lg:min-h-0">
           {locked ? (
             <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-4 py-8 text-center">
               <p className="text-[12px] text-[#667085] leading-relaxed max-w-[240px]">
