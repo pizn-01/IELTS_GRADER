@@ -451,16 +451,47 @@ def collect_all_platforms(
 
     native_reddit = "reddit" in platforms
     native_youtube = "youtube" in platforms
+    youtube_key = os.getenv("YOUTUBE_API_KEY", "").strip()
     serper_platforms = [p for p in platforms if p in SERPER_SITE]
 
+    # YouTube Data API is optional — skip quietly; Serper can still find YT pages.
+    if native_youtube and not youtube_key:
+        print("YouTube API: skipped (no YOUTUBE_API_KEY) — using Serper for youtube.com results")
+        native_youtube = False
+
+    # Reddit public JSON is often 403 from cloud/datacenter IPs (e.g. Fly).
+    # Fall back to Serper site:reddit.com after first block.
+    reddit_via = "native" if native_reddit else None
+    reddit_fallback_announced = False
+
     for query in queries:
-        if native_reddit:
+        if native_reddit and reddit_via == "native":
             try:
                 all_rows.extend(
                     search_reddit(query, start=start, end=end, limit=reddit_limit)
                 )
-            except Exception as exc:  # noqa: BLE001 — continue other sources
-                errors.append(f"reddit/{query}: {exc}")
+            except Exception as exc:  # noqa: BLE001
+                msg = str(exc)
+                if "403" in msg or "Blocked" in msg or "401" in msg:
+                    reddit_via = "serper"
+                    if not reddit_fallback_announced:
+                        print(
+                            "Reddit public JSON blocked from this host — "
+                            "falling back to Serper (site:reddit.com) for the rest"
+                        )
+                        reddit_fallback_announced = True
+                else:
+                    errors.append(f"reddit/{query}: {exc}")
+
+        if native_reddit and reddit_via == "serper":
+            try:
+                all_rows.extend(
+                    search_platform_serper(
+                        "reddit", query, start=start, end=end, num=serper_num
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"serper/reddit/{query}: {exc}")
 
         if native_youtube:
             try:
@@ -471,10 +502,11 @@ def collect_all_platforms(
                 errors.append(f"youtube/{query}: {exc}")
 
         for platform in serper_platforms:
-            # Skip serper for reddit/youtube when native succeeded bulk; still useful
-            # as fallback — keep for FB/IG/etc primarily; include reddit/youtube
-            # only if we want SERP extras. Plan: use Serper for non-native platforms.
-            if platform in ("reddit", "youtube"):
+            # Reddit handled above (native or Serper fallback).
+            # YouTube via Serper only when Data API is off.
+            if platform == "reddit":
+                continue
+            if platform == "youtube" and native_youtube:
                 continue
             try:
                 all_rows.extend(
