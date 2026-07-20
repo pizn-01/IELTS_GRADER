@@ -5,8 +5,9 @@ import ExamQuestionPanel from '../components/ExamQuestionPanel';
 import AdminOverview from '../components/admin/AdminOverview';
 import { buildPreviewQuestionText } from '../utils/buildPreviewQuestionText';
 import { extractFileText } from '../utils/extractFileText';
-import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson, Image as ImageIcon, Globe } from 'lucide-react';
+import { Users, BarChart2, FileText, MessageSquare, Tag, LogOut, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, Search, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, BookOpen, History, Eye, Menu, X as CloseIcon, Upload, ClipboardList, FileJson, Image as ImageIcon, Globe, Share2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import SocialOpsTab from '../components/admin/SocialOpsTab';
 
 const readAsDataURL = (file) =>
   new Promise((resolve, reject) => {
@@ -16,7 +17,7 @@ const readAsDataURL = (file) =>
     reader.readAsDataURL(file);
   });
 
-const TABS = ['Overview', 'Users', 'Acquisition', 'Submissions', 'Tasks', 'Assignments', 'Discounts', 'Support'];
+const TABS = ['Overview', 'Users', 'Acquisition', 'Social Ops', 'Submissions', 'Tasks', 'Assignments', 'Discounts', 'Support'];
 
 const CHANNEL_OPTIONS = [
   '', 'direct', 'google_organic', 'google_ads', 'facebook', 'instagram', 'reddit', 'quora',
@@ -1865,7 +1866,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState('Overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const tabIcon = { Overview: BarChart2, Users, Acquisition: Globe, Submissions: FileText, Tasks: BookOpen, Assignments: ClipboardList, Discounts: Tag, Support: MessageSquare };
+  const tabIcon = { Overview: BarChart2, Users, Acquisition: Globe, 'Social Ops': Share2, Submissions: FileText, Tasks: BookOpen, Assignments: ClipboardList, Discounts: Tag, Support: MessageSquare };
 
   const switchTab = (t) => { setTab(t); setSidebarOpen(false); };
 
@@ -1929,6 +1930,7 @@ export default function AdminPage() {
         {tab === 'Overview'     && <AdminOverview onNavigateTab={switchTab} />}
         {tab === 'Users'        && <UsersTab />}
         {tab === 'Acquisition'  && <AcquisitionTab />}
+        {tab === 'Social Ops'   && <SocialOpsTab />}
         {tab === 'Submissions'  && <SubmissionsTab />}
         {tab === 'Tasks'        && <TasksTab />}
         {tab === 'Assignments'  && <AssignmentsTab />}

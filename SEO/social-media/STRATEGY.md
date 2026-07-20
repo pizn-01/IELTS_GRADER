@@ -125,20 +125,26 @@ Never optimize for link dumps. Optimize for helpful answers that earn the right 
 
 ## Discovery scripts (listening)
 
-From `SEO/social-media/scripts/`:
+**Employees:** use **[README.md](README.md)** and double-click **`Start.command`** (menu). Do not run raw scripts day-to-day.
+
+From `SEO/social-media/scripts/` (managers / automation):
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # add SERPER_API_KEY + YOUTUBE_API_KEY
+cp .env.example .env   # SERPER_API_KEY, YOUTUBE_API_KEY, OPENAI_API_KEY
 
-# Last 5 years of IELTS grading/tutor-related public posts
+python3 menu.py                 # employee front door
+python3 run_cold_start_agent.py # once / occasional (historical)
+python3 run_weekly_agent.py     # Monday
+python3 run_daily_brief.py      # Tue–Fri (+ fresh listen)
+python3 run_sunday_wrap.py      # Sunday scorecard
+
+# Low-level listening only:
 python3 search_historical.py
-
-# Prior 7 days (run every Monday)
 python3 search_weekly.py
 ```
 
-Outputs land in `SEO/social-media/output/` as CSV (url, time, platform, engagement when available).
+Outputs land in `SEO/social-media/output/` (`THIS_WEEK/`, CSVs). Scripts never auto-post.
 
 **Limits:** Reddit + YouTube use native APIs/stats. Facebook, Instagram, Quora, X, LinkedIn, TikTok are found via Serper web search of indexed public pages — engagement often unknown. Scripts do not replace native platform Insights.
 
@@ -146,7 +152,7 @@ Outputs land in `SEO/social-media/output/` as CSV (url, time, platform, engageme
 
 ## Employee handoff
 
-Give the hire: **`EMPLOYEE_PLAYBOOK.pdf`** (this folder) + access to brand accounts + API `.env` for weekly listening + this strategy for priorities.
+Give the hire: **[README.md](README.md)** + **`Start.command`** + **`EMPLOYEE_PLAYBOOK.pdf`** + brand account access. Manager configures `scripts/.env` once.
 
 Fill brand handle list below when ready for footer / bio consistency:
 

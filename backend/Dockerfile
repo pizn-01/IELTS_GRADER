@@ -13,6 +13,12 @@ COPY python/ ./python/
 RUN python3 -m venv ./python/.venv && \
     ./python/.venv/bin/pip install --no-cache-dir -r ./python/requirements.txt
 
+# ── Social Ops Agent (synced into backend/social-media before fly deploy) ─
+COPY social-media/ ./social-media/
+RUN python3 -m venv ./social-media/.venv && \
+    ./social-media/.venv/bin/pip install --no-cache-dir -r ./social-media/scripts/requirements.txt && \
+    mkdir -p ./social-media/output
+
 # ── Node backend ─────────────────────────────────────────────────────────
 COPY package*.json ./
 RUN npm ci --only=production

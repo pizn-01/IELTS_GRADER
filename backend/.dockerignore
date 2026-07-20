@@ -9,3 +9,10 @@ python/__pycache__
 python/*.pyc
 python/.env
 python/asset
+
+# Social Ops — exclude bulky/runtime local data from image context
+social-media/output
+social-media/.venv
+social-media/**/__pycache__
+social-media/**/*.pyc
+social-media/scripts/.env

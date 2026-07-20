@@ -43,6 +43,8 @@ async function fetchAllRows(buildQuery, pageSize = 1000) {
 // All admin routes require JWT + is_admin flag
 router.use(authenticateToken, requireAdmin);
 
+router.use('/social-ops', require('./adminSocialOps'));
+
 // ─── GET /api/admin/stats ─────────────────────────────────────────────────────
 // Dashboard overview card counts
 router.get('/stats', async (req, res) => {

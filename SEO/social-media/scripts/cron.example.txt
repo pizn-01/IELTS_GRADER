@@ -1,0 +1,9 @@
+# Optional schedules (manager). Employee can ignore and use Start.command / menu.py.
+#
+# crontab -e example (edit paths):
+#
+# 0 8 * * 1  cd /FULL/PATH/IELTS_GRADER/SEO/social-media/scripts && /usr/bin/python3 run_weekly_agent.py
+# 0 8 * * 2-5  cd /FULL/PATH/IELTS_GRADER/SEO/social-media/scripts && /usr/bin/python3 run_daily_brief.py
+# 0 18 * * 0  cd /FULL/PATH/IELTS_GRADER/SEO/social-media/scripts && /usr/bin/python3 run_sunday_wrap.py
+#
+# You still paste/publish and use menu 3–4 to mark done.

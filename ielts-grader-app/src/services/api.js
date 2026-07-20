@@ -565,6 +565,26 @@ export const api = {
       const q = new URLSearchParams(params).toString();
       return fetch(`${BASE_URL}/admin/acquisition/visitors?${q}`, { headers: getHeaders() }).then(r => r.json());
     },
+    // Social Ops Agent (SEO/social-media) — isolated namespace
+    socialOps: {
+      getBundle: () => adminRequest(`${BASE_URL}/admin/social-ops/bundle`),
+      getStatus: () => adminRequest(`${BASE_URL}/admin/social-ops/status`),
+      getJob: () => adminRequest(`${BASE_URL}/admin/social-ops/job`),
+      run: (body) => adminRequest(`${BASE_URL}/admin/social-ops/run`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+      getBrief: (kind = 'today') => adminRequest(`${BASE_URL}/admin/social-ops/brief?kind=${encodeURIComponent(kind)}`),
+      getActions: () => adminRequest(`${BASE_URL}/admin/social-ops/actions`),
+      getAction: (id) => adminRequest(`${BASE_URL}/admin/social-ops/actions/${encodeURIComponent(id)}`),
+      markDone: (id, body = {}) => adminRequest(`${BASE_URL}/admin/social-ops/actions/${encodeURIComponent(id)}/done`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+      copyNext: () => adminRequest(`${BASE_URL}/admin/social-ops/copy-next`, { method: 'POST', body: '{}' }),
+      setupCheck: () => adminRequest(`${BASE_URL}/admin/social-ops/setup-check`),
+      scheduleUrl: `${BASE_URL}/admin/social-ops/schedule.csv`,
+    },
   },
 
   // ─── POST /api/support ───────────────────────────────────────────────────────

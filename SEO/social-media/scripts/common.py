@@ -416,18 +416,35 @@ def collect_all_platforms(
     errors: list[str] = []
 
     if dry_run:
-        for platform in platforms:
+        samples = [
+            ("reddit", "grade my IELTS essay stuck at 6.5", "Please check my Task 2"),
+            ("reddit", "IELTS writing feedback needed", "How do I improve coherence?"),
+            ("quora", "How can I check my IELTS essay?", "Looking for feedback tools"),
+            ("quora", "Best IELTS writing tutor?", "AI vs human"),
+            ("twitter", "stuck at band 6.5 writing", "Any tips for Task Response?"),
+            ("twitter", "IELTS Task 2 structure", "Share your outlines"),
+            ("youtube", "IELTS essay checker review", "Does AI feedback work?"),
+            ("linkedin", "AI feedback for IELTS students", "Parents asking about tools"),
+            ("facebook", "IELTS GT letter help", "Formal vs semi-formal"),
+            ("instagram", "Band 7 writing tips", "Save this carousel"),
+            ("tiktok", "IELTS writing mistake", "This sentence costs bands"),
+        ]
+        # Expand toward engage target with variants
+        for i in range(max(len(platforms), 40)):
+            plat, title, snip = samples[i % len(samples)]
+            if platforms and plat not in platforms and i < len(platforms):
+                plat = platforms[i % len(platforms)]
             all_rows.append(
                 ResultRow(
-                    platform=platform,
-                    url=f"https://example.com/dry-run/{platform}",
-                    title=f"[dry-run] sample for {platform}",
-                    snippet="Dry run — no API calls made.",
+                    platform=plat,
+                    url=f"https://example.com/dry-run/{plat}/{i}",
+                    title=f"[dry-run] {title} #{i+1}",
+                    snippet=snip,
                     published_at=start.isoformat(),
                     query=queries[0] if queries else "",
                     source="dry_run",
                     notes="dry_run",
-                    engagement_score="0",
+                    engagement_score=str(200 - i),
                 )
             )
         return dedupe_rows(all_rows)
