@@ -123,6 +123,7 @@ export default function SocialOpsTab() {
   const [briefKind, setBriefKind] = useState('today');
   const [brief, setBrief] = useState({ markdown: '', exists: false });
   const [filter, setFilter] = useState('today');
+  const [onboardingChip, setOnboardingChip] = useState('open');
   const [dryRun, setDryRun] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
@@ -203,7 +204,21 @@ export default function SocialOpsTab() {
 
   const actions = useMemo(() => {
     if (filter === 'onboarding') {
-      return sortActions(bundle?.onboarding_items || []);
+      const all = bundle?.onboarding_items || [];
+      const filtered = all.filter((a) => {
+        const st = (a.status || '').toLowerCase();
+        if (onboardingChip === 'all') return true;
+        if (onboardingChip === 'open') {
+          return ['pending', 'awaiting_reply', 'got_reply', 'needs_draft'].includes(st);
+        }
+        if (onboardingChip === 'awaiting') {
+          return st === 'awaiting_reply' || st === 'got_reply';
+        }
+        if (onboardingChip === 'done') return st === 'done';
+        if (onboardingChip === 'dead') return st === 'dead' || st === 'skipped';
+        return true;
+      });
+      return sortActions(filtered);
     }
     if (filter === 'awaiting') {
       const weekly = filterActions(bundle?.actions || [], 'awaiting', today).map((a) => ({
@@ -219,13 +234,14 @@ export default function SocialOpsTab() {
     }
     const list = filterActions(bundle?.actions || [], filter, today);
     return sortActions(list);
-  }, [bundle?.actions, bundle?.onboarding_items, filter, today]);
+  }, [bundle?.actions, bundle?.onboarding_items, filter, today, onboardingChip]);
 
   const isOnboarding = filter === 'onboarding';
   const awaitingCount = bundle?.awaiting_replies?.count || 0;
   const onboardingNeedsDraft = (bundle?.onboarding_items || []).some(
     (a) => a.status === 'needs_draft' || a.type === 'study'
   );
+  const onboardingProgress = bundle?.onboarding_progress;
 
   const progress = useMemo(() => parseProgress(job?.log_tail), [job?.log_tail, nowTick]);
   const elapsed = formatElapsed(job?.started_at, job?.finished_at);
@@ -390,22 +406,23 @@ export default function SocialOpsTab() {
             queue + themes (not part of Today/Pending).
           </li>
           <li>
-            <strong>Start / refresh week</strong> — every Monday. Builds this week’s reply + post
-            list.
+            <strong>Weekly pack</strong> — auto Monday 00:00 ET (or manual Start / refresh).{' '}
+            <em>Merges</em> new work into pending; untouched tasks stay until Done or Dead.
           </li>
           <li>
-            <strong>Show today’s work</strong> — Tue–Fri. Then Copy → paste → Mark done. Use{' '}
-            <strong>Wait for reply</strong> when you want to check later.
+            <strong>Show today’s work</strong> — Tue–Fri auto 08:00 ET (or manual). Today ≈ new
+            week size / 7 plus overdue pending. Copy → paste → Done or Wait reply.
           </li>
           <li>
             <strong>Awaiting replies</strong> — platforms do <em>not</em> notify this admin. Open
             that tab, check each thread, then Got reply / Still waiting / Dead.
           </li>
           <li>
-            <strong>Onboarding</strong> — same copy/paste/mark flow anytime you have free time.
+            <strong>Onboarding</strong> — same copy/paste/mark flow anytime you have free time;
+            track Open / Awaiting / Done / Dead.
           </li>
           <li>
-            <strong>Sunday scorecard</strong> — wrap the week.
+            <strong>Sunday scorecard</strong> — auto Sunday 18:00 ET (or manual).
           </li>
         </ol>
         <p className="mt-2 text-gray-600 text-[12px]">
@@ -466,15 +483,24 @@ export default function SocialOpsTab() {
           <p className="text-[13px] text-gray-800 font-semibold">
             Discovered {bundle.funnel.discovered ?? '—'}
             {' → '}filter {bundle.funnel.after_filter ?? '—'}
-            {' → '}engage {bundle.funnel.engage_queue ?? '—'}
-            {' + '}create {bundle.funnel.create ?? '—'}
-            {' → '}today {bundle.funnel.today_slice ?? '—'}
-            {bundle.funnel.pending_all != null
-              ? ` · week pending ${bundle.funnel.pending_all}`
+            {' → '}new engage {bundle.funnel.engage_queue_new ?? bundle.funnel.engage_queue ?? '—'}
+            {' + '}create {bundle.funnel.create_new ?? bundle.funnel.create ?? '—'}
+            {' → '}today {bundle.funnel.today_slice ?? bundle?.queue?.today ?? '—'}
+            {bundle.funnel.pending_all != null || bundle?.queue?.open != null
+              ? ` · open pending ${bundle.queue?.open ?? bundle.funnel.pending_all}`
+              : ''}
+            {bundle.queue?.this_week_new != null
+              ? ` (this week new ${bundle.queue.this_week_new})`
+              : ''}
+            {bundle.queue?.daily_target
+              ? ` · ≈${bundle.queue.daily_target}/day`
               : ''}
           </p>
         )}
-        {(kpi?.cta_replies_total > 0 || kpi?.cta_posts_total > 0) && (
+        <p className="text-[11px] text-gray-500">
+          Pending is durable across Mondays — tasks stay open until Done or Dead. Weekly refresh
+          only adds new work.
+        </p>        {(kpi?.cta_replies_total > 0 || kpi?.cta_posts_total > 0) && (
           <p className="text-[12px] text-gray-600">
             Soft-CTA target ~{Math.round((kpi?.targets?.cta_engage_share || 0.22) * 100)}% of
             engages · planned CTA replies {kpi?.cta_replies_total || 0} · CTA creates{' '}
@@ -536,7 +562,7 @@ export default function SocialOpsTab() {
           />
           <RunBtn
             label="Start / refresh week"
-            hint="Step 2 — every Monday"
+            hint="Merges new week — keeps open pending"
             icon={Play}
             busy={busy === 'weekly'}
             disabled={lockRuns}
@@ -722,12 +748,46 @@ export default function SocialOpsTab() {
         {isOnboarding && (
           <p className="text-[12px] text-blue-900 bg-blue-50 border border-blue-100 rounded-[8px] px-3 py-2">
             Free-time engage queue — same Copy / paste / Done / Wait reply as weekly, but{' '}
-            <strong>not</strong> counted in Today or Full week pending. Do these whenever you have
-            spare time.
+            <strong>not</strong> counted in Today or Full week pending. Stays open until Done or
+            Dead.
+            {onboardingProgress
+              ? ` Progress: ${onboardingProgress.closed}/${onboardingProgress.total} closed (${onboardingProgress.pct_closed}%) · ${onboardingProgress.open} open.`
+              : ''}
             {onboardingNeedsDraft
               ? ' If you only see links without paste text, click “Prepare onboarding replies”.'
               : ''}
           </p>
+        )}
+
+        {isOnboarding && (
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { id: 'open', label: 'Open' },
+              { id: 'awaiting', label: 'Awaiting' },
+              { id: 'done', label: 'Done' },
+              { id: 'dead', label: 'Dead' },
+              { id: 'all', label: 'All' },
+            ].map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setOnboardingChip(c.id)}
+                className={`px-2.5 py-1 rounded-[8px] text-[11px] font-bold ${
+                  onboardingChip === c.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-50 text-blue-800 hover:bg-blue-100'
+                }`}
+              >
+                {c.label}
+                {c.id === 'open' && onboardingProgress
+                  ? ` (${onboardingProgress.open})`
+                  : ''}
+                {c.id === 'done' && onboardingProgress?.by_status
+                  ? ` (${onboardingProgress.by_status.done || 0})`
+                  : ''}
+              </button>
+            ))}
+          </div>
         )}
 
         {filter === 'awaiting' && (

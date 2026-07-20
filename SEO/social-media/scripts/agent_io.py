@@ -43,7 +43,25 @@ STATUS_FIELDS = [
     "fresh",
     "cta",
     "reply_check",
+    "week_id",
+    "queued_at",
 ]
+
+# Leave Today / Full pending until done or dead (skipped counts as closed)
+CLOSED_STATUSES = frozenset({"done", "dead", "skipped"})
+OPEN_STATUSES = frozenset({"pending", "awaiting_reply", "got_reply"})
+
+
+def is_open_status(status: str) -> bool:
+    return (status or "").lower() in OPEN_STATUSES
+
+
+def is_closed_status(status: str) -> bool:
+    return (status or "").lower() in CLOSED_STATUSES
+
+
+def normalize_status_url(url: str) -> str:
+    return (url or "").strip().lower().rstrip("/")
 
 load_dotenv(SCRIPTS_DIR / ".env")
 
@@ -78,37 +96,62 @@ def read_status(*, onboarding: bool = False) -> list[dict[str, str]]:
     for r in rows:
         r.setdefault("cta", "")
         r.setdefault("reply_check", "")
+        r.setdefault("week_id", "")
+        r.setdefault("queued_at", "")
         if onboarding:
             r["queue"] = "onboarding"
     return rows
 
 
 def write_status(rows: list[dict[str, str]], *, onboarding: bool = False) -> None:
+    """Atomic STATUS write (temp file → rename) so crashes don't corrupt the queue."""
     ensure_output_dirs()
     path = status_path(onboarding=onboarding)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="", encoding="utf-8") as f:
+    tmp = path.with_suffix(".csv.tmp")
+    with tmp.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=STATUS_FIELDS)
         writer.writeheader()
         for row in rows:
             writer.writerow({k: row.get(k, "") for k in STATUS_FIELDS})
+    tmp.replace(path)
+
+
+def open_status_url_keys(*, onboarding: bool = False) -> set[str]:
+    """URL keys already in an open STATUS row (do not re-queue)."""
+    keys: set[str] = set()
+    for r in read_status(onboarding=onboarding):
+        if not is_open_status(r.get("status") or ""):
+            continue
+        key = normalize_status_url(r.get("url") or "")
+        if key:
+            keys.add(key)
+    return keys
 
 
 def upsert_status_rows(
     new_rows: list[dict[str, str]], *, onboarding: bool = False
 ) -> None:
-    existing = {r["id"]: r for r in read_status(onboarding=onboarding)}
+    """Merge new rows; never overwrite open/closed work; skip duplicate open URLs."""
+    existing_list = read_status(onboarding=onboarding)
+    existing = {r["id"]: r for r in existing_list}
+    open_urls = {
+        normalize_status_url(r.get("url") or "")
+        for r in existing_list
+        if is_open_status(r.get("status") or "") and r.get("url")
+    }
     for row in new_rows:
         rid = row["id"]
-        if rid in existing and existing[rid].get("status") in (
-            "done",
-            "skipped",
-            "awaiting_reply",
-            "got_reply",
-            "dead",
-        ):
+        url_key = normalize_status_url(row.get("url") or "")
+        if rid in existing:
+            prev = existing[rid].get("status") or ""
+            if is_open_status(prev) or is_closed_status(prev):
+                continue
+        if url_key and url_key in open_urls:
             continue
         existing[rid] = {k: row.get(k, "") for k in STATUS_FIELDS}
+        if url_key and is_open_status(row.get("status") or "pending"):
+            open_urls.add(url_key)
     ordered = sorted(existing.values(), key=lambda r: r.get("id", ""))
     write_status(ordered, onboarding=onboarding)
 
@@ -146,18 +189,29 @@ def write_week_meta(data: dict[str, Any]) -> None:
 
 
 def archive_this_week_if_needed(week_id: str) -> None:
-    """Move THIS_WEEK contents to archive/<old_week_id> when starting a new week."""
+    """
+    Snapshot prior week metadata into archive/<old_week_id>.
+    Does NOT move STATUS.csv or action files — open work stays pending across weeks.
+    """
     ensure_output_dirs()
     meta = read_week_meta()
     old = meta.get("week_id")
     if not old or old == week_id:
         return
-    dest = ARCHIVE_DIR / old
-    if dest.exists():
-        shutil.rmtree(dest)
+    dest = ARCHIVE_DIR / old / "_meta"
     dest.mkdir(parents=True, exist_ok=True)
-    for child in list(THIS_WEEK.iterdir()):
-        shutil.move(str(child), str(dest / child.name))
+    meta_dir = THIS_WEEK / "_meta"
+    for name in (
+        "week.json",
+        "funnel.json",
+        "filter_summary.json",
+        "discovery_summary.json",
+        "engage_queue.json",
+        "filtered_discovery.csv",
+    ):
+        src = meta_dir / name
+        if src.exists():
+            shutil.copy2(src, dest / name)
     (THIS_WEEK / "actions").mkdir(exist_ok=True)
     (THIS_WEEK / "_meta").mkdir(exist_ok=True)
 
@@ -370,24 +424,35 @@ def pending_actions(
     day: Optional[str] = None,
     include_overdue: bool = True,
 ) -> list[dict[str, str]]:
+    """Today slice: open rows for this weekday + overdue pending (incl. prior weeks)."""
     today = weekday_label()
     day = day or today
     order_days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     today_idx = order_days.index(day) if day in order_days else 0
+    current_week = (read_week_meta().get("week_id") or "").strip()
 
     rows = read_status()
     pending: list[dict[str, str]] = []
     for r in rows:
         st = (r.get("status") or "").lower()
-        if st not in ("pending", "awaiting_reply"):
+        if not is_open_status(st):
             continue
         rday = r.get("day") or ""
         if rday == day:
             pending.append(r)
-        elif include_overdue and rday in order_days:
-            if order_days.index(rday) < today_idx and st == "pending":
-                pending.append(r)
+            continue
+        if not include_overdue or st != "pending":
+            continue
+        week = (r.get("week_id") or "").strip()
+        if current_week and week and week < current_week:
+            pending.append(r)
+        elif rday in order_days and order_days.index(rday) < today_idx:
+            pending.append(r)
     return pending
+
+
+def open_actions(*, onboarding: bool = False) -> list[dict[str, str]]:
+    return [r for r in read_status(onboarding=onboarding) if is_open_status(r.get("status") or "")]
 
 
 def sort_for_today(rows: list[dict[str, str]]) -> list[dict[str, str]]:

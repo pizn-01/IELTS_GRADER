@@ -16,6 +16,8 @@ from agent_io import (  # noqa: E402
     OUTPUT_DIR,
     THIS_WEEK,
     ensure_output_dirs,
+    is_open_status,
+    open_actions,
     pending_actions,
     read_status,
     read_week_meta,
@@ -23,6 +25,7 @@ from agent_io import (  # noqa: E402
 )
 from agent_rules import (  # noqa: E402
     CTA_ENGAGE_SHARE,
+    ENGAGE_MAX,
     KPI_HIGH_INTENT,
     KPI_POSTS,
     KPI_REPLIES,
@@ -197,12 +200,21 @@ def build_payload() -> dict:
         for a in actions
         if (a.get("type") or "").lower()
         in ("reply", "comment", "engage", "followup", "group_comment")
+        and is_open_status(a.get("status") or "")
     )
     create_n = sum(
         1
         for a in actions
         if (a.get("type") or "").lower()
         in ("post", "answer", "page_post", "short_script", "caption", "stories")
+        and is_open_status(a.get("status") or "")
+    )
+    open_all = open_actions()
+    current_week = (read_week_meta().get("week_id") or "").strip()
+    this_week_new = sum(
+        1
+        for a in open_all
+        if (a.get("week_id") or "") == current_week and current_week
     )
     if not funnel:
         funnel = {
@@ -216,12 +228,13 @@ def build_payload() -> dict:
     funnel = {
         **funnel,
         "today_slice": len(today_rows),
-        "pending_all": sum(
-            1
-            for a in actions
-            if (a.get("status") or "").lower() in ("pending", "awaiting_reply", "got_reply")
-        ),
+        "pending_all": len(open_all),
+        "open_after": len(open_all),
+        "this_week_new": funnel.get("this_week_new") or this_week_new,
+        "daily_target": funnel.get("daily_target")
+        or (max(1, (this_week_new + 6) // 7) if this_week_new else 0),
     }
+    onboarding_progress = _onboarding_progress(onboarding_items)
     return {
         "ok": True,
         "weekday": today,
@@ -233,11 +246,19 @@ def build_payload() -> dict:
                 "posts": KPI_POSTS,
                 "high_intent": KPI_HIGH_INTENT,
                 "cta_engage_share": CTA_ENGAGE_SHARE,
+                "engage_max": ENGAGE_MAX,
             },
             "strip": kpi_strip(kpi),
         },
         "week_meta": read_week_meta(),
         "funnel": funnel,
+        "queue": {
+            "open": len(open_all),
+            "this_week_new": funnel.get("this_week_new") or this_week_new,
+            "today": len(today_rows),
+            "daily_target": funnel.get("daily_target") or 0,
+            "durable": True,
+        },
         "paths": {
             "this_week": str(THIS_WEEK),
             "has_status": (THIS_WEEK / "_meta" / "STATUS.csv").exists(),
@@ -262,6 +283,7 @@ def build_payload() -> dict:
         "setup_ok": serper and openai_key,
         "actions": actions,
         "onboarding_items": onboarding_items,
+        "onboarding_progress": onboarding_progress,
         "awaiting_replies": {
             "weekly": awaiting,
             "onboarding": awaiting_onboarding,
@@ -285,6 +307,26 @@ def build_payload() -> dict:
             ]
             if p.exists()
         ],
+    }
+
+
+def _onboarding_progress(items: list[dict[str, str]]) -> dict:
+    total = len(items)
+    by = {"pending": 0, "awaiting_reply": 0, "got_reply": 0, "done": 0, "dead": 0, "skipped": 0, "needs_draft": 0, "other": 0}
+    for a in items:
+        st = (a.get("status") or "").lower()
+        if st in by:
+            by[st] += 1
+        else:
+            by["other"] += 1
+    closed = by["done"] + by["dead"] + by["skipped"]
+    open_n = sum(1 for a in items if is_open_status(a.get("status") or ""))
+    return {
+        "total": total,
+        "open": open_n,
+        "closed": closed,
+        "by_status": by,
+        "pct_closed": round(100.0 * closed / total, 1) if total else 0.0,
     }
 
 

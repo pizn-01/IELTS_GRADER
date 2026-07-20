@@ -11,10 +11,11 @@ from typing import Optional
 
 from agent_rules import (
     DEEP_DAY,
-    ENGAGE_SLOT_DAYS,
+    ENGAGE_MAX,
     ENGAGE_TARGET,
     KPI_HIGH_INTENT,
     ONBOARDING_ENGAGE_TARGET,
+    WEEKDAYS,
     classify_intent,
     is_high_intent,
     platform_tier,
@@ -57,8 +58,11 @@ def triage_csv(
     fresh_cap: int = 8,
     cta_map: Optional[dict[str, bool]] = None,
     remember: bool = True,
+    skip_urls: Optional[set[str]] = None,
 ) -> list[TriageItem]:
     blocked = blocked_urls()
+    if skip_urls:
+        blocked = blocked | {u.lower().rstrip("/") for u in skip_urls}
     cta_map = cta_map if cta_map is not None else load_cta_map()
     raw = _read_csv_rows(csv_path)
     items: list[TriageItem] = []
@@ -149,7 +153,9 @@ def triage_csv(
             )
         return items
 
-    selected = items[: max(target_engage, KPI_HIGH_INTENT)]
+    # Weekly: take up to target (≈ filtered discovery N), safety-capped
+    cap = min(max(target_engage, KPI_HIGH_INTENT), ENGAGE_MAX)
+    selected = items[:cap]
     _assign_days(selected)
     if remember:
         remember_urls(
@@ -166,17 +172,26 @@ def _today_label() -> str:
 
 
 def _assign_days(items: list[TriageItem]) -> None:
+    """Spread N items across Mon–Sun so each day ≈ N/7 (remainder on later days)."""
     if not items:
         return
-    # Highest engagement → Fri deep (~20%)
-    deep_n = max(3, len(items) // 5)
-    for it in items[:deep_n]:
-        it.day = DEEP_DAY
-    rest = items[deep_n:]
-    # Spread the rest evenly across Mon–Thu (no hard Mon=8 cap)
-    days = ("Mon",) + tuple(ENGAGE_SLOT_DAYS)
-    for i, it in enumerate(rest):
-        it.day = days[i % len(days)]
+    n = len(items)
+    days = list(WEEKDAYS)
+    base = n // 7
+    extra = n % 7
+    # Later days of the week absorb the remainder so Mon isn't overloaded
+    counts = [base + (1 if i >= 7 - extra else 0) for i in range(7)]
+    idx = 0
+    for day, count in zip(days, counts):
+        for _ in range(count):
+            if idx >= n:
+                return
+            items[idx].day = day
+            idx += 1
+    # Fallback if anything left
+    while idx < n:
+        items[idx].day = days[idx % 7]
+        idx += 1
 
 
 def items_to_dicts(items: list[TriageItem]) -> list[dict]:

@@ -22,6 +22,10 @@ primary_region = 'iad'
   min_machines_running = 1
   processes = ['app']
 
+# Keep one machine warm so in-process Social Ops cron (Mon 00:00 ET weekly) can fire
+[deploy]
+  strategy = 'rolling'
+
 # Persist Social Ops discovery CSVs / briefs across deploys (one volume ↔ one machine)
 [[mounts]]
   source = 'social_ops_data'

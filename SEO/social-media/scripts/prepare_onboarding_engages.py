@@ -41,7 +41,9 @@ def run(*, dry_run: bool = False, csv_path: Path | None = None, reset: bool = Fa
     )
     write_triage_json(COLD_START / "_meta" / "engage_queue.json", items)
     print(f"Onboarding candidates: {len(items)}")
-    rows = draft_engage_items(items, dry_run=dry_run, onboarding=True)
+    rows = draft_engage_items(
+        items, dry_run=dry_run, onboarding=True, week_id="onboarding"
+    )
     print(f"Onboarding engage actions ready: {len(rows)} → {COLD_START}")
     print("These are Free-time only — not counted in weekly Today / Pending.")
     return 0

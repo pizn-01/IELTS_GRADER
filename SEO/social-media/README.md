@@ -15,15 +15,18 @@ Cold start (once)
   → free-time Onboarding engage queue (separate from Today/Pending)
   → onboarding brief + theme_bank.json
 
-Weekly (Monday)
+Weekly (Monday 00:00 ET auto)
   → 7-day discover CSV
   → LLM/heuristic relevance filter
-  → top ~173 engage + ~create pack (~200 pending)
+  → engage ≈ filtered N (cap 500), days ≈ N/7 + create pack
+  → MERGE into durable STATUS (keep open pending across weeks)
   → seen_urls (90d) + engaged_urls memory (no duplicates)
-  → you paste → mark done / wait reply / got reply
+  → you paste → done / wait reply / dead
 ```
 
-**Cold start does not fill the weekly reply queue.** It seeds themes for create posts and a free-time Onboarding engage pack. Weekly always does a fresh 7-day search.
+**Cold start does not fill the weekly reply queue.** It seeds themes for create posts and a free-time Onboarding engage pack. Weekly merges new discovery into durable STATUS (open tasks survive Monday refresh until Done or Dead).
+
+**Pending / Today:** open = pending + awaiting_reply + got_reply. Today ≈ this-week-new / 7 for new items’ day slots, plus overdue pending from prior weeks. Auto Monday 00:00 ET on Fly.
 
 **Reply notifications:** platforms never push into Admin. After paste, mark **Wait for reply**, then check **Awaiting replies** later (Got reply / Still waiting / Dead).
 

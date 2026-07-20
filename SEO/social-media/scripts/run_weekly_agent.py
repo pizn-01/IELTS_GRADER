@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Monday pipeline: discover → filter → triage → engage drafts → create pack → week brief."""
+"""Monday pipeline: discover → filter → triage → merge engage/create into durable STATUS."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -16,10 +15,12 @@ from agent_io import (  # noqa: E402
     THIS_WEEK,
     archive_this_week_if_needed,
     ensure_output_dirs,
-    write_status,
+    open_actions,
+    open_status_url_keys,
+    read_status,
     write_week_meta,
 )
-from agent_rules import ENGAGE_TARGET, warmup_enabled  # noqa: E402
+from agent_rules import ENGAGE_MAX, warmup_enabled  # noqa: E402
 from briefs import write_week_brief  # noqa: E402
 from common import (  # noqa: E402
     QUERY_BANK,
@@ -41,12 +42,16 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
     week_id = today.isoformat()
     archive_this_week_if_needed(week_id)
 
-    write_status([])
-    actions = THIS_WEEK / "actions"
-    if actions.exists():
-        shutil.rmtree(actions)
-    actions.mkdir(parents=True, exist_ok=True)
+    # Keep open STATUS + action files. Only ensure dirs exist.
+    (THIS_WEEK / "actions").mkdir(parents=True, exist_ok=True)
     (THIS_WEEK / "_meta").mkdir(parents=True, exist_ok=True)
+
+    prior_open = len(open_actions())
+    print(
+        f"Durable queue: {prior_open} open actions kept before merge "
+        f"(STATUS rows={len(read_status())})",
+        flush=True,
+    )
 
     if csv_path is None and not skip_search:
         start, end_dt = window_bounds(today, 7)
@@ -60,7 +65,6 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
             reddit_limit=35,
             youtube_max=12,
             prefer_undated=False,
-            # Weekly: undated only as last resort for thin Reddit/Quora SERPs
             allow_undated_fallback=True,
         )
         csv_path = default_output_path("ielts_social_weekly", today)
@@ -102,40 +106,63 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         use_llm=not dry_run,
     )
 
-    print("Triaging …", flush=True)
+    already = open_status_url_keys()
+    print(
+        f"Triaging (skip {len(already)} URLs already open in STATUS) …",
+        flush=True,
+    )
+    # Target = filtered discovery size (capped); triage skips blocked + already-open URLs
+    passed = int(filter_summary.get("passed") or 0)
+    target_engage = min(ENGAGE_MAX, passed) if passed else ENGAGE_MAX
     items = triage_csv(
         filtered_csv,
         mode="weekly",
-        target_engage=ENGAGE_TARGET,
+        target_engage=target_engage,
         cta_map=filter_summary.get("cta_map") or {},
+        skip_urls=already,
     )
     write_triage_json(THIS_WEEK / "_meta" / "engage_queue.json", items)
-    print(f"Engage candidates: {len(items)} (warmup={warmup_enabled()})", flush=True)
+    print(
+        f"Engage candidates this week: {len(items)} "
+        f"(target≈{target_engage}, warmup={warmup_enabled()})",
+        flush=True,
+    )
 
-    print("Drafting engage replies …", flush=True)
-    engage_rows = draft_engage_items(items, dry_run=dry_run)
-    print(f"Engage actions: {len(engage_rows)}", flush=True)
+    print("Drafting engage replies (merge into STATUS) …", flush=True)
+    engage_rows = draft_engage_items(items, dry_run=dry_run, week_id=week_id)
+    print(f"New engage actions: {len(engage_rows)}", flush=True)
 
-    print("Drafting create pack …", flush=True)
-    create_rows = draft_content_pack(dry_run=dry_run, week_start=today)
-    print(f"Create actions: {len(create_rows)}", flush=True)
+    print("Drafting create pack (merge into STATUS) …", flush=True)
+    create_rows = draft_content_pack(dry_run=dry_run, week_start=today, week_id=week_id)
+    print(f"New create actions: {len(create_rows)}", flush=True)
 
+    open_n = len(open_actions())
     funnel = {
         "discovered": discovered_n or filter_summary.get("input_rows") or 0,
         "after_filter": filter_summary.get("passed") or 0,
+        "engage_queue_new": len(engage_rows),
         "engage_queue": len(engage_rows),
+        "create_new": len(create_rows),
         "create": len(create_rows),
         "cta_engage": sum(1 for r in engage_rows if r.get("cta") == "1"),
         "cta_create": sum(1 for r in create_rows if r.get("cta") == "1"),
         "filter_rejected": filter_summary.get("rejected") or 0,
+        "open_before": prior_open,
+        "open_after": open_n,
+        "pending_all": open_n,
+        "this_week_new": len(engage_rows) + len(create_rows),
+        "daily_target": max(1, (len(engage_rows) + 6) // 7) if engage_rows else 0,
+        "merged": True,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
     (THIS_WEEK / "_meta" / "funnel.json").write_text(
         json.dumps(funnel, indent=2), encoding="utf-8"
     )
     print(
         f"Funnel: discovered={funnel['discovered']} → filter={funnel['after_filter']} "
-        f"→ engage={funnel['engage_queue']} + create={funnel['create']} "
-        f"(CTA engage {funnel['cta_engage']}, create {funnel['cta_create']})",
+        f"→ new engage={funnel['engage_queue_new']} + create={funnel['create_new']} "
+        f"| open pending {funnel['open_before']} → {funnel['open_after']} "
+        f"(≈{funnel['daily_target']}/day for new engage)",
         flush=True,
     )
 
@@ -147,6 +174,7 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
             "generated_at": date.today().isoformat(),
             "warmup": warmup_enabled(),
             "funnel": funnel,
+            "durable_pending": True,
         }
     )
     brief = write_week_brief()

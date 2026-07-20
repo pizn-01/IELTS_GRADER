@@ -5,10 +5,16 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from agent_rules import agent_model, HELPFUL_REPLY_EXAMPLE
+from agent_rules import agent_model, pick_helpful_fallback
 
 
-def llm_complete(system: str, user: str, *, dry_run: bool = False) -> str:
+def llm_complete(
+    system: str,
+    user: str,
+    *,
+    dry_run: bool = False,
+    temperature: float = 0.85,
+) -> str:
     if dry_run or not os.getenv("OPENAI_API_KEY", "").strip():
         return _fallback(system, user)
 
@@ -22,7 +28,7 @@ def llm_complete(system: str, user: str, *, dry_run: bool = False) -> str:
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            temperature=0.6,
+            temperature=temperature,
         )
         text = (resp.choices[0].message.content or "").strip()
         return text or _fallback(system, user)
@@ -32,30 +38,26 @@ def llm_complete(system: str, user: str, *, dry_run: bool = False) -> str:
 
 
 def _fallback(system: str, user: str) -> str:
-    """Deterministic paste-ready stub when LLM unavailable."""
+    """Varied paste-ready stub when LLM unavailable."""
     lower = (system + "\n" + user).lower()
     if "short_script" in lower or "45–60s" in lower or "45-60s" in lower:
         return (
-            "HOOK: This Band 6 sentence is why you're stuck at 6.5.\n"
-            "ON SCREEN: show the weak sentence, then a Band 7 rewrite.\n"
-            "FIX: Clarify your position in Task Response — one clear view, developed with a specific example.\n"
-            "CTA: Get criterion-by-criterion feedback free — link in bio / link below.\n"
+            "HOOK: Stuck at 6.5? It's usually one undercooked idea — not grammar.\n"
+            "ON SCREEN: weak sentence → tighter rewrite.\n"
+            "SAY: Finish the point with a real example before you move on.\n"
+            "CTA: Free criterion notes if you want them — link in bio.\n"
         )
     if "quora" in lower and ("answer" in lower or "300" in lower):
         return (
-            "IELTS Writing is scored on four criteria: Task Response, Coherence & Cohesion, "
-            "Lexical Resource, and Grammatical Range & Accuracy.\n\n"
-            "If you're stuck around 6.5, the usual issue isn't 'more big words' — it's under-developed "
-            "ideas (TR) and weak paragraph logic (CC).\n\n"
-            "Try this: write a clear topic sentence, then add one concrete example before your next point.\n\n"
-            "Happy to sketch a fix for one paragraph if you paste it."
+            "Most people stuck around 6.5 aren't missing 'big words'. "
+            "They're stopping mid-idea.\n\n"
+            "Try: clear topic sentence → one specific example → then the next point. "
+            "That alone lifts Task Response more than synonym hunting.\n\n"
+            "Paste a paragraph if you want a single highest-impact fix."
         )
     if "follow-up" in lower or "followup" in lower:
         return (
-            "Glad that helped. If you paste the next paragraph, I'll point to the single highest-impact fix "
-            "(usually Task Response or Coherence)."
+            "Nice — glad that landed. Paste the next paragraph and I'll mark the one "
+            "change that moves the band most."
         )
-    # Default engage reply
-    return HELPFUL_REPLY_EXAMPLE + (
-        "\n\nIf you paste one paragraph, I can hint at the highest-impact fix."
-    )
+    return pick_helpful_fallback()

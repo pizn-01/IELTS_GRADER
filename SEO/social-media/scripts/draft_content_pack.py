@@ -82,14 +82,22 @@ def load_theme_bank() -> dict[str, Any]:
 
 
 def draft_content_pack(
-    *, dry_run: bool = False, week_start: Optional[date] = None
+    *,
+    dry_run: bool = False,
+    week_start: Optional[date] = None,
+    week_id: str = "",
 ) -> list[dict[str, str]]:
     week_start = week_start or date.today()
+    wid = week_id or week_start.isoformat()
+    queued_at = datetime.now(timezone.utc).isoformat()
     themes = load_theme_bank().get("themes") or HOOKS
     n = next_action_id()
     status_rows: list[dict[str, str]] = []
     schedule_rows: list[dict[str, str]] = []
     tz = _tzinfo()
+
+    def status_row(*args, **kwargs):
+        return _make_status(*args, **kwargs, week_id=wid, queued_at=queued_at)
 
     short_count = CREATE_TARGETS.get("youtube", 4)
     short_days = list(CREATE_SHORT_DAYS)[:short_count]
@@ -122,7 +130,7 @@ def draft_content_pack(
             intent="create",
         )
         status_rows.append(
-            _status(aid, day, "youtube", "short_script", f"Short: {theme}", path)
+            status_row(aid, day, "youtube", "short_script", f"Short: {theme}", path)
         )
         sched_at = _schedule_dt(week_start, day, 10 + i, tz)
         schedule_rows.append(
@@ -156,7 +164,7 @@ def draft_content_pack(
                 intent="create",
             )
             status_rows.append(
-                _status(caid, day, plat, "caption", f"{plat}: {theme}", cpath)
+                status_row(caid, day, plat, "caption", f"{plat}: {theme}", cpath)
             )
             schedule_rows.append(
                 _sched(caid, plat, "caption", theme, caption[:500], sched_at)
@@ -183,7 +191,7 @@ def draft_content_pack(
                 intent="create",
             )
             status_rows.append(
-                _status(said, day, "instagram", "stories", "Stories poll", spath)
+                status_row(said, day, "instagram", "stories", "Stories poll", spath)
             )
 
     # Reddit value post — Wed
@@ -210,7 +218,7 @@ def draft_content_pack(
         intent="create",
     )
     status_rows.append(
-        _status(raid, "Wed", "reddit", "post", "Reddit value post", rpath, cta=False)
+        status_row(raid, "Wed", "reddit", "post", "Reddit value post", rpath, cta=False)
     )
 
     quora_qs = [
@@ -248,7 +256,7 @@ def draft_content_pack(
             issues=validate_draft(ans, product_mentioned=True),
             intent="create",
         )
-        status_rows.append(_status(qaid, day, "quora", "answer", q, qpath, cta=True))
+        status_rows.append(status_row(qaid, day, "quora", "answer", q, qpath, cta=True))
         schedule_rows.append(
             _sched(
                 qaid,
@@ -284,7 +292,7 @@ def draft_content_pack(
             issues=validate_draft(tw, product_mentioned="ieltsgrader" in tw.lower()),
             intent="create",
         )
-        status_rows.append(_status(taid, day, "twitter", "post", f"X post {i+1}", tpath))
+        status_rows.append(status_row(taid, day, "twitter", "post", f"X post {i+1}", tpath))
         schedule_rows.append(
             _sched(
                 taid,
@@ -323,7 +331,7 @@ def draft_content_pack(
             intent="create",
         )
         status_rows.append(
-            _status(laid, day, "linkedin", "post", f"LinkedIn {i+1}", lpath)
+            status_row(laid, day, "linkedin", "post", f"LinkedIn {i+1}", lpath)
         )
         schedule_rows.append(
             _sched(
@@ -360,7 +368,7 @@ def draft_content_pack(
             intent="create",
         )
         status_rows.append(
-            _status(faid, day, "facebook", "page_post", f"FB page {i+1}", fpath)
+            status_row(faid, day, "facebook", "page_post", f"FB page {i+1}", fpath)
         )
         gaid = format_action_id(n)
         n += 1
@@ -384,7 +392,7 @@ def draft_content_pack(
             intent="create",
         )
         status_rows.append(
-            _status(gaid, day, "facebook", "group_comment", f"FB group {i+1}", gpath)
+            status_row(gaid, day, "facebook", "group_comment", f"FB group {i+1}", gpath)
         )
 
     upsert_status_rows(status_rows)
@@ -392,7 +400,7 @@ def draft_content_pack(
     return status_rows
 
 
-def _status(
+def _make_status(
     aid: str,
     day: str,
     platform: str,
@@ -401,6 +409,8 @@ def _status(
     path: Path,
     *,
     cta: bool = True,
+    week_id: str = "",
+    queued_at: str = "",
 ) -> dict[str, str]:
     return {
         "id": aid,
@@ -417,6 +427,8 @@ def _status(
         "fresh": "0",
         "cta": "1" if cta else "0",
         "reply_check": "",
+        "week_id": week_id,
+        "queued_at": queued_at,
     }
 
 

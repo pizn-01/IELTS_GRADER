@@ -65,23 +65,65 @@ SOFT_CTA = (
     "free evaluation at ieltsgrader.com — no pressure either way."
 )
 
-HELPFUL_REPLY_EXAMPLE = (
-    "Your Task Response is clear, but paragraph 2 doesn't fully develop the "
-    "idea — add a specific example. For Coherence, your transition should "
-    "contrast the previous point, not open a new topic."
-)
+# Rotating human soft CTAs (pick one when product is allowed — never identical boilerplate)
+SOFT_CTA_POOL = [
+    SOFT_CTA,
+    "If you ever want a free band breakdown (TR/CC/LR/GRA), there's one at ieltsgrader.com — totally optional.",
+    "We made a free essay check that shows criterion notes in about a minute: ieltsgrader.com. Ignore if you're good.",
+    "Side note only if useful — free writing check at ieltsgrader.com. Happy to keep helping here either way.",
+]
+
+HELPFUL_REPLY_FALLBACKS = [
+    "Paragraph 2 stops at the claim. Drop in one concrete example (who / what happened) and the idea will carry more weight.",
+    "Your position is clear — the jump between paragraphs is the weak spot. One contrast sentence at the start of para 2 usually fixes it.",
+    "I'd tighten the topic sentence and cut the filler around it. Examiners reward a clean point more than a fancy word.",
+    "Grammar is fine; the band lift is in Task Response — finish the idea before you start the next one.",
+]
+
+HELPFUL_REPLY_EXAMPLE = HELPFUL_REPLY_FALLBACKS[0]
+
+# Phrases that make drafts sound like generic AI
+AI_BANNED_PHRASES = [
+    "as an ai",
+    "as a language model",
+    "delve",
+    "delve into",
+    "landscape",
+    "it's important to note",
+    "it is important to note",
+    "leverage",
+    "in today's world",
+    "in conclusion,",
+    "furthermore,",
+    "moreover,",
+    "navigate the",
+    "unlock your potential",
+    "game-changer",
+    "game changer",
+    "here's a comprehensive",
+    "i hope this helps!",
+    "certainly!",
+    "absolutely!",
+    "great question!",
+]
 
 # ---------------------------------------------------------------------------
 # §3 Cadence & §8 KPIs
 # ---------------------------------------------------------------------------
 
-KPI_REPLIES = 173  # ~173 engage + ~27 create ≈ 200 week-pending actions
+# Soft KPI for scorecard; weekly engage size follows filtered discovery (≤ ENGAGE_MAX)
+KPI_REPLIES = 400
 KPI_POSTS = 12
 KPI_HIGH_INTENT = 10
 # Free-time onboarding (cold start) engage pack — separate from weekly pending
 ONBOARDING_ENGAGE_TARGET = 100
 # Share of weekly engage drafts that should include soft CTA + disclosure + UTM
 CTA_ENGAGE_SHARE = 0.22
+# Hard safety cap so a huge discovery week doesn't explode LLM cost
+ENGAGE_MAX = 500
+# Default engage target when caller doesn't pass discovery size (legacy)
+ENGAGE_TARGET = ENGAGE_MAX
+FRESH_LISTEN_CAP = 12
 
 TIER1 = ("reddit", "quora", "twitter")
 TIER2 = ("youtube", "instagram", "tiktok")
@@ -97,9 +139,6 @@ CREATE_TARGETS = {
     "linkedin": 2,
     "facebook": 2,
 }
-
-ENGAGE_TARGET = KPI_REPLIES
-FRESH_LISTEN_CAP = 12
 
 HOOKS = [
     "This Band 6 sentence is why you're stuck at 6.5.",
@@ -128,6 +167,19 @@ WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 ENGAGE_SLOT_DAYS = ("Tue", "Wed", "Thu")
 DEEP_DAY = "Fri"
 CREATE_SHORT_DAYS = ("Tue", "Wed", "Thu", "Fri")
+
+
+def pick_soft_cta() -> str:
+    import random
+
+    return random.choice(SOFT_CTA_POOL)
+
+
+def pick_helpful_fallback() -> str:
+    import random
+
+    tip = random.choice(HELPFUL_REPLY_FALLBACKS)
+    return tip + "\n\nIf you paste one paragraph, I can point at the highest-impact fix."
 
 
 def warmup_enabled() -> bool:
@@ -298,6 +350,9 @@ def validate_draft(text: str, *, product_mentioned: bool) -> list[str]:
     for phrase in NEVER_SAY:
         if phrase in lower:
             issues.append(f"banned phrase: {phrase}")
+    for phrase in AI_BANNED_PHRASES:
+        if phrase in lower:
+            issues.append(f"AI-sounding phrase: {phrase}")
     if product_mentioned:
         if "disclosure" not in lower and "affiliated" not in lower:
             issues.append("product mentioned but disclosure missing")
@@ -314,21 +369,23 @@ def validate_draft(text: str, *, product_mentioned: bool) -> list[str]:
 def system_prompt_engage(platform: str, intent: str) -> str:
     product_ok = allow_product_mention(platform, intent)
     placement = link_placement(platform, intent)
-    return f"""You are the social media specialist for IELTS AI Tutor by IELTSGRADER.
-Follow EMPLOYEE_PLAYBOOK strictly.
+    return f"""You write casual social replies for IELTSGRADER. Sound like a helpful human tutor on Reddit/Quora/X — not a chatbot.
 
-Positioning: {POSITIONING}
-Primary CTA: {PRIMARY_CTA}
+Voice rules (strict):
+- Short uneven sentences. Contractionsions OK. No corporate polish.
+- ONE concrete tip tied to their post. Skip criterion laundry lists (don't recite TR/CC/LR/GRA unless one name helps).
+- No "As an AI", "Great question!", "Certainly!", "delve", "leverage", "it's important to note".
+- Don't mirror a Hook→Problem→Fix template. Don't end every reply the same way.
+- Vary length: sometimes 2 sentences, sometimes a short paragraph. Never essay-length.
+- Never guarantee bands. Never argue with examiners or competitors.
 
-Reply ladder:
-1) One concrete tip (name TR/CC/LR/GRA or before/after).
-2) Invite a small next step without selling (e.g. paste one paragraph).
-3) Soft product mention ONLY if they asked for tools/tutors/checkers.
-4) At most one allowlisted link where placement allows. Never dump links.
-5) Conversations convert — include a short follow-up paste if they reply.
+Product rules:
+- Soft product mention ONLY if they asked for tools/tutors/checkers (intent allows).
+- At most one allowlisted link where placement allows. Disclose when promoting.
+- If product not allowed: teach only — zero URLs, zero brand names.
 
 Disclosure when promoting: {DISCLOSURE}
-Soft CTA: {SOFT_CTA}
+Example soft CTA style (paraphrase, don't copy verbatim): {SOFT_CTA}
 
 Platform: {platform}
 Intent: {intent}
@@ -337,31 +394,30 @@ Link placement: {placement}
 Warmup mode: {warmup_enabled()}
 
 Never say: {", ".join(NEVER_SAY)}.
-Never guarantee bands. Prefer proof (criteria, before/after) over praise.
-Tone: calm, useful, never argue with examiners/competitors/frustrated students.
 
-Output ONLY the reply text to paste on-platform. No markdown headings. No "Step 1".
-If product not allowed, do not mention the product or URLs.
+Output ONLY the reply text to paste. No markdown headings. No "Step 1". No meta commentary.
 """
 
 
 def system_prompt_create(platform: str, content_type: str) -> str:
-    return f"""You create social content for IELTS AI Tutor by IELTSGRADER.
-Follow EMPLOYEE_PLAYBOOK.
+    return f"""You write social posts for IELTSGRADER that sound human — like a sharp tutor, not an ad agency or ChatGPT.
 
-Positioning: {POSITIONING}
-Hooks that work: {HOOKS}
-Short video structure: Hook → problem sentence → fix → soft CTA (45–60s).
-Text post: Claim → one example → checklist → invite a question.
-Visual: vertical 9:16; overlays {BRAND_NAVY} + {BRAND_BLUE}; show real essay lines.
-Hashtags: 3–8 from {HASHTAG_DEFAULT} plus 1–2 niche (not on LinkedIn — prefer @mentions).
-Banned: {NEVER_SAY}. Use replacements: {BANNED_PHRASE_REPLACEMENTS}.
+Voice:
+- Punchy, specific, a little uneven. Real essay examples beat slogans.
+- Avoid AI filler: delve, leverage, landscape, "in today's world", "unlock your potential".
+- Don't force a rigid Hook→Problem→Fix→CTA every time; mix formats.
+- Hashtags only where natural (skip on LinkedIn).
+
+Positioning (use lightly): {POSITIONING}
+Hook ideas (optional spark, rewrite in your own words): {HOOKS}
+Visual cue when relevant: vertical 9:16; overlays {BRAND_NAVY} + {BRAND_BLUE}.
+Banned claims: {NEVER_SAY}. Replacements: {BANNED_PHRASE_REPLACEMENTS}.
 
 Platform: {platform}
 Content type: {content_type}
-For Instagram/TikTok captions: say "link in bio", avoid raw URLs.
-For YouTube: end with spoken CTA for free criterion feedback; description can include ieltsgrader.com.
+Instagram/TikTok: "link in bio", no raw URLs in caption.
+YouTube: spoken CTA OK; description may include ieltsgrader.com.
 Disclose if product is mentioned: {DISCLOSURE}
 
-Output paste-ready copy only (or script with on-screen text cues). No meta commentary.
+Output paste-ready copy only (or a short script with on-screen cues). No meta commentary.
 """

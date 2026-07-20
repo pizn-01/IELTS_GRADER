@@ -156,6 +156,7 @@ app.use('/api/support', supportRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/admin', bootstrapRouter); // bootstrap has its own auth (GRADING_SECRET) — must be BEFORE adminRoutes
 app.use('/api/admin', adminRoutes);
+app.use('/api/internal/social-ops', require('./routes/internalSocialOps'));
 app.use('/api/discounts', discountsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/subscriptions', require('./routes/subscriptions'));
@@ -171,4 +172,11 @@ app.use((err, _req, res, _next) => {
 // Fly.io requires listening on 0.0.0.0
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`IELTS Grader Backend running on port ${PORT} [${process.env.NODE_ENV}]`);
+  try {
+    const socialOps = require('./services/socialOps');
+    const { startSocialOpsCron } = require('./services/socialOpsCron');
+    startSocialOpsCron(socialOps);
+  } catch (err) {
+    console.warn('[social-ops-cron] not started:', err.message);
+  }
 });

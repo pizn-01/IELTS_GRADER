@@ -21,10 +21,10 @@ from agent_io import (
 from agent_rules import (
     CTA_ENGAGE_SHARE,
     DISCLOSURE,
-    SOFT_CTA,
     allow_cta_for_item,
     allow_product_mention,
     link_placement,
+    pick_soft_cta,
     platform_tier,
     system_prompt_engage,
     utm_url,
@@ -148,13 +148,18 @@ def draft_engage_items(
     dry_run: bool = False,
     start_id: Optional[int] = None,
     onboarding: bool = False,
+    week_id: str = "",
 ) -> list[dict[str, str]]:
-    """Create action files + status rows for engage triage items."""
+    """Create action files + status rows for engage triage items (merge, never wipe)."""
+    from datetime import datetime, timezone
+
     root = work_root(onboarding=onboarding)
     n = start_id or next_action_id(onboarding=onboarding)
     status_rows: list[dict[str, str]] = []
     cta_flags = _assign_cta_flags(items)
     cta_count = 0
+    queued_at = datetime.now(timezone.utc).isoformat()
+    wid = week_id or ("onboarding" if onboarding else "")
 
     for item in items:
         if item.action == "observe_only":
@@ -194,18 +199,17 @@ def draft_engage_items(
         if product_ok:
             user += (
                 "\nInclude a soft CTA to the free evaluation at ieltsgrader.com "
-                "with disclosure — value first, one link max.\n"
+                "with disclosure — value first, one link max. Paraphrase; don't "
+                "reuse the same CTA wording every time.\n"
             )
         else:
             user += "\nDo NOT mention any product or website — teach only.\n"
 
-        paste = llm_complete(system, user, dry_run=dry_run)
+        paste = llm_complete(system, user, dry_run=dry_run, temperature=0.9)
 
         if product_ok and "ieltsgrader" not in paste.lower():
             link = utm_url(SITE, item.platform)
-            paste = (
-                f"{paste.rstrip()}\n\n{DISCLOSURE}\n{SOFT_CTA}\n{link}"
-            )
+            paste = f"{paste.rstrip()}\n\n{DISCLOSURE}\n{pick_soft_cta()}\n{link}"
         if not product_ok and "ieltsgrader" in paste.lower():
             paste = re.sub(
                 r"(?i)full disclosure:.*?ieltsgrader\.com\)?\s*",
@@ -219,8 +223,10 @@ def draft_engage_items(
 
         followup = llm_complete(
             system_prompt_engage(item.platform, "general_tip"),
-            "Write a short follow-up if they reply thanking you or pasting a paragraph. No product unless they ask for a tool.",
+            "Write a short follow-up if they reply thanking you or pasting a paragraph. "
+            "Sound human. No product unless they ask for a tool.",
             dry_run=dry_run,
+            temperature=0.9,
         )
 
         path = write_action_markdown(
@@ -259,6 +265,8 @@ def draft_engage_items(
                 "fresh": "1" if item.fresh else "0",
                 "cta": "1" if product_ok else "0",
                 "reply_check": "",
+                "week_id": wid,
+                "queued_at": queued_at,
             }
         )
 

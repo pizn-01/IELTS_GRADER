@@ -97,6 +97,8 @@ def draft_followups(
                 "fresh": "0",
                 "cta": "0",
                 "reply_check": "",
+                "week_id": r.get("week_id") or ("onboarding" if onboarding else ""),
+                "queued_at": r.get("queued_at") or "",
                 "queue": "onboarding" if onboarding else "weekly",
             }
         )

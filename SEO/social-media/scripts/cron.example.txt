@@ -1,9 +1,19 @@
-# Optional schedules (manager). Employee can ignore and use Start.command / menu.py.
+# Optional schedules (manager). Production: backend in-process cron (America/New_York).
 #
-# crontab -e example (edit paths):
+# Fly / production (automatic):
+#   Monday 00:00 ET  → weekly discover + merge into durable STATUS
+#   Tue–Fri 08:00 ET → daily brief (fresh listen + today slice)
+#   Sunday 18:00 ET  → scorecard wrap
+# Manual Admin "Start / refresh week" uses the same merge (never wipes open pending).
 #
-# 0 8 * * 1  cd /FULL/PATH/IELTS_GRADER/SEO/social-media/scripts && /usr/bin/python3 run_weekly_agent.py
+# Local crontab -e example (edit paths) if not using Fly:
+#
+# 0 0 * * 1  cd /FULL/PATH/IELTS_GRADER/SEO/social-media/scripts && /usr/bin/python3 run_weekly_agent.py
 # 0 8 * * 2-5  cd /FULL/PATH/IELTS_GRADER/SEO/social-media/scripts && /usr/bin/python3 run_daily_brief.py
 # 0 18 * * 0  cd /FULL/PATH/IELTS_GRADER/SEO/social-media/scripts && /usr/bin/python3 run_sunday_wrap.py
 #
-# You still paste/publish and use menu 3–4 to mark done.
+# Or hit the secured cron endpoint:
+#   curl -X POST -H "X-Social-Ops-Cron-Secret: $SOCIAL_OPS_CRON_SECRET" \
+#     https://YOUR_API/api/internal/social-ops/cron -d '{"job":"weekly"}'
+#
+# You still paste/publish and mark done / wait reply / dead in Admin.
