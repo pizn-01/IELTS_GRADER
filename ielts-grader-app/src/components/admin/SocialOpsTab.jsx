@@ -28,6 +28,7 @@ const FILTERS = [
   { id: 'today', label: "Today's work" },
   { id: 'pending', label: 'Full week pending' },
   { id: 'all', label: 'Everything' },
+  { id: 'onboarding', label: 'Onboarding' },
 ];
 
 const weekdayShort = () =>
@@ -197,9 +198,14 @@ export default function SocialOpsTab() {
   }, [toast]);
 
   const actions = useMemo(() => {
+    if (filter === 'onboarding') {
+      return bundle?.onboarding_items || [];
+    }
     const list = filterActions(bundle?.actions || [], filter, today);
     return sortActions(list);
-  }, [bundle?.actions, filter, today]);
+  }, [bundle?.actions, bundle?.onboarding_items, filter, today]);
+
+  const isOnboarding = filter === 'onboarding';
 
   const progress = useMemo(() => parseProgress(job?.log_tail), [job?.log_tail, nowTick]);
   const elapsed = formatElapsed(job?.started_at, job?.finished_at);
@@ -622,7 +628,9 @@ export default function SocialOpsTab() {
       <div className="rounded-[12px] border border-gray-100 bg-white p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13px] font-extrabold text-[#101828]">
-            3) Do the list ({actions.length})
+            {isOnboarding
+              ? `3) Onboarding / cold start (${actions.length})`
+              : `3) Do the list (${actions.length})`}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((f) => (
@@ -637,14 +645,26 @@ export default function SocialOpsTab() {
                 }`}
               >
                 {f.label}
+                {f.id === 'onboarding' && bundle?.onboarding_items?.length
+                  ? ` (${bundle.onboarding_items.length})`
+                  : ''}
               </button>
             ))}
           </div>
         </div>
 
+        {isOnboarding && (
+          <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-100 rounded-[8px] px-3 py-2">
+            Study only — learn from these historical threads. Do <strong>not</strong> necro-spam old
+            posts. Weekly paste work stays under Today / Full week pending.
+          </p>
+        )}
+
         {actions.length === 0 ? (
           <p className="text-[13px] text-gray-500 py-6 text-center">
-            No actions in this filter. Finish step 1–2, then try “All pending”.
+            {isOnboarding
+              ? 'No cold-start archive yet. Run Cold start once.'
+              : 'No actions in this filter. Finish step 1–2, then try “Full week pending”.'}
           </p>
         ) : (
           <ul className="divide-y divide-gray-100">
@@ -661,40 +681,66 @@ export default function SocialOpsTab() {
                     {a.fresh === '1' ? ' · FRESH' : ''}
                     {a.cta === '1' ? ' · CTA' : ''}
                     {a.type === 'followup' ? ' · FOLLOW-UP' : ''}
+                    {a.type === 'study' ? ' · STUDY' : ''}
                     {a.status === 'awaiting_reply' ? ' · WAITING' : ''}
                     {a.status === 'got_reply' ? ' · GOT REPLY' : ''}
                   </p>
                   <p className="text-[12px] text-gray-500 truncate">{a.title}</p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 shrink-0">
-                  <SmallBtn onClick={() => openDetail(a.id)} label="Open" />
-                  <SmallBtn
-                    onClick={async () => {
-                      const d = await api.admin.socialOps.getAction(a.id);
-                      const ok = await copyText(d.paste || '');
-                      setDetail(d);
-                      setToast(ok ? `Copied #${a.id}` : 'Clipboard blocked — see detail');
-                    }}
-                    label="Copy"
-                    icon={Copy}
-                  />
-                  <SmallBtn
-                    onClick={() => handleMark(a.id)}
-                    label="Done"
-                    icon={CheckCircle}
-                    tone="green"
-                  />
-                  <SmallBtn
-                    onClick={() => handleMark(a.id, { awaiting_reply: true })}
-                    label="Wait reply"
-                    icon={MessageCircle}
-                  />
-                  <SmallBtn
-                    onClick={() => handleMark(a.id, { skip: true })}
-                    label="Skip"
-                    icon={SkipForward}
-                    tone="muted"
-                  />
+                  {isOnboarding ? (
+                    <>
+                      {(a.url || a.openUrl) && (
+                        <a
+                          href={a.url || a.openUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] border border-gray-200 text-[11px] font-bold text-blue-700 bg-white hover:bg-gray-50"
+                        >
+                          <ExternalLink size={12} /> Open thread
+                        </a>
+                      )}
+                      <SmallBtn
+                        onClick={async () => {
+                          const ok = await copyText(a.url || '');
+                          setToast(ok ? 'Copied URL' : 'Clipboard blocked');
+                        }}
+                        label="Copy URL"
+                        icon={Copy}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <SmallBtn onClick={() => openDetail(a.id)} label="Open" />
+                      <SmallBtn
+                        onClick={async () => {
+                          const d = await api.admin.socialOps.getAction(a.id);
+                          const ok = await copyText(d.paste || '');
+                          setDetail(d);
+                          setToast(ok ? `Copied #${a.id}` : 'Clipboard blocked — see detail');
+                        }}
+                        label="Copy"
+                        icon={Copy}
+                      />
+                      <SmallBtn
+                        onClick={() => handleMark(a.id)}
+                        label="Done"
+                        icon={CheckCircle}
+                        tone="green"
+                      />
+                      <SmallBtn
+                        onClick={() => handleMark(a.id, { awaiting_reply: true })}
+                        label="Wait reply"
+                        icon={MessageCircle}
+                      />
+                      <SmallBtn
+                        onClick={() => handleMark(a.id, { skip: true })}
+                        label="Skip"
+                        icon={SkipForward}
+                        tone="muted"
+                      />
+                    </>
+                  )}
                 </div>
               </li>
             ))}

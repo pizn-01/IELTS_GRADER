@@ -56,6 +56,75 @@ def _latest_csv(pattern: str) -> Path | None:
     return cands[-1] if cands else None
 
 
+def _load_onboarding_items() -> list[dict[str, str]]:
+    """All cold-start historical discovery rows (study only — not weekly paste queue)."""
+    cold = OUTPUT_DIR / "cold-start"
+    items: list[dict[str, str]] = []
+
+    # Prefer full historical CSV (everything cold start found)
+    hist = _latest_csv("ielts_social_historical_*.csv")
+    if hist and hist.exists():
+        try:
+            with hist.open(newline="", encoding="utf-8") as f:
+                for i, row in enumerate(csv.DictReader(f), 1):
+                    url = (row.get("url") or "").strip()
+                    if not url:
+                        continue
+                    items.append(
+                        {
+                            "id": f"CS{i:04d}",
+                            "day": "Study",
+                            "status": "observe",
+                            "platform": (row.get("platform") or "unknown").lower(),
+                            "type": "study",
+                            "url": url,
+                            "title": (row.get("title") or "")[:200],
+                            "intent": "cold_start",
+                            "high_intent": "0",
+                            "tier": "",
+                            "action_file": "",
+                            "fresh": "0",
+                            "cta": "0",
+                            "reply_check": "",
+                            "snippet": (row.get("snippet") or "")[:300],
+                            "source": "cold_start_historical",
+                        }
+                    )
+        except OSError:
+            items = []
+
+    # Fallback: evergreen triage JSON (top study set)
+    if not items:
+        evergreen = cold / "_meta" / "evergreen.json"
+        if evergreen.exists():
+            try:
+                raw = json.loads(evergreen.read_text(encoding="utf-8"))
+                for i, it in enumerate(raw if isinstance(raw, list) else [], 1):
+                    items.append(
+                        {
+                            "id": f"CS{i:04d}",
+                            "day": "Study",
+                            "status": "observe",
+                            "platform": (it.get("platform") or "unknown").lower(),
+                            "type": "study",
+                            "url": it.get("url") or "",
+                            "title": (it.get("title") or "")[:200],
+                            "intent": it.get("intent") or "cold_start",
+                            "high_intent": "1" if it.get("high_intent") else "0",
+                            "tier": str(it.get("tier") or ""),
+                            "action_file": "",
+                            "fresh": "0",
+                            "cta": "0",
+                            "reply_check": "",
+                            "snippet": (it.get("snippet") or "")[:300],
+                            "source": "cold_start_evergreen",
+                        }
+                    )
+            except (json.JSONDecodeError, OSError):
+                pass
+    return items
+
+
 def _load_funnel() -> dict:
     path = THIS_WEEK / "_meta" / "funnel.json"
     if path.exists():
@@ -173,6 +242,7 @@ def build_payload() -> dict:
         },
         "setup_ok": serper and openai_key,
         "actions": actions,
+        "onboarding_items": _load_onboarding_items(),
         "playbook_remember": PLAYBOOK_REMEMBER,
         "keys": {
             "SERPER_API_KEY": serper,
