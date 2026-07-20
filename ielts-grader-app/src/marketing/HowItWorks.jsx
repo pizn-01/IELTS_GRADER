@@ -1,6 +1,13 @@
 import React from 'react';
+import { Play } from 'lucide-react';
+
+const HOW_IT_WORKS_VIDEO_ID = 'YevrdNf2wgk';
+// YouTube file is 16:9 with side bars; visible content ≈ 62% of width (~10:9)
+const VIDEO_CROP_SCALE = 1.62;
 
 const HowItWorks = () => {
+  const [playing, setPlaying] = React.useState(false);
+
   return (
     <section id="how-it-works" className="bg-white py-12 lg:py-20 overflow-hidden">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-[80px] lg:px-[242px]">
@@ -26,17 +33,38 @@ const HowItWorks = () => {
             </div>
  
             <div className="w-full md:w-[50%] flex justify-center md:justify-end md:pr-4 lg:pr-8">
-              <div className="relative w-full max-w-[280px] mr-0 md:mr-4">
-                {/* Portrait screen recording — fill frame, hide YouTube chrome/link */}
-                <div className="relative z-10 w-full aspect-[9/16] rounded-xl overflow-hidden shadow-lg bg-black">
-                  <iframe
-                    src="https://www.youtube-nocookie.com/embed/YevrdNf2wgk?autoplay=1&mute=1&controls=0&rel=0&fs=0&iv_load_policy=3&cc_load_policy=0&disablekb=1&playsinline=1&loop=1&playlist=YevrdNf2wgk"
-                    title="How IELTS Grader works"
-                    className="absolute left-1/2 top-1/2 h-[115%] w-[115%] max-w-none -translate-x-1/2 -translate-y-1/2 border-0 pointer-events-none"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    loading="lazy"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                  />
+              <div className="relative w-full max-w-[420px] mr-0 md:mr-4">
+                {/* Crop YouTube 16:9 pillarbox so only the app UI shows */}
+                <div className="relative z-10 w-full aspect-[10/9] rounded-xl overflow-hidden shadow-lg bg-[#e8eef5]">
+                  {playing ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${HOW_IT_WORKS_VIDEO_ID}?autoplay=1&rel=0&controls=0&fs=0&iv_load_policy=3&cc_load_policy=0&playsinline=1&disablekb=1`}
+                      title="How IELTS Grader works"
+                      className="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2 border-0"
+                      style={{
+                        width: `${VIDEO_CROP_SCALE * 100}%`,
+                        height: `${VIDEO_CROP_SCALE * 100}%`,
+                      }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setPlaying(true)}
+                      className="absolute inset-0 w-full h-full group cursor-pointer"
+                      aria-label="Play how it works video"
+                    >
+                      <img
+                        src="/videos/how-it-works-poster.jpg"
+                        alt="Submitting an essay for grading"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                      <span className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg group-hover:scale-105 transition-transform">
+                        <Play className="w-6 h-6 text-[#1a1f36] fill-[#1a1f36] ml-0.5" aria-hidden="true" />
+                      </span>
+                    </button>
+                  )}
                 </div>
  
                 {/* Connector SVG to Step 2 */}
