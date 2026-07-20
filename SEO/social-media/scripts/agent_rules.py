@@ -75,7 +75,7 @@ HELPFUL_REPLY_EXAMPLE = (
 # §3 Cadence & §8 KPIs
 # ---------------------------------------------------------------------------
 
-KPI_REPLIES = 50
+KPI_REPLIES = 173  # ~173 engage + ~27 create ≈ 200 week-pending actions
 KPI_POSTS = 12
 KPI_HIGH_INTENT = 10
 # Share of weekly engage drafts that should include soft CTA + disclosure + UTM
@@ -97,7 +97,7 @@ CREATE_TARGETS = {
 }
 
 ENGAGE_TARGET = KPI_REPLIES
-FRESH_LISTEN_CAP = 8
+FRESH_LISTEN_CAP = 12
 
 HOOKS = [
     "This Band 6 sentence is why you're stuck at 6.5.",

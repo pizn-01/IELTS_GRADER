@@ -18,7 +18,7 @@ Cold start (once)
 Weekly (Monday)
   → 7-day discover CSV
   → LLM/heuristic relevance filter
-  → top 50 engage + ~create pack
+  → top ~173 engage + ~create pack (~200 pending)
   → seen_urls (90d) + engaged_urls memory (no duplicates)
   → you paste → mark done / wait reply / got reply
 ```
@@ -35,16 +35,16 @@ If you have admin access, open the app → **Admin** → **Social Ops**.
 No Terminal needed for day-to-day work.
 
 ### Funnel numbers (why Today ≠ everything found)
-Admin shows: **Discovered → After filter → Engage (~50) + Create → Today’s slice**.
+Admin shows: **Discovered → After filter → Engage (~173) + Create → Today’s slice**.
 
 | View | Meaning |
 |------|---------|
-| Today’s work | Only today’s weekday (+ overdue) — often ~8 Mon engages |
-| Full week pending | All ~50 replies + create posts still open (~79) |
+| Today’s work | Only today’s weekday (+ overdue) — roughly ~35 engages/day when the week is full |
+| Full week pending | All ~173 replies + create posts still open (**~200** total) |
 | Everything | Including done/skipped |
 
 ### What good looks like each week
-- **50** helpful replies · **12** posts/Shorts · **10** high-intent  
+- **173** helpful replies · **12** posts/Shorts · **10** high-intent  
 - **~22%** of engage drafts with soft CTA + disclosure + UTM (`ieltsgrader.com`)  
 - Most **create** actions include a platform-appropriate CTA (URL / link in bio)  
 - Value-first on the rest — not every reply is a promo  

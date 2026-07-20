@@ -152,21 +152,15 @@ def _today_label() -> str:
 def _assign_days(items: list[TriageItem]) -> None:
     if not items:
         return
+    # Highest engagement → Fri deep (~20%)
     deep_n = max(3, len(items) // 5)
-    deep = items[:deep_n]
-    rest = items[deep_n:]
-
-    for it in deep:
+    for it in items[:deep_n]:
         it.day = DEEP_DAY
-
-    mon_n = min(8, max(3, len(rest) // 5)) if rest else 0
-    for it in rest[:mon_n]:
-        it.day = "Mon"
-    rest = rest[mon_n:]
-
-    slots = list(ENGAGE_SLOT_DAYS)
+    rest = items[deep_n:]
+    # Spread the rest evenly across Mon–Thu (no hard Mon=8 cap)
+    days = ("Mon",) + tuple(ENGAGE_SLOT_DAYS)
     for i, it in enumerate(rest):
-        it.day = slots[i % len(slots)]
+        it.day = days[i % len(days)]
 
 
 def items_to_dicts(items: list[TriageItem]) -> list[dict]:
