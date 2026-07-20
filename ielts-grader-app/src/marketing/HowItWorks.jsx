@@ -26,15 +26,14 @@ const HowItWorks = () => {
             </div>
  
             <div className="w-full md:w-[50%] flex justify-center md:justify-end md:pr-4 lg:pr-8">
-              <div className="relative w-full max-w-[528px] mr-0 md:mr-4">
-                {/* Step 1 YouTube video */}
-                <div className="relative z-10 w-full aspect-video rounded-xl overflow-hidden shadow-lg">
+              <div className="relative w-full max-w-[280px] mr-0 md:mr-4">
+                {/* Portrait screen recording — fill frame, hide YouTube chrome/link */}
+                <div className="relative z-10 w-full aspect-[9/16] rounded-xl overflow-hidden shadow-lg bg-black">
                   <iframe
-                    src="https://www.youtube.com/embed/YevrdNf2wgk"
+                    src="https://www.youtube-nocookie.com/embed/YevrdNf2wgk?autoplay=1&mute=1&controls=0&rel=0&fs=0&iv_load_policy=3&cc_load_policy=0&disablekb=1&playsinline=1&loop=1&playlist=YevrdNf2wgk"
                     title="How IELTS Grader works"
-                    className="absolute inset-0 w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
+                    className="absolute left-1/2 top-1/2 h-[115%] w-[115%] max-w-none -translate-x-1/2 -translate-y-1/2 border-0 pointer-events-none"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     loading="lazy"
                     referrerPolicy="strict-origin-when-cross-origin"
                   />
