@@ -12,8 +12,8 @@ Full voice rules: [EMPLOYEE_PLAYBOOK.pdf](EMPLOYEE_PLAYBOOK.pdf)
 ```text
 Cold start (once)
   → historical listen (Serper; Reddit/Quora undated-first)
+  → free-time Onboarding engage queue (separate from Today/Pending)
   → onboarding brief + theme_bank.json
-  → study only (do NOT paste into old threads)
 
 Weekly (Monday)
   → 7-day discover CSV
@@ -23,7 +23,9 @@ Weekly (Monday)
   → you paste → mark done / wait reply / got reply
 ```
 
-**Cold start does not fill the weekly reply queue.** It seeds themes for create posts and an onboarding study list. Weekly always does a fresh 7-day search.
+**Cold start does not fill the weekly reply queue.** It seeds themes for create posts and a free-time Onboarding engage pack. Weekly always does a fresh 7-day search.
+
+**Reply notifications:** platforms never push into Admin. After paste, mark **Wait for reply**, then check **Awaiting replies** later (Got reply / Still waiting / Dead).
 
 ---
 

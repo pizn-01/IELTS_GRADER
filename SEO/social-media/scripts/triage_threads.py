@@ -14,6 +14,7 @@ from agent_rules import (
     ENGAGE_SLOT_DAYS,
     ENGAGE_TARGET,
     KPI_HIGH_INTENT,
+    ONBOARDING_ENGAGE_TARGET,
     classify_intent,
     is_high_intent,
     platform_tier,
@@ -109,6 +110,21 @@ def triage_csv(
         )
 
     items.sort(key=lambda x: x.score, reverse=True)
+
+    if mode == "onboarding":
+        # Free-time engage pack (not weekly Mon–Fri slots)
+        target = target_engage or ONBOARDING_ENGAGE_TARGET
+        selected = items[: max(target, KPI_HIGH_INTENT)]
+        for it in selected:
+            it.day = "Free"
+            if it.action == "observe_only":
+                it.action = "value_reply"
+        if remember:
+            remember_urls(
+                [{"url": it.url, "platform": it.platform} for it in selected],
+                reason="onboarding_queued",
+            )
+        return selected
 
     if mode == "cold_start":
         for it in items:

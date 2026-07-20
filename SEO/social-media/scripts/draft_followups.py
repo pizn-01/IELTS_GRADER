@@ -5,13 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from agent_io import (
-    THIS_WEEK,
     format_action_id,
     next_action_id,
     read_status,
     upsert_status_rows,
-    write_status,
     weekday_label,
+    work_root,
+    write_status,
 )
 from agent_rules import system_prompt_engage, validate_draft
 from draft_replies import write_action_markdown
@@ -30,16 +30,19 @@ def extract_followup_from_file(path: Path) -> str:
     return ""
 
 
-def draft_followups(*, dry_run: bool = False) -> list[dict[str, str]]:
-    rows = read_status()
+def draft_followups(
+    *, dry_run: bool = False, onboarding: bool = False
+) -> list[dict[str, str]]:
+    root = work_root(onboarding=onboarding)
+    rows = read_status(onboarding=onboarding)
     existing_follow_urls = {
         r.get("url")
         for r in rows
         if r.get("type") == "followup" and r.get("status") == "pending"
     }
     new_rows: list[dict[str, str]] = []
-    n = next_action_id()
-    today = weekday_label()
+    n = next_action_id(onboarding=onboarding)
+    today = "Free" if onboarding else weekday_label()
     touched_parents = False
 
     for r in rows:
@@ -51,7 +54,7 @@ def draft_followups(*, dry_run: bool = False) -> list[dict[str, str]]:
         action_rel = r.get("action_file") or ""
         paste = ""
         if action_rel:
-            ap = THIS_WEEK / action_rel
+            ap = root / action_rel
             if ap.exists():
                 paste = extract_followup_from_file(ap)
         if not paste:
@@ -76,6 +79,7 @@ def draft_followups(*, dry_run: bool = False) -> list[dict[str, str]]:
             disclosure_needed=False,
             issues=validate_draft(paste, product_mentioned="ieltsgrader" in paste.lower()),
             intent="followup",
+            onboarding=onboarding,
         )
         new_rows.append(
             {
@@ -89,10 +93,11 @@ def draft_followups(*, dry_run: bool = False) -> list[dict[str, str]]:
                 "intent": "followup",
                 "high_intent": r.get("high_intent") or "0",
                 "tier": r.get("tier") or "1",
-                "action_file": str(path.relative_to(THIS_WEEK)),
+                "action_file": str(path.relative_to(root)),
                 "fresh": "0",
                 "cta": "0",
                 "reply_check": "",
+                "queue": "onboarding" if onboarding else "weekly",
             }
         )
         if r.get("status") == "got_reply":
@@ -102,7 +107,7 @@ def draft_followups(*, dry_run: bool = False) -> list[dict[str, str]]:
         existing_follow_urls.add(url)
 
     if touched_parents:
-        write_status(rows)
+        write_status(rows, onboarding=onboarding)
     if new_rows:
-        upsert_status_rows(new_rows)
+        upsert_status_rows(new_rows, onboarding=onboarding)
     return new_rows

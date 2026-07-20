@@ -16,6 +16,7 @@ from agent_io import (
     format_action_id,
     next_action_id,
     upsert_status_rows,
+    work_root,
 )
 from agent_rules import (
     CTA_ENGAGE_SHARE,
@@ -79,8 +80,10 @@ def write_action_markdown(
     issues: list[str],
     intent: str = "",
     cta: bool = False,
+    onboarding: bool = False,
 ) -> Path:
-    actions_dir = THIS_WEEK / "actions"
+    root = work_root(onboarding=onboarding)
+    actions_dir = root / "actions"
     actions_dir.mkdir(parents=True, exist_ok=True)
     fname = _action_filename(aid, platform, typ, day)
     path = actions_dir / fname
@@ -88,7 +91,8 @@ def write_action_markdown(
     issue_block = ""
     if issues:
         issue_block = "\n## VALIDATOR FLAGS\n" + "\n".join(f"- {i}" for i in issues) + "\n"
-    content = f"""# {aid} · {platform} · {typ} · {day} · PENDING
+    queue = "ONBOARDING (free time)" if onboarding else "WEEK"
+    content = f"""# {aid} · {platform} · {typ} · {day} · PENDING · {queue}
 Open: {url}
 Title: {title}
 Intent: {intent}
@@ -143,9 +147,11 @@ def draft_engage_items(
     *,
     dry_run: bool = False,
     start_id: Optional[int] = None,
+    onboarding: bool = False,
 ) -> list[dict[str, str]]:
     """Create action files + status rows for engage triage items."""
-    n = start_id or next_action_id()
+    root = work_root(onboarding=onboarding)
+    n = start_id or next_action_id(onboarding=onboarding)
     status_rows: list[dict[str, str]] = []
     cta_flags = _assign_cta_flags(items)
     cta_count = 0
@@ -201,7 +207,6 @@ def draft_engage_items(
                 f"{paste.rstrip()}\n\n{DISCLOSURE}\n{SOFT_CTA}\n{link}"
             )
         if not product_ok and "ieltsgrader" in paste.lower():
-            # Strip accidental product mention from value-only replies
             paste = re.sub(
                 r"(?i)full disclosure:.*?ieltsgrader\.com\)?\s*",
                 "",
@@ -222,7 +227,7 @@ def draft_engage_items(
             aid=aid,
             platform=item.platform,
             typ="reply",
-            day=item.day or "Tue",
+            day=item.day or ("Free" if onboarding else "Tue"),
             url=item.url,
             title=item.title[:120],
             paste=paste,
@@ -232,6 +237,7 @@ def draft_engage_items(
             issues=issues,
             intent=item.intent,
             cta=product_ok,
+            onboarding=onboarding,
         )
 
         if product_ok:
@@ -240,7 +246,7 @@ def draft_engage_items(
         status_rows.append(
             {
                 "id": aid,
-                "day": item.day or "Tue",
+                "day": item.day or ("Free" if onboarding else "Tue"),
                 "status": "pending",
                 "platform": item.platform,
                 "type": "reply",
@@ -249,17 +255,18 @@ def draft_engage_items(
                 "intent": item.intent,
                 "high_intent": "1" if item.high_intent else "0",
                 "tier": str(platform_tier(item.platform)),
-                "action_file": str(path.relative_to(THIS_WEEK)),
+                "action_file": str(path.relative_to(root)),
                 "fresh": "1" if item.fresh else "0",
                 "cta": "1" if product_ok else "0",
                 "reply_check": "",
             }
         )
 
-    upsert_status_rows(status_rows)
+    upsert_status_rows(status_rows, onboarding=onboarding)
     if status_rows:
+        label = "onboarding" if onboarding else "weekly"
         print(
-            f"CTA engage drafts: {cta_count}/{len(status_rows)} "
+            f"CTA {label} drafts: {cta_count}/{len(status_rows)} "
             f"(target ~{int(CTA_ENGAGE_SHARE * 100)}%)",
             flush=True,
         )

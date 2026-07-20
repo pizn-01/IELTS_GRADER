@@ -57,11 +57,18 @@ def _latest_csv(pattern: str) -> Path | None:
 
 
 def _load_onboarding_items() -> list[dict[str, str]]:
-    """All cold-start historical discovery rows (study only — not weekly paste queue)."""
+    """Free-time onboarding engage queue (STATUS), else historical CSV fallback."""
+    from agent_io import read_status as _read
+
+    drafted = _read(onboarding=True)
+    if drafted:
+        for r in drafted:
+            r["queue"] = "onboarding"
+        return drafted
+
+    # Fallback: raw historical URLs (no paste yet — run Prepare onboarding)
     cold = OUTPUT_DIR / "cold-start"
     items: list[dict[str, str]] = []
-
-    # Prefer full historical CSV (everything cold start found)
     hist = _latest_csv("ielts_social_historical_*.csv")
     if hist and hist.exists():
         try:
@@ -73,8 +80,8 @@ def _load_onboarding_items() -> list[dict[str, str]]:
                     items.append(
                         {
                             "id": f"CS{i:04d}",
-                            "day": "Study",
-                            "status": "observe",
+                            "day": "Free",
+                            "status": "needs_draft",
                             "platform": (row.get("platform") or "unknown").lower(),
                             "type": "study",
                             "url": url,
@@ -88,12 +95,11 @@ def _load_onboarding_items() -> list[dict[str, str]]:
                             "reply_check": "",
                             "snippet": (row.get("snippet") or "")[:300],
                             "source": "cold_start_historical",
+                            "queue": "onboarding",
                         }
                     )
         except OSError:
             items = []
-
-    # Fallback: evergreen triage JSON (top study set)
     if not items:
         evergreen = cold / "_meta" / "evergreen.json"
         if evergreen.exists():
@@ -103,8 +109,8 @@ def _load_onboarding_items() -> list[dict[str, str]]:
                     items.append(
                         {
                             "id": f"CS{i:04d}",
-                            "day": "Study",
-                            "status": "observe",
+                            "day": "Free",
+                            "status": "needs_draft",
                             "platform": (it.get("platform") or "unknown").lower(),
                             "type": "study",
                             "url": it.get("url") or "",
@@ -118,6 +124,7 @@ def _load_onboarding_items() -> list[dict[str, str]]:
                             "reply_check": "",
                             "snippet": (it.get("snippet") or "")[:300],
                             "source": "cold_start_evergreen",
+                            "queue": "onboarding",
                         }
                     )
             except (json.JSONDecodeError, OSError):
@@ -173,6 +180,17 @@ def build_payload() -> dict:
     )
     historical = _csv_discovery_stats(_latest_csv("ielts_social_historical_*.csv"))
     weekly = _csv_discovery_stats(_latest_csv("ielts_social_weekly_*.csv"))
+    onboarding_items = _load_onboarding_items()
+    awaiting = [
+        a
+        for a in actions
+        if (a.get("status") or "").lower() in ("awaiting_reply", "got_reply")
+    ]
+    awaiting_onboarding = [
+        a
+        for a in onboarding_items
+        if (a.get("status") or "").lower() in ("awaiting_reply", "got_reply")
+    ]
     funnel = _load_funnel()
     engage_n = sum(
         1
@@ -229,6 +247,7 @@ def build_payload() -> dict:
             "has_scorecard": (THIS_WEEK / "_meta" / "scorecard.md").exists(),
             "has_backlog": (THIS_WEEK / "SUNDAY_BACKLOG.md").exists(),
             "has_onboarding": (cold / "ONBOARDING_BRIEF.md").exists(),
+            "has_onboarding_queue": (cold / "_meta" / "STATUS.csv").exists(),
             "has_funnel": (THIS_WEEK / "_meta" / "funnel.json").exists(),
         },
         "discovery": {
@@ -242,7 +261,12 @@ def build_payload() -> dict:
         },
         "setup_ok": serper and openai_key,
         "actions": actions,
-        "onboarding_items": _load_onboarding_items(),
+        "onboarding_items": onboarding_items,
+        "awaiting_replies": {
+            "weekly": awaiting,
+            "onboarding": awaiting_onboarding,
+            "count": len(awaiting) + len(awaiting_onboarding),
+        },
         "playbook_remember": PLAYBOOK_REMEMBER,
         "keys": {
             "SERPER_API_KEY": serper,

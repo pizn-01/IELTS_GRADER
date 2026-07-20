@@ -27,6 +27,7 @@ const BRIEF_TABS = [
 const FILTERS = [
   { id: 'today', label: "Today's work" },
   { id: 'pending', label: 'Full week pending' },
+  { id: 'awaiting', label: 'Awaiting replies' },
   { id: 'all', label: 'Everything' },
   { id: 'onboarding', label: 'Onboarding' },
 ];
@@ -53,6 +54,9 @@ function filterActions(actions, filter, today) {
   return actions.filter((a) => {
     const st = (a.status || '').toLowerCase();
     if (filter === 'all') return true;
+    if (filter === 'awaiting') {
+      return st === 'awaiting_reply' || st === 'got_reply';
+    }
     if (filter === 'pending') {
       return st === 'pending' || st === 'awaiting_reply' || st === 'got_reply';
     }
@@ -199,13 +203,29 @@ export default function SocialOpsTab() {
 
   const actions = useMemo(() => {
     if (filter === 'onboarding') {
-      return bundle?.onboarding_items || [];
+      return sortActions(bundle?.onboarding_items || []);
+    }
+    if (filter === 'awaiting') {
+      const weekly = filterActions(bundle?.actions || [], 'awaiting', today).map((a) => ({
+        ...a,
+        queue: 'weekly',
+      }));
+      const onb = (bundle?.onboarding_items || [])
+        .filter((a) =>
+          ['awaiting_reply', 'got_reply'].includes((a.status || '').toLowerCase())
+        )
+        .map((a) => ({ ...a, queue: 'onboarding' }));
+      return sortActions([...weekly, ...onb]);
     }
     const list = filterActions(bundle?.actions || [], filter, today);
     return sortActions(list);
   }, [bundle?.actions, bundle?.onboarding_items, filter, today]);
 
   const isOnboarding = filter === 'onboarding';
+  const awaitingCount = bundle?.awaiting_replies?.count || 0;
+  const onboardingNeedsDraft = (bundle?.onboarding_items || []).some(
+    (a) => a.status === 'needs_draft' || a.type === 'study'
+  );
 
   const progress = useMemo(() => parseProgress(job?.log_tail), [job?.log_tail, nowTick]);
   const elapsed = formatElapsed(job?.started_at, job?.finished_at);
@@ -240,13 +260,17 @@ export default function SocialOpsTab() {
     setBusy('copy');
     setError('');
     try {
-      const data = await api.admin.socialOps.copyNext();
+      const data = await api.admin.socialOps.copyNext({ onboarding: isOnboarding });
       if (data.empty) {
-        setToast('Nothing pending. Run “Show today’s work” or refresh the week.');
+        setToast(
+          isOnboarding
+            ? 'No onboarding drafts ready. Run “Prepare onboarding replies”.'
+            : 'Nothing pending. Run “Show today’s work” or refresh the week.'
+        );
         return;
       }
       const ok = await copyText(data.paste || '');
-      setDetail(data);
+      setDetail({ ...data, queue: isOnboarding ? 'onboarding' : 'weekly' });
       setToast(
         ok
           ? `Copied #${data.id}. Open the URL, paste, then mark done.`
@@ -259,10 +283,16 @@ export default function SocialOpsTab() {
     }
   };
 
+  const resolveOnboarding = (id) =>
+    isOnboarding ||
+    (filter === 'awaiting' &&
+      actions.find((a) => String(a.id) === String(id))?.queue === 'onboarding');
+
   const handleMark = async (id, opts = {}) => {
+    const onboarding = opts.onboarding === true || resolveOnboarding(id);
     setBusy(`mark-${id}`);
     try {
-      const data = await api.admin.socialOps.markDone(id, opts);
+      const data = await api.admin.socialOps.markDone(id, { ...opts, onboarding });
       setBundle(data);
       setDetail(null);
       setToast(`Marked #${id}`);
@@ -274,10 +304,11 @@ export default function SocialOpsTab() {
   };
 
   const openDetail = async (id) => {
+    const onboarding = resolveOnboarding(id);
     setBusy(`detail-${id}`);
     try {
-      const data = await api.admin.socialOps.getAction(id);
-      setDetail(data);
+      const data = await api.admin.socialOps.getAction(id, { onboarding });
+      setDetail({ ...data, queue: onboarding ? 'onboarding' : 'weekly' });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -333,7 +364,12 @@ export default function SocialOpsTab() {
   const needsColdStart = Boolean(bundle?.paths && !bundle.paths.has_onboarding);
   const historical = bundle?.discovery?.historical;
   const weekly = bundle?.discovery?.weekly;
-  const lockRuns = running || Boolean(busy && ['cold_start', 'weekly', 'daily', 'sunday'].includes(busy));
+  const lockRuns =
+    running ||
+    Boolean(
+      busy &&
+        ['cold_start', 'weekly', 'daily', 'sunday', 'onboarding_prepare'].includes(busy)
+    );
 
   if (loading) {
     return (
@@ -350,15 +386,23 @@ export default function SocialOpsTab() {
         <p className="font-bold mb-2">Do these in order (one at a time)</p>
         <ol className="list-decimal ml-4 space-y-1 text-gray-700">
           <li>
-            <strong>Cold start</strong> — once ever (or after a wipe). Builds listening archive +
-            onboarding. Learn, don’t spam old threads.
+            <strong>Cold start</strong> — once. Builds free-time <strong>Onboarding</strong> engage
+            queue + themes (not part of Today/Pending).
           </li>
           <li>
             <strong>Start / refresh week</strong> — every Monday. Builds this week’s reply + post
             list.
           </li>
           <li>
-            <strong>Show today’s work</strong> — Tue–Fri. Then Copy → paste → Mark done.
+            <strong>Show today’s work</strong> — Tue–Fri. Then Copy → paste → Mark done. Use{' '}
+            <strong>Wait for reply</strong> when you want to check later.
+          </li>
+          <li>
+            <strong>Awaiting replies</strong> — platforms do <em>not</em> notify this admin. Open
+            that tab, check each thread, then Got reply / Still waiting / Dead.
+          </li>
+          <li>
+            <strong>Onboarding</strong> — same copy/paste/mark flow anytime you have free time.
           </li>
           <li>
             <strong>Sunday scorecard</strong> — wrap the week.
@@ -511,11 +555,19 @@ export default function SocialOpsTab() {
           />
           <RunBtn
             label="Copy next to clipboard"
-            hint="Then paste & publish"
+            hint={isOnboarding ? 'Next onboarding paste' : 'Then paste & publish'}
             icon={Copy}
             busy={busy === 'copy'}
             disabled={running}
             onClick={handleCopyNext}
+          />
+          <RunBtn
+            label="Prepare onboarding replies"
+            hint="Free-time queue (not weekly)"
+            icon={Play}
+            busy={busy === 'onboarding_prepare' || running}
+            disabled={lockRuns}
+            onClick={() => runAction('onboarding_prepare', { reset: true })}
           />
           <RunBtn
             label="Sunday scorecard"
@@ -648,102 +700,196 @@ export default function SocialOpsTab() {
                 {f.id === 'onboarding' && bundle?.onboarding_items?.length
                   ? ` (${bundle.onboarding_items.length})`
                   : ''}
+                {f.id === 'awaiting' && awaitingCount ? ` (${awaitingCount})` : ''}
               </button>
             ))}
           </div>
         </div>
 
+        <p className="text-[11px] text-gray-500">
+          No auto-notify from Reddit/Quora/X. After you paste, mark <strong>Wait for reply</strong>,
+          then later open{' '}
+          <button
+            type="button"
+            className="underline font-semibold text-gray-700"
+            onClick={() => setFilter('awaiting')}
+          >
+            Awaiting replies
+          </button>{' '}
+          and choose Got reply / Still waiting / Dead.
+        </p>
+
         {isOnboarding && (
-          <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-100 rounded-[8px] px-3 py-2">
-            Study only — learn from these historical threads. Do <strong>not</strong> necro-spam old
-            posts. Weekly paste work stays under Today / Full week pending.
+          <p className="text-[12px] text-blue-900 bg-blue-50 border border-blue-100 rounded-[8px] px-3 py-2">
+            Free-time engage queue — same Copy / paste / Done / Wait reply as weekly, but{' '}
+            <strong>not</strong> counted in Today or Full week pending. Do these whenever you have
+            spare time.
+            {onboardingNeedsDraft
+              ? ' If you only see links without paste text, click “Prepare onboarding replies”.'
+              : ''}
+          </p>
+        )}
+
+        {filter === 'awaiting' && (
+          <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-100 rounded-[8px] px-3 py-2">
+            <strong>No automatic notifications</strong> from Reddit/Quora/X/etc. After you paste,
+            mark <strong>Wait for reply</strong>. Come back here, open each thread, then{' '}
+            <strong>Got reply</strong> (drafts a follow-up), <strong>Still waiting</strong>, or{' '}
+            <strong>Dead</strong>.
+            {awaitingCount ? ` Currently tracking ${awaitingCount}.` : ''}
           </p>
         )}
 
         {actions.length === 0 ? (
           <p className="text-[13px] text-gray-500 py-6 text-center">
             {isOnboarding
-              ? 'No cold-start archive yet. Run Cold start once.'
-              : 'No actions in this filter. Finish step 1–2, then try “Full week pending”.'}
+              ? 'No onboarding engages yet. Run Cold start, or “Prepare onboarding replies”.'
+              : filter === 'awaiting'
+                ? 'Nothing waiting. After pasting, mark “Wait for reply” to track threads here.'
+                : 'No actions in this filter. Finish step 1–2, then try “Full week pending”.'}
           </p>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {actions.map((a) => (
-              <li
-                key={a.id}
-                className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-[#101828] truncate">
-                    <span className="text-gray-400 font-mono mr-1">#{a.id}</span>
-                    {a.platform} · {a.type}
-                    {a.day ? ` · ${a.day}` : ''}
-                    {a.fresh === '1' ? ' · FRESH' : ''}
-                    {a.cta === '1' ? ' · CTA' : ''}
-                    {a.type === 'followup' ? ' · FOLLOW-UP' : ''}
-                    {a.type === 'study' ? ' · STUDY' : ''}
-                    {a.status === 'awaiting_reply' ? ' · WAITING' : ''}
-                    {a.status === 'got_reply' ? ' · GOT REPLY' : ''}
-                  </p>
-                  <p className="text-[12px] text-gray-500 truncate">{a.title}</p>
-                </div>
-                <div className="flex flex-wrap gap-1.5 shrink-0">
-                  {isOnboarding ? (
-                    <>
-                      {(a.url || a.openUrl) && (
-                        <a
-                          href={a.url || a.openUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] border border-gray-200 text-[11px] font-bold text-blue-700 bg-white hover:bg-gray-50"
-                        >
-                          <ExternalLink size={12} /> Open thread
-                        </a>
-                      )}
-                      <SmallBtn
-                        onClick={async () => {
-                          const ok = await copyText(a.url || '');
-                          setToast(ok ? 'Copied URL' : 'Clipboard blocked');
-                        }}
-                        label="Copy URL"
-                        icon={Copy}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <SmallBtn onClick={() => openDetail(a.id)} label="Open" />
-                      <SmallBtn
-                        onClick={async () => {
-                          const d = await api.admin.socialOps.getAction(a.id);
-                          const ok = await copyText(d.paste || '');
-                          setDetail(d);
-                          setToast(ok ? `Copied #${a.id}` : 'Clipboard blocked — see detail');
-                        }}
-                        label="Copy"
-                        icon={Copy}
-                      />
-                      <SmallBtn
-                        onClick={() => handleMark(a.id)}
-                        label="Done"
-                        icon={CheckCircle}
-                        tone="green"
-                      />
-                      <SmallBtn
-                        onClick={() => handleMark(a.id, { awaiting_reply: true })}
-                        label="Wait reply"
-                        icon={MessageCircle}
-                      />
-                      <SmallBtn
-                        onClick={() => handleMark(a.id, { skip: true })}
-                        label="Skip"
-                        icon={SkipForward}
-                        tone="muted"
-                      />
-                    </>
-                  )}
-                </div>
-              </li>
-            ))}
+            {actions.map((a) => {
+              const rowOnboarding =
+                isOnboarding || a.queue === 'onboarding' || a.day === 'Free';
+              const needsDraft = a.status === 'needs_draft' || a.type === 'study';
+              return (
+                <li
+                  key={`${a.queue || 'w'}-${a.id}`}
+                  className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-[#101828] truncate">
+                      <span className="text-gray-400 font-mono mr-1">#{a.id}</span>
+                      {a.platform} · {a.type}
+                      {a.day ? ` · ${a.day}` : ''}
+                      {rowOnboarding ? ' · FREE-TIME' : ''}
+                      {a.fresh === '1' ? ' · FRESH' : ''}
+                      {a.cta === '1' ? ' · CTA' : ''}
+                      {a.type === 'followup' ? ' · FOLLOW-UP' : ''}
+                      {a.status === 'awaiting_reply' ? ' · WAITING' : ''}
+                      {a.status === 'got_reply' ? ' · GOT REPLY' : ''}
+                    </p>
+                    <p className="text-[12px] text-gray-500 truncate">{a.title}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 shrink-0">
+                    {needsDraft ? (
+                      <>
+                        {(a.url || a.openUrl) && (
+                          <a
+                            href={a.url || a.openUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] border border-gray-200 text-[11px] font-bold text-blue-700 bg-white hover:bg-gray-50"
+                          >
+                            <ExternalLink size={12} /> Open thread
+                          </a>
+                        )}
+                        <SmallBtn
+                          onClick={() => runAction('onboarding_prepare', { reset: true })}
+                          label="Prepare drafts"
+                          icon={Play}
+                        />
+                      </>
+                    ) : ['awaiting_reply', 'got_reply'].includes(
+                        (a.status || '').toLowerCase()
+                      ) ? (
+                      <>
+                        <SmallBtn onClick={() => openDetail(a.id)} label="Open" />
+                        {(a.url || a.openUrl) && (
+                          <a
+                            href={a.url || a.openUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] border border-gray-200 text-[11px] font-bold text-blue-700 bg-white hover:bg-gray-50"
+                          >
+                            <ExternalLink size={12} /> Check thread
+                          </a>
+                        )}
+                        <SmallBtn
+                          onClick={() =>
+                            handleMark(a.id, {
+                              got_reply: true,
+                              onboarding: rowOnboarding,
+                            })
+                          }
+                          label="Got reply"
+                          icon={MessageCircle}
+                          tone="green"
+                        />
+                        <SmallBtn
+                          onClick={() =>
+                            handleMark(a.id, {
+                              still_waiting: true,
+                              onboarding: rowOnboarding,
+                            })
+                          }
+                          label="Still waiting"
+                        />
+                        <SmallBtn
+                          onClick={() =>
+                            handleMark(a.id, {
+                              dead: true,
+                              onboarding: rowOnboarding,
+                            })
+                          }
+                          label="Dead"
+                          tone="muted"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <SmallBtn onClick={() => openDetail(a.id)} label="Open" />
+                        <SmallBtn
+                          onClick={async () => {
+                            const d = await api.admin.socialOps.getAction(a.id, {
+                              onboarding: rowOnboarding,
+                            });
+                            const ok = await copyText(d.paste || '');
+                            setDetail({
+                              ...d,
+                              queue: rowOnboarding ? 'onboarding' : 'weekly',
+                            });
+                            setToast(
+                              ok ? `Copied #${a.id}` : 'Clipboard blocked — see detail'
+                            );
+                          }}
+                          label="Copy"
+                          icon={Copy}
+                        />
+                        <SmallBtn
+                          onClick={() =>
+                            handleMark(a.id, { onboarding: rowOnboarding })
+                          }
+                          label="Done"
+                          icon={CheckCircle}
+                          tone="green"
+                        />
+                        <SmallBtn
+                          onClick={() =>
+                            handleMark(a.id, {
+                              awaiting_reply: true,
+                              onboarding: rowOnboarding,
+                            })
+                          }
+                          label="Wait reply"
+                          icon={MessageCircle}
+                        />
+                        <SmallBtn
+                          onClick={() =>
+                            handleMark(a.id, { skip: true, onboarding: rowOnboarding })
+                          }
+                          label="Skip"
+                          icon={SkipForward}
+                          tone="muted"
+                        />
+                      </>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -809,35 +955,59 @@ export default function SocialOpsTab() {
             <div className="flex flex-wrap gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => handleMark(detail.id)}
+                onClick={() =>
+                  handleMark(detail.id, {
+                    onboarding: detail.queue === 'onboarding',
+                  })
+                }
                 className="px-3 py-2 rounded-[8px] text-[12px] font-bold bg-emerald-600 text-white"
               >
                 Mark done
               </button>
               <button
                 type="button"
-                onClick={() => handleMark(detail.id, { awaiting_reply: true })}
+                onClick={() =>
+                  handleMark(detail.id, {
+                    awaiting_reply: true,
+                    onboarding: detail.queue === 'onboarding',
+                  })
+                }
                 className="px-3 py-2 rounded-[8px] text-[12px] font-bold border border-gray-200"
               >
                 Wait for reply
               </button>
               <button
                 type="button"
-                onClick={() => handleMark(detail.id, { got_reply: true })}
+                onClick={() =>
+                  handleMark(detail.id, {
+                    got_reply: true,
+                    onboarding: detail.queue === 'onboarding',
+                  })
+                }
                 className="px-3 py-2 rounded-[8px] text-[12px] font-bold border border-emerald-200 text-emerald-800 bg-emerald-50"
               >
                 Got reply
               </button>
               <button
                 type="button"
-                onClick={() => handleMark(detail.id, { still_waiting: true })}
+                onClick={() =>
+                  handleMark(detail.id, {
+                    still_waiting: true,
+                    onboarding: detail.queue === 'onboarding',
+                  })
+                }
                 className="px-3 py-2 rounded-[8px] text-[12px] font-bold border border-gray-200"
               >
                 Still waiting
               </button>
               <button
                 type="button"
-                onClick={() => handleMark(detail.id, { dead: true })}
+                onClick={() =>
+                  handleMark(detail.id, {
+                    dead: true,
+                    onboarding: detail.queue === 'onboarding',
+                  })
+                }
                 className="px-3 py-2 rounded-[8px] text-[12px] font-bold border border-gray-200 text-gray-500"
               >
                 Dead thread
@@ -851,8 +1021,8 @@ export default function SocialOpsTab() {
               </button>
             </div>
             <p className="text-[11px] text-gray-400">
-              After you paste: open the thread later → Got reply (drafts a follow-up) / Still waiting /
-              Dead.
+              Platforms never push notifications here. After paste → Wait for reply → later check
+              Awaiting replies → Got reply / Still waiting / Dead.
             </p>
           </div>
         </div>

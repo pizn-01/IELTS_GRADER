@@ -20,6 +20,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPTS_DIR.parent
 OUTPUT_DIR = ROOT / "output"
 THIS_WEEK = OUTPUT_DIR / "THIS_WEEK"
+COLD_START = OUTPUT_DIR / "cold-start"
 ARCHIVE_DIR = OUTPUT_DIR / "archive"
 ENGAGED_PATH = OUTPUT_DIR / "engaged_urls.csv"
 SEEN_PATH = OUTPUT_DIR / "seen_urls.csv"
@@ -53,10 +54,76 @@ def ensure_output_dirs() -> None:
     THIS_WEEK.mkdir(parents=True, exist_ok=True)
     (THIS_WEEK / "actions").mkdir(parents=True, exist_ok=True)
     (THIS_WEEK / "_meta").mkdir(parents=True, exist_ok=True)
+    COLD_START.mkdir(parents=True, exist_ok=True)
+    (COLD_START / "actions").mkdir(parents=True, exist_ok=True)
+    (COLD_START / "_meta").mkdir(parents=True, exist_ok=True)
 
 
-def status_path() -> Path:
+def status_path(*, onboarding: bool = False) -> Path:
+    if onboarding:
+        return COLD_START / "_meta" / "STATUS.csv"
     return THIS_WEEK / "_meta" / "STATUS.csv"
+
+
+def work_root(*, onboarding: bool = False) -> Path:
+    return COLD_START if onboarding else THIS_WEEK
+
+
+def read_status(*, onboarding: bool = False) -> list[dict[str, str]]:
+    path = status_path(onboarding=onboarding)
+    if not path.exists():
+        return []
+    with path.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    for r in rows:
+        r.setdefault("cta", "")
+        r.setdefault("reply_check", "")
+        if onboarding:
+            r["queue"] = "onboarding"
+    return rows
+
+
+def write_status(rows: list[dict[str, str]], *, onboarding: bool = False) -> None:
+    ensure_output_dirs()
+    path = status_path(onboarding=onboarding)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=STATUS_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row.get(k, "") for k in STATUS_FIELDS})
+
+
+def upsert_status_rows(
+    new_rows: list[dict[str, str]], *, onboarding: bool = False
+) -> None:
+    existing = {r["id"]: r for r in read_status(onboarding=onboarding)}
+    for row in new_rows:
+        rid = row["id"]
+        if rid in existing and existing[rid].get("status") in (
+            "done",
+            "skipped",
+            "awaiting_reply",
+            "got_reply",
+            "dead",
+        ):
+            continue
+        existing[rid] = {k: row.get(k, "") for k in STATUS_FIELDS}
+    ordered = sorted(existing.values(), key=lambda r: r.get("id", ""))
+    write_status(ordered, onboarding=onboarding)
+
+
+def next_action_id(
+    rows: Optional[list[dict[str, str]]] = None, *, onboarding: bool = False
+) -> int:
+    rows = rows if rows is not None else read_status(onboarding=onboarding)
+    max_id = 0
+    for r in rows:
+        try:
+            max_id = max(max_id, int(r.get("id") or 0))
+        except ValueError:
+            continue
+    return max_id + 1
 
 
 def week_meta_path() -> Path:
@@ -204,55 +271,6 @@ def remember_urls(
 def blocked_urls() -> set[str]:
     """Union of engaged + recently seen — do not re-queue these."""
     return load_engaged_urls() | load_seen_urls()
-
-
-def read_status() -> list[dict[str, str]]:
-    path = status_path()
-    if not path.exists():
-        return []
-    with path.open(newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    # Backfill new optional columns for older STATUS.csv files
-    for r in rows:
-        r.setdefault("cta", "")
-        r.setdefault("reply_check", "")
-    return rows
-
-def write_status(rows: list[dict[str, str]]) -> None:
-    ensure_output_dirs()
-    path = status_path()
-    with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=STATUS_FIELDS)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({k: row.get(k, "") for k in STATUS_FIELDS})
-
-
-def upsert_status_rows(new_rows: list[dict[str, str]]) -> None:
-    existing = {r["id"]: r for r in read_status()}
-    for row in new_rows:
-        rid = row["id"]
-        if rid in existing and existing[rid].get("status") in (
-            "done",
-            "skipped",
-            "awaiting_reply",
-        ):
-            # keep human status unless re-id
-            continue
-        existing[rid] = {k: row.get(k, "") for k in STATUS_FIELDS}
-    ordered = sorted(existing.values(), key=lambda r: r.get("id", ""))
-    write_status(ordered)
-
-
-def next_action_id(rows: Optional[list[dict[str, str]]] = None) -> int:
-    rows = rows if rows is not None else read_status()
-    max_id = 0
-    for r in rows:
-        try:
-            max_id = max(max_id, int(r.get("id") or 0))
-        except ValueError:
-            continue
-    return max_id + 1
 
 
 def format_action_id(n: int) -> str:

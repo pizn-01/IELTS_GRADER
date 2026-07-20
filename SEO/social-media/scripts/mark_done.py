@@ -27,8 +27,9 @@ def mark(
     still_waiting: bool = False,
     dead: bool = False,
     dry_run: bool = False,
+    onboarding: bool = False,
 ) -> None:
-    rows = read_status()
+    rows = read_status(onboarding=onboarding)
     found = False
     for r in rows:
         if r.get("id") == aid.zfill(3) or r.get("id") == aid:
@@ -62,20 +63,24 @@ def mark(
                 append_engaged(url, r.get("platform") or "", r["status"])
             break
     if not found:
-        raise SystemExit(f"No action with id {aid}. Check TODAY.md / STATUS.")
-    write_status(rows)
+        q = "onboarding" if onboarding else "weekly"
+        raise SystemExit(f"No {q} action with id {aid}.")
+    write_status(rows, onboarding=onboarding)
     if got_reply:
         try:
-            fus = draft_followups(dry_run=dry_run)
+            fus = draft_followups(dry_run=dry_run, onboarding=onboarding)
             print(f"Follow-up drafts created/updated: {len(fus)}")
         except Exception as exc:  # noqa: BLE001
             print(f"Follow-up draft warning: {exc}")
-    write_scorecard()
+    if not onboarding:
+        write_scorecard()
     print(
         f"Marked {aid} → "
         f"{next((x['status'] for x in rows if x.get('id') in (aid, aid.zfill(3))), '?')}"
+        f"{' (onboarding)' if onboarding else ''}"
     )
-    print(kpi_strip())
+    if not onboarding:
+        print(kpi_strip())
 
 
 def interactive_mark() -> None:
@@ -124,6 +129,11 @@ def main() -> int:
     parser.add_argument("--still-waiting", action="store_true")
     parser.add_argument("--dead", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--onboarding",
+        action="store_true",
+        help="Mark in cold-start / free-time queue",
+    )
     parser.add_argument("--interactive", action="store_true")
     args = parser.parse_args()
     if args.interactive or not args.id:
@@ -137,6 +147,7 @@ def main() -> int:
             still_waiting=args.still_waiting,
             dead=args.dead,
             dry_run=args.dry_run,
+            onboarding=args.onboarding,
         )
     return 0
 

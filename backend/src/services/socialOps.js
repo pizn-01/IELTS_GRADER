@@ -48,6 +48,15 @@ const RUN_MAP = {
     script: 'run_cold_start_agent.py',
     args: (b) => (b.dry_run ? ['--dry-run'] : []),
   },
+  onboarding_prepare: {
+    script: 'prepare_onboarding_engages.py',
+    args: (b) => {
+      const a = [];
+      if (b.dry_run) a.push('--dry-run');
+      if (b.reset !== false) a.push('--reset');
+      return a;
+    },
+  },
 };
 
 function resolvePython() {
@@ -225,21 +234,24 @@ function extractPasteFromFile(filePath) {
   return { paste, followup, openUrl, raw: text };
 }
 
-async function getAction(id) {
+async function getAction(id, { onboarding = false } = {}) {
   const bundle = await getStatusBundle();
   const aid = String(id).padStart(3, '0');
+  const list = onboarding
+    ? bundle.onboarding_items || []
+    : bundle.actions || [];
   const row =
-    (bundle.actions || []).find((a) => a.id === aid || a.id === String(id)) ||
-    null;
+    list.find((a) => a.id === aid || a.id === String(id)) || null;
   if (!row) throw new Error(`Action ${id} not found`);
+  const root = onboarding ? COLD_START : THIS_WEEK;
   const actionFile = row.action_file
-    ? path.join(THIS_WEEK, row.action_file)
+    ? path.join(root, row.action_file)
     : null;
   let detail = { paste: '', followup: '', openUrl: row.url || '', raw: '' };
   if (actionFile && fs.existsSync(actionFile)) {
     detail = extractPasteFromFile(actionFile);
   }
-  return { ...row, ...detail };
+  return { ...row, ...detail, queue: onboarding ? 'onboarding' : 'weekly' };
 }
 
 async function markDone(
@@ -250,6 +262,7 @@ async function markDone(
     got_reply = false,
     still_waiting = false,
     dead = false,
+    onboarding = false,
   } = {}
 ) {
   const args = ['--id', String(id).padStart(3, '0')];
@@ -258,13 +271,17 @@ async function markDone(
   if (got_reply) args.push('--got-reply');
   if (still_waiting) args.push('--still-waiting');
   if (dead) args.push('--dead');
+  if (onboarding) args.push('--onboarding');
   await runScript('mark_done.py', args, { timeoutMs: 60000 });
   return getStatusBundle();
 }
 
-async function copyNext() {
+async function copyNext({ onboarding = false } = {}) {
   const bundle = await getStatusBundle();
-  const pending = (bundle.actions || []).filter((a) =>
+  const list = onboarding
+    ? bundle.onboarding_items || []
+    : bundle.actions || [];
+  const pending = list.filter((a) =>
     ['pending', 'awaiting_reply'].includes((a.status || '').toLowerCase())
   );
   const prefer = pending.filter((a) =>
@@ -274,7 +291,7 @@ async function copyNext() {
   );
   const pick = prefer[0] || pending[0];
   if (!pick) return { empty: true };
-  const detail = await getAction(pick.id);
+  const detail = await getAction(pick.id, { onboarding });
   return { empty: false, ...detail };
 }
 

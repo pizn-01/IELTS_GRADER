@@ -576,12 +576,18 @@ export const api = {
       }),
       getBrief: (kind = 'today') => adminRequest(`${BASE_URL}/admin/social-ops/brief?kind=${encodeURIComponent(kind)}`),
       getActions: () => adminRequest(`${BASE_URL}/admin/social-ops/actions`),
-      getAction: (id) => adminRequest(`${BASE_URL}/admin/social-ops/actions/${encodeURIComponent(id)}`),
+      getAction: (id, opts = {}) => {
+        const q = opts.onboarding ? '?queue=onboarding' : '';
+        return adminRequest(`${BASE_URL}/admin/social-ops/actions/${encodeURIComponent(id)}${q}`);
+      },
       markDone: (id, body = {}) => adminRequest(`${BASE_URL}/admin/social-ops/actions/${encodeURIComponent(id)}/done`, {
         method: 'POST',
         body: JSON.stringify(body),
       }),
-      copyNext: () => adminRequest(`${BASE_URL}/admin/social-ops/copy-next`, { method: 'POST', body: '{}' }),
+      copyNext: (body = {}) => adminRequest(`${BASE_URL}/admin/social-ops/copy-next`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
       setupCheck: () => adminRequest(`${BASE_URL}/admin/social-ops/setup-check`),
       scheduleUrl: `${BASE_URL}/admin/social-ops/schedule.csv`,
     },

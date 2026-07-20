@@ -78,6 +78,8 @@ HELPFUL_REPLY_EXAMPLE = (
 KPI_REPLIES = 173  # ~173 engage + ~27 create ≈ 200 week-pending actions
 KPI_POSTS = 12
 KPI_HIGH_INTENT = 10
+# Free-time onboarding (cold start) engage pack — separate from weekly pending
+ONBOARDING_ENGAGE_TARGET = 100
 # Share of weekly engage drafts that should include soft CTA + disclosure + UTM
 CTA_ENGAGE_SHARE = 0.22
 

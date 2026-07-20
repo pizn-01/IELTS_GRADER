@@ -79,6 +79,15 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
     items = triage_csv(csv_path, mode="cold_start")
     write_triage_json(meta / "evergreen.json", items)
 
+    # Free-time engage pack (separate STATUS — not weekly pending)
+    print("Preparing onboarding engage drafts (free-time queue) …", flush=True)
+    try:
+        from prepare_onboarding_engages import run as prepare_onboarding
+
+        prepare_onboarding(dry_run=dry_run, csv_path=csv_path, reset=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Onboarding engage prepare warning: {exc}", flush=True)
+
     # Simple theme extraction from titles
     themes: list[str] = []
     words = Counter()
@@ -135,13 +144,19 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
     brief_lines = [
         "# ONBOARDING BRIEF (cold start)",
         "",
-        "Use this once when you start. **Learn from** high-engagement threads — "
-        "**do not necro-spam** old posts.",
+        "Cold start builds a **free-time engage queue** (Admin → Onboarding tab) "
+        "plus themes for weekly create posts. Use Onboarding whenever you have spare "
+        "time — it is **not** part of Today / Full week pending.",
         "",
         "## Discovery summary",
-        f"- **{disc_rows}** listening rows found",
+        f"- **{disc_rows}** listening rows found (themes from top evergreen)",
         "- By platform: "
         + (", ".join(f"{k}={v}" for k, v in sorted(disc_by.items())) or "n/a"),
+        "",
+        "## How replies / notifications work",
+        "- Platforms do **not** notify this admin. After you paste, mark **Wait for reply**.",
+        "- Later open **Awaiting replies**, check the thread, then **Got reply** / "
+        "**Still waiting** / **Dead**.",
         "",
         "## Reddit warmup (1–2 weeks)",
         "- Comment helpfully only — no product, no links.",
@@ -150,7 +165,7 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         "## Themes to create about",
         *[f"- {t}" for t in themes],
         "",
-        "## Evergreen threads to study (not spam)",
+        "## Sample evergreen threads",
     ]
     for it in items[:15]:
         brief_lines.append(

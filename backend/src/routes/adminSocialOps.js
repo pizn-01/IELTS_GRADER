@@ -54,7 +54,8 @@ router.get('/actions', async (_req, res) => {
 
 router.get('/actions/:id', async (req, res) => {
   try {
-    const action = await socialOps.getAction(req.params.id);
+    const onboarding = String(req.query.queue || '') === 'onboarding';
+    const action = await socialOps.getAction(req.params.id, { onboarding });
     return res.json(action);
   } catch (err) {
     return res.status(404).json({ error: err.message });
@@ -69,6 +70,7 @@ router.post('/actions/:id/done', async (req, res) => {
       got_reply: Boolean(req.body?.got_reply),
       still_waiting: Boolean(req.body?.still_waiting),
       dead: Boolean(req.body?.dead),
+      onboarding: Boolean(req.body?.onboarding),
     });
     return res.json(data);
   } catch (err) {
@@ -76,9 +78,11 @@ router.post('/actions/:id/done', async (req, res) => {
   }
 });
 
-router.post('/copy-next', async (_req, res) => {
+router.post('/copy-next', async (req, res) => {
   try {
-    const data = await socialOps.copyNext();
+    const data = await socialOps.copyNext({
+      onboarding: Boolean(req.body?.onboarding),
+    });
     return res.json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
