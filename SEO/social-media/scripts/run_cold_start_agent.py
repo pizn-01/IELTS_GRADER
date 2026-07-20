@@ -16,9 +16,9 @@ from agent_io import OUTPUT_DIR, ensure_output_dirs  # noqa: E402
 from agent_rules import HOOKS, PLAYBOOK_REMEMBER  # noqa: E402
 from common import (  # noqa: E402
     QUERY_BANK,
+    QUERY_BANK_HISTORICAL_EXTRA,
     collect_all_platforms,
     default_output_path,
-    window_bounds,
     write_csv,
 )
 from triage_threads import triage_csv, write_triage_json  # noqa: E402
@@ -40,14 +40,18 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         ).replace(tzinfo=__import__("datetime").timezone.utc)
         start = end_dt - timedelta(days=days)
         print(f"Historical search {start.date()} → {end} …")
+        queries = list(QUERY_BANK) + list(QUERY_BANK_HISTORICAL_EXTRA)
         rows = collect_all_platforms(
             start=start,
             end=end_dt,
-            queries=QUERY_BANK,
+            queries=queries,
             dry_run=dry_run,
-            serper_num=8,
+            serper_num=10,
             reddit_limit=40,
             youtube_max=15,
+            # Long window: undated first for Reddit/Quora (Google multi-year after: is weak)
+            prefer_undated=True,
+            allow_undated_fallback=True,
         )
         csv_path = default_output_path("ielts_social_historical", today)
         write_csv(csv_path, rows)

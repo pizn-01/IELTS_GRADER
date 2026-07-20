@@ -1,6 +1,8 @@
-"""Draft follow-up actions for STATUS=awaiting_reply."""
+"""Draft follow-up actions for STATUS=awaiting_reply or got_reply."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 from agent_io import (
     THIS_WEEK,
@@ -8,21 +10,19 @@ from agent_io import (
     next_action_id,
     read_status,
     upsert_status_rows,
+    write_status,
     weekday_label,
 )
 from agent_rules import system_prompt_engage, validate_draft
 from draft_replies import write_action_markdown
 from llm_client import llm_complete
-from pathlib import Path
 
 
 def extract_followup_from_file(path: Path) -> str:
     text = path.read_text(encoding="utf-8")
     if "## IF THEY REPLY" in text:
         after = text.split("## IF THEY REPLY", 1)[1]
-        # take until end or next unlikely
         block = after.split("\n# ")[0].strip()
-        # remove heading remainder on first line
         lines = block.splitlines()
         if lines and "follow-up" in lines[0].lower():
             lines = lines[1:]
@@ -40,9 +40,10 @@ def draft_followups(*, dry_run: bool = False) -> list[dict[str, str]]:
     new_rows: list[dict[str, str]] = []
     n = next_action_id()
     today = weekday_label()
+    touched_parents = False
 
     for r in rows:
-        if (r.get("status") or "") != "awaiting_reply":
+        if (r.get("status") or "") not in ("awaiting_reply", "got_reply"):
             continue
         url = r.get("url") or ""
         if url in existing_follow_urls:
@@ -90,8 +91,18 @@ def draft_followups(*, dry_run: bool = False) -> list[dict[str, str]]:
                 "tier": r.get("tier") or "1",
                 "action_file": str(path.relative_to(THIS_WEEK)),
                 "fresh": "0",
+                "cta": "0",
+                "reply_check": "",
             }
         )
+        if r.get("status") == "got_reply":
+            r["reply_check"] = "got_reply"
+            r["status"] = "awaiting_reply"
+            touched_parents = True
+        existing_follow_urls.add(url)
+
+    if touched_parents:
+        write_status(rows)
     if new_rows:
         upsert_status_rows(new_rows)
     return new_rows

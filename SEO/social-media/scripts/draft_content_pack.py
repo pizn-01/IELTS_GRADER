@@ -209,7 +209,9 @@ def draft_content_pack(
         issues=validate_draft(rbody, product_mentioned=False),
         intent="create",
     )
-    status_rows.append(_status(raid, "Wed", "reddit", "post", "Reddit value post", rpath))
+    status_rows.append(
+        _status(raid, "Wed", "reddit", "post", "Reddit value post", rpath, cta=False)
+    )
 
     quora_qs = [
         "How can I check my IELTS essay?",
@@ -227,7 +229,7 @@ def draft_content_pack(
             "Answer first; product last with disclosure only if tool-relevant.",
             dry_run=dry_run,
         )
-        if "affiliated" not in ans.lower() and "tool" in q.lower():
+        if "ieltsgrader" not in ans.lower():
             ans = (
                 f"{ans.rstrip()}\n\n{DISCLOSURE}\n{SOFT_CTA}\n"
                 f"{utm_url(SITE, 'quora')}"
@@ -241,12 +243,12 @@ def draft_content_pack(
             title=q,
             paste=ans,
             followup="Reply with one extra example; keep disclosure if product mentioned.",
-            placement="end of answer + disclosure if tool-relevant",
-            disclosure_needed="tool" in q.lower(),
-            issues=validate_draft(ans, product_mentioned="ieltsgrader" in ans.lower()),
+            placement="end of answer + disclosure",
+            disclosure_needed=True,
+            issues=validate_draft(ans, product_mentioned=True),
             intent="create",
         )
-        status_rows.append(_status(qaid, day, "quora", "answer", q, qpath))
+        status_rows.append(_status(qaid, day, "quora", "answer", q, qpath, cta=True))
         schedule_rows.append(
             _sched(
                 qaid,
@@ -391,7 +393,14 @@ def draft_content_pack(
 
 
 def _status(
-    aid: str, day: str, platform: str, typ: str, title: str, path: Path
+    aid: str,
+    day: str,
+    platform: str,
+    typ: str,
+    title: str,
+    path: Path,
+    *,
+    cta: bool = True,
 ) -> dict[str, str]:
     return {
         "id": aid,
@@ -406,6 +415,8 @@ def _status(
         "tier": "2",
         "action_file": str(path.relative_to(THIS_WEEK)),
         "fresh": "0",
+        "cta": "1" if cta else "0",
+        "reply_check": "",
     }
 
 

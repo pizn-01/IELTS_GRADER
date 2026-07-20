@@ -16,11 +16,13 @@ from agent_io import (  # noqa: E402
     OUTPUT_DIR,
     THIS_WEEK,
     ensure_output_dirs,
+    pending_actions,
     read_status,
     read_week_meta,
     weekday_label,
 )
 from agent_rules import (  # noqa: E402
+    CTA_ENGAGE_SHARE,
     KPI_HIGH_INTENT,
     KPI_POSTS,
     KPI_REPLIES,
@@ -54,6 +56,17 @@ def _latest_csv(pattern: str) -> Path | None:
     return cands[-1] if cands else None
 
 
+def _load_funnel() -> dict:
+    path = THIS_WEEK / "_meta" / "funnel.json"
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    meta = read_week_meta()
+    return meta.get("funnel") or {}
+
+
 def build_payload() -> dict:
     ensure_output_dirs()
     actions = read_status()
@@ -62,6 +75,8 @@ def build_payload() -> dict:
     serper = bool(os.getenv("SERPER_API_KEY", "").strip())
     openai_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
     youtube = bool(os.getenv("YOUTUBE_API_KEY", "").strip())
+    today = weekday_label()
+    today_rows = pending_actions(day=today, include_overdue=True)
     action_platforms = dict(
         sorted(
             Counter((a.get("platform") or "unknown").lower() for a in actions).items()
@@ -83,15 +98,46 @@ def build_payload() -> dict:
                 (a.get("platform") or "unknown").lower()
                 for a in actions
                 if (a.get("type") or "").lower()
-                in ("post", "create", "short", "answer", "thread")
+                in ("post", "create", "short", "answer", "thread", "short_script", "page_post")
             ).items()
         )
     )
     historical = _csv_discovery_stats(_latest_csv("ielts_social_historical_*.csv"))
     weekly = _csv_discovery_stats(_latest_csv("ielts_social_weekly_*.csv"))
+    funnel = _load_funnel()
+    engage_n = sum(
+        1
+        for a in actions
+        if (a.get("type") or "").lower()
+        in ("reply", "comment", "engage", "followup", "group_comment")
+    )
+    create_n = sum(
+        1
+        for a in actions
+        if (a.get("type") or "").lower()
+        in ("post", "answer", "page_post", "short_script", "caption", "stories")
+    )
+    if not funnel:
+        funnel = {
+            "discovered": (weekly or {}).get("rows") or 0,
+            "after_filter": 0,
+            "engage_queue": engage_n,
+            "create": create_n,
+            "cta_engage": kpi.get("cta_replies_total") or 0,
+            "cta_create": kpi.get("cta_posts_total") or 0,
+        }
+    funnel = {
+        **funnel,
+        "today_slice": len(today_rows),
+        "pending_all": sum(
+            1
+            for a in actions
+            if (a.get("status") or "").lower() in ("pending", "awaiting_reply", "got_reply")
+        ),
+    }
     return {
         "ok": True,
-        "weekday": weekday_label(),
+        "weekday": today,
         "warmup": warmup_enabled(),
         "kpi": {
             **kpi,
@@ -99,10 +145,12 @@ def build_payload() -> dict:
                 "replies": KPI_REPLIES,
                 "posts": KPI_POSTS,
                 "high_intent": KPI_HIGH_INTENT,
+                "cta_engage_share": CTA_ENGAGE_SHARE,
             },
             "strip": kpi_strip(kpi),
         },
         "week_meta": read_week_meta(),
+        "funnel": funnel,
         "paths": {
             "this_week": str(THIS_WEEK),
             "has_status": (THIS_WEEK / "_meta" / "STATUS.csv").exists(),
@@ -112,6 +160,7 @@ def build_payload() -> dict:
             "has_scorecard": (THIS_WEEK / "_meta" / "scorecard.md").exists(),
             "has_backlog": (THIS_WEEK / "SUNDAY_BACKLOG.md").exists(),
             "has_onboarding": (cold / "ONBOARDING_BRIEF.md").exists(),
+            "has_funnel": (THIS_WEEK / "_meta" / "funnel.json").exists(),
         },
         "discovery": {
             "historical": historical,

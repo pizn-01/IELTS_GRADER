@@ -82,6 +82,18 @@ QUERY_BANK = [
     "IELTS essay correction",
 ]
 
+# Extra phrases for cold-start / historical listening (Serper top-slice expansion)
+QUERY_BANK_HISTORICAL_EXTRA = [
+    "stuck at 6.5 IELTS writing",
+    "IELTS Task Response band 7",
+    "IELTS coherence cohesion tips",
+    "check my IELTS Task 2",
+    "IELTS writing examiner feedback",
+    "best AI for IELTS writing",
+    "IELTS Academic writing feedback free",
+    "IELTS GT letter feedback",
+]
+
 USER_AGENT = os.getenv(
     "REDDIT_USER_AGENT",
     "IELTSGRADER-social-discovery/1.0 (listening script; contact ieltsgrader.com)",
@@ -246,14 +258,39 @@ def search_platform_serper_priority(
     start: datetime,
     end: datetime,
     num: int = 10,
+    prefer_undated: bool = False,
+    allow_undated_fallback: bool = True,
 ) -> list[ResultRow]:
-    """Serper with a no-date retry — Quora/Reddit are often thin in short after: windows."""
-    # Cap at 10 — Serper returns HTTP 400 for num > 10.
+    """Serper with optional undated pass — Quora/Reddit are thin in short after: windows.
+
+    prefer_undated: for long historical windows, try undated first (Google's multi-year
+    after: is weak). allow_undated_fallback: weekly may only undate as last resort.
+    """
     n = max(1, min(int(num), 10))
+    rows: list[ResultRow] = []
+    if prefer_undated and platform in ("reddit", "quora"):
+        rows = search_platform_serper(
+            platform, query, start=start, end=end, num=n, use_dates=False
+        )
+        if len(rows) >= 2:
+            return rows
+        dated = search_platform_serper(
+            platform, query, start=start, end=end, num=n, use_dates=True
+        )
+        seen = {normalize_url(r.url).lower() for r in rows}
+        for r in dated:
+            key = normalize_url(r.url).lower()
+            if key and key not in seen:
+                rows.append(r)
+                seen.add(key)
+        return rows
+
     rows = search_platform_serper(
         platform, query, start=start, end=end, num=n, use_dates=True
     )
     if len(rows) >= 2 or platform not in ("reddit", "quora", "linkedin"):
+        return rows
+    if not allow_undated_fallback:
         return rows
     extra = search_platform_serper(
         platform, query, start=start, end=end, num=n, use_dates=False
@@ -439,6 +476,8 @@ def collect_all_platforms(
     reddit_limit: int = 40,
     youtube_max: int = 15,
     dry_run: bool = False,
+    prefer_undated: bool = False,
+    allow_undated_fallback: bool = True,
 ) -> list[ResultRow]:
     queries = queries or QUERY_BANK
     platforms = platforms or PLATFORMS
@@ -540,7 +579,13 @@ def collect_all_platforms(
             try:
                 all_rows.extend(
                     search_platform_serper_priority(
-                        "reddit", query, start=start, end=end, num=serper_num
+                        "reddit",
+                        query,
+                        start=start,
+                        end=end,
+                        num=serper_num,
+                        prefer_undated=prefer_undated,
+                        allow_undated_fallback=allow_undated_fallback,
                     )
                 )
             except Exception as exc:  # noqa: BLE001
@@ -562,7 +607,13 @@ def collect_all_platforms(
             try:
                 all_rows.extend(
                     search_platform_serper_priority(
-                        platform, query, start=start, end=end, num=serper_num
+                        platform,
+                        query,
+                        start=start,
+                        end=end,
+                        num=serper_num,
+                        prefer_undated=prefer_undated,
+                        allow_undated_fallback=allow_undated_fallback,
                     )
                 )
             except Exception as exc:  # noqa: BLE001

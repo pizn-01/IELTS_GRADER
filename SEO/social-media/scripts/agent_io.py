@@ -10,9 +10,9 @@ import os
 import shutil
 import subprocess
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Iterable
 
 from dotenv import load_dotenv
 
@@ -22,6 +22,8 @@ OUTPUT_DIR = ROOT / "output"
 THIS_WEEK = OUTPUT_DIR / "THIS_WEEK"
 ARCHIVE_DIR = OUTPUT_DIR / "archive"
 ENGAGED_PATH = OUTPUT_DIR / "engaged_urls.csv"
+SEEN_PATH = OUTPUT_DIR / "seen_urls.csv"
+SEEN_TTL_DAYS = 90
 SCORECARDS_PATH = OUTPUT_DIR / "scorecards.csv"
 WARMUP_FLAG = OUTPUT_DIR / "warmup_until.txt"
 
@@ -38,6 +40,8 @@ STATUS_FIELDS = [
     "tier",
     "action_file",
     "fresh",
+    "cta",
+    "reply_check",
 ]
 
 load_dotenv(SCRIPTS_DIR / ".env")
@@ -124,6 +128,82 @@ def append_engaged(url: str, platform: str, status: str = "done") -> None:
                 "marked_at": datetime.utcnow().isoformat() + "Z",
             }
         )
+    append_seen(url, platform, reason=f"engaged:{status}")
+
+
+def _parse_seen_at(value: str) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        raw = value.rstrip("Z")
+        return datetime.fromisoformat(raw).replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def load_seen_urls(*, ttl_days: int = SEEN_TTL_DAYS) -> set[str]:
+    """URLs queued or engaged within the TTL window (default 90 days)."""
+    if not SEEN_PATH.exists():
+        return set()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=ttl_days)
+    urls: set[str] = set()
+    with SEEN_PATH.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            u = (row.get("url") or "").strip().lower().rstrip("/")
+            if not u:
+                continue
+            seen_at = _parse_seen_at(row.get("seen_at") or "")
+            if seen_at is None or seen_at >= cutoff:
+                urls.add(u)
+    return urls
+
+
+def append_seen(url: str, platform: str = "", reason: str = "queued") -> None:
+    ensure_output_dirs()
+    key = (url or "").strip().lower().rstrip("/")
+    if not key:
+        return
+    new_file = not SEEN_PATH.exists()
+    with SEEN_PATH.open("a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f, fieldnames=["url", "platform", "reason", "seen_at"]
+        )
+        if new_file:
+            writer.writeheader()
+        writer.writerow(
+            {
+                "url": url,
+                "platform": platform,
+                "reason": reason,
+                "seen_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+
+def remember_urls(
+    rows: Iterable[dict[str, Any]],
+    *,
+    reason: str = "queued",
+) -> int:
+    """Append many URLs to seen memory. Returns count written."""
+    n = 0
+    for row in rows:
+        url = row.get("url") if isinstance(row, dict) else getattr(row, "url", "")
+        platform = (
+            row.get("platform")
+            if isinstance(row, dict)
+            else getattr(row, "platform", "")
+        )
+        if url:
+            append_seen(str(url), str(platform or ""), reason=reason)
+            n += 1
+    return n
+
+
+def blocked_urls() -> set[str]:
+    """Union of engaged + recently seen — do not re-queue these."""
+    return load_engaged_urls() | load_seen_urls()
 
 
 def read_status() -> list[dict[str, str]]:
@@ -131,8 +211,12 @@ def read_status() -> list[dict[str, str]]:
     if not path.exists():
         return []
     with path.open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
-
+        rows = list(csv.DictReader(f))
+    # Backfill new optional columns for older STATUS.csv files
+    for r in rows:
+        r.setdefault("cta", "")
+        r.setdefault("reply_check", "")
+    return rows
 
 def write_status(rows: list[dict[str, str]]) -> None:
     ensure_output_dirs()

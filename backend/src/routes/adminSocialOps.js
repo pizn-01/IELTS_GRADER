@@ -66,6 +66,9 @@ router.post('/actions/:id/done', async (req, res) => {
     const data = await socialOps.markDone(req.params.id, {
       awaiting_reply: Boolean(req.body?.awaiting_reply),
       skip: Boolean(req.body?.skip),
+      got_reply: Boolean(req.body?.got_reply),
+      still_waiting: Boolean(req.body?.still_waiting),
+      dead: Boolean(req.body?.dead),
     });
     return res.json(data);
   } catch (err) {

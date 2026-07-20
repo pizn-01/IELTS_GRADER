@@ -78,6 +78,8 @@ HELPFUL_REPLY_EXAMPLE = (
 KPI_REPLIES = 50
 KPI_POSTS = 12
 KPI_HIGH_INTENT = 10
+# Share of weekly engage drafts that should include soft CTA + disclosure + UTM
+CTA_ENGAGE_SHARE = 0.22
 
 TIER1 = ("reddit", "quora", "twitter")
 TIER2 = ("youtube", "instagram", "tiktok")
@@ -266,6 +268,25 @@ def allow_product_mention(platform: str, intent: str) -> bool:
     if warmup_enabled() and platform.lower() in ("reddit", "facebook"):
         return False
     return intent == "tool_ask"
+
+
+def allow_cta_for_item(
+    platform: str,
+    intent: str,
+    *,
+    cta_ok: bool = False,
+    force_cta: bool = False,
+) -> bool:
+    """CTA eligibility for quota fill: tool_ask, or approved feedback_ask."""
+    if warmup_enabled() and platform.lower() in ("reddit", "facebook"):
+        return False
+    if force_cta and intent in ("tool_ask", "feedback_ask"):
+        return True
+    if intent == "tool_ask":
+        return True
+    if intent == "feedback_ask" and cta_ok:
+        return True
+    return False
 
 
 def validate_draft(text: str, *, product_mentioned: bool) -> list[str]:

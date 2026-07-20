@@ -19,8 +19,9 @@ from agent_rules import (
     platform_tier,
     ranking_score,
 )
-from agent_io import load_engaged_urls
+from agent_io import blocked_urls, remember_urls
 from common import normalize_url
+from filter_candidates import load_cta_map
 
 
 @dataclass
@@ -38,6 +39,7 @@ class TriageItem:
     action: str  # value_reply | soft_cta_ok | observe_only
     source_query: str = ""
     fresh: bool = False
+    cta_ok: bool = False
 
 
 def _read_csv_rows(path: Path) -> list[dict[str, str]]:
@@ -52,19 +54,27 @@ def triage_csv(
     target_engage: int = ENGAGE_TARGET,
     fresh: bool = False,
     fresh_cap: int = 8,
+    cta_map: Optional[dict[str, bool]] = None,
+    remember: bool = True,
 ) -> list[TriageItem]:
-    engaged = load_engaged_urls()
+    blocked = blocked_urls()
+    cta_map = cta_map if cta_map is not None else load_cta_map()
     raw = _read_csv_rows(csv_path)
     items: list[TriageItem] = []
 
     for row in raw:
         url = normalize_url(row.get("url") or "")
-        if not url or url.lower().rstrip("/") in engaged:
+        key = url.lower().rstrip("/")
+        if not url or key in blocked:
             continue
         platform = (row.get("platform") or "unknown").lower()
         title = row.get("title") or ""
         snippet = row.get("snippet") or ""
         intent = classify_intent(title, snippet)
+        notes = row.get("notes") or ""
+        cta_ok = bool(cta_map.get(key))
+        if "cta_ok=1" in notes:
+            cta_ok = True
         score = ranking_score(
             platform=platform,
             engagement_score=row.get("engagement_score") or "",
@@ -72,7 +82,7 @@ def triage_csv(
             title=title,
             snippet=snippet,
         )
-        if intent == "tool_ask":
+        if intent == "tool_ask" or cta_ok:
             action = "soft_cta_ok"
         elif mode == "cold_start":
             action = "observe_only"
@@ -94,27 +104,42 @@ def triage_csv(
                 action=action,
                 source_query=row.get("query") or "",
                 fresh=fresh,
+                cta_ok=cta_ok or intent == "tool_ask",
             )
         )
 
     items.sort(key=lambda x: x.score, reverse=True)
 
     if mode == "cold_start":
-        # Learn-not-spam: keep top evergreen for study; mark observe
         for it in items:
             it.day = "Study"
             it.action = "observe_only"
-        return items[:40]
+        selected = items[:40]
+        if remember:
+            remember_urls(
+                [{"url": it.url, "platform": it.platform} for it in selected],
+                reason="cold_start_study",
+            )
+        return selected
 
     if fresh:
         items = items[:fresh_cap]
         for it in items:
             it.day = _today_label()
+        if remember:
+            remember_urls(
+                [{"url": it.url, "platform": it.platform} for it in items],
+                reason="fresh_queued",
+            )
         return items
 
-    # Cap / pad toward engage target
     selected = items[: max(target_engage, KPI_HIGH_INTENT)]
     _assign_days(selected)
+    if remember:
+        remember_urls(
+            [{"url": it.url, "platform": it.platform} for it in selected],
+            reason="weekly_queued",
+        )
     return selected
 
 
@@ -127,7 +152,6 @@ def _today_label() -> str:
 def _assign_days(items: list[TriageItem]) -> None:
     if not items:
         return
-    # Highest engagement → Fri deep (top ~20%)
     deep_n = max(3, len(items) // 5)
     deep = items[:deep_n]
     rest = items[deep_n:]
@@ -135,7 +159,6 @@ def _assign_days(items: list[TriageItem]) -> None:
     for it in deep:
         it.day = DEEP_DAY
 
-    # Always reserve a Monday starter batch
     mon_n = min(8, max(3, len(rest) // 5)) if rest else 0
     for it in rest[:mon_n]:
         it.day = "Mon"

@@ -242,11 +242,23 @@ async function getAction(id) {
   return { ...row, ...detail };
 }
 
-async function markDone(id, { awaiting_reply = false, skip = false } = {}) {
+async function markDone(
+  id,
+  {
+    awaiting_reply = false,
+    skip = false,
+    got_reply = false,
+    still_waiting = false,
+    dead = false,
+  } = {}
+) {
   const args = ['--id', String(id).padStart(3, '0')];
   if (awaiting_reply) args.push('--awaiting-reply');
   if (skip) args.push('--skip');
-  await runScript('mark_done.py', args, { timeoutMs: 30000 });
+  if (got_reply) args.push('--got-reply');
+  if (still_waiting) args.push('--still-waiting');
+  if (dead) args.push('--dead');
+  await runScript('mark_done.py', args, { timeoutMs: 60000 });
   return getStatusBundle();
 }
 

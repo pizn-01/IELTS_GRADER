@@ -57,6 +57,7 @@ def run(*, fresh: bool = True, dry_run: bool = False) -> int:
             items = triage_csv(
                 csv_path, mode="weekly", fresh=True, fresh_cap=FRESH_LISTEN_CAP
             )
+            # Light filter for fresh: drop seen/engaged via triage blocked_urls
             write_triage_json(THIS_WEEK / "_meta" / "fresh_queue.json", items)
             drafted = draft_engage_items(items, dry_run=dry_run)
             print(f"Added {len(drafted)} fresh engage actions for {day}")

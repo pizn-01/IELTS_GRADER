@@ -4,6 +4,7 @@ Draft paste-ready engage actions from triage items. Never auto-posts.
 
 from __future__ import annotations
 
+import math
 import re
 from pathlib import Path
 from typing import Optional
@@ -14,19 +15,19 @@ from agent_io import (
     THIS_WEEK,
     format_action_id,
     next_action_id,
-    read_status,
     upsert_status_rows,
 )
 from agent_rules import (
+    CTA_ENGAGE_SHARE,
     DISCLOSURE,
     SOFT_CTA,
+    allow_cta_for_item,
     allow_product_mention,
     link_placement,
     platform_tier,
     system_prompt_engage,
     utm_url,
     validate_draft,
-    warmup_enabled,
     SITE,
 )
 from common import USER_AGENT
@@ -77,6 +78,7 @@ def write_action_markdown(
     disclosure_needed: bool,
     issues: list[str],
     intent: str = "",
+    cta: bool = False,
 ) -> Path:
     actions_dir = THIS_WEEK / "actions"
     actions_dir.mkdir(parents=True, exist_ok=True)
@@ -90,6 +92,7 @@ def write_action_markdown(
 Open: {url}
 Title: {title}
 Intent: {intent}
+CTA: {"yes" if cta else "no"}
 Link placement: {placement}
 Disclosure: {disc}
 {issue_block}
@@ -103,6 +106,38 @@ Disclosure: {disc}
     return path
 
 
+def _assign_cta_flags(items: list[TriageItem]) -> dict[str, bool]:
+    """Pick ~CTA_ENGAGE_SHARE of items for soft CTA (tool_ask first, then cta_ok feedback)."""
+    eligible = [
+        it
+        for it in items
+        if it.action != "observe_only"
+        and allow_cta_for_item(it.platform, it.intent, cta_ok=it.cta_ok)
+    ]
+    # Prefer tool_ask, then feedback_ask with cta_ok, by score
+    eligible.sort(
+        key=lambda it: (
+            0 if it.intent == "tool_ask" else 1,
+            -it.score,
+        )
+    )
+    draftable = [it for it in items if it.action != "observe_only"]
+    target = max(
+        1 if draftable else 0,
+        min(len(eligible), math.ceil(len(draftable) * CTA_ENGAGE_SHARE)),
+    )
+    chosen = {normalize_key(it.url) for it in eligible[:target]}
+    # Always include tool_ask when allowed (even if over share slightly)
+    for it in draftable:
+        if it.intent == "tool_ask" and allow_product_mention(it.platform, it.intent):
+            chosen.add(normalize_key(it.url))
+    return {normalize_key(it.url): normalize_key(it.url) in chosen for it in draftable}
+
+
+def normalize_key(url: str) -> str:
+    return (url or "").strip().lower().rstrip("/")
+
+
 def draft_engage_items(
     items: list[TriageItem],
     *,
@@ -112,6 +147,8 @@ def draft_engage_items(
     """Create action files + status rows for engage triage items."""
     n = start_id or next_action_id()
     status_rows: list[dict[str, str]] = []
+    cta_flags = _assign_cta_flags(items)
+    cta_count = 0
 
     for item in items:
         if item.action == "observe_only":
@@ -122,15 +159,40 @@ def draft_engage_items(
         if item.platform == "reddit":
             context = fetch_reddit_context(item.url)
 
-        product_ok = allow_product_mention(item.platform, item.intent)
-        placement = link_placement(item.platform, item.intent)
-        system = system_prompt_engage(item.platform, item.intent)
+        use_cta = bool(cta_flags.get(normalize_key(item.url), False))
+        product_ok = use_cta and allow_cta_for_item(
+            item.platform,
+            item.intent,
+            cta_ok=item.cta_ok or item.intent == "tool_ask",
+            force_cta=True,
+        )
+
+        intent_for_prompt = item.intent
+        if product_ok and item.intent == "feedback_ask":
+            intent_for_prompt = "feedback_ask"
+        elif product_ok:
+            intent_for_prompt = "tool_ask"
+
+        placement = link_placement(
+            item.platform, intent_for_prompt if product_ok else "general_tip"
+        )
+        system = system_prompt_engage(
+            item.platform, intent_for_prompt if product_ok else item.intent
+        )
         user = (
             f"Thread URL: {item.url}\n"
             f"Title: {item.title}\n"
             f"Snippet: {item.snippet}\n"
             f"Extra context:\n{context or '(none)'}\n"
         )
+        if product_ok:
+            user += (
+                "\nInclude a soft CTA to the free evaluation at ieltsgrader.com "
+                "with disclosure — value first, one link max.\n"
+            )
+        else:
+            user += "\nDo NOT mention any product or website — teach only.\n"
+
         paste = llm_complete(system, user, dry_run=dry_run)
 
         if product_ok and "ieltsgrader" not in paste.lower():
@@ -138,9 +200,17 @@ def draft_engage_items(
             paste = (
                 f"{paste.rstrip()}\n\n{DISCLOSURE}\n{SOFT_CTA}\n{link}"
             )
+        if not product_ok and "ieltsgrader" in paste.lower():
+            # Strip accidental product mention from value-only replies
+            paste = re.sub(
+                r"(?i)full disclosure:.*?ieltsgrader\.com\)?\s*",
+                "",
+                paste,
+            )
+            paste = re.sub(r"(?i)https?://\S*ieltsgrader\.com\S*", "", paste)
+            paste = re.sub(r"\n{3,}", "\n\n", paste).strip()
 
         issues = validate_draft(paste, product_mentioned=product_ok)
-        # Strip banned if validator caught and we're in safe mode — flag only
 
         followup = llm_complete(
             system_prompt_engage(item.platform, "general_tip"),
@@ -161,7 +231,11 @@ def draft_engage_items(
             disclosure_needed=product_ok,
             issues=issues,
             intent=item.intent,
+            cta=product_ok,
         )
+
+        if product_ok:
+            cta_count += 1
 
         status_rows.append(
             {
@@ -177,8 +251,16 @@ def draft_engage_items(
                 "tier": str(platform_tier(item.platform)),
                 "action_file": str(path.relative_to(THIS_WEEK)),
                 "fresh": "1" if item.fresh else "0",
+                "cta": "1" if product_ok else "0",
+                "reply_check": "",
             }
         )
 
     upsert_status_rows(status_rows)
+    if status_rows:
+        print(
+            f"CTA engage drafts: {cta_count}/{len(status_rows)} "
+            f"(target ~{int(CTA_ENGAGE_SHARE * 100)}%)",
+            flush=True,
+        )
     return status_rows

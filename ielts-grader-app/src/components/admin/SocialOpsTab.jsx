@@ -25,8 +25,8 @@ const BRIEF_TABS = [
 ];
 
 const FILTERS = [
-  { id: 'today', label: 'Today + overdue' },
-  { id: 'pending', label: 'All pending' },
+  { id: 'today', label: "Today's work" },
+  { id: 'pending', label: 'Full week pending' },
   { id: 'all', label: 'Everything' },
 ];
 
@@ -52,8 +52,10 @@ function filterActions(actions, filter, today) {
   return actions.filter((a) => {
     const st = (a.status || '').toLowerCase();
     if (filter === 'all') return true;
-    if (filter === 'pending') return st === 'pending' || st === 'awaiting_reply';
-    if (!(st === 'pending' || st === 'awaiting_reply')) return false;
+    if (filter === 'pending') {
+      return st === 'pending' || st === 'awaiting_reply' || st === 'got_reply';
+    }
+    if (!(st === 'pending' || st === 'awaiting_reply' || st === 'got_reply')) return false;
     const d = a.day || '';
     if (d === today) return true;
     const di = dayOrder.indexOf(d);
@@ -393,11 +395,11 @@ export default function SocialOpsTab() {
         </div>
       )}
 
-      {/* Discovery results */}
+      {/* Discovery + funnel */}
       <div className="rounded-[12px] border border-gray-100 bg-white px-4 py-3 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-            Listening results
+            Listening → week pack funnel
           </p>
           <button
             type="button"
@@ -410,6 +412,25 @@ export default function SocialOpsTab() {
         <p className="text-[15px] font-extrabold text-[#101828]">
           {kpi?.strip || 'No week pack yet'}
         </p>
+        {bundle?.funnel && (
+          <p className="text-[13px] text-gray-800 font-semibold">
+            Discovered {bundle.funnel.discovered ?? '—'}
+            {' → '}filter {bundle.funnel.after_filter ?? '—'}
+            {' → '}engage {bundle.funnel.engage_queue ?? '—'}
+            {' + '}create {bundle.funnel.create ?? '—'}
+            {' → '}today {bundle.funnel.today_slice ?? '—'}
+            {bundle.funnel.pending_all != null
+              ? ` · week pending ${bundle.funnel.pending_all}`
+              : ''}
+          </p>
+        )}
+        {(kpi?.cta_replies_total > 0 || kpi?.cta_posts_total > 0) && (
+          <p className="text-[12px] text-gray-600">
+            Soft-CTA target ~{Math.round((kpi?.targets?.cta_engage_share || 0.22) * 100)}% of
+            engages · planned CTA replies {kpi?.cta_replies_total || 0} · CTA creates{' '}
+            {kpi?.cta_posts_total || 0}
+          </p>
+        )}
         {historical ? (
           <p className="text-[13px] text-gray-700">
             <span className="font-bold">Cold start:</span> {historical.rows} rows
@@ -417,7 +438,7 @@ export default function SocialOpsTab() {
           </p>
         ) : (
           <p className="text-[13px] text-gray-500">
-            Cold start archive: none yet (run Cold start, or it was wiped before persistence).
+            Cold start archive: none yet (run Cold start once for themes / onboarding).
           </p>
         )}
         {weekly ? (
@@ -426,14 +447,15 @@ export default function SocialOpsTab() {
             <span className="text-gray-500"> · {platformLine(weekly.by_platform)}</span>
           </p>
         ) : null}
-        {bundle?.action_platforms?.create && Object.keys(bundle.action_platforms.create).length > 0 && (
-          <p className="text-[12px] text-gray-500 pt-1">
-            Tip: the to-do list mixes <strong>engage</strong> (replies from listening — Reddit/Quora
-            prioritized) and <strong>create</strong> (scheduled posts — often X/IG/FB). Create:{' '}
-            {platformLine(bundle.action_platforms.create)} · Engage:{' '}
-            {platformLine(bundle.action_platforms.engage)}
-          </p>
-        )}
+        {bundle?.action_platforms?.create &&
+          Object.keys(bundle.action_platforms.create).length > 0 && (
+            <p className="text-[12px] text-gray-500 pt-1">
+              Tip: the to-do list mixes <strong>engage</strong> (replies from listening) and{' '}
+              <strong>create</strong> (scheduled posts). Create:{' '}
+              {platformLine(bundle.action_platforms.create)} · Engage:{' '}
+              {platformLine(bundle.action_platforms.engage)}
+            </p>
+          )}
       </div>
 
       {/* Run bar */}
@@ -637,7 +659,10 @@ export default function SocialOpsTab() {
                     {a.platform} · {a.type}
                     {a.day ? ` · ${a.day}` : ''}
                     {a.fresh === '1' ? ' · FRESH' : ''}
+                    {a.cta === '1' ? ' · CTA' : ''}
                     {a.type === 'followup' ? ' · FOLLOW-UP' : ''}
+                    {a.status === 'awaiting_reply' ? ' · WAITING' : ''}
+                    {a.status === 'got_reply' ? ' · GOT REPLY' : ''}
                   </p>
                   <p className="text-[12px] text-gray-500 truncate">{a.title}</p>
                 </div>
@@ -752,12 +777,37 @@ export default function SocialOpsTab() {
               </button>
               <button
                 type="button"
+                onClick={() => handleMark(detail.id, { got_reply: true })}
+                className="px-3 py-2 rounded-[8px] text-[12px] font-bold border border-emerald-200 text-emerald-800 bg-emerald-50"
+              >
+                Got reply
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMark(detail.id, { still_waiting: true })}
+                className="px-3 py-2 rounded-[8px] text-[12px] font-bold border border-gray-200"
+              >
+                Still waiting
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMark(detail.id, { dead: true })}
+                className="px-3 py-2 rounded-[8px] text-[12px] font-bold border border-gray-200 text-gray-500"
+              >
+                Dead thread
+              </button>
+              <button
+                type="button"
                 onClick={() => setDetail(null)}
                 className="px-3 py-2 rounded-[8px] text-[12px] font-bold text-gray-500"
               >
                 Close
               </button>
             </div>
+            <p className="text-[11px] text-gray-400">
+              After you paste: open the thread later → Got reply (drafts a follow-up) / Still waiting /
+              Dead.
+            </p>
           </div>
         </div>
       )}
