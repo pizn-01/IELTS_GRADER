@@ -183,7 +183,8 @@ def serper_search(
         raise RuntimeError(
             "SERPER_API_KEY is not set. Copy .env.example to .env and add your key."
         )
-    payload: dict = {"q": query, "num": num}
+    # Serper free/standard plans reject num > 10 (HTTP 400).
+    payload: dict = {"q": query, "num": max(1, min(int(num), 10))}
     if tbs:
         payload["tbs"] = tbs
     resp = requests.post(
@@ -247,14 +248,15 @@ def search_platform_serper_priority(
     num: int = 10,
 ) -> list[ResultRow]:
     """Serper with a no-date retry — Quora/Reddit are often thin in short after: windows."""
-    boost = 4 if platform in ("reddit", "quora") else 0
+    # Cap at 10 — Serper returns HTTP 400 for num > 10.
+    n = max(1, min(int(num), 10))
     rows = search_platform_serper(
-        platform, query, start=start, end=end, num=num + boost, use_dates=True
+        platform, query, start=start, end=end, num=n, use_dates=True
     )
     if len(rows) >= 2 or platform not in ("reddit", "quora", "linkedin"):
         return rows
     extra = search_platform_serper(
-        platform, query, start=start, end=end, num=num + boost, use_dates=False
+        platform, query, start=start, end=end, num=n, use_dates=False
     )
     seen = {normalize_url(r.url).lower() for r in rows}
     for r in extra:
