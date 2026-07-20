@@ -51,7 +51,20 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         )
         csv_path = default_output_path("ielts_social_historical", today)
         write_csv(csv_path, rows)
+        by = Counter((r.platform or "unknown").lower() for r in rows)
         print(f"Wrote {len(rows)} rows → {csv_path}")
+        print(f"By platform: {dict(sorted(by.items()))}", flush=True)
+        (meta / "discovery_summary.json").write_text(
+            json.dumps(
+                {
+                    "rows": len(rows),
+                    "by_platform": dict(sorted(by.items())),
+                    "csv": str(csv_path),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
     elif csv_path is None:
         cands = sorted(OUTPUT_DIR.glob("ielts_social_historical_*.csv"))
         if not cands:
@@ -102,11 +115,29 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
     ]
     (cold / "shorts_series_ideas.md").write_text("\n".join(series), encoding="utf-8")
 
+    summary_path = meta / "discovery_summary.json"
+    disc_rows = len(items)
+    disc_by: dict = {}
+    if summary_path.exists():
+        try:
+            disc = json.loads(summary_path.read_text(encoding="utf-8"))
+            disc_rows = int(disc.get("rows") or disc_rows)
+            disc_by = disc.get("by_platform") or {}
+        except (json.JSONDecodeError, OSError, TypeError, ValueError):
+            pass
+    if not disc_by:
+        disc_by = dict(Counter(it.platform for it in items))
+
     brief_lines = [
         "# ONBOARDING BRIEF (cold start)",
         "",
         "Use this once when you start. **Learn from** high-engagement threads — "
         "**do not necro-spam** old posts.",
+        "",
+        "## Discovery summary",
+        f"- **{disc_rows}** listening rows found",
+        "- By platform: "
+        + (", ".join(f"{k}={v}" for k, v in sorted(disc_by.items())) or "n/a"),
         "",
         "## Reddit warmup (1–2 weeks)",
         "- Comment helpfully only — no product, no links.",

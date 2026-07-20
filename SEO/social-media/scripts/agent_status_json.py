@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -28,13 +30,28 @@ from agent_rules import (  # noqa: E402
 from scorecard import kpi_counts, kpi_strip  # noqa: E402
 
 
-def _read_text(path: Path) -> str:
-    if not path.exists():
-        return ""
+def _csv_discovery_stats(path: Path | None) -> dict | None:
+    if not path or not path.exists():
+        return None
     try:
-        return path.read_text(encoding="utf-8")
+        with path.open(newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
     except OSError:
-        return ""
+        return None
+    by_platform = dict(
+        sorted(Counter((r.get("platform") or "unknown").lower() for r in rows).items())
+    )
+    return {
+        "file": path.name,
+        "path": str(path),
+        "rows": len(rows),
+        "by_platform": by_platform,
+    }
+
+
+def _latest_csv(pattern: str) -> Path | None:
+    cands = sorted(OUTPUT_DIR.glob(pattern))
+    return cands[-1] if cands else None
 
 
 def build_payload() -> dict:
@@ -42,6 +59,36 @@ def build_payload() -> dict:
     actions = read_status()
     kpi = kpi_counts(actions)
     cold = OUTPUT_DIR / "cold-start"
+    serper = bool(os.getenv("SERPER_API_KEY", "").strip())
+    openai_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
+    youtube = bool(os.getenv("YOUTUBE_API_KEY", "").strip())
+    action_platforms = dict(
+        sorted(
+            Counter((a.get("platform") or "unknown").lower() for a in actions).items()
+        )
+    )
+    engage_platforms = dict(
+        sorted(
+            Counter(
+                (a.get("platform") or "unknown").lower()
+                for a in actions
+                if (a.get("type") or "").lower()
+                in ("reply", "comment", "engage", "followup", "group_comment")
+            ).items()
+        )
+    )
+    create_platforms = dict(
+        sorted(
+            Counter(
+                (a.get("platform") or "unknown").lower()
+                for a in actions
+                if (a.get("type") or "").lower()
+                in ("post", "create", "short", "answer", "thread")
+            ).items()
+        )
+    )
+    historical = _csv_discovery_stats(_latest_csv("ielts_social_historical_*.csv"))
+    weekly = _csv_discovery_stats(_latest_csv("ielts_social_weekly_*.csv"))
     return {
         "ok": True,
         "weekday": weekday_label(),
@@ -66,12 +113,22 @@ def build_payload() -> dict:
             "has_backlog": (THIS_WEEK / "SUNDAY_BACKLOG.md").exists(),
             "has_onboarding": (cold / "ONBOARDING_BRIEF.md").exists(),
         },
+        "discovery": {
+            "historical": historical,
+            "weekly": weekly,
+        },
+        "action_platforms": {
+            "all": action_platforms,
+            "engage": engage_platforms,
+            "create": create_platforms,
+        },
+        "setup_ok": serper and openai_key,
         "actions": actions,
         "playbook_remember": PLAYBOOK_REMEMBER,
         "keys": {
-            "SERPER_API_KEY": bool(os.getenv("SERPER_API_KEY", "").strip()),
-            "YOUTUBE_API_KEY": bool(os.getenv("YOUTUBE_API_KEY", "").strip()),
-            "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY", "").strip()),
+            "SERPER_API_KEY": serper,
+            "YOUTUBE_API_KEY": youtube,
+            "OPENAI_API_KEY": openai_key,
         },
         "briefs_available": [
             k

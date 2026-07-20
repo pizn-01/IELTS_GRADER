@@ -63,7 +63,11 @@ function resolvePython() {
 
 function loadScriptsEnv() {
   const envPath = path.join(SCRIPTS_DIR, '.env');
-  const env = { ...process.env, SOCIAL_AGENT_NO_OPEN: '1' };
+  const env = {
+    ...process.env,
+    SOCIAL_AGENT_NO_OPEN: '1',
+    PYTHONUNBUFFERED: '1',
+  };
   if (!fs.existsSync(envPath)) return env;
   try {
     const text = fs.readFileSync(envPath, 'utf8');

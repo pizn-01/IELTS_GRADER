@@ -62,7 +62,17 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         )
         csv_path = default_output_path("ielts_social_weekly", today)
         write_csv(csv_path, rows)
+        from collections import Counter
+
+        by = dict(sorted(Counter((r.platform or "unknown").lower() for r in rows).items()))
         print(f"Wrote {len(rows)} discovery rows → {csv_path}")
+        print(f"By platform: {by}", flush=True)
+        (THIS_WEEK / "_meta" / "discovery_summary.json").write_text(
+            __import__("json").dumps(
+                {"rows": len(rows), "by_platform": by, "csv": str(csv_path)}, indent=2
+            ),
+            encoding="utf-8",
+        )
     elif csv_path is None:
         # find latest weekly csv
         candidates = sorted(THIS_WEEK.parent.glob("ielts_social_weekly_*.csv"))

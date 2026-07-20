@@ -204,16 +204,17 @@ def search_platform_serper(
     start: datetime,
     end: datetime,
     num: int = 10,
+    use_dates: bool = True,
 ) -> list[ResultRow]:
     site = SERPER_SITE.get(platform)
     if not site:
         return []
-    date_q = after_before_for_serper(start, end)
+    date_q = after_before_for_serper(start, end) if use_dates else ""
     # twitter uses OR in site expression already
     if platform == "twitter":
-        full_q = f"({site}) {query} {date_q}"
+        full_q = f"({site}) {query} {date_q}".strip()
     else:
-        full_q = f"site:{site} {query} {date_q}"
+        full_q = f"site:{site} {query} {date_q}".strip()
     organic = serper_search(full_q, num=num)
     _sleep()
     rows: list[ResultRow] = []
@@ -229,11 +230,38 @@ def search_platform_serper(
                 snippet=item.get("snippet") or "",
                 published_at=item.get("date") or "",
                 query=query,
-                source="serper",
+                source="serper" if use_dates else "serper_no_date",
                 notes="engagement_unknown",
                 engagement_score="",
             )
         )
+    return rows
+
+
+def search_platform_serper_priority(
+    platform: str,
+    query: str,
+    *,
+    start: datetime,
+    end: datetime,
+    num: int = 10,
+) -> list[ResultRow]:
+    """Serper with a no-date retry — Quora/Reddit are often thin in short after: windows."""
+    boost = 4 if platform in ("reddit", "quora") else 0
+    rows = search_platform_serper(
+        platform, query, start=start, end=end, num=num + boost, use_dates=True
+    )
+    if len(rows) >= 2 or platform not in ("reddit", "quora", "linkedin"):
+        return rows
+    extra = search_platform_serper(
+        platform, query, start=start, end=end, num=num + boost, use_dates=False
+    )
+    seen = {normalize_url(r.url).lower() for r in rows}
+    for r in extra:
+        key = normalize_url(r.url).lower()
+        if key and key not in seen:
+            rows.append(r)
+            seen.add(key)
     return rows
 
 
@@ -449,22 +477,44 @@ def collect_all_platforms(
             )
         return dedupe_rows(all_rows)
 
+    from collections import Counter
+    import json as _json
+
     native_reddit = "reddit" in platforms
     native_youtube = "youtube" in platforms
     youtube_key = os.getenv("YOUTUBE_API_KEY", "").strip()
-    serper_platforms = [p for p in platforms if p in SERPER_SITE]
+    # Prefer Quora early (Serper); Reddit handled separately below.
+    preferred = ["quora", "twitter", "linkedin", "youtube", "instagram", "tiktok", "facebook"]
+    serper_platforms = [p for p in preferred if p in platforms and p in SERPER_SITE]
+    serper_platforms += [
+        p for p in platforms if p in SERPER_SITE and p not in serper_platforms and p != "reddit"
+    ]
 
     # YouTube Data API is optional — skip quietly; Serper can still find YT pages.
     if native_youtube and not youtube_key:
-        print("YouTube API: skipped (no YOUTUBE_API_KEY) — using Serper for youtube.com results")
+        print(
+            "YouTube API: skipped (no YOUTUBE_API_KEY) — using Serper for youtube.com results",
+            flush=True,
+        )
         native_youtube = False
 
     # Reddit public JSON is often 403 from cloud/datacenter IPs (e.g. Fly).
     # Fall back to Serper site:reddit.com after first block.
     reddit_via = "native" if native_reddit else None
     reddit_fallback_announced = False
+    total_q = len(queries)
 
-    for query in queries:
+    def _progress(qi: int, note: str = "") -> None:
+        counts = dict(Counter(r.platform for r in all_rows))
+        extra = f" {note}" if note else ""
+        print(
+            f"PROGRESS query={qi}/{total_q} rows={len(all_rows)} by={_json.dumps(counts, separators=(',', ':'))}{extra}",
+            flush=True,
+        )
+
+    for qi, query in enumerate(queries, 1):
+        print(f"PROGRESS query={qi}/{total_q} searching {query!r} …", flush=True)
+
         if native_reddit and reddit_via == "native":
             try:
                 all_rows.extend(
@@ -477,7 +527,8 @@ def collect_all_platforms(
                     if not reddit_fallback_announced:
                         print(
                             "Reddit public JSON blocked from this host — "
-                            "falling back to Serper (site:reddit.com) for the rest"
+                            "falling back to Serper (site:reddit.com) for the rest",
+                            flush=True,
                         )
                         reddit_fallback_announced = True
                 else:
@@ -486,7 +537,7 @@ def collect_all_platforms(
         if native_reddit and reddit_via == "serper":
             try:
                 all_rows.extend(
-                    search_platform_serper(
+                    search_platform_serper_priority(
                         "reddit", query, start=start, end=end, num=serper_num
                     )
                 )
@@ -504,27 +555,33 @@ def collect_all_platforms(
         for platform in serper_platforms:
             # Reddit handled above (native or Serper fallback).
             # YouTube via Serper only when Data API is off.
-            if platform == "reddit":
-                continue
             if platform == "youtube" and native_youtube:
                 continue
             try:
                 all_rows.extend(
-                    search_platform_serper(
+                    search_platform_serper_priority(
                         platform, query, start=start, end=end, num=serper_num
                     )
                 )
             except Exception as exc:  # noqa: BLE001
                 errors.append(f"serper/{platform}/{query}: {exc}")
 
-    if errors:
-        print("Warnings / partial failures:")
-        for err in errors[:30]:
-            print(f"  - {err}")
-        if len(errors) > 30:
-            print(f"  … and {len(errors) - 30} more")
+        _progress(qi)
 
-    return dedupe_rows(all_rows)
+    if errors:
+        print("Warnings / partial failures:", flush=True)
+        for err in errors[:30]:
+            print(f"  - {err}", flush=True)
+        if len(errors) > 30:
+            print(f"  … and {len(errors) - 30} more", flush=True)
+
+    final = dedupe_rows(all_rows)
+    final_counts = dict(sorted(Counter(r.platform for r in final).items()))
+    print(
+        f"PROGRESS done total={len(final)} by={_json.dumps(final_counts, separators=(',', ':'))}",
+        flush=True,
+    )
+    return final
 
 
 def default_output_path(prefix: str, end: date) -> Path:

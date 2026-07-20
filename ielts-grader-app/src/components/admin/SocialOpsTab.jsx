@@ -53,7 +53,6 @@ function filterActions(actions, filter, today) {
     const st = (a.status || '').toLowerCase();
     if (filter === 'all') return true;
     if (filter === 'pending') return st === 'pending' || st === 'awaiting_reply';
-    // today + overdue
     if (!(st === 'pending' || st === 'awaiting_reply')) return false;
     const d = a.day || '';
     if (d === today) return true;
@@ -71,6 +70,47 @@ async function copyText(text) {
   }
 }
 
+function parseProgress(logTail) {
+  const text = logTail || '';
+  const done = [...text.matchAll(/PROGRESS done total=(\d+) by=(\{[^]*?\})/g)].pop();
+  if (done) {
+    let by = {};
+    try {
+      by = JSON.parse(done[2]);
+    } catch {
+      by = {};
+    }
+    return { kind: 'done', total: Number(done[1]), by, query: null, of: null, rows: Number(done[1]) };
+  }
+  const matches = [...text.matchAll(/PROGRESS query=(\d+)\/(\d+) rows=(\d+)/g)];
+  const last = matches[matches.length - 1];
+  if (!last) return null;
+  return {
+    kind: 'running',
+    query: Number(last[1]),
+    of: Number(last[2]),
+    rows: Number(last[3]),
+    total: null,
+    by: null,
+  };
+}
+
+function formatElapsed(startedAt, finishedAt) {
+  if (!startedAt) return '';
+  const end = finishedAt ? new Date(finishedAt).getTime() : Date.now();
+  const sec = Math.max(0, Math.floor((end - new Date(startedAt).getTime()) / 1000));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function platformLine(obj) {
+  if (!obj || !Object.keys(obj).length) return '—';
+  return Object.entries(obj)
+    .map(([k, v]) => `${k} ${v}`)
+    .join(' · ');
+}
+
 export default function SocialOpsTab() {
   const [bundle, setBundle] = useState(null);
   const [briefKind, setBriefKind] = useState('today');
@@ -83,7 +123,9 @@ export default function SocialOpsTab() {
   const [toast, setToast] = useState('');
   const [job, setJob] = useState({ status: 'idle' });
   const [setupOut, setSetupOut] = useState('');
+  const [showSetup, setShowSetup] = useState(false);
   const [detail, setDetail] = useState(null);
+  const [nowTick, setNowTick] = useState(Date.now());
 
   const today = bundle?.weekday || weekdayShort();
 
@@ -129,15 +171,20 @@ export default function SocialOpsTab() {
       try {
         const j = await api.admin.socialOps.getJob();
         setJob(j);
+        setNowTick(Date.now());
         if (j.status !== 'running') {
           await refresh();
           if (briefKind) await loadBrief(briefKind);
-          setToast(j.status === 'ok' ? 'Job finished — list refreshed.' : `Job ended: ${j.error || j.status}`);
+          setToast(
+            j.status === 'ok'
+              ? 'Job finished — list refreshed.'
+              : `Job ended: ${j.error || j.status}`
+          );
         }
       } catch {
         /* ignore poll errors */
       }
-    }, 2000);
+    }, 1500);
     return () => clearInterval(t);
   }, [job?.status, refresh, briefKind, loadBrief]);
 
@@ -152,7 +199,14 @@ export default function SocialOpsTab() {
     return sortActions(list);
   }, [bundle?.actions, filter, today]);
 
+  const progress = useMemo(() => parseProgress(job?.log_tail), [job?.log_tail, nowTick]);
+  const elapsed = formatElapsed(job?.started_at, job?.finished_at);
+
   const runAction = async (action, extra = {}) => {
+    if (job?.status === 'running') {
+      setError('A job is already running. Wait for it to finish.');
+      return;
+    }
     setBusy(action);
     setError('');
     try {
@@ -164,8 +218,8 @@ export default function SocialOpsTab() {
       setJob(res.job || { status: 'running' });
       setToast(
         dryRun
-          ? 'Dry run started (no live API discovery / templates OK)…'
-          : 'Started — this can take a few minutes. Keep this tab open.'
+          ? 'Dry run started…'
+          : 'Started — only one job at a time. Watch progress below.'
       );
     } catch (err) {
       setError(err.message || 'Run failed');
@@ -228,7 +282,9 @@ export default function SocialOpsTab() {
     try {
       const data = await api.admin.socialOps.setupCheck();
       setSetupOut(data.output || '');
+      setShowSetup(true);
       setToast(data.ok ? 'Setup looks good.' : 'Setup has missing items — see panel.');
+      await refresh();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -262,10 +318,14 @@ export default function SocialOpsTab() {
   const kpi = bundle?.kpi;
   const running = job?.status === 'running';
   const keys = bundle?.keys || {};
+  const setupOk = Boolean(bundle?.setup_ok);
   const missingKeys = ['SERPER_API_KEY', 'OPENAI_API_KEY'].filter(
     (k) => keys[k] === false
   );
   const needsColdStart = Boolean(bundle?.paths && !bundle.paths.has_onboarding);
+  const historical = bundle?.discovery?.historical;
+  const weekly = bundle?.discovery?.weekly;
+  const lockRuns = running || Boolean(busy && ['cold_start', 'weekly', 'daily', 'sunday'].includes(busy));
 
   if (loading) {
     return (
@@ -277,33 +337,34 @@ export default function SocialOpsTab() {
 
   return (
     <div className="space-y-5 max-w-5xl">
-      {/* Help */}
+      {/* Sequence */}
       <div className="rounded-[12px] border border-blue-100 bg-blue-50/60 px-4 py-3 text-[13px] text-[#1a1f36] leading-relaxed">
-        <p className="font-bold mb-1">How to use</p>
-        <ol className="list-decimal ml-4 space-y-0.5 text-gray-700">
+        <p className="font-bold mb-2">Do these in order (one at a time)</p>
+        <ol className="list-decimal ml-4 space-y-1 text-gray-700">
           <li>
-            <strong>First time only:</strong> Setup check → fix any missing keys →{' '}
-            <strong>Cold start</strong> (builds themes / onboarding — learn, don’t spam old threads)
+            <strong>Cold start</strong> — once ever (or after a wipe). Builds listening archive +
+            onboarding. Learn, don’t spam old threads.
           </li>
           <li>
-            <strong>Every Monday:</strong> Start / refresh week → then work the list
+            <strong>Start / refresh week</strong> — every Monday. Builds this week’s reply + post
+            list.
           </li>
           <li>
-            <strong>Tue–Fri:</strong> Show today’s work → Copy next → paste on the platform → Mark done
+            <strong>Show today’s work</strong> — Tue–Fri. Then Copy → paste → Mark done.
           </li>
           <li>
-            <strong>Sunday:</strong> Sunday scorecard
+            <strong>Sunday scorecard</strong> — wrap the week.
           </li>
         </ol>
         <p className="mt-2 text-gray-600 text-[12px]">
-          This never posts for you. Value first · disclose when you promote · no band guarantees.
+          Never posts for you. Value first · disclose when you promote · no band guarantees.
         </p>
       </div>
 
       {needsColdStart && (
         <div className="rounded-[10px] border border-amber-200 bg-amber-50 text-amber-950 text-[13px] font-semibold px-4 py-2.5">
-          No onboarding brief yet — run <strong>Cold start</strong> once before your first weekly pack
-          (playbook: historical listening = learn from evergreen threads, not spam).
+          No onboarding yet — run <strong>Cold start</strong> first (step 1). Deploys used to wipe
+          results; they now persist on a Fly volume.
         </div>
       )}
 
@@ -332,21 +393,47 @@ export default function SocialOpsTab() {
         </div>
       )}
 
-      {/* KPI */}
-      <div className="rounded-[12px] border border-gray-100 bg-white px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
-        <div>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">This week</p>
-          <p className="text-[15px] font-extrabold text-[#101828]">
-            {kpi?.strip || 'No week pack yet'}
+      {/* Discovery results */}
+      <div className="rounded-[12px] border border-gray-100 bg-white px-4 py-3 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            Listening results
           </p>
+          <button
+            type="button"
+            onClick={refresh}
+            className="inline-flex items-center gap-1.5 text-[12px] font-bold text-gray-500 hover:text-gray-800 px-3 py-1.5 rounded-[8px] hover:bg-gray-50"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={refresh}
-          className="inline-flex items-center gap-1.5 text-[12px] font-bold text-gray-500 hover:text-gray-800 px-3 py-1.5 rounded-[8px] hover:bg-gray-50"
-        >
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <p className="text-[15px] font-extrabold text-[#101828]">
+          {kpi?.strip || 'No week pack yet'}
+        </p>
+        {historical ? (
+          <p className="text-[13px] text-gray-700">
+            <span className="font-bold">Cold start:</span> {historical.rows} rows
+            <span className="text-gray-500"> · {platformLine(historical.by_platform)}</span>
+          </p>
+        ) : (
+          <p className="text-[13px] text-gray-500">
+            Cold start archive: none yet (run Cold start, or it was wiped before persistence).
+          </p>
+        )}
+        {weekly ? (
+          <p className="text-[13px] text-gray-700">
+            <span className="font-bold">This week listen:</span> {weekly.rows} rows
+            <span className="text-gray-500"> · {platformLine(weekly.by_platform)}</span>
+          </p>
+        ) : null}
+        {bundle?.action_platforms?.create && Object.keys(bundle.action_platforms.create).length > 0 && (
+          <p className="text-[12px] text-gray-500 pt-1">
+            Tip: the to-do list mixes <strong>engage</strong> (replies from listening — Reddit/Quora
+            prioritized) and <strong>create</strong> (scheduled posts — often X/IG/FB). Create:{' '}
+            {platformLine(bundle.action_platforms.create)} · Engage:{' '}
+            {platformLine(bundle.action_platforms.engage)}
+          </p>
+        )}
       </div>
 
       {/* Run bar */}
@@ -359,68 +446,115 @@ export default function SocialOpsTab() {
               checked={dryRun}
               onChange={(e) => setDryRun(e.target.checked)}
               className="rounded border-gray-300"
+              disabled={lockRuns}
             />
             Dry run (safe test)
           </label>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <RunBtn
-            label="Setup check"
-            hint="Do this first"
-            icon={AlertCircle}
-            busy={busy === 'setup'}
-            onClick={handleSetup}
-          />
-          <RunBtn
             label="Cold start (once)"
-            hint="First time — before weekly"
+            hint="Step 1 — first time"
             icon={Play}
-            busy={busy === 'cold_start' || running}
+            busy={busy === 'cold_start'}
+            disabled={lockRuns}
             onClick={() => runAction('cold_start')}
             primary={needsColdStart}
+            step="1"
           />
           <RunBtn
             label="Start / refresh week"
-            hint="Every Monday"
+            hint="Step 2 — every Monday"
             icon={Play}
-            busy={busy === 'weekly' || running}
+            busy={busy === 'weekly'}
+            disabled={lockRuns}
             onClick={() => runAction('weekly')}
             primary={!needsColdStart}
+            step="2"
           />
           <RunBtn
             label="Show today’s work"
-            hint="Tue–Fri"
+            hint="Step 3 — Tue–Fri"
             icon={RefreshCw}
-            busy={busy === 'daily' || running}
+            busy={busy === 'daily'}
+            disabled={lockRuns}
             onClick={() => runAction('daily')}
+            step="3"
           />
           <RunBtn
             label="Copy next to clipboard"
             hint="Then paste & publish"
             icon={Copy}
             busy={busy === 'copy'}
+            disabled={running}
             onClick={handleCopyNext}
           />
           <RunBtn
             label="Sunday scorecard"
-            hint="Sunday"
+            hint="Step 4 — Sunday"
             icon={CheckCircle}
-            busy={busy === 'sunday' || running}
+            busy={busy === 'sunday'}
+            disabled={lockRuns}
             onClick={() => runAction('sunday')}
+            step="4"
           />
+          {!setupOk || showSetup ? (
+            <RunBtn
+              label="Setup check"
+              hint={setupOk ? 'Optional re-check' : 'Fix keys first'}
+              icon={AlertCircle}
+              busy={busy === 'setup'}
+              disabled={running}
+              onClick={handleSetup}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowSetup(true)}
+              className="text-left rounded-[10px] border border-dashed border-gray-200 px-3 py-3 text-[12px] text-gray-400 hover:text-gray-600 hover:border-gray-300"
+            >
+              Setup OK — click to re-check
+            </button>
+          )}
         </div>
-        {(running || job?.log_tail) && (
-          <div className="rounded-[8px] bg-gray-50 border border-gray-100 p-3">
-            <p className="text-[11px] font-bold text-gray-400 uppercase mb-1">
+
+        {(running || job?.status === 'ok' || job?.status === 'error' || job?.log_tail) && (
+          <div
+            className={`rounded-[8px] border p-3 ${
+              running
+                ? 'bg-amber-50 border-amber-200'
+                : job?.status === 'error'
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-gray-50 border-gray-100'
+            }`}
+          >
+            <p className="text-[12px] font-bold text-[#101828] mb-1 flex flex-wrap items-center gap-2">
+              {running && <Loader2 className="animate-spin" size={14} />}
               Job: {job?.action || '—'} · {job?.status || 'idle'}
-              {running && <Loader2 className="inline ml-2 animate-spin" size={12} />}
+              {elapsed ? <span className="text-gray-500 font-semibold">· {elapsed}</span> : null}
             </p>
-            <pre className="text-[11px] text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto font-mono">
-              {job?.log_tail || 'Starting…'}
+            {progress && progress.kind === 'running' && (
+              <p className="text-[13px] text-gray-800 mb-1">
+                Query <strong>{progress.query}</strong> of <strong>{progress.of}</strong>
+                {' · '}
+                <strong>{progress.rows}</strong> rows so far
+                {progress.of
+                  ? ` · ~${Math.max(0, progress.of - progress.query)} queries left`
+                  : ''}
+              </p>
+            )}
+            {progress && progress.kind === 'done' && (
+              <p className="text-[13px] text-gray-800 mb-1">
+                Finished listening: <strong>{progress.total}</strong> rows
+                {progress.by ? ` · ${platformLine(progress.by)}` : ''}
+              </p>
+            )}
+            <pre className="text-[11px] text-gray-600 whitespace-pre-wrap max-h-44 overflow-y-auto font-mono">
+              {job?.log_tail || (running ? 'Starting…' : '—')}
             </pre>
           </div>
         )}
-        {setupOut && (
+        {showSetup && setupOut && (
           <pre className="text-[12px] bg-gray-50 border border-gray-100 rounded-[8px] p-3 whitespace-pre-wrap max-h-48 overflow-y-auto">
             {setupOut}
           </pre>
@@ -457,7 +591,7 @@ export default function SocialOpsTab() {
         </div>
         <pre className="text-[12px] leading-relaxed text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-100 rounded-[10px] p-4 max-h-[320px] overflow-y-auto">
           {brief.exists === false && !brief.markdown
-            ? 'Nothing here yet. Run “Start / refresh week” or “Show today’s work”.'
+            ? 'Nothing here yet. Run Cold start (Onboarding tab) or “Start / refresh week”.'
             : brief.markdown || '—'}
         </pre>
       </div>
@@ -488,12 +622,15 @@ export default function SocialOpsTab() {
 
         {actions.length === 0 ? (
           <p className="text-[13px] text-gray-500 py-6 text-center">
-            No actions in this filter. Try “All pending” or refresh the week.
+            No actions in this filter. Finish step 1–2, then try “All pending”.
           </p>
         ) : (
           <ul className="divide-y divide-gray-100">
             {actions.map((a) => (
-              <li key={a.id} className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <li
+                key={a.id}
+                className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
+              >
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-[#101828] truncate">
                     <span className="text-gray-400 font-mono mr-1">#{a.id}</span>
@@ -546,7 +683,6 @@ export default function SocialOpsTab() {
         Full rules: SEO/social-media/EMPLOYEE_PLAYBOOK.pdf
       </p>
 
-      {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-[14px] shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-5 space-y-3">
@@ -557,7 +693,11 @@ export default function SocialOpsTab() {
                 </p>
                 <p className="text-[12px] text-gray-500">{detail.title}</p>
               </div>
-              <button type="button" onClick={() => setDetail(null)} className="p-1 text-gray-400 hover:text-gray-700">
+              <button
+                type="button"
+                onClick={() => setDetail(null)}
+                className="p-1 text-gray-400 hover:text-gray-700"
+              >
                 <CloseIcon size={18} />
               </button>
             </div>
@@ -625,13 +765,13 @@ export default function SocialOpsTab() {
   );
 }
 
-function RunBtn({ label, hint, icon: Icon, onClick, busy, primary }) {
+function RunBtn({ label, hint, icon: Icon, onClick, busy, primary, disabled, step }) {
   return (
     <button
       type="button"
-      disabled={busy}
+      disabled={busy || disabled}
       onClick={onClick}
-      className={`text-left rounded-[10px] border px-3 py-3 transition-colors disabled:opacity-60 ${
+      className={`text-left rounded-[10px] border px-3 py-3 transition-colors disabled:opacity-50 ${
         primary
           ? 'border-[#101828] bg-[#101828] text-white hover:bg-[#1a1f36]'
           : 'border-gray-200 bg-white hover:bg-gray-50 text-[#101828]'
@@ -639,6 +779,7 @@ function RunBtn({ label, hint, icon: Icon, onClick, busy, primary }) {
     >
       <span className="flex items-center gap-2 text-[13px] font-extrabold">
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Icon size={14} />}
+        {step ? <span className="opacity-60 font-mono text-[11px]">{step}.</span> : null}
         {label}
       </span>
       {hint && (
