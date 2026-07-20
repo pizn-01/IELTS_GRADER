@@ -11,7 +11,8 @@ Full voice rules: [EMPLOYEE_PLAYBOOK.pdf](EMPLOYEE_PLAYBOOK.pdf)
 
 ### Easiest: Admin → Social Ops
 If you have admin access, open the app → **Admin** → **Social Ops**.  
-Use the big buttons there (same steps as below). No Terminal needed.
+**First time:** Setup check → set missing keys → **Cold start** → then Monday weekly.  
+No Terminal needed for day-to-day work.
 
 ### Or: double-click Start.command
 

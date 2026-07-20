@@ -261,6 +261,11 @@ export default function SocialOpsTab() {
 
   const kpi = bundle?.kpi;
   const running = job?.status === 'running';
+  const keys = bundle?.keys || {};
+  const missingKeys = ['SERPER_API_KEY', 'YOUTUBE_API_KEY', 'OPENAI_API_KEY'].filter(
+    (k) => keys[k] === false
+  );
+  const needsColdStart = Boolean(bundle?.paths && !bundle.paths.has_onboarding);
 
   if (loading) {
     return (
@@ -274,10 +279,14 @@ export default function SocialOpsTab() {
     <div className="space-y-5 max-w-5xl">
       {/* Help */}
       <div className="rounded-[12px] border border-blue-100 bg-blue-50/60 px-4 py-3 text-[13px] text-[#1a1f36] leading-relaxed">
-        <p className="font-bold mb-1">How to use (same as the employee menu)</p>
+        <p className="font-bold mb-1">How to use</p>
         <ol className="list-decimal ml-4 space-y-0.5 text-gray-700">
           <li>
-            <strong>Monday:</strong> Start / refresh week → then work the list
+            <strong>First time only:</strong> Setup check → fix any missing keys →{' '}
+            <strong>Cold start</strong> (builds themes / onboarding — learn, don’t spam old threads)
+          </li>
+          <li>
+            <strong>Every Monday:</strong> Start / refresh week → then work the list
           </li>
           <li>
             <strong>Tue–Fri:</strong> Show today’s work → Copy next → paste on the platform → Mark done
@@ -290,6 +299,26 @@ export default function SocialOpsTab() {
           This never posts for you. Value first · disclose when you promote · no band guarantees.
         </p>
       </div>
+
+      {needsColdStart && (
+        <div className="rounded-[10px] border border-amber-200 bg-amber-50 text-amber-950 text-[13px] font-semibold px-4 py-2.5">
+          No onboarding brief yet — run <strong>Cold start</strong> once before your first weekly pack
+          (playbook: historical listening = learn from evergreen threads, not spam).
+        </div>
+      )}
+
+      {missingKeys.length > 0 && (
+        <div className="rounded-[10px] border border-red-200 bg-red-50 text-red-800 text-[13px] px-4 py-3">
+          <p className="font-bold mb-1">Missing API keys on the server</p>
+          <p className="mb-2">
+            {missingKeys.join(', ')}. Without Serper, Facebook/Instagram/Quora/X/LinkedIn/TikTok
+            discovery fails.
+          </p>
+          <p className="text-[12px] font-mono bg-white/70 border border-red-100 rounded-[8px] px-2 py-1.5 break-all">
+            cd backend && fly secrets set SERPER_API_KEY=… YOUTUBE_API_KEY=…
+          </p>
+        </div>
+      )}
 
       {toast && (
         <div className="rounded-[10px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-[13px] font-semibold px-4 py-2.5">
@@ -336,11 +365,27 @@ export default function SocialOpsTab() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <RunBtn
+            label="Setup check"
+            hint="Do this first"
+            icon={AlertCircle}
+            busy={busy === 'setup'}
+            onClick={handleSetup}
+          />
+          <RunBtn
+            label="Cold start (once)"
+            hint="First time — before weekly"
+            icon={Play}
+            busy={busy === 'cold_start' || running}
+            onClick={() => runAction('cold_start')}
+            primary={needsColdStart}
+          />
+          <RunBtn
             label="Start / refresh week"
-            hint="Monday"
+            hint="Every Monday"
             icon={Play}
             busy={busy === 'weekly' || running}
             onClick={() => runAction('weekly')}
+            primary={!needsColdStart}
           />
           <RunBtn
             label="Show today’s work"
@@ -355,7 +400,6 @@ export default function SocialOpsTab() {
             icon={Copy}
             busy={busy === 'copy'}
             onClick={handleCopyNext}
-            primary
           />
           <RunBtn
             label="Sunday scorecard"
@@ -363,20 +407,6 @@ export default function SocialOpsTab() {
             icon={CheckCircle}
             busy={busy === 'sunday' || running}
             onClick={() => runAction('sunday')}
-          />
-          <RunBtn
-            label="Cold start (once)"
-            hint="Onboarding"
-            icon={Play}
-            busy={busy === 'cold_start' || running}
-            onClick={() => runAction('cold_start')}
-          />
-          <RunBtn
-            label="Setup check"
-            hint="Keys & deps"
-            icon={AlertCircle}
-            busy={busy === 'setup'}
-            onClick={handleSetup}
           />
         </div>
         {(running || job?.log_tail) && (

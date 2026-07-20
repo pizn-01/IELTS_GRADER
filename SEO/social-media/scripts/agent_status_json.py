@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -67,6 +68,11 @@ def build_payload() -> dict:
         },
         "actions": actions,
         "playbook_remember": PLAYBOOK_REMEMBER,
+        "keys": {
+            "SERPER_API_KEY": bool(os.getenv("SERPER_API_KEY", "").strip()),
+            "YOUTUBE_API_KEY": bool(os.getenv("YOUTUBE_API_KEY", "").strip()),
+            "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY", "").strip()),
+        },
         "briefs_available": [
             k
             for k, p in [
