@@ -429,6 +429,7 @@ def _make_status(
         "reply_check": "",
         "week_id": week_id,
         "queued_at": queued_at,
+        "parent_id": "",
     }
 
 

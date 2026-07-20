@@ -6,6 +6,7 @@ from pathlib import Path
 
 from agent_io import (
     format_action_id,
+    lookup_parent_id,
     next_action_id,
     read_status,
     upsert_status_rows,
@@ -99,6 +100,9 @@ def draft_followups(
                 "reply_check": "",
                 "week_id": r.get("week_id") or ("onboarding" if onboarding else ""),
                 "queued_at": r.get("queued_at") or "",
+                "parent_id": lookup_parent_id(url, onboarding=onboarding)
+                or r.get("id")
+                or "",
                 "queue": "onboarding" if onboarding else "weekly",
             }
         )

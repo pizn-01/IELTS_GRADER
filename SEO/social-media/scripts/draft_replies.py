@@ -12,9 +12,7 @@ from typing import Optional
 import requests
 
 from agent_io import (
-    THIS_WEEK,
-    format_action_id,
-    next_action_id,
+    get_or_create_parent_id,
     upsert_status_rows,
     work_root,
 )
@@ -154,18 +152,25 @@ def draft_engage_items(
     from datetime import datetime, timezone
 
     root = work_root(onboarding=onboarding)
-    n = start_id or next_action_id(onboarding=onboarding)
     status_rows: list[dict[str, str]] = []
     cta_flags = _assign_cta_flags(items)
     cta_count = 0
     queued_at = datetime.now(timezone.utc).isoformat()
     wid = week_id or ("onboarding" if onboarding else "")
+    batch_ids: dict[str, str] = {}
 
     for item in items:
         if item.action == "observe_only":
             continue
-        aid = format_action_id(n)
-        n += 1
+        try:
+            aid, is_new = get_or_create_parent_id(
+                item.url, onboarding=onboarding, batch=batch_ids
+            )
+        except ValueError:
+            continue
+        if not is_new:
+            # Parent URL already has a unique id — no duplicate draft
+            continue
         context = ""
         if item.platform == "reddit":
             context = fetch_reddit_context(item.url)
@@ -267,6 +272,7 @@ def draft_engage_items(
                 "reply_check": "",
                 "week_id": wid,
                 "queued_at": queued_at,
+                "parent_id": "",
             }
         )
 

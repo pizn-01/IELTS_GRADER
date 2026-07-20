@@ -24,6 +24,7 @@ COLD_START = OUTPUT_DIR / "cold-start"
 ARCHIVE_DIR = OUTPUT_DIR / "archive"
 ENGAGED_PATH = OUTPUT_DIR / "engaged_urls.csv"
 SEEN_PATH = OUTPUT_DIR / "seen_urls.csv"
+PARENT_URL_IDS_PATH = OUTPUT_DIR / "parent_url_ids.csv"
 SEEN_TTL_DAYS = 90
 SCORECARDS_PATH = OUTPUT_DIR / "scorecards.csv"
 WARMUP_FLAG = OUTPUT_DIR / "warmup_until.txt"
@@ -45,11 +46,17 @@ STATUS_FIELDS = [
     "reply_check",
     "week_id",
     "queued_at",
+    "parent_id",
 ]
 
 # Leave Today / Full pending until done or dead (skipped counts as closed)
 CLOSED_STATUSES = frozenset({"done", "dead", "skipped"})
 OPEN_STATUSES = frozenset({"pending", "awaiting_reply", "got_reply"})
+
+# One STATUS id per parent thread URL (followups are children via parent_id)
+PARENT_THREAD_TYPES = frozenset(
+    {"reply", "comment", "engage", "answer", "group_comment"}
+)
 
 
 def is_open_status(status: str) -> bool:
@@ -60,8 +67,14 @@ def is_closed_status(status: str) -> bool:
     return (status or "").lower() in CLOSED_STATUSES
 
 
+def is_parent_thread_type(typ: str) -> bool:
+    return (typ or "").lower() in PARENT_THREAD_TYPES
+
+
 def normalize_status_url(url: str) -> str:
-    return (url or "").strip().lower().rstrip("/")
+    """Canonical parent-URL key: no fragment, lowercased, no trailing slash."""
+    raw = (url or "").strip().split("#")[0].rstrip("/")
+    return raw.lower()
 
 load_dotenv(SCRIPTS_DIR / ".env")
 
@@ -98,6 +111,7 @@ def read_status(*, onboarding: bool = False) -> list[dict[str, str]]:
         r.setdefault("reply_check", "")
         r.setdefault("week_id", "")
         r.setdefault("queued_at", "")
+        r.setdefault("parent_id", "")
         if onboarding:
             r["queue"] = "onboarding"
     return rows
@@ -108,6 +122,7 @@ def write_status(rows: list[dict[str, str]], *, onboarding: bool = False) -> Non
     ensure_output_dirs()
     path = status_path(onboarding=onboarding)
     path.parent.mkdir(parents=True, exist_ok=True)
+    rows = dedupe_parent_url_rows(rows)
     tmp = path.with_suffix(".csv.tmp")
     with tmp.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=STATUS_FIELDS)
@@ -117,9 +132,121 @@ def write_status(rows: list[dict[str, str]], *, onboarding: bool = False) -> Non
     tmp.replace(path)
 
 
+def dedupe_parent_url_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    """Keep one parent-thread row per URL (lowest numeric id wins); leave followups/create."""
+    best_parent: dict[str, dict[str, str]] = {}
+    others: list[dict[str, str]] = []
+    for r in rows:
+        typ = (r.get("type") or "").lower()
+        if not is_parent_thread_type(typ):
+            others.append(r)
+            continue
+        key = normalize_status_url(r.get("url") or "")
+        if not key:
+            others.append(r)
+            continue
+        prev = best_parent.get(key)
+        if prev is None:
+            best_parent[key] = r
+            continue
+        try:
+            keep_new = int(r.get("id") or 0) < int(prev.get("id") or 0)
+        except ValueError:
+            keep_new = False
+        if keep_new:
+            best_parent[key] = r
+    return sorted(
+        list(best_parent.values()) + others, key=lambda x: x.get("id", "")
+    )
+
+
+def _parent_url_registry_path(*, onboarding: bool = False) -> Path:
+    if onboarding:
+        return COLD_START / "_meta" / "parent_url_ids.csv"
+    return PARENT_URL_IDS_PATH
+
+
+def read_parent_url_registry(*, onboarding: bool = False) -> dict[str, str]:
+    """url_key → stable action id (unique parent URL identity)."""
+    path = _parent_url_registry_path(onboarding=onboarding)
+    mapping: dict[str, str] = {}
+    if path.exists():
+        with path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                key = normalize_status_url(row.get("url") or "")
+                aid = (row.get("id") or "").strip()
+                if key and aid and key not in mapping:
+                    mapping[key] = aid
+    # STATUS is source of truth for live rows — fill gaps
+    for r in read_status(onboarding=onboarding):
+        if not is_parent_thread_type(r.get("type") or ""):
+            continue
+        key = normalize_status_url(r.get("url") or "")
+        aid = (r.get("id") or "").strip()
+        if key and aid and key not in mapping:
+            mapping[key] = aid
+    return mapping
+
+
+def write_parent_url_registry(
+    mapping: dict[str, str], *, onboarding: bool = False
+) -> None:
+    ensure_output_dirs()
+    path = _parent_url_registry_path(onboarding=onboarding)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".csv.tmp")
+    with tmp.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["url", "id"])
+        writer.writeheader()
+        for url_key, aid in sorted(mapping.items(), key=lambda x: x[1]):
+            writer.writerow({"url": url_key, "id": aid})
+    tmp.replace(path)
+
+
+def get_or_create_parent_id(
+    url: str,
+    *,
+    onboarding: bool = False,
+    batch: Optional[dict[str, str]] = None,
+) -> tuple[str, bool]:
+    """
+    Stable unique id for a parent thread URL.
+    Returns (id, is_new). is_new=False → URL already known (do not draft again).
+    Pass `batch` (url_key→id) when allocating many ids in one run so ids stay unique
+    before STATUS upsert writes the registry.
+    """
+    key = normalize_status_url(url)
+    if not key:
+        raise ValueError("empty parent url")
+    mapping = read_parent_url_registry(onboarding=onboarding)
+    if key in mapping:
+        return mapping[key], False
+    if batch is not None and key in batch:
+        return batch[key], False
+    existing_ids = {r.get("id") for r in read_status(onboarding=onboarding)}
+    existing_ids |= set(mapping.values())
+    if batch:
+        existing_ids |= set(batch.values())
+    n = next_action_id(onboarding=onboarding)
+    aid = format_action_id(n)
+    while aid in existing_ids:
+        n += 1
+        aid = format_action_id(n)
+    if batch is not None:
+        batch[key] = aid
+    return aid, True
+
+
+def lookup_parent_id(url: str, *, onboarding: bool = False) -> Optional[str]:
+    key = normalize_status_url(url)
+    if not key:
+        return None
+    return read_parent_url_registry(onboarding=onboarding).get(key)
+
+
 def open_status_url_keys(*, onboarding: bool = False) -> set[str]:
-    """URL keys already in an open STATUS row (do not re-queue)."""
-    keys: set[str] = set()
+    """All registered parent URLs + open STATUS URLs (do not re-queue)."""
+    keys = set(read_parent_url_registry(onboarding=onboarding).keys())
     for r in read_status(onboarding=onboarding):
         if not is_open_status(r.get("status") or ""):
             continue
@@ -132,26 +259,56 @@ def open_status_url_keys(*, onboarding: bool = False) -> set[str]:
 def upsert_status_rows(
     new_rows: list[dict[str, str]], *, onboarding: bool = False
 ) -> None:
-    """Merge new rows; never overwrite open/closed work; skip duplicate open URLs."""
+    """
+    Merge new rows. Parent thread URLs are unique: one id per URL forever.
+    Followups may share a URL but must set parent_id to that URL's id.
+    """
     existing_list = read_status(onboarding=onboarding)
     existing = {r["id"]: r for r in existing_list}
-    open_urls = {
-        normalize_status_url(r.get("url") or "")
-        for r in existing_list
-        if is_open_status(r.get("status") or "") and r.get("url")
-    }
+    registry = read_parent_url_registry(onboarding=onboarding)
+    parent_url_to_id = dict(registry)
+    for r in existing_list:
+        if is_parent_thread_type(r.get("type") or ""):
+            key = normalize_status_url(r.get("url") or "")
+            if key and r.get("id"):
+                parent_url_to_id.setdefault(key, r["id"])
+
     for row in new_rows:
-        rid = row["id"]
+        rid = (row.get("id") or "").strip()
         url_key = normalize_status_url(row.get("url") or "")
+        typ = (row.get("type") or "").lower()
+        row.setdefault("parent_id", "")
+
+        if is_parent_thread_type(typ) and url_key:
+            known = parent_url_to_id.get(url_key)
+            if known:
+                # Same URL → must reuse same id; skip if already present
+                if known in existing:
+                    continue
+                rid = known
+                row["id"] = known
+            else:
+                if not rid:
+                    rid = format_action_id(next_action_id(list(existing.values()), onboarding=onboarding))
+                    row["id"] = rid
+                parent_url_to_id[url_key] = rid
+            row["parent_id"] = ""
+        elif typ == "followup" and url_key:
+            parent = parent_url_to_id.get(url_key) or lookup_parent_id(
+                url_key, onboarding=onboarding
+            )
+            if parent:
+                row["parent_id"] = parent
+
+        if not rid:
+            continue
         if rid in existing:
             prev = existing[rid].get("status") or ""
             if is_open_status(prev) or is_closed_status(prev):
                 continue
-        if url_key and url_key in open_urls:
-            continue
         existing[rid] = {k: row.get(k, "") for k in STATUS_FIELDS}
-        if url_key and is_open_status(row.get("status") or "pending"):
-            open_urls.add(url_key)
+
+    write_parent_url_registry(parent_url_to_id, onboarding=onboarding)
     ordered = sorted(existing.values(), key=lambda r: r.get("id", ""))
     write_status(ordered, onboarding=onboarding)
 
