@@ -4,8 +4,11 @@ Draft paste-ready engage actions from triage items. Never auto-posts.
 
 from __future__ import annotations
 
+import json
 import math
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Optional
 
@@ -32,6 +35,8 @@ from agent_rules import (
 from common import USER_AGENT
 from llm_client import llm_complete
 from triage_threads import TriageItem
+
+DRAFT_WORKERS = 10
 
 
 def fetch_reddit_context(url: str) -> str:
@@ -140,6 +145,136 @@ def normalize_key(url: str) -> str:
     return (url or "").strip().lower().rstrip("/")
 
 
+def _write_draft_progress(
+    *,
+    onboarding: bool,
+    total: int,
+    done_urls: list[str],
+    pending_urls: list[str],
+) -> None:
+    root = work_root(onboarding=onboarding)
+    path = root / "_meta" / "draft_progress.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "total": total,
+                "done": len(done_urls),
+                "pending": len(pending_urls),
+                "done_urls": done_urls,
+                "pending_urls": pending_urls,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _draft_one_item(
+    item: TriageItem,
+    *,
+    aid: str,
+    product_ok: bool,
+    dry_run: bool,
+    onboarding: bool,
+    week_id: str,
+    queued_at: str,
+) -> dict[str, str]:
+    """LLM draft + action file for one engage item (safe to run in a worker thread)."""
+    root = work_root(onboarding=onboarding)
+    context = ""
+    if item.platform == "reddit":
+        context = fetch_reddit_context(item.url)
+
+    intent_for_prompt = item.intent
+    if product_ok and item.intent == "feedback_ask":
+        intent_for_prompt = "feedback_ask"
+    elif product_ok:
+        intent_for_prompt = "tool_ask"
+
+    placement = link_placement(
+        item.platform, intent_for_prompt if product_ok else "general_tip"
+    )
+    system = system_prompt_engage(
+        item.platform, intent_for_prompt if product_ok else item.intent
+    )
+    user = (
+        f"Thread URL: {item.url}\n"
+        f"Title: {item.title}\n"
+        f"Snippet: {item.snippet}\n"
+        f"Extra context:\n{context or '(none)'}\n"
+    )
+    if product_ok:
+        user += (
+            "\nInclude a soft CTA to the free evaluation at ieltsgrader.com "
+            "with disclosure — value first, one link max. Paraphrase; don't "
+            "reuse the same CTA wording every time.\n"
+        )
+    else:
+        user += "\nDo NOT mention any product or website — teach only.\n"
+
+    paste = llm_complete(system, user, dry_run=dry_run, temperature=0.9)
+
+    if product_ok and "ieltsgrader" not in paste.lower():
+        link = utm_url(SITE, item.platform)
+        paste = f"{paste.rstrip()}\n\n{DISCLOSURE}\n{pick_soft_cta()}\n{link}"
+    if not product_ok and "ieltsgrader" in paste.lower():
+        paste = re.sub(
+            r"(?i)full disclosure:.*?ieltsgrader\.com\)?\s*",
+            "",
+            paste,
+        )
+        paste = re.sub(r"(?i)https?://\S*ieltsgrader\.com\S*", "", paste)
+        paste = re.sub(r"\n{3,}", "\n\n", paste).strip()
+
+    issues = validate_draft(paste, product_mentioned=product_ok)
+
+    followup = llm_complete(
+        system_prompt_engage(item.platform, "general_tip"),
+        "Write a short follow-up if they reply thanking you or pasting a paragraph. "
+        "Sound human. No product unless they ask for a tool.",
+        dry_run=dry_run,
+        temperature=0.9,
+    )
+
+    path = write_action_markdown(
+        aid=aid,
+        platform=item.platform,
+        typ="reply",
+        day=item.day or ("Free" if onboarding else "Tue"),
+        url=item.url,
+        title=item.title[:120],
+        paste=paste,
+        followup=followup,
+        placement=placement,
+        disclosure_needed=product_ok,
+        issues=issues,
+        intent=item.intent,
+        cta=product_ok,
+        onboarding=onboarding,
+    )
+
+    return {
+        "id": aid,
+        "day": item.day or ("Free" if onboarding else "Tue"),
+        "status": "pending",
+        "platform": item.platform,
+        "type": "reply",
+        "url": item.url,
+        "title": item.title[:160],
+        "intent": item.intent,
+        "high_intent": "1" if item.high_intent else "0",
+        "tier": str(platform_tier(item.platform)),
+        "action_file": str(path.relative_to(root)),
+        "fresh": "1" if item.fresh else "0",
+        "cta": "1" if product_ok else "0",
+        "reply_check": "",
+        "week_id": week_id,
+        "queued_at": queued_at,
+        "parent_id": "",
+    }
+
+
 def draft_engage_items(
     items: list[TriageItem],
     *,
@@ -147,18 +282,24 @@ def draft_engage_items(
     start_id: Optional[int] = None,
     onboarding: bool = False,
     week_id: str = "",
+    max_workers: int = DRAFT_WORKERS,
 ) -> list[dict[str, str]]:
-    """Create action files + status rows for engage triage items (merge, never wipe)."""
+    """
+    Create action files + status rows for engage triage items (merge, never wipe).
+
+    Pre-allocates IDs serially, then drafts with up to `max_workers` parallel LLM
+    workers. Each completed draft is upserted into STATUS immediately so undrafted
+    URLs remain only in engage_queue.json until finished.
+    """
     from datetime import datetime, timezone
 
-    root = work_root(onboarding=onboarding)
-    status_rows: list[dict[str, str]] = []
     cta_flags = _assign_cta_flags(items)
-    cta_count = 0
     queued_at = datetime.now(timezone.utc).isoformat()
     wid = week_id or ("onboarding" if onboarding else "")
-    batch_ids: dict[str, str] = {}
 
+    # Serial: pick new URLs and allocate unique ids (not yet in parent registry)
+    batch_ids: dict[str, str] = {}
+    work: list[tuple[TriageItem, str, bool]] = []  # item, aid, product_ok
     for item in items:
         if item.action == "observe_only":
             continue
@@ -169,12 +310,8 @@ def draft_engage_items(
         except ValueError:
             continue
         if not is_new:
-            # Parent URL already has a unique id — no duplicate draft
+            # Parent URL already drafted / registered — skip
             continue
-        context = ""
-        if item.platform == "reddit":
-            context = fetch_reddit_context(item.url)
-
         use_cta = bool(cta_flags.get(normalize_key(item.url), False))
         product_ok = use_cta and allow_cta_for_item(
             item.platform,
@@ -182,101 +319,81 @@ def draft_engage_items(
             cta_ok=item.cta_ok or item.intent == "tool_ask",
             force_cta=True,
         )
+        work.append((item, aid, product_ok))
 
-        intent_for_prompt = item.intent
-        if product_ok and item.intent == "feedback_ask":
-            intent_for_prompt = "feedback_ask"
-        elif product_ok:
-            intent_for_prompt = "tool_ask"
+    total = len(work)
+    pending_urls = [it.url for it, _, _ in work]
+    done_urls: list[str] = []
+    _write_draft_progress(
+        onboarding=onboarding,
+        total=total,
+        done_urls=done_urls,
+        pending_urls=pending_urls,
+    )
 
-        placement = link_placement(
-            item.platform, intent_for_prompt if product_ok else "general_tip"
-        )
-        system = system_prompt_engage(
-            item.platform, intent_for_prompt if product_ok else item.intent
-        )
-        user = (
-            f"Thread URL: {item.url}\n"
-            f"Title: {item.title}\n"
-            f"Snippet: {item.snippet}\n"
-            f"Extra context:\n{context or '(none)'}\n"
-        )
-        if product_ok:
-            user += (
-                "\nInclude a soft CTA to the free evaluation at ieltsgrader.com "
-                "with disclosure — value first, one link max. Paraphrase; don't "
-                "reuse the same CTA wording every time.\n"
-            )
-        else:
-            user += "\nDo NOT mention any product or website — teach only.\n"
+    if not work:
+        return []
 
-        paste = llm_complete(system, user, dry_run=dry_run, temperature=0.9)
+    workers = max(1, min(max_workers, total))
+    print(
+        f"Drafting {total} engage replies with {workers} parallel workers …",
+        flush=True,
+    )
 
-        if product_ok and "ieltsgrader" not in paste.lower():
-            link = utm_url(SITE, item.platform)
-            paste = f"{paste.rstrip()}\n\n{DISCLOSURE}\n{pick_soft_cta()}\n{link}"
-        if not product_ok and "ieltsgrader" in paste.lower():
-            paste = re.sub(
-                r"(?i)full disclosure:.*?ieltsgrader\.com\)?\s*",
-                "",
-                paste,
-            )
-            paste = re.sub(r"(?i)https?://\S*ieltsgrader\.com\S*", "", paste)
-            paste = re.sub(r"\n{3,}", "\n\n", paste).strip()
+    status_rows: list[dict[str, str]] = []
+    cta_count = 0
+    progress_lock = threading.Lock()
+    done_count = 0
 
-        issues = validate_draft(paste, product_mentioned=product_ok)
-
-        followup = llm_complete(
-            system_prompt_engage(item.platform, "general_tip"),
-            "Write a short follow-up if they reply thanking you or pasting a paragraph. "
-            "Sound human. No product unless they ask for a tool.",
-            dry_run=dry_run,
-            temperature=0.9,
-        )
-
-        path = write_action_markdown(
+    def _run(pair: tuple[TriageItem, str, bool]) -> dict[str, str]:
+        item, aid, product_ok = pair
+        return _draft_one_item(
+            item,
             aid=aid,
-            platform=item.platform,
-            typ="reply",
-            day=item.day or ("Free" if onboarding else "Tue"),
-            url=item.url,
-            title=item.title[:120],
-            paste=paste,
-            followup=followup,
-            placement=placement,
-            disclosure_needed=product_ok,
-            issues=issues,
-            intent=item.intent,
-            cta=product_ok,
+            product_ok=product_ok,
+            dry_run=dry_run,
             onboarding=onboarding,
+            week_id=wid,
+            queued_at=queued_at,
         )
 
-        if product_ok:
-            cta_count += 1
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(_run, pair): pair for pair in work}
+        for fut in as_completed(futures):
+            pair = futures[fut]
+            item, _aid, product_ok = pair
+            try:
+                row = fut.result()
+            except Exception as exc:  # noqa: BLE001
+                print(
+                    f"  Draft failed for {item.url[:80]}: {exc}",
+                    flush=True,
+                )
+                continue
 
-        status_rows.append(
-            {
-                "id": aid,
-                "day": item.day or ("Free" if onboarding else "Tue"),
-                "status": "pending",
-                "platform": item.platform,
-                "type": "reply",
-                "url": item.url,
-                "title": item.title[:160],
-                "intent": item.intent,
-                "high_intent": "1" if item.high_intent else "0",
-                "tier": str(platform_tier(item.platform)),
-                "action_file": str(path.relative_to(root)),
-                "fresh": "1" if item.fresh else "0",
-                "cta": "1" if product_ok else "0",
-                "reply_check": "",
-                "week_id": wid,
-                "queued_at": queued_at,
-                "parent_id": "",
-            }
-        )
+            # Immediate durable merge (STATUS lock lives in agent_io)
+            upsert_status_rows([row], onboarding=onboarding)
 
-    upsert_status_rows(status_rows, onboarding=onboarding)
+            with progress_lock:
+                status_rows.append(row)
+                if row.get("cta") == "1":
+                    cta_count += 1
+                done_count += 1
+                done_urls.append(item.url)
+                pending_urls = [
+                    u
+                    for u in pending_urls
+                    if normalize_key(u) != normalize_key(item.url)
+                ]
+                _write_draft_progress(
+                    onboarding=onboarding,
+                    total=total,
+                    done_urls=list(done_urls),
+                    pending_urls=list(pending_urls),
+                )
+                if done_count == total or done_count % 10 == 0:
+                    print(f"Drafted {done_count}/{total} …", flush=True)
+
     if status_rows:
         label = "onboarding" if onboarding else "weekly"
         print(

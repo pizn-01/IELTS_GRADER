@@ -18,6 +18,7 @@ from agent_io import (  # noqa: E402
     open_actions,
     open_status_url_keys,
     read_status,
+    read_week_meta,
     write_week_meta,
 )
 from agent_rules import ENGAGE_MAX, warmup_enabled  # noqa: E402
@@ -33,7 +34,62 @@ from draft_content_pack import draft_content_pack  # noqa: E402
 from draft_replies import draft_engage_items  # noqa: E402
 from filter_candidates import filter_discovery_csv  # noqa: E402
 from open_brief import open_this_week  # noqa: E402
-from triage_threads import triage_csv, write_triage_json  # noqa: E402
+from triage_threads import (  # noqa: E402
+    load_triage_json,
+    triage_csv,
+    write_triage_json,
+)
+
+CREATE_TYPES = frozenset(
+    {
+        "short_script",
+        "caption",
+        "post",
+        "stories",
+        "page_post",
+        "create",
+        "answer",
+        "group_comment",
+    }
+)
+
+
+def _engage_queue_path() -> Path:
+    return THIS_WEEK / "_meta" / "engage_queue.json"
+
+
+def _filtered_csv_path() -> Path:
+    return THIS_WEEK / "_meta" / "filtered_discovery.csv"
+
+
+def _funnel_path() -> Path:
+    return THIS_WEEK / "_meta" / "funnel.json"
+
+
+def can_resume_same_week(week_id: str) -> bool:
+    """
+    True when this week's filtered queue already exists — skip rediscovery/filter.
+    Undrafted URLs stay in engage_queue.json until draft_engage_items finishes them.
+    """
+    meta = read_week_meta()
+    if (meta.get("week_id") or "").strip() != week_id:
+        return False
+    if not _engage_queue_path().exists():
+        return False
+    if not _filtered_csv_path().exists():
+        return False
+    return True
+
+
+def create_pack_done_for_week(week_id: str) -> bool:
+    """Skip create pack if this week_id already has create-type STATUS rows."""
+    for r in read_status():
+        if (r.get("week_id") or "").strip() != week_id:
+            continue
+        typ = (r.get("type") or "").lower()
+        if typ in CREATE_TYPES or typ.startswith("create"):
+            return True
+    return False
 
 
 def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | None = None) -> int:
@@ -53,88 +109,134 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         flush=True,
     )
 
-    if csv_path is None and not skip_search:
-        start, end_dt = window_bounds(today, 7)
-        print(f"Weekly discovery {start.date()} → {today} …", flush=True)
-        rows = collect_all_platforms(
-            start=start,
-            end=end_dt,
-            queries=QUERY_BANK,
-            dry_run=dry_run,
-            serper_num=6,
-            reddit_limit=35,
-            youtube_max=12,
-            prefer_undated=False,
-            allow_undated_fallback=True,
-        )
-        csv_path = default_output_path("ielts_social_weekly", today)
-        write_csv(csv_path, rows)
-        from collections import Counter
-
-        by = dict(sorted(Counter((r.platform or "unknown").lower() for r in rows).items()))
-        print(f"Wrote {len(rows)} discovery rows → {csv_path}", flush=True)
-        print(f"By platform: {by}", flush=True)
-        (THIS_WEEK / "_meta" / "discovery_summary.json").write_text(
-            json.dumps(
-                {"rows": len(rows), "by_platform": by, "csv": str(csv_path)}, indent=2
-            ),
-            encoding="utf-8",
-        )
-    elif csv_path is None:
-        candidates = sorted(THIS_WEEK.parent.glob("ielts_social_weekly_*.csv"))
-        if not candidates:
-            print("No weekly CSV found. Run without --skip-search or pass --csv.")
-            return 1
-        csv_path = candidates[-1]
-        print(f"Using existing CSV: {csv_path}")
-
+    resume = can_resume_same_week(week_id)
+    filter_summary: dict = {}
     discovered_n = 0
-    try:
-        import csv as _csv
+    items = []
 
-        with csv_path.open(newline="", encoding="utf-8") as f:
-            discovered_n = sum(1 for _ in _csv.DictReader(f))
-    except OSError:
-        pass
+    if resume:
+        print(
+            "Resuming undrafted engages (same week) — skipping rediscovery/filter …",
+            flush=True,
+        )
+        items = load_triage_json(_engage_queue_path())
+        filter_summary_path = THIS_WEEK / "_meta" / "filter_summary.json"
+        if filter_summary_path.exists():
+            try:
+                filter_summary = json.loads(
+                    filter_summary_path.read_text(encoding="utf-8")
+                )
+            except (json.JSONDecodeError, OSError):
+                filter_summary = {}
+        discovered_n = int(filter_summary.get("input_rows") or 0)
+        print(
+            f"Engage queue loaded: {len(items)} "
+            f"(already-drafted URLs skipped inside draft step)",
+            flush=True,
+        )
+    else:
+        if csv_path is None and not skip_search:
+            start, end_dt = window_bounds(today, 7)
+            print(f"Weekly discovery {start.date()} → {today} …", flush=True)
+            rows = collect_all_platforms(
+                start=start,
+                end=end_dt,
+                queries=QUERY_BANK,
+                dry_run=dry_run,
+                serper_num=6,
+                reddit_limit=35,
+                youtube_max=12,
+                prefer_undated=False,
+                allow_undated_fallback=True,
+            )
+            csv_path = default_output_path("ielts_social_weekly", today)
+            write_csv(csv_path, rows)
+            from collections import Counter
 
-    print("Filtering for relevance …", flush=True)
-    filtered_csv, filter_summary = filter_discovery_csv(
-        csv_path,
-        out_csv=THIS_WEEK / "_meta" / "filtered_discovery.csv",
-        meta_path=THIS_WEEK / "_meta" / "filter_summary.json",
-        dry_run=dry_run,
-        use_llm=not dry_run,
-    )
+            by = dict(sorted(Counter((r.platform or "unknown").lower() for r in rows).items()))
+            print(f"Wrote {len(rows)} discovery rows → {csv_path}", flush=True)
+            print(f"By platform: {by}", flush=True)
+            (THIS_WEEK / "_meta" / "discovery_summary.json").write_text(
+                json.dumps(
+                    {"rows": len(rows), "by_platform": by, "csv": str(csv_path)}, indent=2
+                ),
+                encoding="utf-8",
+            )
+        elif csv_path is None:
+            candidates = sorted(THIS_WEEK.parent.glob("ielts_social_weekly_*.csv"))
+            if not candidates:
+                print("No weekly CSV found. Run without --skip-search or pass --csv.")
+                return 1
+            csv_path = candidates[-1]
+            print(f"Using existing CSV: {csv_path}")
 
-    already = open_status_url_keys()
-    print(
-        f"Triaging (skip {len(already)} URLs already open in STATUS) …",
-        flush=True,
-    )
-    # Target = filtered discovery size (capped); triage skips blocked + already-open URLs
-    passed = int(filter_summary.get("passed") or 0)
-    target_engage = min(ENGAGE_MAX, passed) if passed else ENGAGE_MAX
-    items = triage_csv(
-        filtered_csv,
-        mode="weekly",
-        target_engage=target_engage,
-        cta_map=filter_summary.get("cta_map") or {},
-        skip_urls=already,
-    )
-    write_triage_json(THIS_WEEK / "_meta" / "engage_queue.json", items)
-    print(
-        f"Engage candidates this week: {len(items)} "
-        f"(target≈{target_engage}, warmup={warmup_enabled()})",
-        flush=True,
-    )
+        try:
+            import csv as _csv
+
+            with csv_path.open(newline="", encoding="utf-8") as f:
+                discovered_n = sum(1 for _ in _csv.DictReader(f))
+        except OSError:
+            pass
+
+        # Garbage removal MUST finish before any engage drafting
+        print("Filtering for relevance (garbage removal) …", flush=True)
+        filtered_csv, filter_summary = filter_discovery_csv(
+            csv_path,
+            out_csv=_filtered_csv_path(),
+            meta_path=THIS_WEEK / "_meta" / "filter_summary.json",
+            dry_run=dry_run,
+            use_llm=not dry_run,
+        )
+
+        already = open_status_url_keys()
+        print(
+            f"Triaging (skip {len(already)} URLs already open in STATUS) …",
+            flush=True,
+        )
+        # Target = filtered discovery size (capped); triage skips blocked + already-open URLs
+        passed = int(filter_summary.get("passed") or 0)
+        target_engage = min(ENGAGE_MAX, passed) if passed else ENGAGE_MAX
+        items = triage_csv(
+            filtered_csv,
+            mode="weekly",
+            target_engage=target_engage,
+            cta_map=filter_summary.get("cta_map") or {},
+            skip_urls=already,
+        )
+        write_triage_json(_engage_queue_path(), items)
+        # Persist week_id early so same-week re-runs resume instead of rediscovering
+        write_week_meta(
+            {
+                "week_id": week_id,
+                "csv": str(csv_path),
+                "filtered_csv": str(filtered_csv),
+                "generated_at": date.today().isoformat(),
+                "warmup": warmup_enabled(),
+                "durable_pending": True,
+                "queue_ready": True,
+                "drafts_complete": False,
+            }
+        )
+        print(
+            f"Engage candidates this week: {len(items)} "
+            f"(target≈{target_engage}, warmup={warmup_enabled()})",
+            flush=True,
+        )
 
     print("Drafting engage replies (merge into STATUS) …", flush=True)
     engage_rows = draft_engage_items(items, dry_run=dry_run, week_id=week_id)
     print(f"New engage actions: {len(engage_rows)}", flush=True)
 
-    print("Drafting create pack (merge into STATUS) …", flush=True)
-    create_rows = draft_content_pack(dry_run=dry_run, week_start=today, week_id=week_id)
-    print(f"New create actions: {len(create_rows)}", flush=True)
+    create_rows: list = []
+    if create_pack_done_for_week(week_id):
+        print(
+            "Create pack already present for this week — skipping …",
+            flush=True,
+        )
+    else:
+        print("Drafting create pack (merge into STATUS) …", flush=True)
+        create_rows = draft_content_pack(dry_run=dry_run, week_start=today, week_id=week_id)
+        print(f"New create actions: {len(create_rows)}", flush=True)
 
     open_n = len(open_actions())
     funnel = {
@@ -153,11 +255,10 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         "this_week_new": len(engage_rows) + len(create_rows),
         "daily_target": max(1, (len(engage_rows) + 6) // 7) if engage_rows else 0,
         "merged": True,
+        "resumed": resume,
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
-    (THIS_WEEK / "_meta" / "funnel.json").write_text(
-        json.dumps(funnel, indent=2), encoding="utf-8"
-    )
+    _funnel_path().write_text(json.dumps(funnel, indent=2), encoding="utf-8")
     print(
         f"Funnel: discovered={funnel['discovered']} → filter={funnel['after_filter']} "
         f"→ new engage={funnel['engage_queue_new']} + create={funnel['create_new']} "
@@ -166,15 +267,20 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
         flush=True,
     )
 
+    prev_meta = read_week_meta()
     write_week_meta(
         {
+            **prev_meta,
             "week_id": week_id,
-            "csv": str(csv_path),
-            "filtered_csv": str(filtered_csv),
+            "csv": prev_meta.get("csv") or (str(csv_path) if csv_path else ""),
+            "filtered_csv": str(_filtered_csv_path()),
             "generated_at": date.today().isoformat(),
             "warmup": warmup_enabled(),
             "funnel": funnel,
             "durable_pending": True,
+            "queue_ready": True,
+            "drafts_complete": True,
+            "resumed": resume,
         }
     )
     brief = write_week_brief()

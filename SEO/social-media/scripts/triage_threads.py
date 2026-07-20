@@ -205,3 +205,43 @@ def write_triage_json(path: Path, items: list[TriageItem]) -> None:
     path.write_text(
         json.dumps(items_to_dicts(items), indent=2), encoding="utf-8"
     )
+
+
+def load_triage_json(path: Path) -> list[TriageItem]:
+    """Rebuild TriageItem list from a persisted engage_queue.json."""
+    import json
+
+    if not path.exists():
+        return []
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+    if not isinstance(raw, list):
+        return []
+    items: list[TriageItem] = []
+    for row in raw:
+        if not isinstance(row, dict):
+            continue
+        url = (row.get("url") or "").strip()
+        if not url:
+            continue
+        items.append(
+            TriageItem(
+                platform=(row.get("platform") or "unknown").lower(),
+                url=url,
+                title=row.get("title") or "",
+                snippet=row.get("snippet") or "",
+                engagement_score=str(row.get("engagement_score") or ""),
+                intent=row.get("intent") or "general_tip",
+                high_intent=bool(row.get("high_intent")),
+                tier=int(row.get("tier") or platform_tier(row.get("platform") or "")),
+                score=float(row.get("score") or 0),
+                day=row.get("day") or "",
+                action=row.get("action") or "value_reply",
+                source_query=row.get("source_query") or "",
+                fresh=bool(row.get("fresh")),
+                cta_ok=bool(row.get("cta_ok")),
+            )
+        )
+    return items

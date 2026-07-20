@@ -10,11 +10,15 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional, Iterable
 
 from dotenv import load_dotenv
+
+# Serialize STATUS / parent-URL registry writes for parallel draft workers
+_STATUS_IO_LOCK = threading.Lock()
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPTS_DIR.parent
@@ -119,6 +123,13 @@ def read_status(*, onboarding: bool = False) -> list[dict[str, str]]:
 
 def write_status(rows: list[dict[str, str]], *, onboarding: bool = False) -> None:
     """Atomic STATUS write (temp file → rename) so crashes don't corrupt the queue."""
+    with _STATUS_IO_LOCK:
+        _write_status_unlocked(rows, onboarding=onboarding)
+
+
+def _write_status_unlocked(
+    rows: list[dict[str, str]], *, onboarding: bool = False
+) -> None:
     ensure_output_dirs()
     path = status_path(onboarding=onboarding)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -189,6 +200,13 @@ def read_parent_url_registry(*, onboarding: bool = False) -> dict[str, str]:
 
 
 def write_parent_url_registry(
+    mapping: dict[str, str], *, onboarding: bool = False
+) -> None:
+    with _STATUS_IO_LOCK:
+        _write_parent_url_registry_unlocked(mapping, onboarding=onboarding)
+
+
+def _write_parent_url_registry_unlocked(
     mapping: dict[str, str], *, onboarding: bool = False
 ) -> None:
     ensure_output_dirs()
@@ -262,55 +280,63 @@ def upsert_status_rows(
     """
     Merge new rows. Parent thread URLs are unique: one id per URL forever.
     Followups may share a URL but must set parent_id to that URL's id.
+    Thread-safe for parallel draft workers.
     """
-    existing_list = read_status(onboarding=onboarding)
-    existing = {r["id"]: r for r in existing_list}
-    registry = read_parent_url_registry(onboarding=onboarding)
-    parent_url_to_id = dict(registry)
-    for r in existing_list:
-        if is_parent_thread_type(r.get("type") or ""):
-            key = normalize_status_url(r.get("url") or "")
-            if key and r.get("id"):
-                parent_url_to_id.setdefault(key, r["id"])
+    with _STATUS_IO_LOCK:
+        existing_list = read_status(onboarding=onboarding)
+        existing = {r["id"]: r for r in existing_list}
+        registry = read_parent_url_registry(onboarding=onboarding)
+        parent_url_to_id = dict(registry)
+        for r in existing_list:
+            if is_parent_thread_type(r.get("type") or ""):
+                key = normalize_status_url(r.get("url") or "")
+                if key and r.get("id"):
+                    parent_url_to_id.setdefault(key, r["id"])
 
-    for row in new_rows:
-        rid = (row.get("id") or "").strip()
-        url_key = normalize_status_url(row.get("url") or "")
-        typ = (row.get("type") or "").lower()
-        row.setdefault("parent_id", "")
+        for row in new_rows:
+            rid = (row.get("id") or "").strip()
+            url_key = normalize_status_url(row.get("url") or "")
+            typ = (row.get("type") or "").lower()
+            row.setdefault("parent_id", "")
 
-        if is_parent_thread_type(typ) and url_key:
-            known = parent_url_to_id.get(url_key)
-            if known:
-                # Same URL → must reuse same id; skip if already present
-                if known in existing:
-                    continue
-                rid = known
-                row["id"] = known
-            else:
-                if not rid:
-                    rid = format_action_id(next_action_id(list(existing.values()), onboarding=onboarding))
-                    row["id"] = rid
-                parent_url_to_id[url_key] = rid
-            row["parent_id"] = ""
-        elif typ == "followup" and url_key:
-            parent = parent_url_to_id.get(url_key) or lookup_parent_id(
-                url_key, onboarding=onboarding
-            )
-            if parent:
-                row["parent_id"] = parent
+            if is_parent_thread_type(typ) and url_key:
+                known = parent_url_to_id.get(url_key)
+                if known:
+                    # Same URL → must reuse same id; skip if already present
+                    if known in existing:
+                        continue
+                    rid = known
+                    row["id"] = known
+                else:
+                    if not rid:
+                        rid = format_action_id(
+                            next_action_id(
+                                list(existing.values()), onboarding=onboarding
+                            )
+                        )
+                        row["id"] = rid
+                    parent_url_to_id[url_key] = rid
+                row["parent_id"] = ""
+            elif typ == "followup" and url_key:
+                parent = parent_url_to_id.get(url_key) or lookup_parent_id(
+                    url_key, onboarding=onboarding
+                )
+                if parent:
+                    row["parent_id"] = parent
 
-        if not rid:
-            continue
-        if rid in existing:
-            prev = existing[rid].get("status") or ""
-            if is_open_status(prev) or is_closed_status(prev):
+            if not rid:
                 continue
-        existing[rid] = {k: row.get(k, "") for k in STATUS_FIELDS}
+            if rid in existing:
+                prev = existing[rid].get("status") or ""
+                if is_open_status(prev) or is_closed_status(prev):
+                    continue
+            existing[rid] = {k: row.get(k, "") for k in STATUS_FIELDS}
 
-    write_parent_url_registry(parent_url_to_id, onboarding=onboarding)
-    ordered = sorted(existing.values(), key=lambda r: r.get("id", ""))
-    write_status(ordered, onboarding=onboarding)
+        _write_parent_url_registry_unlocked(
+            parent_url_to_id, onboarding=onboarding
+        )
+        ordered = sorted(existing.values(), key=lambda r: r.get("id", ""))
+        _write_status_unlocked(ordered, onboarding=onboarding)
 
 
 def next_action_id(
