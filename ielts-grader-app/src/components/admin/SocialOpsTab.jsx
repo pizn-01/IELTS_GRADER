@@ -262,7 +262,7 @@ export default function SocialOpsTab() {
   const kpi = bundle?.kpi;
   const running = job?.status === 'running';
   const keys = bundle?.keys || {};
-  const missingKeys = ['SERPER_API_KEY', 'YOUTUBE_API_KEY', 'OPENAI_API_KEY'].filter(
+  const missingKeys = ['SERPER_API_KEY', 'OPENAI_API_KEY'].filter(
     (k) => keys[k] === false
   );
   const needsColdStart = Boolean(bundle?.paths && !bundle.paths.has_onboarding);
@@ -312,10 +312,10 @@ export default function SocialOpsTab() {
           <p className="font-bold mb-1">Missing API keys on the server</p>
           <p className="mb-2">
             {missingKeys.join(', ')}. Without Serper, Facebook/Instagram/Quora/X/LinkedIn/TikTok
-            discovery fails.
+            discovery fails. Reddit needs no key. YouTube is optional.
           </p>
           <p className="text-[12px] font-mono bg-white/70 border border-red-100 rounded-[8px] px-2 py-1.5 break-all">
-            cd backend && fly secrets set SERPER_API_KEY=… YOUTUBE_API_KEY=…
+            cd backend && fly secrets set SERPER_API_KEY=…
           </p>
         </div>
       )}

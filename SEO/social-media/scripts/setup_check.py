@@ -61,20 +61,23 @@ def check() -> int:
             else "Needed for Facebook/Instagram/Quora/X/LinkedIn/TikTok (serper.dev)"
         ),
     )
-    flag(
-        "YOUTUBE_API_KEY",
-        youtube,
-        (
-            "Set on Fly: fly secrets set YOUTUBE_API_KEY=…  (Google Cloud → YouTube Data API v3)"
-            if in_container
-            else "Needed for YouTube listening (Google Cloud → YouTube Data API v3)"
-        ),
-    )
+    # YouTube is optional — Reddit uses public JSON (no key); Serper covers most other platforms.
+    yt_ok = youtube
+    print(f"  [{'OK' if yt_ok else 'SKIP'}] YOUTUBE_API_KEY")
+    if not yt_ok:
+        print(
+            "         → Optional for now — YouTube listening skipped without it "
+            "(Reddit needs no key; Serper covers FB/IG/Quora/X/LI/TikTok)"
+        )
+
     flag(
         "OPENAI_API_KEY",
         openai,
         "Needed for drafted replies/posts (templates still work without it)",
     )
+
+    print("  [OK] Reddit")
+    print("         → Public JSON search — no API key required")
 
     try:
         import openai  # noqa: F401
@@ -103,11 +106,11 @@ def check() -> int:
         print("Next: Cold start once, then Monday “Start / refresh week”.")
         return 0
     print("Fix the MISSING items, then run this check again.")
-    if in_container and (not serper or not youtube):
+    if in_container and not serper:
         print()
         print("Production fix (from your laptop):")
         print("  cd backend")
-        print("  fly secrets set SERPER_API_KEY=your_key YOUTUBE_API_KEY=your_key")
+        print("  fly secrets set SERPER_API_KEY=your_key")
     return 1
 
 
