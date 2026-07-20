@@ -1,12 +1,21 @@
 import React from 'react';
-import { Play } from 'lucide-react';
-
-const HOW_IT_WORKS_VIDEO_ID = 'YevrdNf2wgk';
-// YouTube file is 16:9 with side bars; visible content ≈ 62% of width (~10:9)
-const VIDEO_CROP_SCALE = 1.62;
+import { Upload, Clock, Info, Check } from 'lucide-react';
 
 const HowItWorks = () => {
-  const [playing, setPlaying] = React.useState(false);
+  const [selectedOption, setSelectedOption] = React.useState(null);
+  const [activeTooltip, setActiveTooltip] = React.useState(null);
+
+  const tooltips = {
+    essay: { text: "Paste or upload your IELTS question prompt and written answer for accurate evaluation." },
+    mock: { text: "Practice under exam conditions to simulate a real computer-based IELTS environment." }
+  };
+
+  const Tooltip = ({ text }) => (
+    <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[220px] bg-[#1a1f36] rounded-lg p-3 shadow-2xl z-[100] text-left pointer-events-none animate-in fade-in zoom-in-95 duration-200">
+      <p className="m-0 text-[11px] leading-relaxed font-normal text-white opacity-95">{text}</p>
+      <div className="absolute top-[-4px] left-1/2 -translate-x-1/2 rotate-45 w-[8px] h-[8px] bg-[#1a1f36]"></div>
+    </div>
+  );
 
   return (
     <section id="how-it-works" className="bg-white py-12 lg:py-20 overflow-hidden">
@@ -32,39 +41,11 @@ const HowItWorks = () => {
               </p>
             </div>
  
-            <div className="w-full md:w-[50%] flex justify-center md:justify-end md:pr-4 lg:pr-8">
-              <div className="relative w-full max-w-[420px] mr-0 md:mr-4">
-                {/* Crop YouTube 16:9 pillarbox so only the app UI shows */}
-                <div className="relative z-10 w-full aspect-[10/9] rounded-xl overflow-hidden shadow-lg bg-[#e8eef5]">
-                  {playing ? (
-                    <iframe
-                      src={`https://www.youtube.com/embed/${HOW_IT_WORKS_VIDEO_ID}?autoplay=1&rel=0&controls=0&fs=0&iv_load_policy=3&cc_load_policy=0&playsinline=1&disablekb=1`}
-                      title="How IELTS Grader works"
-                      className="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2 border-0"
-                      style={{
-                        width: `${VIDEO_CROP_SCALE * 100}%`,
-                        height: `${VIDEO_CROP_SCALE * 100}%`,
-                      }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setPlaying(true)}
-                      className="absolute inset-0 w-full h-full group cursor-pointer"
-                      aria-label="Play how it works video"
-                    >
-                      <img
-                        src="/videos/how-it-works-poster.jpg"
-                        alt="Submitting an essay for grading"
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      <span className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg group-hover:scale-105 transition-transform">
-                        <Play className="w-6 h-6 text-[#1a1f36] fill-[#1a1f36] ml-0.5" aria-hidden="true" />
-                      </span>
-                    </button>
-                  )}
+            <div className="w-full md:w-[50%] flex justify-center">
+              <div className="relative">
+                {/* Step 1 Card Image */}
+                <div className="relative z-10 w-full max-w-[528px]">
+                  <img src="/images/how-it-works/Background+Border+Shadow.png" alt="Evaluate Writing Skills" className="w-full h-auto" />
                 </div>
  
                 {/* Connector SVG to Step 2 */}
