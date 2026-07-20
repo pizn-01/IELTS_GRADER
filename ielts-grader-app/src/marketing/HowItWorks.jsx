@@ -1,22 +1,6 @@
 import React from 'react';
-import { Upload, Clock, Info, Check } from 'lucide-react';
 
 const HowItWorks = () => {
-  const [selectedOption, setSelectedOption] = React.useState(null);
-  const [activeTooltip, setActiveTooltip] = React.useState(null);
-
-  const tooltips = {
-    essay: { text: "Paste or upload your IELTS question prompt and written answer for accurate evaluation." },
-    mock: { text: "Practice under exam conditions to simulate a real computer-based IELTS environment." }
-  };
-
-  const Tooltip = ({ text }) => (
-    <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[220px] bg-[#1a1f36] rounded-lg p-3 shadow-2xl z-[100] text-left pointer-events-none animate-in fade-in zoom-in-95 duration-200">
-      <p className="m-0 text-[11px] leading-relaxed font-normal text-white opacity-95">{text}</p>
-      <div className="absolute top-[-4px] left-1/2 -translate-x-1/2 rotate-45 w-[8px] h-[8px] bg-[#1a1f36]"></div>
-    </div>
-  );
-
   return (
     <section id="how-it-works" className="bg-white py-12 lg:py-20 overflow-hidden">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-[80px] lg:px-[242px]">
@@ -41,11 +25,19 @@ const HowItWorks = () => {
               </p>
             </div>
  
-            <div className="w-full md:w-[50%] flex justify-center">
-              <div className="relative">
-                {/* Step 1 Card Image */}
-                <div className="relative z-10 w-full max-w-[528px]">
-                  <img src="/images/how-it-works/Background+Border+Shadow.png" alt="Evaluate Writing Skills" className="w-full h-auto" />
+            <div className="w-full md:w-[50%] flex justify-center md:justify-end md:pr-4 lg:pr-8">
+              <div className="relative w-full max-w-[528px] mr-0 md:mr-4">
+                {/* Step 1 YouTube video */}
+                <div className="relative z-10 w-full aspect-video rounded-xl overflow-hidden shadow-lg">
+                  <iframe
+                    src="https://www.youtube.com/embed/YevrdNf2wgk"
+                    title="How IELTS Grader works"
+                    className="absolute inset-0 w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
                 </div>
  
                 {/* Connector SVG to Step 2 */}
