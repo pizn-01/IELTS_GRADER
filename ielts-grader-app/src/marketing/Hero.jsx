@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileCheck2, Clock, Info, Star, ChevronLeft, ChevronRight, Gift, BarChart3, Target } from 'lucide-react';
+import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Gift, BarChart3, Target } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -51,6 +51,7 @@ const HERO_SLIDES = [
     caption: 'Band scores and scoring breakdown—not just a number.',
     image: '/images/hero/report.png',
     imageAlt: 'Detailed IELTS report with criteria breakdown and scoring details',
+    chip: { Icon: FileCheck2, text: 'Criterion scores + scoring breakdown', iconClass: 'text-[#0D9488]', fill: null },
     accent: '#0D9488',
     mobileSub: (
       <>
@@ -67,6 +68,7 @@ const HERO_SLIDES = [
     caption: 'Goal progress, strengths, and priority fixes in one view.',
     image: '/images/hero/performance.png',
     imageAlt: 'Overall performance dashboard with band goal and skill growth',
+    chip: { Icon: BarChart3, text: 'Trends across exams toward your goal', iconClass: 'text-[#0284C7]', fill: null },
     accent: '#0284C7',
     mobileSub: (
       <>
@@ -83,6 +85,7 @@ const HERO_SLIDES = [
     caption: 'Priority focus areas—exactly what to practice next.',
     image: '/images/hero/personalized.png',
     imageAlt: 'Personalized learning priorities and average bands for this edition',
+    chip: { Icon: Target, text: 'What to practice first—ranked for you', iconClass: 'text-[#0EA5E9]', fill: null },
     accent: '#0EA5E9',
     mobileSub: (
       <>
@@ -206,7 +209,7 @@ const Hero = () => {
     </div>
   );
 
-  const ChipIcon = isTextSlide ? slide.chip.Icon : null;
+  const ChipIcon = slide.chip.Icon;
 
   const SlideDots = ({ className = '', size = 'sm' }) => (
     <div className={`flex items-center gap-1.5 ${className}`} role="tablist" aria-label="Product highlights">
@@ -243,54 +246,32 @@ const Hero = () => {
       <div className="hero-atmosphere pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[80px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-8 relative z-[1]">
 
-        {/* Mobile: all messaging above the CTA card (no product images) */}
+        {/* Mobile: compact rotating headline above the card (pre-today layout) */}
         {cardView !== 'mock' && (
           <div
-            className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-4 px-1"
+            className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5"
             onMouseEnter={onSpotlightEnter}
             onMouseLeave={onSpotlightLeave}
             onFocus={onSpotlightEnter}
             onBlur={onSpotlightLeave}
           >
-            <h1 className="text-[22px] sm:text-[28px] font-bold text-[#0f172a] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+            <div
+              key={`m-badge-${slide.id}`}
+              className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide hero-slide-enter"
+            >
+              {slide.mobileBadge}
+            </div>
+            <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
               Your IELTS Writing Tutor.
             </h1>
-
-            <div className="inline-flex items-center px-3 py-1 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[12px] font-medium text-[#78350F] mt-3 mb-3 hero-free-badge">
-              1 free evaluation · No card required
-            </div>
-
-            {/* Text-only rotating strip */}
-            <div className="relative h-[44px] w-full max-w-[420px] mx-auto" aria-live="polite">
-              {HERO_SLIDES.map((s, i) => (
-                <div
-                  key={s.id}
-                  className={`flex items-center justify-center gap-2 px-2 ${slideLayerClass(i)}`}
-                  aria-hidden={i !== slideIndex}
-                >
-                  {s.type === 'text' ? (
-                    <p className="m-0 text-[14px] sm:text-[15px] font-medium text-[#64748B] leading-snug">
-                      {s.mobileSub}
-                    </p>
-                  ) : (
-                    <>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] text-[12px] font-semibold text-[#0369A1] whitespace-nowrap shrink-0">
-                        {s.badge}
-                      </span>
-                      <span className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug text-left min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {s.caption}
-                      </span>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 mb-3 text-left max-w-[420px] mx-auto px-2">
-              <BenefitBullets compact />
-            </div>
-
-            <SlideDots className="justify-center" size="sm" />
+            <p
+              key={`m-sub-${slide.id}`}
+              className="mt-2 mb-0 text-[14px] sm:text-[16px] font-medium text-[#6B7280] leading-snug hero-slide-enter"
+              aria-live="polite"
+            >
+              {slide.mobileSub}
+            </p>
+            <SlideDots className="justify-center mt-3" size="sm" />
           </div>
         )}
 
@@ -384,7 +365,7 @@ const Hero = () => {
                   </button>
                 </div>
 
-                <p className="text-center text-[13px] lg:text-[14px] font-semibold text-[#0f172a] mt-4 mb-0 shrink-0 tracking-[-0.01em]">
+                <p className="hidden lg:block text-center text-[13px] lg:text-[14px] font-semibold text-[#0f172a] mt-4 mb-0 shrink-0 tracking-[-0.01em]">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FEF9C3] border border-[#FDE68A] text-[#78350F]">
                     1 free evaluation · No credit card
                   </span>
@@ -440,16 +421,36 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Mobile: slim rating under the card only */}
+        {/* Mobile: rating + rotating chip below the card (pre-today layout) */}
         {cardView !== 'mock' && (
-          <div className="lg:hidden order-3 shrink-0 flex items-center justify-center gap-1.5 w-full max-w-[480px] mx-auto px-5 pt-2 pb-2 animate-fadeInUp animate-delay-150">
-            <div className="flex gap-0.5">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
-              ))}
+          <div className="lg:hidden order-3 flex-1 flex flex-col justify-center gap-3.5 w-full max-w-[480px] mx-auto px-5 pt-1 pb-1 animate-fadeInUp animate-delay-150">
+            <div className="flex items-center gap-1.5 shrink-0 pb-3 mb-0.5 border-b border-[#E8ECF1]/90">
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
+                ))}
+              </div>
+              <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
+              <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
             </div>
-            <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
-            <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
+            <div
+              key={`m-chip-${slide.id}`}
+              className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-enter"
+            >
+              <ChipIcon
+                className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
+                strokeWidth={2}
+              />
+              <span>{slide.chip.text}</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+              <Zap className="w-[17px] h-[17px] text-[#0EA5E9] shrink-0" strokeWidth={2} />
+              <span>Detailed report + overall performance</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+              <ShieldCheck className="w-[17px] h-[17px] text-[#0D9488] shrink-0" strokeWidth={2} />
+              <span>Personalized learning to your target band</span>
+            </div>
           </div>
         )}
 
