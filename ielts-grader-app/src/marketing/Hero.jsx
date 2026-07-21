@@ -62,7 +62,7 @@ const HERO_SLIDES = [
   {
     id: 'performance',
     type: 'shot',
-    cue: 'both',
+    cue: 'mock',
     badge: 'Overall performance',
     mobileBadge: 'Performance',
     caption: 'Goal progress, strengths, and priority fixes in one view.',
@@ -106,8 +106,8 @@ const Hero = () => {
   const [reduceMotion, setReduceMotion] = useState(false);
 
   const slide = HERO_SLIDES[slideIndex];
-  const cueGrade = slide.cue === 'grade';
-  const cueMock = slide.cue === 'mock';
+  const cueGrade = slide.cue === 'grade' || slide.cue === 'both';
+  const cueMock = slide.cue === 'mock' || slide.cue === 'both';
   const isTextSlide = slide.type === 'text';
   const SHOT_SLIDES = HERO_SLIDES.filter((s) => s.type === 'shot');
 
