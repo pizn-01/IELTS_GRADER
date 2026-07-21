@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileCheck2, Clock, Info, Star, ChevronLeft, ChevronRight, Gift, BarChart3, Map, Target } from 'lucide-react';
+import { FileCheck2, Clock, Info, Star, ChevronLeft, ChevronRight, Gift, BarChart3, Target } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -20,10 +20,9 @@ const AVATARS = [
 ];
 
 const BENEFIT_BULLETS = [
-  { Icon: FileCheck2, title: 'Full tutor report', detail: 'Criterion scores + sentence-level fixes' },
+  { Icon: FileCheck2, title: 'Detailed report', detail: 'Criterion scores + scoring breakdown' },
   { Icon: BarChart3, title: 'Overall performance', detail: 'Trends across your exams toward your goal' },
-  { Icon: Map, title: 'Roadmap', detail: 'Clear pathway to your next half-band' },
-  { Icon: Target, title: 'Personalized next steps', detail: 'What to practice first—ranked for you' },
+  { Icon: Target, title: 'Personalized learning', detail: 'What to practice first—ranked for you' },
 ];
 
 const SLIDE_INTERVAL_MS = 5500;
@@ -39,7 +38,23 @@ const HERO_SLIDES = [
     accent: '#0EA5E9',
     mobileSub: (
       <>
-        Full report, roadmap & plan — <span className="text-[#0EA5E9]">free, no card</span>
+        Report, performance & plan — <span className="text-[#0EA5E9]">free, no card</span>
+      </>
+    ),
+  },
+  {
+    id: 'report',
+    type: 'shot',
+    cue: 'grade',
+    badge: 'Detailed report',
+    mobileBadge: 'Detailed report',
+    caption: 'Overall band, criterion scores, and a clear scoring breakdown—not just a number.',
+    image: '/images/hero/report.png',
+    imageAlt: 'Detailed IELTS report with criteria breakdown and scoring details',
+    accent: '#0D9488',
+    mobileSub: (
+      <>
+        Criterion scores & <span className="text-[#0EA5E9]">scoring details</span>
       </>
     ),
   },
@@ -60,50 +75,18 @@ const HERO_SLIDES = [
     ),
   },
   {
-    id: 'edition',
-    type: 'shot',
-    cue: 'both',
-    badge: 'Top mistakes across exams',
-    mobileBadge: 'Top mistakes',
-    caption: 'See what keeps repeating across exams—and which criterion they hit.',
-    image: '/images/hero/edition.png',
-    imageAlt: 'Edition summary of top mistakes and average band scores',
-    accent: '#F59E0B',
-    mobileSub: (
-      <>
-        Your top mistakes <span className="text-[#0EA5E9]">across exams</span>
-      </>
-    ),
-  },
-  {
     id: 'personalized',
     type: 'shot',
     cue: 'grade',
     badge: 'Personalized learning',
     mobileBadge: 'Your plan',
-    caption: 'Tutor verdict, plateau alerts, and the lowest-hanging fruit to raise next.',
+    caption: 'Your priority focus areas across exams—so you know exactly what to practice next.',
     image: '/images/hero/personalized.png',
-    imageAlt: 'Personalized tutor verdict and pathway to the next band',
+    imageAlt: 'Personalized learning priorities and average bands for this edition',
     accent: '#0EA5E9',
     mobileSub: (
       <>
         Next steps tailored to <span className="text-[#0EA5E9]">your essays</span>
-      </>
-    ),
-  },
-  {
-    id: 'roadmap',
-    type: 'shot',
-    cue: 'both',
-    badge: 'Skill roadmap',
-    mobileBadge: 'Roadmap',
-    caption: 'Skill growth over time plus mistake frequency—so you know what to lift next.',
-    image: '/images/hero/roadmap.png',
-    imageAlt: 'Skill growth chart and mistake frequency roadmap',
-    accent: '#0D9488',
-    mobileSub: (
-      <>
-        A clear path to your <span className="text-[#0EA5E9]">next half-band</span>
       </>
     ),
   },
