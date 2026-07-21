@@ -243,10 +243,10 @@ const Hero = () => {
       <div className="hero-atmosphere pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[80px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-8 relative z-[1]">
 
-        {/* Mobile: compact rotating headline above the card */}
+        {/* Mobile: all messaging above the CTA card (no product images) */}
         {cardView !== 'mock' && (
           <div
-            className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-5"
+            className="w-full order-1 lg:hidden animate-fadeInUp text-center shrink-0 mb-4 px-1"
             onMouseEnter={onSpotlightEnter}
             onMouseLeave={onSpotlightLeave}
             onFocus={onSpotlightEnter}
@@ -255,29 +255,42 @@ const Hero = () => {
             <h1 className="text-[22px] sm:text-[28px] font-bold text-[#0f172a] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
               Your IELTS Writing Tutor.
             </h1>
-            <div className="relative h-[72px] mt-2">
+
+            <div className="inline-flex items-center px-3 py-1 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[12px] font-medium text-[#78350F] mt-3 mb-3 hero-free-badge">
+              1 free evaluation · No card required
+            </div>
+
+            {/* Text-only rotating strip */}
+            <div className="relative h-[44px] w-full max-w-[420px] mx-auto" aria-live="polite">
               {HERO_SLIDES.map((s, i) => (
                 <div
                   key={s.id}
-                  className={`flex flex-col items-center justify-start ${slideLayerClass(i)}`}
+                  className={`flex items-center justify-center gap-2 px-2 ${slideLayerClass(i)}`}
                   aria-hidden={i !== slideIndex}
                 >
-                  <div
-                    className={`inline-flex items-center px-2.5 py-0.5 border rounded-full text-[11px] font-medium mb-1.5 tracking-wide ${
-                      s.type === 'text'
-                        ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hero-free-badge'
-                        : 'bg-white/90 border-[#BFDBFE] text-[#0369A1]'
-                    }`}
-                  >
-                    {s.mobileBadge}
-                  </div>
-                  <p className="mt-0 mb-0 text-[14px] sm:text-[16px] font-medium text-[#64748B] leading-snug px-2">
-                    {s.mobileSub}
-                  </p>
+                  {s.type === 'text' ? (
+                    <p className="m-0 text-[14px] sm:text-[15px] font-medium text-[#64748B] leading-snug">
+                      {s.mobileSub}
+                    </p>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] text-[12px] font-semibold text-[#0369A1] whitespace-nowrap shrink-0">
+                        {s.badge}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug text-left min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {s.caption}
+                      </span>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
-            <SlideDots className="justify-center mt-3" size="sm" />
+
+            <div className="mt-3 mb-3 text-left max-w-[420px] mx-auto px-2">
+              <BenefitBullets compact />
+            </div>
+
+            <SlideDots className="justify-center" size="sm" />
           </div>
         )}
 
@@ -427,41 +440,16 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Mobile: composed rating + benefits fill remaining viewport (hidden on mock) */}
+        {/* Mobile: slim rating under the card only */}
         {cardView !== 'mock' && (
-          <div className="lg:hidden order-3 flex-1 flex flex-col justify-center gap-3.5 w-full max-w-[480px] mx-auto px-5 pt-1 pb-1 animate-fadeInUp animate-delay-150">
-            <div className="flex items-center gap-1.5 shrink-0 pb-3 mb-0.5 border-b border-[#E8ECF1]/90">
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
-                ))}
-              </div>
-              <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
-              <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
+          <div className="lg:hidden order-3 shrink-0 flex items-center justify-center gap-1.5 w-full max-w-[480px] mx-auto px-5 pt-2 pb-2 animate-fadeInUp animate-delay-150">
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
+              ))}
             </div>
-            <div className="relative min-h-[148px]">
-              {isTextSlide ? (
-                <>
-                  <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] mb-2">
-                    <ChipIcon
-                      className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
-                      strokeWidth={2}
-                    />
-                    <span>{slide.chip.text}</span>
-                  </div>
-                  <BenefitBullets compact />
-                </>
-              ) : (
-                <div className="flex items-center gap-2.5 max-w-full min-w-0">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] text-[12px] font-semibold text-[#0369A1] whitespace-nowrap shrink-0">
-                    {slide.badge}
-                  </span>
-                  <span className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
-                    {slide.caption}
-                  </span>
-                </div>
-              )}
-            </div>
+            <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
+            <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
           </div>
         )}
 
