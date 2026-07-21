@@ -26,7 +26,7 @@ const BENEFIT_BULLETS = [
   { Icon: Target, title: 'Personalized next steps', detail: 'What to practice first—ranked for you' },
 ];
 
-const SLIDE_INTERVAL_MS = 5000;
+const SLIDE_INTERVAL_MS = 5500;
 
 const HERO_SLIDES = [
   {
@@ -56,22 +56,6 @@ const HERO_SLIDES = [
     mobileSub: (
       <>
         Track progress toward <span className="text-[#0EA5E9]">your target band</span>
-      </>
-    ),
-  },
-  {
-    id: 'report',
-    type: 'shot',
-    cue: 'grade',
-    badge: 'Full tutor report',
-    mobileBadge: 'Tutor report',
-    caption: 'Band breakdown plus Fix Cards that rewrite weak sentences for you.',
-    image: '/images/hero/report.png',
-    imageAlt: 'Tutor report with overall band score and grammar fix card',
-    accent: '#0D9488',
-    mobileSub: (
-      <>
-        Criterion scores & <span className="text-[#0EA5E9]">sentence-level fixes</span>
       </>
     ),
   },
@@ -263,7 +247,7 @@ const Hero = () => {
           >
             <div
               key={`m-badge-${slide.id}`}
-              className={`inline-flex items-center px-2.5 py-0.5 border rounded-full text-[11px] font-medium mb-3 tracking-wide hero-slide-enter ${
+              className={`inline-flex items-center px-2.5 py-0.5 border rounded-full text-[11px] font-medium mb-3 tracking-wide hero-slide-panel ${
                 isTextSlide
                   ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hero-free-badge'
                   : 'bg-white/90 border-[#BFDBFE] text-[#0369A1]'
@@ -276,7 +260,7 @@ const Hero = () => {
             </h1>
             <p
               key={`m-sub-${slide.id}`}
-              className="mt-2 mb-0 text-[14px] sm:text-[16px] font-medium text-[#64748B] leading-snug hero-slide-enter"
+              className="mt-2 mb-0 text-[14px] sm:text-[16px] font-medium text-[#64748B] leading-snug hero-slide-panel"
               aria-live="polite"
             >
               {slide.mobileSub}
@@ -445,7 +429,7 @@ const Hero = () => {
               <>
                 <div
                   key={`m-chip-${slide.id}`}
-                  className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-enter mb-1"
+                  className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-panel mb-1"
                 >
                   <ChipIcon
                     className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
@@ -453,12 +437,12 @@ const Hero = () => {
                   />
                   <span>{slide.chip.text}</span>
                 </div>
-                <div key="m-bullets" className="hero-slide-enter">
+                <div key="m-bullets" className="hero-slide-panel">
                   <BenefitBullets compact />
                 </div>
               </>
             ) : (
-              <div key={`m-cap-${slide.id}`} className="hero-slide-enter">
+              <div key={`m-cap-${slide.id}`} className="hero-slide-panel">
                 <p className="text-[13px] font-semibold text-[#0f172a] m-0 mb-1.5">{slide.badge}</p>
                 <p className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug m-0">{slide.caption}</p>
               </div>
@@ -479,7 +463,7 @@ const Hero = () => {
               <div className={`flex flex-col ${isTextSlide ? 'min-h-[320px]' : 'min-h-[360px]'}`}>
                 <div
                   key={`badge-${slide.id}`}
-                  className={`inline-flex items-center self-start px-4 py-1.5 border rounded-full text-[13px] font-medium mb-4 hero-slide-enter ${
+                  className={`inline-flex items-center self-start px-4 py-1.5 border rounded-full text-[13px] font-medium mb-4 hero-slide-panel ${
                     isTextSlide
                       ? 'bg-[#FEF9C3] border-[#FDE68A] text-[#78350F] hero-free-badge'
                       : 'bg-white/90 border-[#BAE6FD] text-[#0369A1] shadow-sm'
@@ -494,13 +478,13 @@ const Hero = () => {
 
                 {isTextSlide ? (
                   <>
-                    <div key={`bullets-${slide.id}`} className="hero-slide-enter mt-5 mb-6">
+                    <div key={`bullets-${slide.id}`} className="hero-slide-panel mt-5 mb-6">
                       <BenefitBullets />
                     </div>
 
                     <div
                       key={`chip-${slide.id}`}
-                      className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)] mb-6 hero-slide-enter"
+                      className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)] mb-6 hero-slide-panel"
                     >
                       <ChipIcon
                         className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
@@ -510,15 +494,15 @@ const Hero = () => {
                     </div>
                   </>
                 ) : (
-                  <div key={`shot-${slide.id}`} className="hero-slide-enter mt-4 mb-5">
+                  <div key={`shot-${slide.id}`} className="hero-slide-panel mt-4 mb-5">
                     <p className="text-[15px] text-[#64748B] leading-snug m-0 mb-4 max-w-[480px]">
                       {slide.caption}
                     </p>
-                    <div className="hero-shot-frame relative w-full max-w-[540px] rounded-[16px] bg-[#F8FAFC] border border-[#E2E8F0] shadow-[0_20px_50px_rgba(15,23,42,0.1)] p-3 sm:p-4 flex items-center justify-center min-h-[200px] max-h-[360px]">
+                    <div className="hero-shot-frame relative w-full max-w-[540px] overflow-hidden rounded-[14px] shadow-[0_16px_40px_rgba(15,23,42,0.1)]">
                       <img
                         src={slide.image}
                         alt={slide.imageAlt}
-                        className="relative w-full h-auto max-h-[328px] object-contain object-center block"
+                        className="relative w-full h-auto max-h-[340px] object-contain object-center block bg-transparent"
                         loading="lazy"
                       />
                     </div>

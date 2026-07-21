@@ -132,7 +132,7 @@ html.lenis body {
 }
 
 @keyframes heroSlideEnter {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -146,9 +146,14 @@ html.lenis body {
   50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
 }
 
+@keyframes heroSlidePanel {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes heroShotFade {
-  from { opacity: 0; transform: translateY(8px) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* --- Animation Utility Classes --- */
@@ -161,7 +166,11 @@ html.lenis body {
 }
 
 .hero-slide-enter {
-  animation: heroSlideEnter 0.45s ease-out both;
+  animation: heroSlideEnter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-slide-panel {
+  animation: heroSlidePanel 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .hero-cta-pulse {
@@ -173,9 +182,8 @@ html.lenis body {
 }
 
 .hero-shot-frame img {
-  animation: heroShotFade 0.5s ease-out both;
+  animation: heroShotFade 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-
 .animate-delay-50 {
   animation-delay: 50ms;
 }
@@ -194,6 +202,7 @@ html.lenis body {
   .animate-slideDown,
   .animate-in,
   .hero-slide-enter,
+  .hero-slide-panel,
   .hero-cta-pulse,
   .hero-free-badge,
   .hero-shot-frame img {
