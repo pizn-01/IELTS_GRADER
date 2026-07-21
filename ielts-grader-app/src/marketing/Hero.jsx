@@ -195,7 +195,7 @@ const Hero = () => {
   );
 
   const ShotImage = ({ shot }) => (
-    <div className="hero-shot-stage flex items-center justify-start h-[260px] xl:h-[280px] w-full max-w-[540px]">
+    <div className="hero-shot-stage flex items-center justify-start h-[320px] xl:h-[340px] w-full max-w-[560px]">
       <img
         src={shot.image}
         alt={shot.imageAlt}
@@ -450,11 +450,13 @@ const Hero = () => {
                   <BenefitBullets compact />
                 </>
               ) : (
-                <p className="text-[12px] sm:text-[13px] leading-snug m-0 whitespace-nowrap overflow-hidden text-ellipsis">
-                  <span className="font-semibold text-[#0f172a]">{slide.badge}</span>
-                  <span className="text-[#94A3B8]"> · </span>
-                  <span className="text-[#64748B]">{slide.caption}</span>
-                </p>
+                <div className="inline-flex items-center gap-2 max-w-full px-3 py-2 rounded-[10px] bg-white/90 border border-[#E2E8F0] shadow-sm">
+                  <span className="text-[12px] font-semibold text-[#0f172a] whitespace-nowrap shrink-0">{slide.badge}</span>
+                  <span className="text-[#CBD5E1] shrink-0">·</span>
+                  <span className="text-[12px] text-[#64748B] leading-snug whitespace-nowrap overflow-hidden text-ellipsis">
+                    {slide.caption}
+                  </span>
+                </div>
               )}
             </div>
           </div>
@@ -499,17 +501,21 @@ const Hero = () => {
                     Your IELTS Writing Tutor.
                   </h1>
 
-                  {/* Shot slides only: crossfade with fixed image height */}
-                  <div className="relative mt-4 mb-10 h-[340px] xl:h-[360px]" aria-live="polite">
+                  {/* Shot slides only: crossfade with larger fixed-height images */}
+                  <div className="relative mt-4 mb-6 h-[390px] xl:h-[410px]" aria-live="polite">
                     {SHOT_SLIDES.map((s) => {
                       const i = HERO_SLIDES.findIndex((x) => x.id === s.id);
                       return (
                         <div key={s.id} className={slideLayerClass(i)} aria-hidden={i !== slideIndex}>
-                          <p className="text-[15px] leading-snug m-0 mb-3 max-w-[540px] whitespace-nowrap overflow-hidden text-ellipsis">
-                            <span className="font-semibold text-[#0f172a]">{s.badge}</span>
-                            <span className="text-[#94A3B8]"> · </span>
-                            <span className="text-[#64748B]">{s.caption}</span>
-                          </p>
+                          <div className="inline-flex items-center gap-2 self-start max-w-[560px] px-3.5 py-2 mb-3.5 rounded-[12px] bg-white/90 border border-[#E2E8F0] shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
+                            <span className="text-[13px] font-semibold text-[#0f172a] whitespace-nowrap shrink-0">
+                              {s.badge}
+                            </span>
+                            <span className="text-[#CBD5E1] shrink-0">·</span>
+                            <span className="text-[13px] text-[#64748B] leading-snug whitespace-nowrap overflow-hidden text-ellipsis">
+                              {s.caption}
+                            </span>
+                          </div>
                           <ShotImage shot={s} />
                         </div>
                       );
@@ -527,9 +533,9 @@ const Hero = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex -space-x-1.5">
+                <div className="flex -space-x-2">
                   {AVATARS.map((src) => (
-                    <div key={src} className="w-4 h-4 rounded-full border border-white bg-slate-200 overflow-hidden shrink-0">
+                    <div key={src} className="w-7 h-7 rounded-full border-2 border-white bg-slate-200 overflow-hidden shrink-0 shadow-sm">
                       <img src={src} alt="" className="w-full h-full object-cover" />
                     </div>
                   ))}
