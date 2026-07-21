@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Target, PenLine } from 'lucide-react';
+import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -12,74 +12,95 @@ const MOCK_OPTIONS = [
   { examType: 'General', taskType: 'Task 2', label: 'Task 2', sublabel: 'Essay' },
 ];
 
-const SLIDE_INTERVAL_MS = 4000;
+const AVATARS = [
+  '/images/avatars/avatar-1.jpg',
+  '/images/avatars/avatar-2.jpg',
+  '/images/avatars/avatar-3.jpg',
+  '/images/avatars/avatar-4.jpg',
+];
+
+const SLIDE_INTERVAL_MS = 5000;
 
 const HERO_SLIDES = [
   {
-    id: 'speed',
+    id: 'free',
+    type: 'text',
     cue: 'both',
     badge: '1 free evaluation · No card required',
     mobileBadge: 'Free · No card',
-    lines: ['Band scores, fixes & a plan in', '60 Seconds.'],
-    accentWord: '60 Seconds.',
+    lines: ['A full tutor report, performance view,', 'roadmap, and personalized next steps.'],
+    accentWord: 'personalized next steps.',
     support:
-      'Stop guessing. Sign up free, upload an essay (or take a mock), and get criterion scores, sentence-level corrections, and a clear improvement plan: 1 full evaluation included.',
-    chip: { Icon: Star, text: '1 free full report, no credit card', iconClass: 'text-[#F59E0B]', fill: '#F59E0B' },
-    accent: '#3B82F6',
+      'Stop guessing your band. Sign up free—no credit card—and see exactly what to fix, how you are trending, and what to practice next.',
+    chip: { Icon: Gift, text: '1 free full evaluation · No credit card', iconClass: 'text-[#F59E0B]', fill: null },
+    accent: '#0EA5E9',
     mobileSub: (
       <>
-        Band scores in <span className="text-[#3B82F6]">60 seconds.</span>
+        Full report, roadmap & plan — <span className="text-[#0EA5E9]">free, no card</span>
       </>
     ),
   },
   {
-    id: 'fixes',
+    id: 'report',
+    type: 'shot',
     cue: 'grade',
-    badge: 'Sentence-level tutor report',
-    mobileBadge: 'Sentence-level fixes',
-    lines: ['Stop chasing a number.', 'See the exact sentences', 'costing you band points.'],
-    accentWord: 'band points.',
-    support:
-      'Criterion scores plus rewrite cards for Task 1 & 2, so you know what to change, not just what you scored.',
-    chip: { Icon: PenLine, text: 'Criterion scores + sentence fixes, not just a band', iconClass: 'text-[#F59E0B]', fill: null },
-    accent: '#F59E0B',
-    mobileSub: (
-      <>
-        See the sentences <span className="text-[#3B82F6]">costing you band points.</span>
-      </>
-    ),
-  },
-  {
-    id: 'mock',
-    cue: 'mock',
-    badge: 'Exam-day simulation',
-    mobileBadge: 'Timed mock exam',
-    lines: ['Practice like it’s test day.', 'Timed mock. Real conditions.', 'Instant tutor report.'],
-    accentWord: 'Instant tutor report.',
-    support:
-      'Sit a computer-based IELTS mock with a real timer, then get the same criterion scores and fixes as a live evaluation.',
-    chip: { Icon: Clock, text: 'Timed mock under real exam conditions', iconClass: 'text-[#0D9488]', fill: null },
+    badge: 'Full tutor report',
+    mobileBadge: 'Tutor report',
+    caption: 'Criterion scores plus sentence-level fixes—not just a band number.',
+    image: '/images/hero/report.png',
+    imageAlt: 'IELTS tutor report with band scores and fix cards',
     accent: '#0D9488',
     mobileSub: (
       <>
-        Timed mock. Real conditions. <span className="text-[#3B82F6]">Instant report.</span>
+        Criterion scores & <span className="text-[#0EA5E9]">sentence-level fixes</span>
       </>
     ),
   },
   {
-    id: 'plan',
+    id: 'performance',
+    type: 'shot',
     cue: 'both',
-    badge: 'Personalized next steps',
-    mobileBadge: 'Your band plan',
-    lines: ['Know your next move.', 'A clear plan to climb', 'toward Band 7+.'],
-    accentWord: 'Band 7+.',
-    support:
-      'Weakest criteria ranked, prioritized fixes, and what to practice next: a clear path toward your target band.',
-    chip: { Icon: Target, text: 'Personalized next steps toward your target band', iconClass: 'text-[#6366F1]', fill: null },
-    accent: '#6366F1',
+    badge: 'Overall performance',
+    mobileBadge: 'Performance',
+    caption: 'See how each criterion trends so you know what is lifting—or holding—your band.',
+    image: '/images/hero/roadmap.png',
+    imageAlt: 'Overall performance chart across writing criteria',
+    accent: '#0284C7',
     mobileSub: (
       <>
-        A clear plan to climb toward <span className="text-[#3B82F6]">Band 7+.</span>
+        Track criterion trends toward <span className="text-[#0EA5E9]">your target band</span>
+      </>
+    ),
+  },
+  {
+    id: 'roadmap',
+    type: 'shot',
+    cue: 'both',
+    badge: 'Your roadmap',
+    mobileBadge: 'Roadmap',
+    caption: 'A clear pathway to the next half-band—what to raise and by how much.',
+    image: '/images/hero/personalized.png',
+    imageAlt: 'Pathway roadmap toward the next IELTS band',
+    accent: '#0D9488',
+    mobileSub: (
+      <>
+        A clear path to your <span className="text-[#0EA5E9]">next half-band</span>
+      </>
+    ),
+  },
+  {
+    id: 'personalized',
+    type: 'shot',
+    cue: 'grade',
+    badge: 'Personalized learning',
+    mobileBadge: 'Your plan',
+    caption: 'Strengths, weaknesses, and prioritized practice tailored to your essays.',
+    image: '/images/hero/performance.png',
+    imageAlt: 'Personalized strengths, weaknesses, and study focus',
+    accent: '#F59E0B',
+    mobileSub: (
+      <>
+        Prioritized practice for <span className="text-[#0EA5E9]">your weakest criteria</span>
       </>
     ),
   },
@@ -98,6 +119,7 @@ const Hero = () => {
   const slide = HERO_SLIDES[slideIndex];
   const cueGrade = slide.cue === 'grade';
   const cueMock = slide.cue === 'mock';
+  const isTextSlide = slide.type === 'text';
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -147,18 +169,45 @@ const Hero = () => {
   };
 
   const isMockMobileFill = cardView === 'mock';
-  const ChipIcon = slide.chip.Icon;
+  const ChipIcon = isTextSlide ? slide.chip.Icon : null;
 
   const renderHeadlineLines = (lines, accentWord, className) => (
     <div className={className} aria-live="polite">
       {lines.map((line) => (
         <span key={line} className="block">
           {line === accentWord ? (
-            <span className="font-semibold text-[#3B82F6]">{line}</span>
+            <span className="font-semibold text-[#0EA5E9]">{line}</span>
           ) : (
             line
           )}
         </span>
+      ))}
+    </div>
+  );
+
+  const SlideDots = ({ className = '', size = 'sm' }) => (
+    <div className={`flex items-center gap-1.5 ${className}`} role="tablist" aria-label="Product highlights">
+      {HERO_SLIDES.map((s, i) => (
+        <button
+          key={s.id}
+          type="button"
+          role="tab"
+          aria-selected={i === slideIndex}
+          aria-label={`${s.badge}`}
+          onClick={() => goToSlide(i)}
+          className={`rounded-full transition-all duration-300 ${
+            size === 'sm' ? 'h-1.5' : 'h-2'
+          } ${
+            i === slideIndex
+              ? size === 'sm'
+                ? 'w-5 bg-[#0EA5E9]'
+                : 'w-6'
+              : size === 'sm'
+                ? 'w-1.5 bg-[#D1D5DB] hover:bg-[#9CA3AF]'
+                : 'w-2 bg-[#D1D5DB] hover:bg-[#9CA3AF]'
+          }`}
+          style={i === slideIndex && size !== 'sm' ? { backgroundColor: slide.accent } : undefined}
+        />
       ))}
     </div>
   );
@@ -168,7 +217,8 @@ const Hero = () => {
       id="about"
       className="hero-mobile-wash relative box-border overflow-hidden flex flex-col pt-6 pb-3 lg:py-12 lg:items-center lg:justify-center min-h-[calc(100dvh-64px)] lg:min-h-[700px]"
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[80px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-8">
+      <div className="hero-atmosphere pointer-events-none absolute inset-0" aria-hidden="true" />
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[80px] w-full flex-1 flex flex-col lg:flex-none lg:flex-row lg:items-center gap-0 lg:gap-8 relative z-[1]">
 
         {/* Mobile: compact rotating headline above the card */}
         {cardView !== 'mock' && (
@@ -181,35 +231,25 @@ const Hero = () => {
           >
             <div
               key={`m-badge-${slide.id}`}
-              className="inline-flex items-center px-2.5 py-0.5 bg-[#FFFBEB]/80 border border-[#FDE68A]/70 rounded-full text-[11px] font-medium text-[#92400E]/90 mb-3 tracking-wide hero-slide-enter"
+              className={`inline-flex items-center px-2.5 py-0.5 border rounded-full text-[11px] font-medium mb-3 tracking-wide hero-slide-enter ${
+                isTextSlide
+                  ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hero-free-badge'
+                  : 'bg-white/90 border-[#BFDBFE] text-[#0369A1]'
+              }`}
             >
               {slide.mobileBadge}
             </div>
-            <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1a1f36] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+            <h1 className="text-[22px] sm:text-[28px] font-bold text-[#0f172a] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
               Your IELTS Writing Tutor.
             </h1>
             <p
               key={`m-sub-${slide.id}`}
-              className="mt-2 mb-0 text-[14px] sm:text-[16px] font-medium text-[#6B7280] leading-snug hero-slide-enter"
+              className="mt-2 mb-0 text-[14px] sm:text-[16px] font-medium text-[#64748B] leading-snug hero-slide-enter"
               aria-live="polite"
             >
               {slide.mobileSub}
             </p>
-            <div className="flex items-center justify-center gap-1.5 mt-3" role="tablist" aria-label="Marketing messages">
-              {HERO_SLIDES.map((s, i) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={i === slideIndex}
-                  aria-label={`Message ${i + 1}`}
-                  onClick={() => goToSlide(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === slideIndex ? 'w-5 bg-[#3B82F6]' : 'w-1.5 bg-[#D1D5DB] hover:bg-[#9CA3AF]'
-                  }`}
-                />
-              ))}
-            </div>
+            <SlideDots className="justify-center mt-3" size="sm" />
           </div>
         )}
 
@@ -230,7 +270,7 @@ const Hero = () => {
             {cardView === 'default' ? (
               <div className="flex flex-col animate-fadeIn">
                 <h3 className="text-[16px] lg:text-[18px] font-bold text-[#1a1f36] mb-3 tracking-[-0.01em] shrink-0">
-                  Start your <span className="text-[#3B82F6]">free</span> tutor report
+                  Start your <span className="text-[#0EA5E9]">free</span> tutor report
                 </h3>
 
                 <div className="flex flex-col gap-2.5">
@@ -304,7 +344,7 @@ const Hero = () => {
                 </div>
 
                 <p className="hidden lg:block text-center text-[12px] text-[#9CA3AF] mt-3.5 mb-0 shrink-0">
-                  1 free evaluation · No credit card · Results in about 60 seconds
+                  1 free evaluation · No credit card
                 </p>
               </div>
             ) : cardView === 'mock' ? (
@@ -367,27 +407,35 @@ const Hero = () => {
                 ))}
               </div>
               <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
-              <span className="text-[12px] text-[#9CA3AF]">· 2,400+ reviews</span>
+              <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
             </div>
-            <div
-              key={`m-chip-${slide.id}`}
-              className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-enter"
-            >
-              <ChipIcon
-                className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
-                strokeWidth={2}
-                {...(slide.chip.fill ? { fill: slide.chip.fill } : {})}
-              />
-              <span>{slide.chip.text}</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-              <Zap className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-              <span>Criterion scores + fixes, not just a band</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-              <ShieldCheck className="w-[17px] h-[17px] text-[#3B82F6] shrink-0" strokeWidth={2} />
-              <span>Personalized steps to your target band</span>
-            </div>
+            {isTextSlide ? (
+              <>
+                <div
+                  key={`m-chip-${slide.id}`}
+                  className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-enter"
+                >
+                  <ChipIcon
+                    className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
+                    strokeWidth={2}
+                  />
+                  <span>{slide.chip.text}</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+                  <Zap className="w-[17px] h-[17px] text-[#0EA5E9] shrink-0" strokeWidth={2} />
+                  <span>Report, performance & roadmap in one place</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
+                  <ShieldCheck className="w-[17px] h-[17px] text-[#0D9488] shrink-0" strokeWidth={2} />
+                  <span>Personalized steps to your target band</span>
+                </div>
+              </>
+            ) : (
+              <div key={`m-cap-${slide.id}`} className="hero-slide-enter">
+                <p className="text-[13px] font-semibold text-[#0f172a] m-0 mb-1.5">{slide.badge}</p>
+                <p className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug m-0">{slide.caption}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -401,64 +449,76 @@ const Hero = () => {
         >
           <div className="flex items-stretch">
             <div className="min-w-0 flex-1 flex flex-col">
-              <div className="min-h-[320px] flex flex-col">
+              <div className={`flex flex-col ${isTextSlide ? 'min-h-[320px]' : 'min-h-[360px]'}`}>
                 <div
                   key={`badge-${slide.id}`}
-                  className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mb-4 hero-slide-enter"
+                  className={`inline-flex items-center self-start px-4 py-1.5 border rounded-full text-[13px] font-medium mb-4 hero-slide-enter ${
+                    isTextSlide
+                      ? 'bg-[#FEF9C3] border-[#FDE68A] text-[#78350F] hero-free-badge'
+                      : 'bg-white/90 border-[#BAE6FD] text-[#0369A1] shadow-sm'
+                  }`}
                 >
                   {slide.badge}
                 </div>
 
-                <h1 className="text-[40px] xl:text-[44px] font-bold text-[#1a1f36] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+                <h1 className="text-[40px] xl:text-[44px] font-bold text-[#0f172a] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
                   Your IELTS Writing Tutor.
                 </h1>
 
-                <div key={`lines-${slide.id}`} className="hero-slide-enter mt-3 mb-5">
-                  {renderHeadlineLines(
-                    slide.lines,
-                    slide.accentWord,
-                    "text-[24px] xl:text-[26px] font-medium text-[#4B5563] leading-[1.3] tracking-[-0.015em] font-['Nunito',_sans-serif] max-w-[520px]"
-                  )}
-                </div>
+                {isTextSlide ? (
+                  <>
+                    <div key={`lines-${slide.id}`} className="hero-slide-enter mt-3 mb-5">
+                      {renderHeadlineLines(
+                        slide.lines,
+                        slide.accentWord,
+                        "text-[24px] xl:text-[26px] font-medium text-[#475569] leading-[1.3] tracking-[-0.015em] font-['Nunito',_sans-serif] max-w-[520px]"
+                      )}
+                    </div>
 
-                <p
-                  key={`support-${slide.id}`}
-                  className="text-[16px] text-[#6B7280] leading-[1.55] mb-6 max-w-[480px] hero-slide-enter m-0"
-                >
-                  {slide.support}
-                </p>
+                    <p
+                      key={`support-${slide.id}`}
+                      className="text-[16px] text-[#64748B] leading-[1.55] mb-6 max-w-[480px] hero-slide-enter m-0"
+                    >
+                      {slide.support}
+                    </p>
 
-                <div
-                  key={`chip-${slide.id}`}
-                  className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/80 border border-[#E8ECF1] shadow-[0_4px_16px_rgba(26,31,54,0.04)] mb-6 hero-slide-enter"
-                >
-                  <ChipIcon
-                    className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
-                    strokeWidth={2}
-                    {...(slide.chip.fill ? { fill: slide.chip.fill } : {})}
-                  />
-                  <span className="text-[15px] font-medium text-[#1a1f36]">{slide.chip.text}</span>
-                </div>
+                    <div
+                      key={`chip-${slide.id}`}
+                      className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)] mb-6 hero-slide-enter"
+                    >
+                      <ChipIcon
+                        className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
+                        strokeWidth={2}
+                      />
+                      <span className="text-[15px] font-medium text-[#1a1f36]">{slide.chip.text}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div key={`shot-${slide.id}`} className="hero-slide-enter mt-4 mb-5">
+                    <p className="text-[15px] text-[#64748B] leading-snug m-0 mb-4 max-w-[440px]">
+                      {slide.caption}
+                    </p>
+                    <div className="hero-shot-frame relative max-w-[520px] rounded-[16px] overflow-hidden bg-white border border-[#E2E8F0] shadow-[0_20px_50px_rgba(15,23,42,0.1)]">
+                      <div
+                        className="absolute inset-0 pointer-events-none opacity-40"
+                        style={{
+                          background: `linear-gradient(135deg, ${slide.accent}14 0%, transparent 55%)`,
+                        }}
+                      />
+                      <img
+                        src={slide.image}
+                        alt={slide.imageAlt}
+                        className="relative w-full h-auto max-h-[280px] object-cover object-top block"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-4 mb-8">
-                <div className="flex items-center gap-1.5" role="tablist" aria-label="Marketing messages">
-                  {HERO_SLIDES.map((s, i) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={i === slideIndex}
-                      aria-label={`Message ${i + 1}: ${s.badge}`}
-                      onClick={() => goToSlide(i)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        i === slideIndex ? 'w-6' : 'w-2 bg-[#D1D5DB] hover:bg-[#9CA3AF]'
-                      }`}
-                      style={i === slideIndex ? { backgroundColor: slide.accent } : undefined}
-                    />
-                  ))}
-                </div>
-                <span className="text-[13px] text-[#9CA3AF] flex items-center gap-1">
+                <SlideDots size="md" />
+                <span className="text-[13px] text-[#94A3B8] flex items-center gap-1">
                   Start free on the right
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
@@ -466,9 +526,9 @@ const Hero = () => {
 
               <div className="flex items-center gap-4">
                 <div className="flex -space-x-3">
-                  {['photo-1534528741775-53994a69daeb', 'photo-1506794778202-cad84cf45f1d', 'photo-1494790108377-be9c29b29330', 'photo-1500648767791-00dcc994a43e'].map((id, i) => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
-                      <img src={`https://images.unsplash.com/${id}?w=100&h=100&fit=crop`} alt="User" className="w-full h-full object-cover" />
+                  {AVATARS.map((src, i) => (
+                    <div key={src} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
+                      <img src={src} alt="" className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>
@@ -480,7 +540,7 @@ const Hero = () => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[15px] font-bold text-[#1a1f36]">4.9/5</span>
-                    <span className="text-[14px] text-[#9CA3AF]">from 2,400+ reviews</span>
+                    <span className="text-[14px] text-[#64748B]">Rated by IELTS learners</span>
                   </div>
                 </div>
               </div>
