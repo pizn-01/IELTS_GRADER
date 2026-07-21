@@ -105,7 +105,6 @@ const Hero = () => {
   const slide = HERO_SLIDES[slideIndex];
   const cueGrade = slide.cue === 'grade';
   const cueMock = slide.cue === 'mock';
-  const isTextSlide = slide.type === 'text';
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -155,7 +154,16 @@ const Hero = () => {
   };
 
   const isMockMobileFill = cardView === 'mock';
-  const ChipIcon = isTextSlide ? slide.chip.Icon : null;
+  const fadeClass = reduceMotion
+    ? ''
+    : 'transition-opacity duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]';
+
+  const slideLayerClass = (i) =>
+    `absolute inset-0 ${fadeClass} ${
+      i === slideIndex
+        ? 'opacity-100 z-[1] pointer-events-auto'
+        : 'opacity-0 z-0 pointer-events-none'
+    }`;
 
   const BenefitBullets = ({ compact = false }) => (
     <ul
@@ -182,6 +190,18 @@ const Hero = () => {
         </li>
       ))}
     </ul>
+  );
+
+  const ShotImage = ({ shot }) => (
+    <div className="hero-shot-stage flex items-center justify-start h-[280px] xl:h-[300px] w-full max-w-[540px]">
+      <img
+        src={shot.image}
+        alt={shot.imageAlt}
+        className="h-full w-auto max-w-full object-contain object-left rounded-[12px] shadow-[0_12px_36px_rgba(15,23,42,0.12)]"
+        loading="lazy"
+        draggable={false}
+      />
+    </div>
   );
 
   const SlideDots = ({ className = '', size = 'sm' }) => (
@@ -228,26 +248,31 @@ const Hero = () => {
             onFocus={onSpotlightEnter}
             onBlur={onSpotlightLeave}
           >
-            <div
-              key={`m-badge-${slide.id}`}
-              className={`inline-flex items-center px-2.5 py-0.5 border rounded-full text-[11px] font-medium mb-3 tracking-wide hero-slide-panel ${
-                isTextSlide
-                  ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hero-free-badge'
-                  : 'bg-white/90 border-[#BFDBFE] text-[#0369A1]'
-              }`}
-            >
-              {slide.mobileBadge}
-            </div>
             <h1 className="text-[22px] sm:text-[28px] font-bold text-[#0f172a] leading-[1.2] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
               Your IELTS Writing Tutor.
             </h1>
-            <p
-              key={`m-sub-${slide.id}`}
-              className="mt-2 mb-0 text-[14px] sm:text-[16px] font-medium text-[#64748B] leading-snug hero-slide-panel"
-              aria-live="polite"
-            >
-              {slide.mobileSub}
-            </p>
+            <div className="relative h-[72px] mt-2">
+              {HERO_SLIDES.map((s, i) => (
+                <div
+                  key={s.id}
+                  className={`flex flex-col items-center justify-start ${slideLayerClass(i)}`}
+                  aria-hidden={i !== slideIndex}
+                >
+                  <div
+                    className={`inline-flex items-center px-2.5 py-0.5 border rounded-full text-[11px] font-medium mb-1.5 tracking-wide ${
+                      s.type === 'text'
+                        ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hero-free-badge'
+                        : 'bg-white/90 border-[#BFDBFE] text-[#0369A1]'
+                    }`}
+                  >
+                    {s.mobileBadge}
+                  </div>
+                  <p className="mt-0 mb-0 text-[14px] sm:text-[16px] font-medium text-[#64748B] leading-snug px-2">
+                    {s.mobileSub}
+                  </p>
+                </div>
+              ))}
+            </div>
             <SlideDots className="justify-center mt-3" size="sm" />
           </div>
         )}
@@ -408,28 +433,29 @@ const Hero = () => {
               <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
               <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
             </div>
-            {isTextSlide ? (
-              <>
-                <div
-                  key={`m-chip-${slide.id}`}
-                  className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-panel mb-1"
-                >
-                  <ChipIcon
-                    className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
-                    strokeWidth={2}
-                  />
-                  <span>{slide.chip.text}</span>
-                </div>
-                <div key="m-bullets" className="hero-slide-panel">
-                  <BenefitBullets compact />
-                </div>
-              </>
-            ) : (
-              <div key={`m-cap-${slide.id}`} className="hero-slide-panel">
-                <p className="text-[13px] font-semibold text-[#0f172a] m-0 mb-1.5">{slide.badge}</p>
-                <p className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug m-0">{slide.caption}</p>
-              </div>
-            )}
+            <div className="relative min-h-[148px]">
+              {HERO_SLIDES.map((s, i) => {
+                const Chip = s.type === 'text' ? s.chip.Icon : null;
+                return (
+                  <div key={s.id} className={slideLayerClass(i)} aria-hidden={i !== slideIndex}>
+                    {s.type === 'text' ? (
+                      <>
+                        <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] mb-2">
+                          <Chip className={`w-[17px] h-[17px] shrink-0 ${s.chip.iconClass}`} strokeWidth={2} />
+                          <span>{s.chip.text}</span>
+                        </div>
+                        <BenefitBullets compact />
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[13px] font-semibold text-[#0f172a] m-0 mb-1.5">{s.badge}</p>
+                        <p className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug m-0">{s.caption}</p>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -443,54 +469,47 @@ const Hero = () => {
         >
           <div className="flex items-stretch">
             <div className="min-w-0 flex-1 flex flex-col">
-              <div className={`flex flex-col ${isTextSlide ? 'min-h-[320px]' : 'min-h-[360px]'}`}>
-                <div
-                  key={`badge-${slide.id}`}
-                  className={`inline-flex items-center self-start px-4 py-1.5 border rounded-full text-[13px] font-medium mb-4 hero-slide-panel ${
-                    isTextSlide
-                      ? 'bg-[#FEF9C3] border-[#FDE68A] text-[#78350F] hero-free-badge'
-                      : 'bg-white/90 border-[#BAE6FD] text-[#0369A1] shadow-sm'
-                  }`}
-                >
-                  {slide.badge}
-                </div>
+              <h1 className="text-[40px] xl:text-[44px] font-bold text-[#0f172a] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+                Your IELTS Writing Tutor.
+              </h1>
 
-                <h1 className="text-[40px] xl:text-[44px] font-bold text-[#0f172a] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
-                  Your IELTS Writing Tutor.
-                </h1>
+              {/* Fixed-height stage: stacked slides crossfade (rotate) instead of remounting */}
+              <div className="relative mt-4 mb-6 h-[360px] xl:h-[380px]" aria-live="polite">
+                {HERO_SLIDES.map((s, i) => {
+                  const Chip = s.type === 'text' ? s.chip.Icon : null;
+                  return (
+                    <div key={s.id} className={slideLayerClass(i)} aria-hidden={i !== slideIndex}>
+                      <div
+                        className={`inline-flex items-center self-start px-4 py-1.5 border rounded-full text-[13px] font-medium mb-4 ${
+                          s.type === 'text'
+                            ? 'bg-[#FEF9C3] border-[#FDE68A] text-[#78350F] hero-free-badge'
+                            : 'bg-white/90 border-[#BAE6FD] text-[#0369A1] shadow-sm'
+                        }`}
+                      >
+                        {s.badge}
+                      </div>
 
-                {isTextSlide ? (
-                  <>
-                    <div key={`bullets-${slide.id}`} className="hero-slide-panel mt-5 mb-6">
-                      <BenefitBullets />
+                      {s.type === 'text' ? (
+                        <>
+                          <div className="mb-5">
+                            <BenefitBullets />
+                          </div>
+                          <div className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)]">
+                            <Chip className={`w-5 h-5 shrink-0 ${s.chip.iconClass}`} strokeWidth={2} />
+                            <span className="text-[15px] font-medium text-[#1a1f36]">{s.chip.text}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-[15px] text-[#64748B] leading-snug m-0 mb-4 max-w-[480px]">
+                            {s.caption}
+                          </p>
+                          <ShotImage shot={s} />
+                        </>
+                      )}
                     </div>
-
-                    <div
-                      key={`chip-${slide.id}`}
-                      className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)] mb-6 hero-slide-panel"
-                    >
-                      <ChipIcon
-                        className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
-                        strokeWidth={2}
-                      />
-                      <span className="text-[15px] font-medium text-[#1a1f36]">{slide.chip.text}</span>
-                    </div>
-                  </>
-                ) : (
-                  <div key={`shot-${slide.id}`} className="hero-slide-panel mt-4 mb-5">
-                    <p className="text-[15px] text-[#64748B] leading-snug m-0 mb-4 max-w-[480px]">
-                      {slide.caption}
-                    </p>
-                    <div className="hero-shot-frame relative w-full max-w-[540px] overflow-hidden rounded-[14px] shadow-[0_16px_40px_rgba(15,23,42,0.1)]">
-                      <img
-                        src={slide.image}
-                        alt={slide.imageAlt}
-                        className="relative w-full h-auto max-h-[340px] object-contain object-center block bg-transparent"
-                        loading="lazy"
-                      />
-                    </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
 
               <div className="flex items-center gap-4 mb-8">
@@ -503,7 +522,7 @@ const Hero = () => {
 
               <div className="flex items-center gap-4">
                 <div className="flex -space-x-3">
-                  {AVATARS.map((src, i) => (
+                  {AVATARS.map((src) => (
                     <div key={src} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
                       <img src={src} alt="" className="w-full h-full object-cover" />
                     </div>
