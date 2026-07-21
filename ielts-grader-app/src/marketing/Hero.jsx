@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
+import { FileCheck2, Clock, Info, Star, ChevronLeft, ChevronRight, Gift, BarChart3, Map, Target } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,13 @@ const AVATARS = [
   '/images/avatars/avatar-4.jpg',
 ];
 
+const BENEFIT_BULLETS = [
+  { Icon: FileCheck2, title: 'Full tutor report', detail: 'Criterion scores + sentence-level fixes' },
+  { Icon: BarChart3, title: 'Overall performance', detail: 'Trends across your exams toward your goal' },
+  { Icon: Map, title: 'Roadmap', detail: 'Clear pathway to your next half-band' },
+  { Icon: Target, title: 'Personalized next steps', detail: 'What to practice first—ranked for you' },
+];
+
 const SLIDE_INTERVAL_MS = 5000;
 
 const HERO_SLIDES = [
@@ -28,10 +35,6 @@ const HERO_SLIDES = [
     cue: 'both',
     badge: '1 free evaluation · No card required',
     mobileBadge: 'Free · No card',
-    lines: ['A full tutor report, performance view,', 'roadmap, and personalized next steps.'],
-    accentWord: 'personalized next steps.',
-    support:
-      'Stop guessing your band. Sign up free—no credit card—and see exactly what to fix, how you are trending, and what to practice next.',
     chip: { Icon: Gift, text: '1 free full evaluation · No credit card', iconClass: 'text-[#F59E0B]', fill: null },
     accent: '#0EA5E9',
     mobileSub: (
@@ -41,14 +44,30 @@ const HERO_SLIDES = [
     ),
   },
   {
+    id: 'performance',
+    type: 'shot',
+    cue: 'both',
+    badge: 'Overall performance',
+    mobileBadge: 'Performance',
+    caption: 'Latest band, goal progress, strengths, and your top priority fixes in one view.',
+    image: '/images/hero/performance.png',
+    imageAlt: 'Overall performance dashboard with band goal and skill growth',
+    accent: '#0284C7',
+    mobileSub: (
+      <>
+        Track progress toward <span className="text-[#0EA5E9]">your target band</span>
+      </>
+    ),
+  },
+  {
     id: 'report',
     type: 'shot',
     cue: 'grade',
     badge: 'Full tutor report',
     mobileBadge: 'Tutor report',
-    caption: 'Criterion scores plus sentence-level fixes—not just a band number.',
+    caption: 'Band breakdown plus Fix Cards that rewrite weak sentences for you.',
     image: '/images/hero/report.png',
-    imageAlt: 'IELTS tutor report with band scores and fix cards',
+    imageAlt: 'Tutor report with overall band score and grammar fix card',
     accent: '#0D9488',
     mobileSub: (
       <>
@@ -57,34 +76,18 @@ const HERO_SLIDES = [
     ),
   },
   {
-    id: 'performance',
+    id: 'edition',
     type: 'shot',
     cue: 'both',
-    badge: 'Overall performance',
-    mobileBadge: 'Performance',
-    caption: 'See how each criterion trends so you know what is lifting—or holding—your band.',
-    image: '/images/hero/roadmap.png',
-    imageAlt: 'Overall performance chart across writing criteria',
-    accent: '#0284C7',
+    badge: 'Top mistakes across exams',
+    mobileBadge: 'Top mistakes',
+    caption: 'See what keeps repeating across exams—and which criterion they hit.',
+    image: '/images/hero/edition.png',
+    imageAlt: 'Edition summary of top mistakes and average band scores',
+    accent: '#F59E0B',
     mobileSub: (
       <>
-        Track criterion trends toward <span className="text-[#0EA5E9]">your target band</span>
-      </>
-    ),
-  },
-  {
-    id: 'roadmap',
-    type: 'shot',
-    cue: 'both',
-    badge: 'Your roadmap',
-    mobileBadge: 'Roadmap',
-    caption: 'A clear pathway to the next half-band—what to raise and by how much.',
-    image: '/images/hero/personalized.png',
-    imageAlt: 'Pathway roadmap toward the next IELTS band',
-    accent: '#0D9488',
-    mobileSub: (
-      <>
-        A clear path to your <span className="text-[#0EA5E9]">next half-band</span>
+        Your top mistakes <span className="text-[#0EA5E9]">across exams</span>
       </>
     ),
   },
@@ -94,13 +97,29 @@ const HERO_SLIDES = [
     cue: 'grade',
     badge: 'Personalized learning',
     mobileBadge: 'Your plan',
-    caption: 'Strengths, weaknesses, and prioritized practice tailored to your essays.',
-    image: '/images/hero/performance.png',
-    imageAlt: 'Personalized strengths, weaknesses, and study focus',
-    accent: '#F59E0B',
+    caption: 'Tutor verdict, plateau alerts, and the lowest-hanging fruit to raise next.',
+    image: '/images/hero/personalized.png',
+    imageAlt: 'Personalized tutor verdict and pathway to the next band',
+    accent: '#0EA5E9',
     mobileSub: (
       <>
-        Prioritized practice for <span className="text-[#0EA5E9]">your weakest criteria</span>
+        Next steps tailored to <span className="text-[#0EA5E9]">your essays</span>
+      </>
+    ),
+  },
+  {
+    id: 'roadmap',
+    type: 'shot',
+    cue: 'both',
+    badge: 'Skill roadmap',
+    mobileBadge: 'Roadmap',
+    caption: 'Skill growth over time plus mistake frequency—so you know what to lift next.',
+    image: '/images/hero/roadmap.png',
+    imageAlt: 'Skill growth chart and mistake frequency roadmap',
+    accent: '#0D9488',
+    mobileSub: (
+      <>
+        A clear path to your <span className="text-[#0EA5E9]">next half-band</span>
       </>
     ),
   },
@@ -171,18 +190,31 @@ const Hero = () => {
   const isMockMobileFill = cardView === 'mock';
   const ChipIcon = isTextSlide ? slide.chip.Icon : null;
 
-  const renderHeadlineLines = (lines, accentWord, className) => (
-    <div className={className} aria-live="polite">
-      {lines.map((line) => (
-        <span key={line} className="block">
-          {line === accentWord ? (
-            <span className="font-semibold text-[#0EA5E9]">{line}</span>
-          ) : (
-            line
-          )}
-        </span>
+  const BenefitBullets = ({ compact = false }) => (
+    <ul
+      className={`list-none m-0 p-0 flex flex-col ${compact ? 'gap-2.5' : 'gap-3.5'} max-w-[520px]`}
+      aria-label="What you get"
+    >
+      {BENEFIT_BULLETS.map(({ Icon, title, detail }) => (
+        <li key={title} className="flex items-start gap-3">
+          <span
+            className={`mt-0.5 flex shrink-0 items-center justify-center rounded-lg bg-[#E0F2FE] text-[#0284C7] ${
+              compact ? 'w-7 h-7' : 'w-9 h-9'
+            }`}
+          >
+            <Icon className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} strokeWidth={2.25} />
+          </span>
+          <span className="min-w-0">
+            <span className={`block font-semibold text-[#0f172a] leading-snug ${compact ? 'text-[13px]' : 'text-[16px]'}`}>
+              {title}
+            </span>
+            <span className={`block text-[#64748B] leading-snug ${compact ? 'text-[12px] mt-0.5' : 'text-[14px] mt-0.5'}`}>
+              {detail}
+            </span>
+          </span>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 
   const SlideDots = ({ className = '', size = 'sm' }) => (
@@ -413,7 +445,7 @@ const Hero = () => {
               <>
                 <div
                   key={`m-chip-${slide.id}`}
-                  className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-enter"
+                  className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] hero-slide-enter mb-1"
                 >
                   <ChipIcon
                     className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
@@ -421,13 +453,8 @@ const Hero = () => {
                   />
                   <span>{slide.chip.text}</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-                  <Zap className="w-[17px] h-[17px] text-[#0EA5E9] shrink-0" strokeWidth={2} />
-                  <span>Report, performance & roadmap in one place</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] whitespace-nowrap">
-                  <ShieldCheck className="w-[17px] h-[17px] text-[#0D9488] shrink-0" strokeWidth={2} />
-                  <span>Personalized steps to your target band</span>
+                <div key="m-bullets" className="hero-slide-enter">
+                  <BenefitBullets compact />
                 </div>
               </>
             ) : (
@@ -467,20 +494,9 @@ const Hero = () => {
 
                 {isTextSlide ? (
                   <>
-                    <div key={`lines-${slide.id}`} className="hero-slide-enter mt-3 mb-5">
-                      {renderHeadlineLines(
-                        slide.lines,
-                        slide.accentWord,
-                        "text-[24px] xl:text-[26px] font-medium text-[#475569] leading-[1.3] tracking-[-0.015em] font-['Nunito',_sans-serif] max-w-[520px]"
-                      )}
+                    <div key={`bullets-${slide.id}`} className="hero-slide-enter mt-5 mb-6">
+                      <BenefitBullets />
                     </div>
-
-                    <p
-                      key={`support-${slide.id}`}
-                      className="text-[16px] text-[#64748B] leading-[1.55] mb-6 max-w-[480px] hero-slide-enter m-0"
-                    >
-                      {slide.support}
-                    </p>
 
                     <div
                       key={`chip-${slide.id}`}
@@ -495,20 +511,14 @@ const Hero = () => {
                   </>
                 ) : (
                   <div key={`shot-${slide.id}`} className="hero-slide-enter mt-4 mb-5">
-                    <p className="text-[15px] text-[#64748B] leading-snug m-0 mb-4 max-w-[440px]">
+                    <p className="text-[15px] text-[#64748B] leading-snug m-0 mb-4 max-w-[480px]">
                       {slide.caption}
                     </p>
-                    <div className="hero-shot-frame relative max-w-[520px] rounded-[16px] overflow-hidden bg-white border border-[#E2E8F0] shadow-[0_20px_50px_rgba(15,23,42,0.1)]">
-                      <div
-                        className="absolute inset-0 pointer-events-none opacity-40"
-                        style={{
-                          background: `linear-gradient(135deg, ${slide.accent}14 0%, transparent 55%)`,
-                        }}
-                      />
+                    <div className="hero-shot-frame relative w-full max-w-[540px] rounded-[16px] bg-[#F8FAFC] border border-[#E2E8F0] shadow-[0_20px_50px_rgba(15,23,42,0.1)] p-3 sm:p-4 flex items-center justify-center min-h-[200px] max-h-[360px]">
                       <img
                         src={slide.image}
                         alt={slide.imageAlt}
-                        className="relative w-full h-auto max-h-[280px] object-cover object-top block"
+                        className="relative w-full h-auto max-h-[328px] object-contain object-center block"
                         loading="lazy"
                       />
                     </div>
