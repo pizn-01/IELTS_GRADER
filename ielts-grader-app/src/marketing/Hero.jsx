@@ -48,7 +48,7 @@ const HERO_SLIDES = [
     cue: 'grade',
     badge: 'Detailed report',
     mobileBadge: 'Detailed report',
-    caption: 'Overall band, criterion scores, and a clear scoring breakdown—not just a number.',
+    caption: 'Band scores and scoring breakdown—not just a number.',
     image: '/images/hero/report.png',
     imageAlt: 'Detailed IELTS report with criteria breakdown and scoring details',
     accent: '#0D9488',
@@ -64,7 +64,7 @@ const HERO_SLIDES = [
     cue: 'both',
     badge: 'Overall performance',
     mobileBadge: 'Performance',
-    caption: 'Latest band, goal progress, strengths, and your top priority fixes in one view.',
+    caption: 'Goal progress, strengths, and priority fixes in one view.',
     image: '/images/hero/performance.png',
     imageAlt: 'Overall performance dashboard with band goal and skill growth',
     accent: '#0284C7',
@@ -80,7 +80,7 @@ const HERO_SLIDES = [
     cue: 'grade',
     badge: 'Personalized learning',
     mobileBadge: 'Your plan',
-    caption: 'Your priority focus areas across exams—so you know exactly what to practice next.',
+    caption: 'Priority focus areas—exactly what to practice next.',
     image: '/images/hero/personalized.png',
     imageAlt: 'Personalized learning priorities and average bands for this edition',
     accent: '#0EA5E9',
@@ -105,6 +105,8 @@ const Hero = () => {
   const slide = HERO_SLIDES[slideIndex];
   const cueGrade = slide.cue === 'grade';
   const cueMock = slide.cue === 'mock';
+  const isTextSlide = slide.type === 'text';
+  const SHOT_SLIDES = HERO_SLIDES.filter((s) => s.type === 'shot');
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -193,7 +195,7 @@ const Hero = () => {
   );
 
   const ShotImage = ({ shot }) => (
-    <div className="hero-shot-stage flex items-center justify-start h-[280px] xl:h-[300px] w-full max-w-[540px]">
+    <div className="hero-shot-stage flex items-center justify-start h-[260px] xl:h-[280px] w-full max-w-[540px]">
       <img
         src={shot.image}
         alt={shot.imageAlt}
@@ -203,6 +205,8 @@ const Hero = () => {
       />
     </div>
   );
+
+  const ChipIcon = isTextSlide ? slide.chip.Icon : null;
 
   const SlideDots = ({ className = '', size = 'sm' }) => (
     <div className={`flex items-center gap-1.5 ${className}`} role="tablist" aria-label="Product highlights">
@@ -434,27 +438,24 @@ const Hero = () => {
               <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
             </div>
             <div className="relative min-h-[148px]">
-              {HERO_SLIDES.map((s, i) => {
-                const Chip = s.type === 'text' ? s.chip.Icon : null;
-                return (
-                  <div key={s.id} className={slideLayerClass(i)} aria-hidden={i !== slideIndex}>
-                    {s.type === 'text' ? (
-                      <>
-                        <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] mb-2">
-                          <Chip className={`w-[17px] h-[17px] shrink-0 ${s.chip.iconClass}`} strokeWidth={2} />
-                          <span>{s.chip.text}</span>
-                        </div>
-                        <BenefitBullets compact />
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-[13px] font-semibold text-[#0f172a] m-0 mb-1.5">{s.badge}</p>
-                        <p className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug m-0">{s.caption}</p>
-                      </>
-                    )}
+              {isTextSlide ? (
+                <>
+                  <div className="flex items-center gap-2.5 text-[12px] sm:text-[13px] font-medium text-[#1a1f36] tracking-[-0.01em] mb-2">
+                    <ChipIcon
+                      className={`w-[17px] h-[17px] shrink-0 ${slide.chip.iconClass}`}
+                      strokeWidth={2}
+                    />
+                    <span>{slide.chip.text}</span>
                   </div>
-                );
-              })}
+                  <BenefitBullets compact />
+                </>
+              ) : (
+                <p className="text-[12px] sm:text-[13px] leading-snug m-0 whitespace-nowrap overflow-hidden text-ellipsis">
+                  <span className="font-semibold text-[#0f172a]">{slide.badge}</span>
+                  <span className="text-[#94A3B8]"> · </span>
+                  <span className="text-[#64748B]">{slide.caption}</span>
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -469,48 +470,53 @@ const Hero = () => {
         >
           <div className="flex items-stretch">
             <div className="min-w-0 flex-1 flex flex-col">
-              <h1 className="text-[40px] xl:text-[44px] font-bold text-[#0f172a] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
-                Your IELTS Writing Tutor.
-              </h1>
+              {/* Text slide: exact previous in-flow layout (not in the rotating stage) */}
+              {isTextSlide ? (
+                <div className="flex flex-col min-h-[320px]">
+                  <h1 className="text-[40px] xl:text-[44px] font-bold text-[#0f172a] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+                    Your IELTS Writing Tutor.
+                  </h1>
 
-              {/* Fixed-height stage: stacked slides crossfade (rotate) instead of remounting */}
-              <div className="relative mt-4 mb-6 h-[360px] xl:h-[380px]" aria-live="polite">
-                {HERO_SLIDES.map((s, i) => {
-                  const Chip = s.type === 'text' ? s.chip.Icon : null;
-                  return (
-                    <div key={s.id} className={slideLayerClass(i)} aria-hidden={i !== slideIndex}>
-                      <div
-                        className={`inline-flex items-center self-start px-4 py-1.5 border rounded-full text-[13px] font-medium mb-4 ${
-                          s.type === 'text'
-                            ? 'bg-[#FEF9C3] border-[#FDE68A] text-[#78350F] hero-free-badge'
-                            : 'bg-white/90 border-[#BAE6FD] text-[#0369A1] shadow-sm'
-                        }`}
-                      >
-                        {s.badge}
-                      </div>
+                  <div className="inline-flex items-center self-start px-4 py-1.5 bg-[#FEF9C3] border border-[#FDE68A] rounded-full text-[13px] font-medium text-[#78350F] mt-4 mb-4 hero-free-badge">
+                    {slide.badge}
+                  </div>
 
-                      {s.type === 'text' ? (
-                        <>
-                          <div className="mb-5">
-                            <BenefitBullets />
-                          </div>
-                          <div className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)]">
-                            <Chip className={`w-5 h-5 shrink-0 ${s.chip.iconClass}`} strokeWidth={2} />
-                            <span className="text-[15px] font-medium text-[#1a1f36]">{s.chip.text}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-[15px] text-[#64748B] leading-snug m-0 mb-4 max-w-[480px]">
-                            {s.caption}
+                  <div className="mb-6">
+                    <BenefitBullets />
+                  </div>
+
+                  <div className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)] mb-6">
+                    <ChipIcon
+                      className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
+                      strokeWidth={2}
+                    />
+                    <span className="text-[15px] font-medium text-[#1a1f36]">{slide.chip.text}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <h1 className="text-[40px] xl:text-[44px] font-bold text-[#0f172a] leading-[1.05] tracking-[-0.03em] m-0 font-['Nunito',_sans-serif]">
+                    Your IELTS Writing Tutor.
+                  </h1>
+
+                  {/* Shot slides only: crossfade with fixed image height */}
+                  <div className="relative mt-4 mb-10 h-[340px] xl:h-[360px]" aria-live="polite">
+                    {SHOT_SLIDES.map((s) => {
+                      const i = HERO_SLIDES.findIndex((x) => x.id === s.id);
+                      return (
+                        <div key={s.id} className={slideLayerClass(i)} aria-hidden={i !== slideIndex}>
+                          <p className="text-[15px] leading-snug m-0 mb-3 max-w-[540px] whitespace-nowrap overflow-hidden text-ellipsis">
+                            <span className="font-semibold text-[#0f172a]">{s.badge}</span>
+                            <span className="text-[#94A3B8]"> · </span>
+                            <span className="text-[#64748B]">{s.caption}</span>
                           </p>
                           <ShotImage shot={s} />
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-4 mb-8">
                 <SlideDots size="md" />
@@ -520,10 +526,10 @@ const Hero = () => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="flex -space-x-3">
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-1.5">
                   {AVATARS.map((src) => (
-                    <div key={src} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
+                    <div key={src} className="w-4 h-4 rounded-full border border-white bg-slate-200 overflow-hidden shrink-0">
                       <img src={src} alt="" className="w-full h-full object-cover" />
                     </div>
                   ))}
