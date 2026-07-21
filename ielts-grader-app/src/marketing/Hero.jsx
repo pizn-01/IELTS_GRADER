@@ -195,7 +195,7 @@ const Hero = () => {
   );
 
   const ShotImage = ({ shot }) => (
-    <div className="hero-shot-stage flex items-center justify-start h-[320px] xl:h-[340px] w-full max-w-[560px]">
+    <div className="hero-shot-stage flex items-center justify-start h-[340px] xl:h-[360px] w-full max-w-[560px]">
       <img
         src={shot.image}
         alt={shot.imageAlt}
@@ -450,10 +450,11 @@ const Hero = () => {
                   <BenefitBullets compact />
                 </>
               ) : (
-                <div className="inline-flex items-center gap-2 max-w-full px-3 py-2 rounded-[10px] bg-white/90 border border-[#E2E8F0] shadow-sm">
-                  <span className="text-[12px] font-semibold text-[#0f172a] whitespace-nowrap shrink-0">{slide.badge}</span>
-                  <span className="text-[#CBD5E1] shrink-0">·</span>
-                  <span className="text-[12px] text-[#64748B] leading-snug whitespace-nowrap overflow-hidden text-ellipsis">
+                <div className="flex items-center gap-2.5 max-w-full min-w-0">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] text-[12px] font-semibold text-[#0369A1] whitespace-nowrap shrink-0">
+                    {slide.badge}
+                  </span>
+                  <span className="text-[12px] sm:text-[13px] text-[#64748B] leading-snug whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
                     {slide.caption}
                   </span>
                 </div>
@@ -501,18 +502,17 @@ const Hero = () => {
                     Your IELTS Writing Tutor.
                   </h1>
 
-                  {/* Shot slides only: crossfade with larger fixed-height images */}
-                  <div className="relative mt-4 mb-6 h-[390px] xl:h-[410px]" aria-live="polite">
+                  {/* Shot slides: name pill + caption, equal space above/below image */}
+                  <div className="relative mt-4 mb-4 h-[396px] xl:h-[416px]" aria-live="polite">
                     {SHOT_SLIDES.map((s) => {
                       const i = HERO_SLIDES.findIndex((x) => x.id === s.id);
                       return (
                         <div key={s.id} className={slideLayerClass(i)} aria-hidden={i !== slideIndex}>
-                          <div className="inline-flex items-center gap-2 self-start max-w-[560px] px-3.5 py-2 mb-3.5 rounded-[12px] bg-white/90 border border-[#E2E8F0] shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
-                            <span className="text-[13px] font-semibold text-[#0f172a] whitespace-nowrap shrink-0">
+                          <div className="flex items-center gap-3 mb-4 max-w-[560px]">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] text-[13px] font-semibold text-[#0369A1] whitespace-nowrap shrink-0">
                               {s.badge}
                             </span>
-                            <span className="text-[#CBD5E1] shrink-0">·</span>
-                            <span className="text-[13px] text-[#64748B] leading-snug whitespace-nowrap overflow-hidden text-ellipsis">
+                            <span className="text-[14px] text-[#64748B] leading-snug whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
                               {s.caption}
                             </span>
                           </div>
