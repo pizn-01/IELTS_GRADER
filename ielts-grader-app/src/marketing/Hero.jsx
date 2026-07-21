@@ -32,8 +32,8 @@ const HERO_SLIDES = [
     id: 'free',
     type: 'text',
     cue: 'both',
-    badge: '1 free evaluation · No card required',
-    mobileBadge: 'Free · No card',
+    badge: 'Report · Performance · Personalized plan',
+    mobileBadge: 'Your writing plan',
     chip: { Icon: Gift, text: '1 free full evaluation · No credit card', iconClass: 'text-[#F59E0B]', fill: null },
     accent: '#0EA5E9',
     mobileSub: (
