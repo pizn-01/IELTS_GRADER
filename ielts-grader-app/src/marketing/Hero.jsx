@@ -371,8 +371,10 @@ const Hero = () => {
                   </button>
                 </div>
 
-                <p className="hidden lg:block text-center text-[12px] text-[#9CA3AF] mt-3.5 mb-0 shrink-0">
-                  1 free evaluation · No credit card
+                <p className="text-center text-[13px] lg:text-[14px] font-semibold text-[#0f172a] mt-4 mb-0 shrink-0 tracking-[-0.01em]">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FEF9C3] border border-[#FDE68A] text-[#78350F]">
+                    1 free evaluation · No credit card
+                  </span>
                 </p>
               </div>
             ) : cardView === 'mock' ? (
