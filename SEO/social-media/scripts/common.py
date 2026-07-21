@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import csv
 import os
+import re
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timedelta, timezone
@@ -208,6 +209,117 @@ def serper_search(
     resp.raise_for_status()
     data = resp.json()
     return data.get("organic") or []
+
+
+def serper_scrape(url: str, *, timeout: int = 90) -> str:
+    """
+    Fetch readable page text via Serper scrape API.
+    Critical for Reddit drafts: public .json is often 403 from cloud IPs;
+    scrape of old.reddit.com usually returns the OP prompt + essay.
+    """
+    api_key = os.getenv("SERPER_API_KEY", "").strip()
+    if not api_key or not (url or "").strip():
+        return ""
+    try:
+        resp = requests.post(
+            "https://scrape.serper.dev",
+            headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+            json={"url": url.strip(), "includeMarkdown": True},
+            timeout=timeout,
+        )
+        if resp.status_code != 200:
+            return ""
+        data = resp.json()
+        text = (data.get("markdown") or data.get("text") or "").strip()
+        # Drop Reddit block pages
+        lower = text.lower()
+        if "whoa there, pardner" in lower or "you've been blocked by network security" in lower:
+            return ""
+        return text
+    except Exception:
+        return ""
+
+
+def serper_snippet_for_url(
+    url: str, *, require_substr: Optional[str] = None
+) -> str:
+    """Best-effort organic snippet for an exact URL (when full scrape fails)."""
+    # Reddit: use multi-query enrichment (filters comment pollution)
+    if "reddit.com" in (url or "").lower():
+        rich = serper_snippets_for_reddit_post(url)
+        if rich:
+            return rich
+    api_key = os.getenv("SERPER_API_KEY", "").strip()
+    if not api_key or not (url or "").strip():
+        return ""
+    try:
+        organic = serper_search(url.strip(), num=5)
+    except Exception:
+        return ""
+    target = url.strip().rstrip("/").lower()
+    req = (require_substr or "").strip().lower()
+    for row in organic:
+        link = (row.get("link") or "").rstrip("/").lower()
+        if req and req not in link:
+            continue
+        if link == target or target in link or link in target or (req and req in link):
+            return (row.get("snippet") or "").strip()
+    return ""
+
+
+def serper_snippets_for_reddit_post(url: str) -> str:
+    """
+    Build OP context from Serper organic results for this post id.
+    Prefer longer snippets; drop obvious comment-pollution phrases.
+    """
+    post_id = ""
+    m = re.search(r"/comments/([a-z0-9]+)", url or "", re.I)
+    if m:
+        post_id = m.group(1)
+    if not post_id:
+        return ""
+    api_key = os.getenv("SERPER_API_KEY", "").strip()
+    if not api_key:
+        return ""
+    pollution = re.compile(
+        r"(?i)\b("
+        r"i scored|an?\s+\d+(?:\.\d+)?\s+in\s+ielts|"
+        r"chat\s*gpt|take advantage of|experienced ielts|"
+        r"pay a small fee|full disclosure|ieltsgrader"
+        r")\b[^.!?\n]*[.!]?"
+    )
+    chunks: list[str] = []
+    queries = [
+        f"site:reddit.com/comments/{post_id}",
+        f"site:reddit.com {post_id}",
+        url.strip(),
+    ]
+    seen: set[str] = set()
+    for q in queries:
+        try:
+            organic = serper_search(q, num=8)
+        except Exception:
+            continue
+        for row in organic:
+            link = (row.get("link") or "").lower()
+            if post_id.lower() not in link:
+                continue
+            snip = (row.get("snippet") or "").strip()
+            title = (row.get("title") or "").strip()
+            cleaned = pollution.sub("", snip)
+            cleaned = re.sub(r"\s{2,}", " ", cleaned).strip(" ,.-")
+            if len(cleaned) < 40:
+                continue
+            key = cleaned[:80].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            chunks.append(f"{title}\n{cleaned}" if title else cleaned)
+        _sleep(0.2)
+    if not chunks:
+        return ""
+    chunks.sort(key=len, reverse=True)
+    return "\n\n".join(chunks[:4])[:4500]
 
 
 def search_platform_serper(

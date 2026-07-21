@@ -32,33 +32,163 @@ from agent_rules import (
     validate_draft,
     SITE,
 )
-from common import USER_AGENT
+from common import (
+    USER_AGENT,
+    serper_scrape,
+    serper_snippet_for_url,
+    serper_snippets_for_reddit_post,
+)
 from llm_client import llm_complete
 from triage_threads import TriageItem
 
 DRAFT_WORKERS = 10
 
 
-def fetch_reddit_context(url: str) -> str:
-    """Best-effort public JSON for a reddit submission."""
-    if "reddit.com" not in url:
+def _reddit_old_url(url: str) -> str:
+    u = (url or "").strip()
+    if "old.reddit.com" in u:
+        return u
+    return u.replace("www.reddit.com", "old.reddit.com").replace(
+        "://reddit.com", "://old.reddit.com"
+    )
+
+
+def _reddit_oauth_post_body(url: str) -> str:
+    """Fetch submission selftext via Reddit OAuth if client id/secret are set."""
+    import os
+
+    cid = (os.getenv("REDDIT_CLIENT_ID") or "").strip()
+    sec = (os.getenv("REDDIT_CLIENT_SECRET") or "").strip()
+    if not cid or not sec:
         return ""
-    json_url = url.rstrip("/") + ".json"
+    m = re.search(r"/comments/([a-z0-9]+)", url or "", re.I)
+    if not m:
+        return ""
+    post_id = m.group(1)
     try:
-        resp = requests.get(
-            json_url,
+        tok = requests.post(
+            "https://www.reddit.com/api/v1/access_token",
+            auth=(cid, sec),
+            data={"grant_type": "client_credentials"},
             headers={"User-Agent": USER_AGENT},
-            timeout=30,
+            timeout=20,
+        )
+        if tok.status_code != 200:
+            return ""
+        access = (tok.json() or {}).get("access_token")
+        if not access:
+            return ""
+        resp = requests.get(
+            f"https://oauth.reddit.com/comments/{post_id}",
+            headers={
+                "Authorization": f"Bearer {access}",
+                "User-Agent": USER_AGENT,
+            },
+            timeout=20,
         )
         if resp.status_code != 200:
             return ""
-        data = resp.json()
-        post = data[0]["data"]["children"][0]["data"]
+        post = resp.json()[0]["data"]["children"][0]["data"]
         title = post.get("title") or ""
-        body = (post.get("selftext") or "")[:1500]
+        body = (post.get("selftext") or "")[:4000]
+        if not body.strip():
+            return ""
         return f"Title: {title}\n\nBody:\n{body}"
     except Exception:
         return ""
+
+
+def fetch_reddit_context(url: str) -> str:
+    """Best-effort Reddit OP text. Public JSON is often 403 from cloud — Serper scrape fallback."""
+    return fetch_thread_context(url, "reddit")[0]
+
+
+def fetch_thread_context(url: str, platform: str) -> tuple[str, str]:
+    """
+    Return (context_text, source) for drafting.
+    source: reddit_json | serper_scrape | serper_snippet | none
+
+    Reddit public .json is usually 403 from cloud IPs — try it briefly, then
+    Serper-scrape old.reddit.com (full OP prompt + essay). Avoid polluted SERP
+    snippets that mix other posts' text into this URL.
+    """
+    platform = (platform or "").lower()
+    url = (url or "").strip()
+    if not url:
+        return "", "none"
+
+    if "reddit.com" in url or platform == "reddit":
+        # Prefer Serper scrape of old.reddit first (when not blocked).
+        old = _reddit_old_url(url)
+        scraped = serper_scrape(old, timeout=60)
+        if scraped and len(scraped) > 80:
+            return scraped[:5000], "serper_scrape"
+
+        json_url = url.rstrip("/") + ".json"
+        try:
+            resp = requests.get(
+                json_url,
+                headers={"User-Agent": USER_AGENT},
+                timeout=8,
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                post = data[0]["data"]["children"][0]["data"]
+                title = post.get("title") or ""
+                body = (post.get("selftext") or "")[:4000]
+                if body.strip():
+                    return f"Title: {title}\n\nBody:\n{body}", "reddit_json"
+        except Exception:
+            pass
+
+        # Reddit OAuth if configured (cloud IPs need this for .json)
+        oauth_body = _reddit_oauth_post_body(url)
+        if oauth_body:
+            return oauth_body, "reddit_oauth"
+
+        # Multi-query Serper enrichment for this post id (filters comment pollution)
+        rich = serper_snippets_for_reddit_post(url)
+        if rich and len(rich) > 40:
+            return rich, "serper_reddit_enrich"
+
+        post_id = ""
+        m = re.search(r"/comments/([a-z0-9]+)", url, re.I)
+        if m:
+            post_id = m.group(1).lower()
+        snip = serper_snippet_for_url(url, require_substr=post_id or None)
+        if snip and len(snip) > 40:
+            return f"Search snippet:\n{snip}", "serper_snippet"
+        return "", "none"
+
+    scraped = serper_scrape(url, timeout=60)
+    if scraped and len(scraped) > 80:
+        return scraped[:5000], "serper_scrape"
+    snip = serper_snippet_for_url(url)
+    if snip:
+        return f"Search snippet:\n{snip}", "serper_snippet"
+    return "", "none"
+
+
+def _looks_like_essay_request(title: str, snippet: str, context: str) -> bool:
+    blob = f"{title}\n{snippet}\n{context}".lower()
+    if any(
+        p in blob
+        for p in (
+            "grade my",
+            "check my essay",
+            "evaluate my",
+            "mark my",
+            "please check my",
+            "task 2",
+            "writing task",
+        )
+    ):
+        return True
+    if "you should spend about 40 minutes" in blob or "you should write at least 250" in blob:
+        return True
+    if len(context) > 400 and ("answer" in blob or "nowadays" in blob):
+        return True
+    return False
 
 
 def _action_filename(aid: str, platform: str, typ: str, day: str) -> str:
@@ -182,9 +312,12 @@ def _draft_one_item(
 ) -> dict[str, str]:
     """LLM draft + action file for one engage item (safe to run in a worker thread)."""
     root = work_root(onboarding=onboarding)
-    context = ""
-    if item.platform == "reddit":
-        context = fetch_reddit_context(item.url)
+    context, ctx_source = fetch_thread_context(item.url, item.platform)
+    essay_posted = _looks_like_essay_request(item.title, item.snippet, context)
+    print(
+        f"  [{aid}] context={ctx_source} chars={len(context)} essay_posted={essay_posted}",
+        flush=True,
+    )
 
     intent_for_prompt = item.intent
     if product_ok and item.intent == "feedback_ask":
@@ -202,8 +335,15 @@ def _draft_one_item(
         f"Thread URL: {item.url}\n"
         f"Title: {item.title}\n"
         f"Snippet: {item.snippet}\n"
-        f"Extra context:\n{context or '(none)'}\n"
+        f"Extra context (fetched from the URL — prefer this over Snippet):\n"
+        f"{context or '(none — do not invent essay details)'}\n"
     )
+    if essay_posted:
+        user += (
+            "\nOP already shared / asked to grade their essay. "
+            "Reply to THEIR prompt/essay text above. "
+            "Do NOT ask them to paste a paragraph.\n"
+        )
     if product_ok:
         user += (
             "\nInclude a soft CTA to the free evaluation at ieltsgrader.com "
@@ -227,12 +367,36 @@ def _draft_one_item(
         paste = re.sub(r"(?i)https?://\S*ieltsgrader\.com\S*", "", paste)
         paste = re.sub(r"\n{3,}", "\n\n", paste).strip()
 
-    issues = validate_draft(paste, product_mentioned=product_ok)
+    issues = validate_draft(
+        paste,
+        product_mentioned=product_ok,
+        already_posted_essay=essay_posted,
+    )
+
+    # One retry if validator caught generic/paste-ask failure and we have context
+    if issues and context and not dry_run:
+        retry_user = user + (
+            "\nPrevious draft was too generic or asked them to paste. "
+            "Rewrite: cite a concrete detail from Extra context "
+            "(prompt topic or a line from their essay).\n"
+        )
+        paste2 = llm_complete(system, retry_user, dry_run=dry_run, temperature=0.85)
+        if product_ok and "ieltsgrader" not in paste2.lower():
+            link = utm_url(SITE, item.platform)
+            paste2 = f"{paste2.rstrip()}\n\n{DISCLOSURE}\n{pick_soft_cta()}\n{link}"
+        issues2 = validate_draft(
+            paste2,
+            product_mentioned=product_ok,
+            already_posted_essay=essay_posted,
+        )
+        if len(issues2) <= len(issues):
+            paste, issues = paste2, issues2
 
     followup = llm_complete(
         system_prompt_engage(item.platform, "general_tip"),
-        "Write a short follow-up if they reply thanking you or pasting a paragraph. "
-        "Sound human. No product unless they ask for a tool.",
+        "Write a short follow-up if they reply thanking you or asking a follow-up. "
+        "Sound human. No product unless they ask for a tool. "
+        "Do not ask them to paste an essay if they already posted one.",
         dry_run=dry_run,
         temperature=0.9,
     )

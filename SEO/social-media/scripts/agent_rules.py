@@ -343,10 +343,37 @@ def allow_cta_for_item(
     return False
 
 
-def validate_draft(text: str, *, product_mentioned: bool) -> list[str]:
+def validate_draft(
+    text: str,
+    *,
+    product_mentioned: bool,
+    already_posted_essay: bool = False,
+) -> list[str]:
     """Return list of problems (empty = ok)."""
     issues: list[str] = []
     lower = text.lower()
+    if already_posted_essay and any(
+        p in lower
+        for p in (
+            "paste one paragraph",
+            "paste a paragraph",
+            "share a paragraph",
+            "if you paste",
+            "paste your essay",
+            "paste the essay",
+        )
+    ):
+        issues.append("asks to paste essay/paragraph though OP already posted it")
+    if re.search(
+        r"quick tip for (?:ielts )?(?:academic )?task\s*2",
+        lower,
+    ) and "lawbreak" not in lower and "prison" not in lower:
+        # Generic opener with no thread-specific cue — soft flag
+        if not any(
+            k in lower
+            for k in ("your", "you wrote", "your essay", "your intro", "your prompt")
+        ):
+            issues.append("generic task-2 tip without referencing their post")
     for phrase in NEVER_SAY:
         if phrase in lower:
             issues.append(f"banned phrase: {phrase}")
@@ -370,6 +397,14 @@ def system_prompt_engage(platform: str, intent: str) -> str:
     product_ok = allow_product_mention(platform, intent)
     placement = link_placement(platform, intent)
     return f"""You write casual social replies for IELTSGRADER. Sound like a helpful human tutor on Reddit/Quora/X — not a chatbot.
+
+Thread-specificity rules (strict — most important):
+- Your reply MUST be about THIS thread only. Use the Title, Snippet, and Extra context.
+- Name something concrete from their post (prompt topic, a claim they made, a wording issue, a structure problem).
+- If Extra context includes their essay/prompt: comment on THAT text. Never invent a generic "quick tip for Task 2".
+- If they already posted an essay or asked "grade/check my essay": do NOT ask them to paste a paragraph.
+- If Extra context is missing/thin: do NOT fake specific feedback. Acknowledge their ask from the title and help with what you actually have (or a soft free-evaluation CTA if product is allowed). Never invent essay details.
+- Never invent the OP's band score, exam result, or biography. Only mention scores if Extra context explicitly says they claimed them.
 
 Voice rules (strict):
 - Short uneven sentences. Contractionsions OK. No corporate polish.
