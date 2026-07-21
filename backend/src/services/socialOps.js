@@ -57,6 +57,16 @@ const RUN_MAP = {
       return a;
     },
   },
+  redraft_engages: {
+    script: 'redraft_open_engages.py',
+    args: (b) => {
+      const a = ['--queue', b.queue === 'weekly' || b.queue === 'onboarding' ? b.queue : 'both'];
+      if (b.dry_run) a.push('--dry-run');
+      if (b.limit) a.push('--limit', String(b.limit));
+      if (b.workers) a.push('--workers', String(b.workers));
+      return a;
+    },
+  },
 };
 
 function resolvePython() {

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Build free-time onboarding engage pack from historical CSV (separate from weekly)."""
+"""Build free-time onboarding engage pack from historical CSV (separate from weekly).
+
+New prepares use the same URL-context drafting path as weekly engages
+(fetch_thread_context → thread-specific paste). To refresh existing pastes
+without wiping STATUS, run redraft_open_engages.py (Admin: Redraft open replies)
+instead of --reset.
+"""
 
 from __future__ import annotations
 

@@ -26,6 +26,10 @@ router.post('/run', (req, res) => {
     const job = socialOps.startRun(action, {
       dry_run: Boolean(req.body?.dry_run),
       no_fresh: Boolean(req.body?.no_fresh),
+      reset: req.body?.reset !== false,
+      queue: req.body?.queue || 'both',
+      limit: req.body?.limit,
+      workers: req.body?.workers,
     });
     return res.json({ ok: true, job });
   } catch (err) {

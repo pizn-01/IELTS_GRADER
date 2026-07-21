@@ -339,6 +339,30 @@ def upsert_status_rows(
         _write_status_unlocked(ordered, onboarding=onboarding)
 
 
+def update_status_action_file(
+    action_id: str,
+    action_file: str,
+    *,
+    onboarding: bool = False,
+) -> bool:
+    """Patch action_file for an existing STATUS row (used by force redraft)."""
+    rid = (action_id or "").strip()
+    if not rid:
+        return False
+    with _STATUS_IO_LOCK:
+        rows = read_status(onboarding=onboarding)
+        found = False
+        for r in rows:
+            if (r.get("id") or "").strip() == rid:
+                r["action_file"] = action_file
+                found = True
+                break
+        if not found:
+            return False
+        _write_status_unlocked(rows, onboarding=onboarding)
+        return True
+
+
 def next_action_id(
     rows: Optional[list[dict[str, str]]] = None, *, onboarding: bool = False
 ) -> int:

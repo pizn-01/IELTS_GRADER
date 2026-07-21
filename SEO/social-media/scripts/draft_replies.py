@@ -309,6 +309,7 @@ def _draft_one_item(
     onboarding: bool,
     week_id: str,
     queued_at: str,
+    typ: str = "reply",
 ) -> dict[str, str]:
     """LLM draft + action file for one engage item (safe to run in a worker thread)."""
     root = work_root(onboarding=onboarding)
@@ -318,7 +319,7 @@ def _draft_one_item(
         f"  [{aid}] context={ctx_source} chars={len(context)} essay_posted={essay_posted}",
         flush=True,
     )
-
+    action_typ = (typ or "reply").strip().lower() or "reply"
     intent_for_prompt = item.intent
     if product_ok and item.intent == "feedback_ask":
         intent_for_prompt = "feedback_ask"
@@ -404,7 +405,7 @@ def _draft_one_item(
     path = write_action_markdown(
         aid=aid,
         platform=item.platform,
-        typ="reply",
+        typ=action_typ,
         day=item.day or ("Free" if onboarding else "Tue"),
         url=item.url,
         title=item.title[:120],
@@ -423,7 +424,7 @@ def _draft_one_item(
         "day": item.day or ("Free" if onboarding else "Tue"),
         "status": "pending",
         "platform": item.platform,
-        "type": "reply",
+        "type": action_typ,
         "url": item.url,
         "title": item.title[:160],
         "intent": item.intent,

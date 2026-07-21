@@ -384,7 +384,7 @@ export default function SocialOpsTab() {
     running ||
     Boolean(
       busy &&
-        ['cold_start', 'weekly', 'daily', 'sunday', 'onboarding_prepare'].includes(busy)
+        ['cold_start', 'weekly', 'daily', 'sunday', 'onboarding_prepare', 'redraft_engages'].includes(busy)
     );
 
   if (loading) {
@@ -594,6 +594,14 @@ export default function SocialOpsTab() {
             busy={busy === 'onboarding_prepare' || running}
             disabled={lockRuns}
             onClick={() => runAction('onboarding_prepare', { reset: true })}
+          />
+          <RunBtn
+            label="Redraft open replies"
+            hint="Refresh pastes with URL context (weekly + onboarding)"
+            icon={RefreshCw}
+            busy={busy === 'redraft_engages' || running}
+            disabled={lockRuns}
+            onClick={() => runAction('redraft_engages', { queue: 'both' })}
           />
           <RunBtn
             label="Sunday scorecard"

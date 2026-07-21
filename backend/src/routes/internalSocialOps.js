@@ -1,6 +1,6 @@
 /**
  * Internal Social Ops cron trigger — protected by SOCIAL_OPS_CRON_SECRET.
- * POST /api/internal/social-ops/cron  body: { job: "weekly"|"daily"|"sunday"|"onboarding_prepare" }
+ * POST /api/internal/social-ops/cron  body: { job: "weekly"|"daily"|"sunday"|"onboarding_prepare"|"redraft_engages" }
  */
 const express = require('express');
 const socialOps = require('../services/socialOps');
@@ -25,7 +25,14 @@ function authorize(req, res, next) {
 router.post('/cron', authorize, (req, res) => {
   try {
     const jobName = String(req.body?.job || 'weekly');
-    const allowed = new Set(['weekly', 'daily', 'sunday', 'onboarding_prepare', 'cold_start']);
+    const allowed = new Set([
+      'weekly',
+      'daily',
+      'sunday',
+      'onboarding_prepare',
+      'cold_start',
+      'redraft_engages',
+    ]);
     if (!allowed.has(jobName)) {
       return res.status(400).json({ error: `Unknown job: ${jobName}` });
     }
@@ -33,6 +40,9 @@ router.post('/cron', authorize, (req, res) => {
       dry_run: Boolean(req.body?.dry_run),
       no_fresh: Boolean(req.body?.no_fresh),
       reset: req.body?.reset !== false,
+      queue: req.body?.queue || 'both',
+      limit: req.body?.limit,
+      workers: req.body?.workers,
     });
     return res.json({ ok: true, job });
   } catch (err) {
