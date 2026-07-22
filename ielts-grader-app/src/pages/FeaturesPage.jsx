@@ -185,7 +185,7 @@ export default function FeaturesPage() {
               Prefer to see the report first?
             </h2>
             <p className="text-[15px] text-[#6B7280] m-0 max-w-xl">
-              Browse annotated screenshots of a real report layout before you submit your own essay.
+              Browse annotated previews of a real report layout before you submit your own essay.
             </p>
           </div>
           <Link

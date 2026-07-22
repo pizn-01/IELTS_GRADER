@@ -183,7 +183,7 @@ export default function GradeEssayForm({
           <div className="w-full md:w-[400px] lg:w-[480px] max-h-[46vh] md:max-h-none border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto p-4 md:p-10 bg-[#F8FAFC] shrink-0 md:shrink flex flex-col min-h-0">
             <div className="mb-4 md:mb-6 flex items-center justify-between gap-3 shrink-0">
               <span className="bg-[#E0F2FE] text-[#0EA5E9] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                Question / Prompt
+                Exam Question
               </span>
               <button
                 type="button"
@@ -339,7 +339,7 @@ export default function GradeEssayForm({
 
         <div>
           <label className={labelClass}>
-            Your Question / Prompt <span className="text-[#9CA3AF] font-normal">(recommended)</span>
+            Exam Question
           </label>
           <div className="relative">
             <textarea

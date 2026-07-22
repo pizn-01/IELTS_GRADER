@@ -31,7 +31,7 @@ const Navbar = ({ showCredits }) => {
   };
 
   const handleNavClick = (e, link) => {
-    if (link === 'Blog' || link === 'Contact') {
+    if (link === 'Blog' || link === 'Pricing' || link === 'Contact') {
       setIsMobileMenuOpen(false);
       return;
     }
@@ -46,10 +46,12 @@ const Navbar = ({ showCredits }) => {
     setIsMobileMenuOpen(false);
   };
 
-  const navLinks = ['About', 'How it works', 'Sample Report', 'Blog', 'FAQS', 'Contact'];
+  const navLinks = ['How it works', 'Sample Report', 'Pricing', 'Blog', 'FAQS', 'Contact'];
   const isBlogActive = location.pathname === '/blog' || location.pathname.startsWith('/blog/');
+  const isPricingActive = location.pathname === '/pricing';
   const navLinkTo = (link) => {
     if (link === 'Blog') return '/blog';
+    if (link === 'Pricing') return '/pricing';
     if (link === 'Contact') return '/settings?tab=Support';
     return `/#${link.toLowerCase().replace(/\s+/g, '-')}`;
   };
@@ -68,7 +70,9 @@ const Navbar = ({ showCredits }) => {
           <ul className="hidden md:flex items-center gap-7 list-none m-0 p-0">
             {navLinks.map((link) => {
               const to = navLinkTo(link);
-              const active = link === 'Blog' && isBlogActive;
+              const active =
+                (link === 'Blog' && isBlogActive) ||
+                (link === 'Pricing' && isPricingActive);
               return (
                 <li key={link}>
                   <Link
@@ -216,7 +220,8 @@ const Navbar = ({ showCredits }) => {
                   to={to}
                   onClick={(e) => handleNavClick(e, link)}
                   className={`text-[15px] font-semibold py-3 px-2 rounded-lg transition-colors ${
-                    link === 'Blog' && isBlogActive
+                    (link === 'Blog' && isBlogActive) ||
+                    (link === 'Pricing' && isPricingActive)
                       ? 'bg-[#F9FAFB] text-[#1a1f36]'
                       : 'text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#1a1f36]'
                   }`}

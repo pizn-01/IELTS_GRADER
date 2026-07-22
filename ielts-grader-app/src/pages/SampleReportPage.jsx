@@ -102,7 +102,7 @@ export default function SampleReportPage() {
               </div>
               <div className="lg:w-[42%]">
                 <p className="text-sm font-bold text-[#3B82F6] tracking-wide uppercase mb-2">
-                  Screenshot {i + 1}
+                  Preview {i + 1}
                 </p>
                 <h3 className="text-[22px] md:text-[26px] font-extrabold text-[#1a1f36] mb-3 tracking-tight font-['Nunito',_sans-serif]">
                   {shot.title}
@@ -116,7 +116,7 @@ export default function SampleReportPage() {
         </section>
 
         <p className="text-[13px] text-[#9CA3AF] mb-4">
-          Screenshots are illustrative samples of the IELTSGRADER report UI. Your live report reflects your own essay and scores.
+          These previews are illustrative samples of the IELTSGRADER report UI. Your live report reflects your own essay and scores.
         </p>
 
         <div className="flex flex-wrap gap-3 mb-4">
