@@ -34,13 +34,9 @@ const HERO_SLIDES = [
     cue: 'both',
     badge: 'Report · Performance · Personalized plan',
     mobileBadge: 'Your writing plan',
-    chip: {
-      Icon: Gift,
-      text: 'Not just a grader—your IELTS writing tutor.',
-      detail: 'Band scores, sentence-level fixes, performance tracking, and a clear plan to your target band.',
-      iconClass: 'text-[#F59E0B]',
-      fill: null,
-    },
+    chip: { Icon: Gift, text: '1 free full evaluation · No credit card', iconClass: 'text-[#F59E0B]', fill: null },
+    support:
+      'Not just a band score. Get sentence-level fixes, track your progress, and follow a clear plan toward Band 7+.',
     accent: '#0EA5E9',
     mobileSub: (
       <>
@@ -481,23 +477,22 @@ const Hero = () => {
                     {slide.badge}
                   </div>
 
-                  <div className="mb-6">
+                  <div className="mb-5">
                     <BenefitBullets />
                   </div>
 
-                  <div className="flex flex-col items-start gap-1.5 self-stretch max-w-[520px] px-4 py-3.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)] mb-6">
-                    <div className="flex items-center gap-3">
-                      <ChipIcon
-                        className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
-                        strokeWidth={2}
-                      />
-                      <span className="text-[15px] font-semibold text-[#1a1f36] leading-snug">{slide.chip.text}</span>
-                    </div>
-                    {slide.chip.detail && (
-                      <p className="m-0 pl-8 text-[14px] text-[#64748B] leading-snug">
-                        {slide.chip.detail}
-                      </p>
-                    )}
+                  {slide.support && (
+                    <p className="text-[15px] text-[#64748B] leading-[1.55] m-0 mb-5 max-w-[500px]">
+                      {slide.support}
+                    </p>
+                  )}
+
+                  <div className="inline-flex items-center gap-3 self-start px-4 py-2.5 rounded-[12px] bg-white/90 border border-[#FDE68A]/80 shadow-[0_4px_20px_rgba(245,158,11,0.08)] mb-6">
+                    <ChipIcon
+                      className={`w-5 h-5 shrink-0 ${slide.chip.iconClass}`}
+                      strokeWidth={2}
+                    />
+                    <span className="text-[15px] font-medium text-[#1a1f36]">{slide.chip.text}</span>
                   </div>
                 </div>
               ) : (
