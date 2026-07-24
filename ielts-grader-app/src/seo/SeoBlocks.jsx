@@ -6,7 +6,7 @@ export function SeoCta({
   label = 'Get your free band score',
   href = '/signup',
   title = 'Try IELTS AI Tutor free',
-  subtitle = 'Get criterion-level feedback and a personalized study plan in about 60 seconds.',
+  subtitle = 'Get criterion feedback, track progress, and follow a personalized plan toward your target band.',
 }) {
   return (
     <section className="mt-14 mb-4">

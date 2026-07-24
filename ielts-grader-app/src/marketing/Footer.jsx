@@ -24,7 +24,7 @@ const Footer = () => {
               IELTSGRADER
             </Link>
             <p className="mt-3 text-[13px] text-[#6B7280] leading-relaxed">
-              IELTS AI Tutor by IELTSGRADER: writing feedback, band scores, and personalized study plans in about 60 seconds.
+              IELTS AI Tutor by IELTSGRADER: your assistant toward your target band—reports, progress tracking, and a personalized study plan.
             </p>
             <p className="mt-4 text-[12px] text-[#9CA3AF]">
               © 2026 IELTSGRADER. All rights reserved.

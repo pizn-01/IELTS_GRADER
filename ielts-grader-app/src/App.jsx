@@ -61,6 +61,7 @@ import BlogListPage from './pages/BlogListPage';
 import BlogPostPage from './pages/BlogPostPage';
 import LegalPage from './pages/LegalPage';
 import ToolLandingPage from './seo/ToolLandingPage';
+import SeoHead from './seo/SeoHead';
 import { toolPages } from './content/toolPagesData';
 
 const SEO_MARKETING_ROUTES = [
@@ -81,6 +82,11 @@ const SEO_MARKETING_ROUTES = [
 // ── Landing Page Assembly ─────────────────────────────────────────────────────
 const LandingPage = () => (
   <>
+    <SeoHead
+      title="IELTS AI Tutor: Your Assistant to Your Target Band | IELTSGRADER"
+      description="Your IELTS AI Tutor—not just a score. Get criterion feedback, track progress, and follow a personalized plan toward your target band. Free evaluation, no card."
+      path="/"
+    />
     <Navbar />
     <Hero />
     <div className="bg-white">

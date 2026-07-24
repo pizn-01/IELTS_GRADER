@@ -3,9 +3,9 @@ export const toolPages = [
     slug: 'ielts-ai-tutor',
     path: '/ielts-ai-tutor',
     shortTitle: 'IELTS AI Tutor',
-    title: 'IELTS AI Tutor: Writing Coach, Feedback & Study Plans | IELTSGRADER',
+    title: 'IELTS AI Tutor: Your Assistant to Your Target Band | IELTSGRADER',
     description:
-      'IELTS AI Tutor by IELTSGRADER grades essays in ~60 seconds, explains every criterion, and builds personalized study plans. Task 1, Task 2, mock exams. Free evaluation.',
+      'IELTS AI Tutor by IELTSGRADER explains every criterion, tracks progress, and builds a personalized plan toward your target band. Task 1, Task 2, mock exams. Free evaluation.',
     h1: 'Your IELTS AI Tutor: Not Just a Score',
     intro:
       'IELTS AI Tutor by IELTSGRADER is an AI writing coach built for IELTS. It grades your essays, explains why you lost marks, and turns that feedback into a study plan, so every practice session moves you closer to your target band.',
@@ -61,12 +61,12 @@ export const toolPages = [
     slug: 'ielts-essay-checker',
     path: '/ielts-essay-checker',
     shortTitle: 'Essay checker',
-    title: 'IELTS Essay Checker: AI Tutor Feedback in 60 Seconds | IELTSGRADER',
+    title: 'IELTS Essay Checker: AI Tutor to Your Target Band | IELTSGRADER',
     description:
-      'Check your IELTS essay with an AI tutor. Band score, criterion feedback, fix cards, and a study plan for Task 1 & Task 2. Free evaluation.',
+      'Check your IELTS essay with an AI tutor. Criterion feedback, fix cards, and a personalized plan toward your target band. Free evaluation.',
     h1: 'IELTS Essay Checker with AI Tutor Feedback',
     intro:
-      'Paste your essay and get more than a score, get tutor-level feedback on every IELTS writing criterion in about 60 seconds.',
+      'Paste your essay and get more than a score—get tutor-level feedback on every IELTS writing criterion and a clear path toward your target band.',
     highlights: [
       { title: 'Overall + 4 criteria', body: 'See exactly which skill is holding your band down.' },
       { title: 'Actionable fixes', body: 'Improved sentences and clearer structure suggestions.' },
@@ -170,7 +170,7 @@ export const toolPages = [
     shortTitle: 'Task 1 checker',
     title: 'IELTS Task 1 Checker: Academic Reports & GT Letters | IELTSGRADER',
     description:
-      'AI tutor for IELTS Task 1. Check Academic charts and GT letters. Band score and criterion feedback in about 60 seconds. Free evaluation.',
+      'AI tutor for IELTS Task 1. Check Academic charts and GT letters with criterion feedback and a personalized plan toward your target band. Free evaluation.',
     h1: 'IELTS Task 1 Checker: Reports & Letters',
     intro:
       'Whether you describe a chart or write a formal letter, your AI tutor evaluates Task Achievement, organization, vocabulary, and grammar.',
