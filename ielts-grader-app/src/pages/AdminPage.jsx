@@ -271,6 +271,7 @@ const AcquisitionTab = () => {
   const [timeseries, setTimeseries] = useState([]);
   const [byChannel, setByChannel] = useState([]);
   const [byCountry, setByCountry] = useState([]);
+  const [byCampaign, setByCampaign] = useState([]);
   const [byHour, setByHour] = useState([]);
   const [visitors, setVisitors] = useState([]);
   const [visitorPage, setVisitorPage] = useState(1);
@@ -285,11 +286,12 @@ const AcquisitionTab = () => {
       const visitorParams = { days, page: visitorPage, per_page: 20, converted: 'false' };
       if (visitorChannel) visitorParams.channel = visitorChannel;
 
-      const [ov, ts, ch, co, hr, vis] = await Promise.all([
+      const [ov, ts, ch, co, camp, hr, vis] = await Promise.all([
         api.admin.getAcquisitionOverview(params),
         api.admin.getAcquisitionTimeseries(params),
         api.admin.getAcquisitionByChannel(params),
         api.admin.getAcquisitionByCountry(params),
+        api.admin.getAcquisitionByCampaign(params),
         api.admin.getAcquisitionByHour(params),
         api.admin.getAcquisitionVisitors(visitorParams),
       ]);
@@ -298,6 +300,7 @@ const AcquisitionTab = () => {
       setTimeseries(ts.data || []);
       setByChannel(ch.data || []);
       setByCountry(co.data || []);
+      setByCampaign(camp.data || []);
       setByHour(hr.data || []);
       setVisitors(vis.data || []);
       setVisitorTotal(vis.total || 0);
@@ -321,6 +324,7 @@ const AcquisitionTab = () => {
 
   const timeseriesSessionTotal = timeseries.reduce((sum, row) => sum + (row.sessions || 0), 0);
   const channelSessionTotal = byChannel.reduce((sum, row) => sum + (row.sessions || 0), 0);
+  const campaignSessionTotal = byCampaign.reduce((sum, row) => sum + (row.sessions || 0), 0);
 
   const formatChartDate = (date) => {
     if (!date) return '';
@@ -413,6 +417,40 @@ const AcquisitionTab = () => {
         </div>
 
         <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+          <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sessions by Campaign</p>
+          <p className="text-[11px] text-gray-400 mb-4">
+            {campaignSessionTotal
+              ? `${campaignSessionTotal} tagged sessions (utm_campaign / campaignid)`
+              : 'No campaign tags yet — add utm_campaign to Google Ads Final URL suffix'}
+          </p>
+          <div className="h-[240px]">
+            {byCampaign.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={byCampaign.slice(0, 10)} layout="vertical" margin={{ left: 100 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="campaign"
+                    tick={{ fontSize: 10 }}
+                    width={95}
+                    tickFormatter={v => (v.length > 16 ? `${v.slice(0, 16)}…` : v)}
+                  />
+                  <Tooltip />
+                  <Bar dataKey="sessions" fill="#0EA5E9" name="Sessions" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-[13px] text-gray-400 px-6 text-center">
+                No campaign data in this period. Google Ads auto-tagging alone does not send campaign names —
+                set Final URL suffix to include{' '}
+                <code className="text-[11px] bg-gray-50 px-1 rounded">utm_campaign={'{campaignname}'}</code>.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
           <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Top Countries</p>
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -427,7 +465,7 @@ const AcquisitionTab = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm">
+        <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm lg:col-span-2">
           <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-4">Sessions by Hour (Toronto)</p>
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -462,7 +500,7 @@ const AcquisitionTab = () => {
         </div>
 
         <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
-          <table className="w-full text-[12px] min-w-[1080px]">
+          <table className="w-full text-[12px] min-w-[1180px]">
             <thead className="bg-gray-50 text-[10px] uppercase tracking-wider text-gray-400 font-bold">
               <tr>
                 {[
@@ -472,6 +510,7 @@ const AcquisitionTab = () => {
                   { label: 'Referrer', className: 'px-3 py-3 max-w-[120px]', title: 'External URL the visitor came from' },
                   { label: 'UTM Src', className: 'px-3 py-3 max-w-[72px]', title: 'utm_source' },
                   { label: 'UTM Med', className: 'px-3 py-3 max-w-[72px]', title: 'utm_medium' },
+                  { label: 'Campaign', className: 'px-3 py-3 max-w-[100px]', title: 'utm_campaign' },
                   { label: 'Country', className: 'px-3 py-3' },
                   { label: 'Pages', className: 'px-3 py-3' },
                   { label: 'Duration', className: 'px-3 py-3' },
@@ -501,6 +540,9 @@ const AcquisitionTab = () => {
                   <td className="px-3 py-3 text-gray-500 max-w-[72px] truncate" title={v.utm_medium || undefined}>
                     {v.utm_medium || '—'}
                   </td>
+                  <td className="px-3 py-3 text-gray-500 max-w-[100px] truncate" title={v.utm_campaign || undefined}>
+                    {v.utm_campaign || '—'}
+                  </td>
                   <td className="px-3 py-3 text-gray-500">{v.country || '—'}</td>
                   <td className="px-3 py-3 text-gray-500">{v.page_view_count}</td>
                   <td className="px-3 py-3 text-gray-500 whitespace-nowrap">{formatDuration(v.duration_seconds)}</td>
@@ -508,7 +550,7 @@ const AcquisitionTab = () => {
                 </tr>
               ))}
               {visitors.length === 0 && (
-                <tr><td colSpan={10} className="px-5 py-8 text-center text-gray-400">No visitor sessions in this period.</td></tr>
+                <tr><td colSpan={11} className="px-5 py-8 text-center text-gray-400">No visitor sessions in this period.</td></tr>
               )}
             </tbody>
           </table>

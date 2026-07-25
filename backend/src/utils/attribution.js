@@ -40,8 +40,9 @@ function normalizeAttribution(input = {}) {
   const referrer = input.referrer || null;
   const utm_source = input.utm_source || null;
   const utm_medium = input.utm_medium || null;
-  const utm_campaign = input.utm_campaign || null;
-  const utm_content = input.utm_content || null;
+  // Accept Google Ads ValueTrack campaignid when utm_campaign is missing
+  const utm_campaign = input.utm_campaign || input.campaignid || null;
+  const utm_content = input.utm_content || input.adgroupid || null;
   const utm_term = input.utm_term || null;
   const gclid = input.gclid || null;
   const landing_path = resolveLandingPath(input);
@@ -59,6 +60,10 @@ function normalizeAttribution(input = {}) {
     gclid,
     channel,
   };
+}
+
+function isWeakChannel(channel) {
+  return !channel || channel === 'direct';
 }
 
 /**
@@ -93,7 +98,7 @@ async function saveUserAttribution(supabaseAdmin, userId, { attribution, session
 
     const { data: session } = await supabaseAdmin
       .from('visitor_sessions')
-      .select('country, city, channel, landing_path')
+      .select('country, city, channel, landing_path, referrer, utm_source, utm_medium, utm_campaign, gclid')
       .eq('session_id', session_id)
       .maybeSingle();
 
@@ -104,8 +109,35 @@ async function saveUserAttribution(supabaseAdmin, userId, { attribution, session
       if (!profileUpdate.acquisition_city && session.city) {
         profileUpdate.acquisition_city = session.city;
       }
-      if (!profileUpdate.acquisition_channel && session.channel) {
+      if (!profileUpdate.utm_source && session.utm_source) {
+        profileUpdate.utm_source = session.utm_source;
+      }
+      if (!profileUpdate.utm_medium && session.utm_medium) {
+        profileUpdate.utm_medium = session.utm_medium;
+      }
+      if (!profileUpdate.utm_campaign && session.utm_campaign) {
+        profileUpdate.utm_campaign = session.utm_campaign;
+      }
+      if (!profileUpdate.gclid && session.gclid) {
+        profileUpdate.gclid = session.gclid;
+      }
+      if (!profileUpdate.referrer && session.referrer) {
+        profileUpdate.referrer = session.referrer;
+      }
+      // Prefer session channel when signup attribution was empty/direct but the visit was paid
+      if (isWeakChannel(profileUpdate.acquisition_channel) && session.channel && !isWeakChannel(session.channel)) {
         profileUpdate.acquisition_channel = session.channel;
+      } else if (!profileUpdate.acquisition_channel && session.channel) {
+        profileUpdate.acquisition_channel = session.channel;
+      }
+      // Re-classify if we recovered gclid/UTM from the session
+      if (profileUpdate.gclid || profileUpdate.utm_source || profileUpdate.utm_medium) {
+        profileUpdate.acquisition_channel = classifyChannel({
+          referrer: profileUpdate.referrer,
+          utm_source: profileUpdate.utm_source,
+          utm_medium: profileUpdate.utm_medium,
+          gclid: profileUpdate.gclid,
+        });
       }
       if (!profileUpdate.landing_path && session.landing_path && !isInternalPath(session.landing_path)) {
         profileUpdate.landing_path = session.landing_path;
@@ -122,6 +154,11 @@ async function saveUserAttribution(supabaseAdmin, userId, { attribution, session
       sessionUpdate.landing_path = normalized.landing_path;
       sessionUpdate.channel = normalized.channel;
     }
+    // Backfill session UTM/campaign from signup when the session was created without them
+    if (normalized?.utm_campaign) sessionUpdate.utm_campaign = normalized.utm_campaign;
+    if (normalized?.utm_source) sessionUpdate.utm_source = normalized.utm_source;
+    if (normalized?.utm_medium) sessionUpdate.utm_medium = normalized.utm_medium;
+    if (normalized?.gclid) sessionUpdate.gclid = normalized.gclid;
 
     await supabaseAdmin
       .from('visitor_sessions')

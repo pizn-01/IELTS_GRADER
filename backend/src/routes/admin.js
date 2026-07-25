@@ -18,6 +18,7 @@ const {
   computeByChannel,
   computeByCountry,
   computeByLanding,
+  computeByCampaign,
   computeByHour,
 } = require('../utils/acquisitionAnalytics');
 
@@ -1208,7 +1209,7 @@ async function fetchSessionsSince(since) {
   return fetchAllRows(() =>
     supabaseAdmin
       .from('visitor_sessions')
-      .select('session_id, channel, country, landing_path, page_view_count, duration_seconds, is_bounce, converted_user_id, first_seen_at')
+      .select('session_id, channel, country, landing_path, page_view_count, duration_seconds, is_bounce, converted_user_id, first_seen_at, utm_campaign, utm_source, utm_medium, gclid')
       .gte('first_seen_at', since)
       .order('first_seen_at', { ascending: false })
   );
@@ -1314,6 +1315,20 @@ router.get('/acquisition/by-landing', async (req, res) => {
   }
 });
 
+// ─── GET /api/admin/acquisition/by-campaign ────────────────────────────────────
+router.get('/acquisition/by-campaign', async (req, res) => {
+  const days = parseDays(req.query.days);
+  const since = sinceIso(days);
+
+  try {
+    const sessions = await fetchSessionsSince(since);
+    return res.json({ data: computeByCampaign(sessions).slice(0, 20) });
+  } catch (err) {
+    console.error('[admin/acquisition/by-campaign]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch campaign breakdown.' });
+  }
+});
+
 // ─── GET /api/admin/acquisition/by-hour ────────────────────────────────────────
 router.get('/acquisition/by-hour', async (req, res) => {
   const days = parseDays(req.query.days);
@@ -1339,7 +1354,7 @@ router.get('/acquisition/visitors', async (req, res) => {
   try {
     let query = supabaseAdmin
       .from('visitor_sessions')
-      .select('session_id, channel, landing_path, referrer, utm_source, utm_medium, country, page_view_count, duration_seconds, device_type, browser, os, is_bounce, converted_user_id, first_seen_at, last_seen_at', { count: 'exact' })
+      .select('session_id, channel, landing_path, referrer, utm_source, utm_medium, utm_campaign, gclid, country, page_view_count, duration_seconds, device_type, browser, os, is_bounce, converted_user_id, first_seen_at, last_seen_at', { count: 'exact' })
       .gte('first_seen_at', since)
       .order('first_seen_at', { ascending: false })
       .range((page - 1) * perPage, page * perPage - 1);

@@ -557,6 +557,10 @@ export const api = {
       const q = new URLSearchParams(params).toString();
       return fetch(`${BASE_URL}/admin/acquisition/by-landing?${q}`, { headers: getHeaders() }).then(r => r.json());
     },
+    getAcquisitionByCampaign: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return fetch(`${BASE_URL}/admin/acquisition/by-campaign?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
     getAcquisitionByHour: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return fetch(`${BASE_URL}/admin/acquisition/by-hour?${q}`, { headers: getHeaders() }).then(r => r.json());

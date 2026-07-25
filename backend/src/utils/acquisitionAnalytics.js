@@ -153,6 +153,25 @@ function computeByLanding(sessions) {
     .map(({ key, count }) => ({ path: key, sessions: count }));
 }
 
+function computeByCampaign(sessions) {
+  const campaignMap = {};
+  for (const s of sessions) {
+    const campaign = s.utm_campaign || (s.gclid ? '(google ads — no campaign tag)' : null);
+    if (!campaign) continue;
+    if (!campaignMap[campaign]) {
+      campaignMap[campaign] = { campaign, sessions: 0, conversions: 0 };
+    }
+    campaignMap[campaign].sessions += 1;
+    if (s.converted_user_id) campaignMap[campaign].conversions += 1;
+  }
+  return Object.values(campaignMap)
+    .map((row) => ({
+      ...row,
+      conversion_rate: row.sessions ? Math.round((row.conversions / row.sessions) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => b.sessions - a.sessions);
+}
+
 function computeByHour(sessions) {
   const hourMap = Array.from({ length: 24 }, (_, i) => ({
     hour: i,
@@ -184,5 +203,6 @@ module.exports = {
   computeByChannel,
   computeByCountry,
   computeByLanding,
+  computeByCampaign,
   computeByHour,
 };
