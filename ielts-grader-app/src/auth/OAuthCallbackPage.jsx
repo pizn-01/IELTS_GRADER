@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { getSignupAttribution } from '../utils/attribution';
 import { consumePostAuthRedirect } from '../utils/authStorage';
+import { trackSignUpConversion } from '../utils/googleAds';
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -27,12 +28,18 @@ const OAuthCallbackPage = () => {
 
         // Exchange Supabase token for our custom backend JWT
         const { session_id, attribution } = getSignupAttribution();
-        const { token, user } = await api.googleAuth(session.access_token, { session_id, attribution });
+        const { token, user, is_new_user: isNewUser } = await api.googleAuth(
+          session.access_token,
+          { session_id, attribution },
+        );
 
         if (cancelled) return;
 
         // Store JWT and update AuthContext — no page reload needed
         setUserFromToken(token, user);
+        if (isNewUser) {
+          trackSignUpConversion({ userId: user?.id });
+        }
         navigate(consumePostAuthRedirect('/dashboard'), { replace: true });
       } catch (err) {
         if (!cancelled) setError(err.message || 'Authentication failed. Please try again.');

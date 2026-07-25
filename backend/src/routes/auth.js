@@ -614,6 +614,7 @@ router.post('/google', async (req, res) => {
 
     return res.json({
       token,
+      is_new_user: isNewUser,
       user: {
         id: user.id,
         email: user.email,

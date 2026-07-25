@@ -9,6 +9,7 @@ import {
   getRememberMePreference,
   setRememberedEmail,
 } from '../utils/authStorage';
+import { trackSignUpConversion } from '../utils/googleAds';
 
 const AuthContext = createContext(null);
 
@@ -66,6 +67,7 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(t, true);
     setToken(t);
     setUser(u);
+    trackSignUpConversion({ userId: u?.id });
     return u;
   };
 
