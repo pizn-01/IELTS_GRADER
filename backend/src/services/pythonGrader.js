@@ -5,8 +5,12 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const sharp = require('sharp');
 const { supabaseAdmin } = require('./supabase');
+const { refundOneCredit, failStuckSubmission } = require('./gradingReconcile');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
+// Hard ceiling for a single Python grading child. Matches ~UI patience while
+// still allowing the 19-call mega-batch to finish on slow OpenAI days.
+const PYTHON_GRADING_TIMEOUT_MS = Number(process.env.PYTHON_GRADING_TIMEOUT_MS || 8 * 60 * 1000);
 
 // Mirrors the executable resolution logic in the client's own server.js —
 // prefer a project virtualenv (created at Docker build time in production,
@@ -33,10 +37,21 @@ function extractJson(output) {
   return JSON.parse(output.slice(start, end + 1));
 }
 
-function runPythonScript(scriptName, args) {
+// In-flight grading jobs — used to detect deploy/SIGTERM killing work mid-grade (H1)
+const inflightGrading = new Map(); // submissionId -> { startedAt, scriptName }
+
+function runPythonScript(scriptName, args, submissionId) {
   return new Promise((resolve, reject) => {
     const python = resolvePythonExecutable();
     const child = spawn(python, [path.join(PYTHON_DIR, scriptName), ...args], { cwd: PYTHON_DIR });
+    let settled = false;
+    let timedOut = false;
+
+    const killTimer = setTimeout(() => {
+      timedOut = true;
+      console.error(`[pythonGrader] ${scriptName} timed out after ${PYTHON_GRADING_TIMEOUT_MS}ms — killing child`);
+      try { child.kill('SIGKILL'); } catch (_) { /* ignore */ }
+    }, PYTHON_GRADING_TIMEOUT_MS);
 
     let stdout = '';
     let stderr = '';
@@ -47,10 +62,20 @@ function runPythonScript(scriptName, args) {
     });
 
     child.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(killTimer);
       reject(new Error(`Failed to start ${scriptName}: ${err.message}`));
     });
 
     child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(killTimer);
+      if (timedOut) {
+        reject(new Error(`${scriptName} timed out after ${PYTHON_GRADING_TIMEOUT_MS}ms`));
+        return;
+      }
       if (code !== 0) {
         reject(new Error(`${scriptName} exited with code ${code}: ${stderr.slice(0, 2000)}`));
         return;
@@ -63,6 +88,32 @@ function runPythonScript(scriptName, args) {
     });
   });
 }
+
+let _shutdownHandlerInstalled = false;
+function installGradingShutdownHandler() {
+  if (_shutdownHandlerInstalled) return;
+  _shutdownHandlerInstalled = true;
+
+  const onShutdown = (signal) => {
+    const jobs = [...inflightGrading.entries()].map(([id, meta]) => ({
+      submissionId: id,
+      userId: meta.userId,
+      scriptName: meta.scriptName,
+      ageMs: Date.now() - meta.startedAt,
+    }));
+    console.error(`[pythonGrader] ${signal} with ${jobs.length} inflight grading job(s) — failing + refunding`);
+    // Best-effort; Fly kill grace may cut this short — reconciler is the backstop.
+    Promise.allSettled(
+      jobs.map((j) => failStuckSubmission(j.submissionId, j.userId, `shutdown_${signal}`)),
+    ).finally(() => {
+      inflightGrading.clear();
+    });
+  };
+
+  process.on('SIGTERM', () => onShutdown('SIGTERM'));
+  process.on('SIGINT', () => onShutdown('SIGINT'));
+}
+installGradingShutdownHandler();
 
 const { resolveTaskVariant } = require('../utils/taskVariant');
 
@@ -365,6 +416,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
   } = submissionData;
 
   console.log(`[pythonGrader] Starting: submission=${submissionId} task=${exam_type} ${task_type}`);
+  inflightGrading.set(submissionId, { startedAt: Date.now(), scriptName: null, userId });
 
   try {
     const taskVariant = resolveTaskVariant(exam_type, task_type);
@@ -467,7 +519,9 @@ async function gradeEssayAsync(submissionId, submissionData) {
 
     let result;
     try {
-      result = mapPythonResult(await runPythonScript(scriptName, args));
+      const meta = inflightGrading.get(submissionId);
+      if (meta) meta.scriptName = scriptName;
+      result = mapPythonResult(await runPythonScript(scriptName, args, submissionId));
     } finally {
       if (chartSvgPath) {
         fs.promises.unlink(chartSvgPath).catch(() => {});
@@ -569,22 +623,30 @@ async function gradeEssayAsync(submissionId, submissionData) {
     }
 
     // ── Mark submission as graded ────────────────────────────────────────
-    await supabaseAdmin.from('submissions').update({ status: 'graded' }).eq('id', submissionId);
+    const { error: statusErr } = await supabaseAdmin.from('submissions').update({ status: 'graded' }).eq('id', submissionId);
+    if (statusErr) {
+      throw new Error(`Status update to graded failed: ${statusErr.message}`);
+    }
 
     console.log(`[pythonGrader] Done: submission=${submissionId} band=${overall_band}`);
+    inflightGrading.delete(submissionId);
   } catch (err) {
     console.error(`[pythonGrader] Failed: submission=${submissionId}`, err.message);
 
-    // Mark as failed and refund the credit
-    await supabaseAdmin.from('submissions').update({ status: 'failed' }).eq('id', submissionId);
+    // Mark as failed only if still grading, then +1 refund (not absolute snapshot)
+    const { data: failedRow } = await supabaseAdmin
+      .from('submissions')
+      .update({ status: 'failed' })
+      .eq('id', submissionId)
+      .eq('status', 'grading')
+      .select('id')
+      .maybeSingle();
 
-    if (userId && typeof original_credits === 'number') {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ credits_remaining: original_credits })
-        .eq('id', userId);
-      console.log(`[pythonGrader] Credit refunded for user=${userId}`);
+    if (failedRow && userId) {
+      const refunded = await refundOneCredit(userId);
+      if (refunded) console.log(`[pythonGrader] Credit refunded (+1) for user=${userId}`);
     }
+    inflightGrading.delete(submissionId);
   }
 }
 

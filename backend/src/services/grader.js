@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const { supabaseAdmin } = require('./supabase');
+const { refundOneCredit } = require('./gradingReconcile');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000 });
 
@@ -340,18 +341,18 @@ async function gradeEssayAsync(submissionId, submissionData) {
   } catch (err) {
     console.error(`[grader] Failed: submission=${submissionId}`, err.message);
 
-    // Mark as failed and refund the credit
-    await supabaseAdmin
+    // Mark as failed only if still grading, then +1 refund
+    const { data: failedRow } = await supabaseAdmin
       .from('submissions')
       .update({ status: 'failed' })
-      .eq('id', submissionId);
+      .eq('id', submissionId)
+      .eq('status', 'grading')
+      .select('id')
+      .maybeSingle();
 
-    if (userId && typeof original_credits === 'number') {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ credits_remaining: original_credits })
-        .eq('id', userId);
-      console.log(`[grader] Credit refunded for user=${userId}`);
+    if (failedRow && userId) {
+      const refunded = await refundOneCredit(userId);
+      if (refunded) console.log(`[grader] Credit refunded (+1) for user=${userId}`);
     }
   }
 }

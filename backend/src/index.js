@@ -179,4 +179,10 @@ app.listen(PORT, '0.0.0.0', () => {
   } catch (err) {
     console.warn('[social-ops-cron] not started:', err.message);
   }
+  try {
+    const { startGradingReconcile } = require('./services/gradingReconcile');
+    startGradingReconcile();
+  } catch (err) {
+    console.warn('[grading-reconcile] not started:', err.message);
+  }
 });

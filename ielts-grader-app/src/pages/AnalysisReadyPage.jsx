@@ -27,6 +27,7 @@ const AnalysisReadyPage = () => {
   const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData, updateEssayData } = useGrade();
   const pollRef = useRef(null);
   const hydratedRef = useRef(false);
+  const submitInFlightRef = useRef(false);
 
   // Restore essay payload saved before login/signup (incl. Google OAuth)
   useEffect(() => {
@@ -73,6 +74,8 @@ const AnalysisReadyPage = () => {
         return;
       }
       if (essayData?.essayContent) {
+        if (submitInFlightRef.current) return;
+        submitInFlightRef.current = true;
         try {
           const res = await api.submitAttempt({
             exam_type: essayData.examType || 'Academic',
@@ -102,6 +105,8 @@ const AnalysisReadyPage = () => {
             navigate('/performance');
           }
           return;
+        } finally {
+          submitInFlightRef.current = false;
         }
       } else {
         setGradingStatus('completed');
@@ -113,8 +118,9 @@ const AnalysisReadyPage = () => {
     // Keep modal open (gradingStatus stays 'processing') while we poll the backend.
     // The modal will disappear naturally when we navigate away on completion.
     let attempts = 0;
-    const maxAttempts = 40; // ~2 min at 3s intervals
+    const maxAttempts = 100; // ~5 min at 3s — python mega-batch can exceed 2 min
 
+    if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
       attempts++;
       try {

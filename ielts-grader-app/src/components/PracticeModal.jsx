@@ -213,9 +213,9 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
       return;
     }
 
-    // Poll until graded
+    // Poll until graded (python mega-batch can exceed 2 minutes)
     let attempts = 0;
-    const maxAttempts = 40; // ~2 min at 3s intervals
+    const maxAttempts = 100; // ~5 min at 3s intervals
 
     pollRef.current = setInterval(async () => {
       attempts++;
@@ -239,7 +239,11 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
         } else if (status === 'failed' || attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           stopProgressAnimation();
-          setGradingError('Grading failed. Your credit has been refunded. Please try again.');
+          if (status === 'failed') {
+            setGradingError('Grading failed. Your credit has been refunded. Please try again.');
+          } else {
+            setGradingError('Grading is taking longer than expected. Please check Reports in a few minutes before submitting again — your credit is only refunded if grading fails.');
+          }
         }
       } catch {
         if (attempts >= maxAttempts) {
