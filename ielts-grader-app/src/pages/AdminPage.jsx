@@ -278,15 +278,19 @@ const AcquisitionTab = () => {
   const [visitorChannel, setVisitorChannel] = useState('');
   const [visitorTotal, setVisitorTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const params = { days };
       const visitorParams = { days, page: visitorPage, per_page: 20, converted: 'false' };
       if (visitorChannel) visitorParams.channel = visitorChannel;
 
-      const [ov, ts, ch, co, camp, hr, vis] = await Promise.all([
+      // allSettled so a missing/new endpoint (e.g. by-campaign before backend deploy)
+      // cannot blank the entire Acquisition tab.
+      const settled = await Promise.allSettled([
         api.admin.getAcquisitionOverview(params),
         api.admin.getAcquisitionTimeseries(params),
         api.admin.getAcquisitionByChannel(params),
@@ -296,6 +300,23 @@ const AcquisitionTab = () => {
         api.admin.getAcquisitionVisitors(visitorParams),
       ]);
 
+      const value = (i, fallback = null) => (
+        settled[i].status === 'fulfilled' ? settled[i].value : fallback
+      );
+
+      const ov = value(0);
+      const ts = value(1, {});
+      const ch = value(2, {});
+      const co = value(3, {});
+      const camp = value(4, {});
+      const hr = value(5, {});
+      const vis = value(6, {});
+
+      if (!ov || ov.error) {
+        setLoadError(ov?.error || 'Failed to load acquisition data.');
+        return;
+      }
+
       setOverview(ov);
       setTimeseries(ts.data || []);
       setByChannel(ch.data || []);
@@ -304,8 +325,8 @@ const AcquisitionTab = () => {
       setByHour(hr.data || []);
       setVisitors(vis.data || []);
       setVisitorTotal(vis.total || 0);
-    } catch {
-      // keep prior data on error
+    } catch (err) {
+      setLoadError(err?.message || 'Failed to load acquisition data.');
     } finally {
       setLoading(false);
     }
@@ -315,6 +336,15 @@ const AcquisitionTab = () => {
 
   if (loading && !overview) {
     return <p className="text-gray-400 text-[14px] p-8">Loading acquisition data…</p>;
+  }
+
+  if (!overview) {
+    return (
+      <div className="p-8 space-y-3">
+        <p className="text-red-500 text-[14px]">{loadError || 'Acquisition data unavailable.'}</p>
+        <button onClick={load} className="text-[13px] text-[#2C3E50] underline">Retry</button>
+      </div>
+    );
   }
 
   const hourChartData = byHour.map(h => ({

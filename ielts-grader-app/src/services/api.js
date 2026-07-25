@@ -557,9 +557,16 @@ export const api = {
       const q = new URLSearchParams(params).toString();
       return fetch(`${BASE_URL}/admin/acquisition/by-landing?${q}`, { headers: getHeaders() }).then(r => r.json());
     },
-    getAcquisitionByCampaign: (params = {}) => {
+    getAcquisitionByCampaign: async (params = {}) => {
       const q = new URLSearchParams(params).toString();
-      return fetch(`${BASE_URL}/admin/acquisition/by-campaign?${q}`, { headers: getHeaders() }).then(r => r.json());
+      const res = await fetch(`${BASE_URL}/admin/acquisition/by-campaign?${q}`, { headers: getHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Older backends may not have this route yet — treat as empty, not fatal
+        if (res.status === 404) return { data: [] };
+        throw new Error(data.error || `Request failed (${res.status})`);
+      }
+      return data;
     },
     getAcquisitionByHour: (params = {}) => {
       const q = new URLSearchParams(params).toString();
