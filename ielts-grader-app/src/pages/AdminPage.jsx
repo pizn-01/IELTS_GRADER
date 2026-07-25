@@ -625,13 +625,12 @@ const SubmissionsTab = () => {
       <div className="bg-white rounded-[16px] border border-gray-100 overflow-x-auto shadow-sm">
         <table className="w-full text-[13px] min-w-[800px]">
           <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
-            <tr>{['ID', 'User ID', 'Email', 'Type', 'Words', 'Band', 'Status', 'Date'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
+            <tr>{['ID', 'Email', 'Type', 'Words', 'Band', 'Status', 'Date'].map(h => <th key={h} className="px-5 py-3 text-left">{h}</th>)}</tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {subs.map(s => (
               <tr key={s.id} className="hover:bg-gray-50/50">
                 <td className="px-5 py-3 text-gray-400 font-mono text-[11px]">{s.id.slice(0, 8)}</td>
-                <td className="px-5 py-3 text-gray-500 font-mono text-[11px] break-all" title={s.user_id}>{s.user_id || '—'}</td>
                 <td className="px-5 py-3 text-gray-600">{s.user_email || '—'}</td>
                 <td className="px-5 py-3 text-[#101828] font-medium">{s.exam_type} {s.task_type}</td>
                 <td className="px-5 py-3 text-gray-500">{s.word_count || '—'}</td>
@@ -640,7 +639,7 @@ const SubmissionsTab = () => {
                 <td className="px-5 py-3 text-gray-400">{new Date(s.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
-            {subs.length === 0 && <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400">No submissions.</td></tr>}
+            {subs.length === 0 && <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No submissions.</td></tr>}
           </tbody>
         </table>
       </div>
