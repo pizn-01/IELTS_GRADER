@@ -400,10 +400,18 @@ router.get('/submissions', async (req, res) => {
     const { data, error } = await query;
     if (error) throw error;
 
+    const uniqueUserIds = [...new Set((data || []).map(s => s.user_id).filter(Boolean))];
+    const emailMap = {};
+    if (uniqueUserIds.length > 0) {
+      const { data: authData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      (authData?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+    }
+
     return res.json({
       data: (data || []).map(s => ({
         ...s,
         overall_band: Array.isArray(s.reports) ? s.reports[0]?.overall_band : s.reports?.overall_band,
+        user_email: emailMap[s.user_id] || '—',
         reports: undefined,
       })),
       page: parseInt(page),
