@@ -15,20 +15,10 @@ const FullPageLoader = () => (
 );
 
 /**
- * After all free-trial credits are used, unverified email users must verify
- * before using the rest of the product. Report viewing is exempt.
- */
-function needsEmailVerification(user) {
-  if (!user || user.email_verified) return false;
-  return (Number(user.credits_remaining) || 0) <= 0;
-}
-
-/**
  * ProtectedRoute — wraps any route that requires authentication.
  * Shows loader during bootstrap, redirects to /login if unauthenticated,
  * and preserves the intended destination via location state.
- * When allowUnverified is false (default), also gates unverified users
- * who have already used their free-trial credits.
+ * Email verification is gated only at subscribe/checkout, not on free practice.
  */
 export const AdminRoute = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -39,18 +29,14 @@ export const AdminRoute = ({ children }) => {
   return children;
 };
 
-export const ProtectedRoute = ({ children, allowUnverified = false }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+export const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) return <FullPageLoader />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (!allowUnverified && needsEmailVerification(user)) {
-    return <Navigate to="/verify-email" replace />;
   }
 
   return children;

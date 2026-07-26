@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { SUBSCRIPTION_PLANS, SUBSCRIPTION_FEATURES } from '../constants/subscriptionPlans';
+import { VerifyEmailModal } from '../components/Modals';
+import { ensureVerifiedForCheckout } from '../utils/checkoutGate';
+import { markVerificationEmailSent } from '../utils/authStorage';
 
 const PLANS = [SUBSCRIPTION_PLANS.weekly, SUBSCRIPTION_PLANS.monthly];
 
 const UpgradePage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [examType, setExamType] = useState('Academic');
   const [selectedKey, setSelectedKey] = useState(PLANS[0].key);
   const [loading, setLoading] = useState(false);
@@ -13,6 +20,7 @@ const UpgradePage = () => {
   const [error, setError] = useState('');
   const [status, setStatus] = useState(null);
   const [statusLoading, setStatusLoading] = useState(true);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   useEffect(() => {
     api.getSubscriptionStatus()
@@ -38,6 +46,15 @@ const UpgradePage = () => {
     setLoading(true);
     setError('');
     try {
+      const verified = await ensureVerifiedForCheckout(user, {
+        plan: selectedKey,
+        returnPath: '/upgrade',
+      });
+      if (!verified) {
+        setShowVerifyModal(true);
+        setLoading(false);
+        return;
+      }
       const { url } = await api.createSubscriptionCheckout(selectedKey);
       window.location.href = url;
     } catch (err) {
@@ -218,6 +235,23 @@ const UpgradePage = () => {
             : 'Cancel anytime. No long-term commitment.'}
         </p>
       </div>
+
+      <VerifyEmailModal
+        isOpen={showVerifyModal}
+        email={user?.email}
+        purpose="checkout"
+        onContinueReading={() => setShowVerifyModal(false)}
+        onGoVerify={() => navigate('/verify-email', { state: { fromCheckout: true } })}
+        onResend={async () => {
+          if (!user?.email) return;
+          try {
+            await api.sendVerification();
+          } catch {
+            await api.resendVerification(user.email);
+          }
+          markVerificationEmailSent();
+        }}
+      />
     </div>
   );
 };

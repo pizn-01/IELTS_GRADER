@@ -305,7 +305,7 @@ function App() {
         <Route path="/selection" element={<SelectionPage />} />
         <Route path="/mock-exam" element={<MockExamPage />} />
         <Route path="/report" element={
-          <ProtectedRoute allowUnverified>
+          <ProtectedRoute>
             <Layout 
               currentView="reports" 
               onNavigate={handleProtectedNavigate} 
@@ -316,7 +316,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/analysis-ready" element={
-          <ProtectedRoute allowUnverified><AnalysisReadyPage /></ProtectedRoute>
+          <ProtectedRoute><AnalysisReadyPage /></ProtectedRoute>
         } />
         <Route path="/reports" element={
           <ProtectedRoute><ReportsRedirect /></ProtectedRoute>

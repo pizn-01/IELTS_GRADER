@@ -194,7 +194,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Enforce free trial credits, set email_verified = false, generate verification token.
-    // Verification email is deferred until after the first free evaluation.
+    // Verification email is sent at signup; checkout requires verification before Stripe.
     const verificationToken = generateToken();
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
 

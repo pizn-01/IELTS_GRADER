@@ -12,9 +12,10 @@ import {
   peekPendingGradePayload,
   consumePendingGradePayload,
   markVerificationEmailSent,
-  wasVerificationEmailSent,
 } from '../utils/authStorage';
 import { trackEvent } from '../utils/trackEvent';
+import { VerifyEmailModal } from '../components/Modals';
+import { ensureVerifiedForCheckout } from '../utils/checkoutGate';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const AnalysisReadyPage = () => {
   const [selectedPlan, setSelectedPlan] = useState('Monthly');
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeError, setSubscribeError] = useState('');
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData, updateEssayData } = useGrade();
   const pollRef = useRef(null);
@@ -49,19 +51,6 @@ const AnalysisReadyPage = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const triggerPostEvalVerification = async (freshUser) => {
-    const profile = freshUser || user;
-    if (!profile?.email || profile.email_verified) return;
-    if (wasVerificationEmailSent()) return;
-    try {
-      const result = await api.sendVerification();
-      if (!result?.already_verified) markVerificationEmailSent();
-    } catch (err) {
-      console.warn('[verify] post-eval send failed:', err.message);
-      // Do not mark as sent — ReportPage / verify UI can retry
-    }
-  };
 
   const onGradingComplete = async () => {
     let currentSubId = submissionId;
@@ -136,10 +125,9 @@ const AnalysisReadyPage = () => {
               email_verified: fresh.email_verified,
             });
           } catch {}
-          await triggerPostEvalVerification(fresh);
           const report = await api.getReport(currentSubId);
           setGradingStatus('completed');
-          navigate('/report', { state: { reportData: report, requireEmailVerify: fresh && !fresh.email_verified } });
+          navigate('/report', { state: { reportData: report } });
         } else if (status === 'failed' || attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           setGradingStatus('completed');
@@ -174,7 +162,17 @@ const AnalysisReadyPage = () => {
     setSubscribeError('');
     try {
       trackEvent('upgrade_cta_clicked', { source: 'analysis_ready' });
-      const { url } = await api.createSubscriptionCheckout(planKeyFromSelection(selectedPlan));
+      const plan = planKeyFromSelection(selectedPlan);
+      const verified = await ensureVerifiedForCheckout(user, {
+        plan,
+        returnPath: '/analysis-ready',
+      });
+      if (!verified) {
+        setShowVerifyModal(true);
+        setSubscribeLoading(false);
+        return;
+      }
+      const { url } = await api.createSubscriptionCheckout(plan);
       window.location.href = url;
     } catch (err) {
       setSubscribeError(err.message || 'Something went wrong. Please try again.');
@@ -398,6 +396,22 @@ const AnalysisReadyPage = () => {
       <AIProcessingModal 
         isOpen={gradingStatus === 'processing'} 
         onComplete={onGradingComplete}
+      />
+      <VerifyEmailModal
+        isOpen={showVerifyModal}
+        email={user?.email}
+        purpose="checkout"
+        onContinueReading={() => setShowVerifyModal(false)}
+        onGoVerify={() => navigate('/verify-email', { state: { fromCheckout: true } })}
+        onResend={async () => {
+          if (!user?.email) return;
+          try {
+            await api.sendVerification();
+          } catch {
+            await api.resendVerification(user.email);
+          }
+          markVerificationEmailSent();
+        }}
       />
     </div>
   );

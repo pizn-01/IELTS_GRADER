@@ -11,10 +11,13 @@ export const VerifyEmailModal = ({
   onContinueReading,
   onGoVerify,
   onResend,
+  purpose = 'default',
 }) => {
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [error, setError] = useState('');
+
+  const isCheckout = purpose === 'checkout';
 
   const handleResend = async () => {
     if (!onResend) return;
@@ -52,7 +55,7 @@ export const VerifyEmailModal = ({
                 type="button"
                 onClick={onContinueReading}
                 className="absolute top-4 md:top-6 right-4 md:right-6 text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label="Continue reading report"
+                aria-label="Close"
               >
                 <X size={24} />
               </button>
@@ -63,9 +66,13 @@ export const VerifyEmailModal = ({
                 <Mail size={32} />
               </div>
 
-              <h2 className="text-xl md:text-2xl font-bold mb-4 text-[#1a1f36]">Verify your email</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-4 text-[#1a1f36]">
+                {isCheckout ? 'Verify email to subscribe' : 'Verify your email'}
+              </h2>
               <p className="text-sm md:text-base text-gray-500 mb-6 max-w-sm leading-relaxed">
-                Your free evaluation is ready. Verify your email to keep using IELTS Grader.
+                {isCheckout
+                  ? 'Confirm your email before starting checkout so we can secure your subscription.'
+                  : 'Verify your email to keep using IELTS Grader.'}
                 {email ? (
                   <>
                     {' '}We&apos;ve sent a secure link to{' '}
@@ -95,7 +102,7 @@ export const VerifyEmailModal = ({
                     onClick={onContinueReading}
                     className="flex-1 h-11 bg-white border border-[#E5E7EB] text-[#1a1f36] rounded-[10px] font-semibold text-sm hover:bg-[#F9FAFB] transition-colors"
                   >
-                    Keep reading report
+                    {isCheckout ? 'Not now' : 'Keep reading report'}
                   </button>
                 )}
               </div>

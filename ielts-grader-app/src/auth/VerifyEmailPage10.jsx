@@ -4,7 +4,11 @@ import AuthLayout from './AuthLayout';
 import { Icons, formStyles } from "./Common.jsx";
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { clearVerificationEmailSent } from '../utils/authStorage';
+import { clearVerificationEmailSent, peekPendingCheckout } from '../utils/authStorage';
+import {
+  resumePendingCheckoutIfAny,
+  getPendingCheckoutReturnPath,
+} from '../utils/checkoutGate';
 
 const VerifyEmailPage10 = () => {
   const navigate = useNavigate();
@@ -16,6 +20,7 @@ const VerifyEmailPage10 = () => {
   const [error, setError] = useState('');
 
   const email = user?.email || location.state?.email || '';
+  const fromCheckout = Boolean(location.state?.fromCheckout || peekPendingCheckout());
 
   const handleResend = async () => {
     if (!email) {
@@ -46,9 +51,19 @@ const VerifyEmailPage10 = () => {
       updateUser(fresh);
       if (fresh.email_verified) {
         clearVerificationEmailSent();
+        const resumed = await resumePendingCheckoutIfAny();
+        if (resumed) return;
+        if (fromCheckout) {
+          navigate(getPendingCheckoutReturnPath('/upgrade'), { replace: true });
+          return;
+        }
         navigate('/dashboard', { replace: true });
       } else {
-        setError('Email not verified yet. Click the link in your inbox, then try again.');
+        setError(
+          fromCheckout
+            ? 'Email not verified yet. Click the link in your inbox, then try again to continue checkout.'
+            : 'Email not verified yet. Click the link in your inbox, then try again.'
+        );
       }
     } catch (err) {
       setError(err.message || 'Could not refresh your account status.');
@@ -65,10 +80,13 @@ const VerifyEmailPage10 = () => {
         </div>
 
         <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#1a1f36', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
-          Verify Your Email
+          {fromCheckout ? 'Verify Email to Subscribe' : 'Verify Your Email'}
         </h1>
         <p style={{ fontSize: '16px', color: '#6B7280', margin: '0 auto 12px', maxWidth: '420px', lineHeight: 1.7 }}>
-          We&apos;ve sent a verification link to{email ? <> <strong style={{ color: '#1a1f36' }}>{email}</strong></> : ' your email'}. Click the link to continue using IELTS Grader.
+          We&apos;ve sent a verification link to{email ? <> <strong style={{ color: '#1a1f36' }}>{email}</strong></> : ' your email'}.
+          {fromCheckout
+            ? ' Confirm it to continue to checkout.'
+            : ' Click the link to continue using IELTS Grader.'}
         </p>
         <p style={{ fontSize: '13px', color: '#9CA3AF', margin: '0 auto 32px', maxWidth: '380px', lineHeight: 1.6 }}>
           The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
@@ -109,7 +127,9 @@ const VerifyEmailPage10 = () => {
           {checking
             ? 'Checking…'
             : isAuthenticated
-              ? "I've verified. Continue"
+              ? fromCheckout
+                ? "I've verified. Continue to checkout"
+                : "I've verified. Continue"
               : 'Sign In'}
         </button>
       </div>

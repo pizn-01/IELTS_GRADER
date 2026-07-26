@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import MockExam from '../components/MockExam';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
@@ -10,7 +10,7 @@ const MockExamPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { essayData } = useGrade();
-  const { user, updateUser, isAuthenticated, isLoading } = useAuth();
+  const { updateUser, isAuthenticated, isLoading } = useAuth();
   const [creditCheckDone, setCreditCheckDone] = useState(!isAuthenticated);
   const [allowed, setAllowed] = useState(!isAuthenticated);
 
@@ -18,13 +18,6 @@ const MockExamPage = () => {
   const routeState = location.state || {};
   const examType = routeState.examType || essayData.examType || 'Academic';
   const taskType = routeState.taskType || essayData.taskType || 'Task 2';
-
-  // Logged-in users who have used all free-trial credits must verify email first
-  const needsVerify =
-    isAuthenticated &&
-    user &&
-    !user.email_verified &&
-    (Number(user.credits_remaining) || 0) <= 0;
 
   useEffect(() => {
     if (isLoading) return;
@@ -51,10 +44,6 @@ const MockExamPage = () => {
         });
         const remaining = Number(fresh.credits_remaining) || 0;
         if (remaining <= 0) {
-          if (!fresh.email_verified) {
-            navigate('/verify-email', { replace: true });
-            return;
-          }
           navigate('/analysis-ready', { state: { outOfCredits: true }, replace: true });
           return;
         }
@@ -107,10 +96,6 @@ const MockExamPage = () => {
         </div>
       </>
     );
-  }
-
-  if (needsVerify) {
-    return <Navigate to="/verify-email" replace />;
   }
 
   if (isAuthenticated && !allowed) {

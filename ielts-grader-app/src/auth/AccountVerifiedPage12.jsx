@@ -4,7 +4,11 @@ import AuthLayout from './AuthLayout';
 import { Icons, formStyles } from "./Common.jsx";
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { clearVerificationEmailSent, getAuthToken } from '../utils/authStorage';
+import { clearVerificationEmailSent, getAuthToken, peekPendingCheckout } from '../utils/authStorage';
+import {
+  resumePendingCheckoutIfAny,
+  getPendingCheckoutReturnPath,
+} from '../utils/checkoutGate';
 
 const AccountVerifiedPage12 = () => {
   const navigate = useNavigate();
@@ -102,8 +106,14 @@ const AccountVerifiedPage12 = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (isAuthenticated) {
+      const resumed = await resumePendingCheckoutIfAny();
+      if (resumed) return;
+      if (peekPendingCheckout()) {
+        navigate(getPendingCheckoutReturnPath('/upgrade'), { replace: true });
+        return;
+      }
       navigate('/dashboard', { replace: true });
     } else {
       navigate('/login');
@@ -150,10 +160,16 @@ const AccountVerifiedPage12 = () => {
           Account Verified!
         </h1>
         <p style={{ fontSize: '16px', color: '#6B7280', margin: '0 auto 36px', maxWidth: '420px', lineHeight: 1.7 }}>
-          Your email has been verified and your account is now active. You can continue practising.
+          {peekPendingCheckout()
+            ? 'Your email is verified. Continue to finish subscribing.'
+            : 'Your email has been verified and your account is now active. You can continue practising.'}
         </p>
         <button onClick={handleContinue} className="btn-primary-active" style={formStyles.button.active}>
-          {isAuthenticated ? 'Continue to Dashboard' : 'Sign In'}
+          {isAuthenticated
+            ? peekPendingCheckout()
+              ? 'Continue to Checkout'
+              : 'Continue to Dashboard'
+            : 'Sign In'}
         </button>
       </div>
     </AuthLayout>
