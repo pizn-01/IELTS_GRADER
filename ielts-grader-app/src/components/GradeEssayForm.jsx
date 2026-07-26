@@ -7,6 +7,7 @@ import { api } from '../services/api';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
 import { setPendingGradePayload } from '../utils/authStorage';
+import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 
 const readAsDataURL = (file) =>
   new Promise((resolve, reject) => {
@@ -253,7 +254,7 @@ export default function GradeEssayForm({
           <div className="flex items-center gap-1 md:gap-3">
             {!user && (
               <p className="hidden lg:block text-[11px] text-gray-500 m-0 max-w-[160px] text-right leading-snug">
-                3 free evaluations. No card required.
+                {FREE_TRIAL_CREDITS} free evaluations. No card required.
               </p>
             )}
             <button
@@ -421,7 +422,7 @@ export default function GradeEssayForm({
         </button>
         {!user && (
           <p className="text-[12px] text-[#6B7280] text-center mt-3 mb-0">
-            Free account includes 1 full evaluation. No card required.
+            Free account includes {FREE_TRIAL_CREDITS} full evaluations. No card required.
           </p>
         )}
       </div>
