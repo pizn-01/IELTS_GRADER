@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import QuestionChart, { detectChartType } from './QuestionChart';
 import { isGeneralTask1Letter, parseLetterQuestion } from '../utils/parseLetterQuestion';
 import { isAcademicTask1Report, parseReportQuestion } from '../utils/parseReportQuestion';
@@ -40,6 +40,35 @@ function ReportQuestionDisplay({ text, chartType, chartSvg, chartImage }) {
   const { scenario, instruction } = parseReportQuestion(text);
   // Prefer svg/image; fall back to synthetic chart from chartType/seed.
   const showChart = Boolean(chartSvg || chartImage || chartType || text);
+  const [expanded, setExpanded] = useState(false);
+  const expandedRef = useRef(null);
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const onPointerDown = (e) => {
+      if (expandedRef.current && !expandedRef.current.contains(e.target)) {
+        setExpanded(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setExpanded(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [expanded]);
+
+  const chartProps = {
+    type: chartType,
+    seed: text,
+    svg: chartSvg,
+    image: chartImage,
+    fit: true,
+  };
+
   return (
     <>
       {/* Keep timing + task rules visible; chart scales to fit (no internal scroll). */}
@@ -50,14 +79,31 @@ function ReportQuestionDisplay({ text, chartType, chartSvg, chartImage }) {
         {scenario}
       </h2>
       {showChart && (
-        <div className="mb-2 md:mb-4 w-full h-[min(200px,32vh)] md:h-[280px] lg:h-[320px] overflow-hidden rounded-[8px]">
-          <QuestionChart
-            type={chartType}
-            seed={text}
-            svg={chartSvg}
-            image={chartImage}
-            fit
-          />
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={expanded}
+          title="Click to enlarge chart"
+          onClick={() => setExpanded(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setExpanded(true);
+            }
+          }}
+          className="mb-2 md:mb-4 w-full h-[min(200px,32vh)] md:h-[280px] lg:h-[320px] overflow-hidden rounded-[8px] cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-[#0EA5E9]/focus-visible:ring-offset-2"
+        >
+          <QuestionChart {...chartProps} />
+        </div>
+      )}
+      {expanded && showChart && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-8">
+          <div
+            ref={expandedRef}
+            className="w-[min(960px,92vw)] h-[min(640px,80vh)] rounded-[12px] overflow-hidden shadow-2xl"
+          >
+            <QuestionChart {...chartProps} />
+          </div>
         </div>
       )}
       <p className="text-[12px] md:text-[13px] text-[#475467] leading-[1.6] font-medium mb-2">
