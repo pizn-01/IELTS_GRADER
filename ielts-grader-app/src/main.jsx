@@ -19,6 +19,7 @@ function PrerenderSignal() {
 
     let cancelled = false
     let intervalId = 0
+    document.documentElement.dataset.prerenderReady = '0'
 
     const ready = () => {
       const root = document.getElementById('root')
@@ -28,11 +29,12 @@ function PrerenderSignal() {
     }
 
     const fire = () => {
-      if (!cancelled) document.dispatchEvent(new Event('render-event'))
+      if (cancelled) return
+      document.documentElement.dataset.prerenderReady = '1'
+      document.dispatchEvent(new Event('render-event'))
     }
 
     if (ready()) {
-      // Let react-helmet-async flush title/canonical before snapshot
       const t = window.setTimeout(fire, 50)
       return () => {
         cancelled = true
