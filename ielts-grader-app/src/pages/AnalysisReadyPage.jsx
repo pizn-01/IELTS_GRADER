@@ -11,11 +11,8 @@ import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS } from 
 import {
   peekPendingGradePayload,
   consumePendingGradePayload,
-  markVerificationEmailSent,
 } from '../utils/authStorage';
 import { trackEvent } from '../utils/trackEvent';
-import { VerifyEmailModal } from '../components/Modals';
-import { ensureVerifiedForCheckout } from '../utils/checkoutGate';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
@@ -25,7 +22,6 @@ const AnalysisReadyPage = () => {
   const [selectedPlan, setSelectedPlan] = useState('Monthly');
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeError, setSubscribeError] = useState('');
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData, updateEssayData } = useGrade();
   const pollRef = useRef(null);
@@ -162,17 +158,7 @@ const AnalysisReadyPage = () => {
     setSubscribeError('');
     try {
       trackEvent('upgrade_cta_clicked', { source: 'analysis_ready' });
-      const plan = planKeyFromSelection(selectedPlan);
-      const verified = await ensureVerifiedForCheckout(user, {
-        plan,
-        returnPath: '/analysis-ready',
-      });
-      if (!verified) {
-        setShowVerifyModal(true);
-        setSubscribeLoading(false);
-        return;
-      }
-      const { url } = await api.createSubscriptionCheckout(plan);
+      const { url } = await api.createSubscriptionCheckout(planKeyFromSelection(selectedPlan));
       window.location.href = url;
     } catch (err) {
       setSubscribeError(err.message || 'Something went wrong. Please try again.');
@@ -396,22 +382,6 @@ const AnalysisReadyPage = () => {
       <AIProcessingModal 
         isOpen={gradingStatus === 'processing'} 
         onComplete={onGradingComplete}
-      />
-      <VerifyEmailModal
-        isOpen={showVerifyModal}
-        email={user?.email}
-        purpose="checkout"
-        onContinueReading={() => setShowVerifyModal(false)}
-        onGoVerify={() => navigate('/verify-email', { state: { fromCheckout: true } })}
-        onResend={async () => {
-          if (!user?.email) return;
-          try {
-            await api.sendVerification();
-          } catch {
-            await api.resendVerification(user.email);
-          }
-          markVerificationEmailSent();
-        }}
       />
     </div>
   );

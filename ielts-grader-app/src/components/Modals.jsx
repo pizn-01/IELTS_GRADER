@@ -17,7 +17,7 @@ export const VerifyEmailModal = ({
   const [resent, setResent] = useState(false);
   const [error, setError] = useState('');
 
-  const isCheckout = purpose === 'checkout';
+  const isPostPayment = purpose === 'post_payment';
 
   const handleResend = async () => {
     if (!onResend) return;
@@ -67,11 +67,11 @@ export const VerifyEmailModal = ({
               </div>
 
               <h2 className="text-xl md:text-2xl font-bold mb-4 text-[#1a1f36]">
-                {isCheckout ? 'Verify email to subscribe' : 'Verify your email'}
+                Verify your email
               </h2>
               <p className="text-sm md:text-base text-gray-500 mb-6 max-w-sm leading-relaxed">
-                {isCheckout
-                  ? 'Confirm your email before starting checkout so we can secure your subscription.'
+                {isPostPayment
+                  ? 'Your subscription is active. Confirm your email so we can reach you about billing and account recovery.'
                   : 'Verify your email to keep using IELTS Grader.'}
                 {email ? (
                   <>
@@ -102,7 +102,7 @@ export const VerifyEmailModal = ({
                     onClick={onContinueReading}
                     className="flex-1 h-11 bg-white border border-[#E5E7EB] text-[#1a1f36] rounded-[10px] font-semibold text-sm hover:bg-[#F9FAFB] transition-colors"
                   >
-                    {isCheckout ? 'Not now' : 'Keep reading report'}
+                    {isPostPayment ? 'Continue to dashboard' : 'Keep reading report'}
                   </button>
                 )}
               </div>

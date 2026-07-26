@@ -1,24 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Loader } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { VerifyEmailModal } from '../components/Modals';
+import {
+  markVerificationEmailSent,
+  wasVerificationEmailSent,
+} from '../utils/authStorage';
 
 const CheckoutSuccessPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const sessionId = searchParams.get('session_id');
 
   const [status, setStatus] = useState('polling'); // 'polling' | 'success' | 'timeout'
   const [packName, setPackName] = useState('');
   const [creditsGranted, setCreditsGranted] = useState(0);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [freshEmail, setFreshEmail] = useState('');
+  const redirectTimerRef = useRef(null);
+
+  const goDashboard = () => {
+    if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    navigate('/dashboard');
+  };
 
   useEffect(() => {
     if (!sessionId) { navigate('/dashboard'); return; }
 
     let attempts = 0;
     const maxAttempts = 15; // 30 seconds at 2s intervals
+    let cancelled = false;
+
+    const promptVerifyIfNeeded = async (fresh) => {
+      if (!fresh || fresh.email_verified) {
+        redirectTimerRef.current = setTimeout(() => navigate('/dashboard'), 3000);
+        return;
+      }
+
+      setFreshEmail(fresh.email || user?.email || '');
+      if (fresh.email && !wasVerificationEmailSent()) {
+        try {
+          const result = await api.sendVerification();
+          if (!result?.already_verified) markVerificationEmailSent();
+        } catch {
+          try {
+            await api.resendVerification(fresh.email);
+            markVerificationEmailSent();
+          } catch {
+            /* modal can resend */
+          }
+        }
+      }
+      if (!cancelled) setShowVerifyModal(true);
+    };
 
     const poll = async () => {
       try {
@@ -29,9 +66,9 @@ const CheckoutSuccessPage = () => {
           setCreditsGranted(result.credits_granted || 0);
           setStatus('success');
 
-          // Refresh user credits in AuthContext so header updates
+          let fresh = null;
           try {
-            const fresh = await api.getMe();
+            fresh = await api.getMe();
             updateUser({
               credits_remaining: fresh.credits_remaining,
               credits_allowance: fresh.credits_allowance,
@@ -39,10 +76,11 @@ const CheckoutSuccessPage = () => {
               subscription_status: fresh.subscription_status,
               is_subscribed: fresh.is_subscribed,
               has_paid: fresh.has_paid,
+              email_verified: fresh.email_verified,
             });
           } catch {}
 
-          setTimeout(() => navigate('/dashboard'), 3000);
+          await promptVerifyIfNeeded(fresh);
           return;
         }
       } catch {}
@@ -57,6 +95,10 @@ const CheckoutSuccessPage = () => {
     };
 
     poll();
+    return () => {
+      cancelled = true;
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -80,7 +122,18 @@ const CheckoutSuccessPage = () => {
             <p className="text-[15px] text-[#4B5563] mb-1">
               <span className="font-bold text-[#1a1f36]">{creditsGranted} credits</span> on <span className="font-semibold">{packName}</span> are now active.
             </p>
-            <p className="text-[13px] text-[#9CA3AF] mt-4">Redirecting you to the dashboard…</p>
+            {!showVerifyModal && (
+              <p className="text-[13px] text-[#9CA3AF] mt-4">Redirecting you to the dashboard…</p>
+            )}
+            {showVerifyModal && (
+              <button
+                type="button"
+                onClick={goDashboard}
+                className="mt-6 w-full h-[48px] bg-[#1a1f36] text-white rounded-[10px] font-bold text-[14px] hover:bg-[#2a2f46] transition-all"
+              >
+                Continue to Dashboard
+              </button>
+            )}
           </>
         )}
 
@@ -94,7 +147,7 @@ const CheckoutSuccessPage = () => {
               Your payment was processed. Credits may take a moment to appear. Refresh your dashboard if they haven't shown up yet.
             </p>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={goDashboard}
               className="w-full h-[48px] bg-[#1a1f36] text-white rounded-[10px] font-bold text-[14px] hover:bg-[#2a2f46] transition-all"
             >
               Go to Dashboard
@@ -102,6 +155,24 @@ const CheckoutSuccessPage = () => {
           </>
         )}
       </div>
+
+      <VerifyEmailModal
+        isOpen={showVerifyModal}
+        email={freshEmail || user?.email}
+        purpose="post_payment"
+        onContinueReading={goDashboard}
+        onGoVerify={() => navigate('/verify-email', { state: { fromPayment: true } })}
+        onResend={async () => {
+          const target = freshEmail || user?.email;
+          if (!target) return;
+          try {
+            await api.sendVerification();
+          } catch {
+            await api.resendVerification(target);
+          }
+          markVerificationEmailSent();
+        }}
+      />
     </div>
   );
 };

@@ -64,7 +64,6 @@ export function consumePostAuthRedirect(fallback = '/dashboard') {
 
 const PENDING_GRADE_KEY = 'pending_grade_payload';
 const VERIFY_EMAIL_SENT_KEY = 'verify_email_sent_after_eval';
-const PENDING_CHECKOUT_KEY = 'pending_subscription_checkout';
 
 /**
  * Persist essay/exam payload across login/signup (and Google OAuth full-page redirect).
@@ -97,47 +96,6 @@ export function consumePendingGradePayload() {
     /* ignore */
   }
   return payload;
-}
-
-/** Persist plan intent when email verify is required before Stripe checkout. */
-export function setPendingCheckout({ plan, returnPath } = {}) {
-  if (!plan) return;
-  try {
-    sessionStorage.setItem(
-      PENDING_CHECKOUT_KEY,
-      JSON.stringify({
-        plan,
-        returnPath:
-          returnPath && returnPath.startsWith('/') && !returnPath.startsWith('//')
-            ? returnPath
-            : '/upgrade',
-      })
-    );
-  } catch {
-    /* ignore */
-  }
-}
-
-export function peekPendingCheckout() {
-  try {
-    const raw = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.plan) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-export function consumePendingCheckout() {
-  const pending = peekPendingCheckout();
-  try {
-    sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
-  } catch {
-    /* ignore */
-  }
-  return pending;
 }
 
 export function markVerificationEmailSent() {

@@ -10,9 +10,6 @@ import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { trackEvent } from '../utils/trackEvent';
-import { ensureVerifiedForCheckout } from '../utils/checkoutGate';
-import { VerifyEmailModal } from '../components/Modals';
-import { markVerificationEmailSent } from '../utils/authStorage';
 
 const SelectionPage = () => {
   const navigate = useNavigate();
@@ -32,7 +29,6 @@ const SelectionPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   // Premium plan state
   const [trainingType, setTrainingType] = useState('Academic');
@@ -171,21 +167,10 @@ const SelectionPage = () => {
     setIsLoading(true);
     try {
       trackEvent('upgrade_cta_clicked', { source: 'selection_page' });
-      let account = user;
-      if (!account) {
-        account = await register({ first_name: firstName, last_name: lastName, email, password });
+      if (!user) {
+        await register({ first_name: firstName, last_name: lastName, email, password });
       }
-      const plan = planKeyFromSelection(selectedPlan);
-      const verified = await ensureVerifiedForCheckout(account || user, {
-        plan,
-        returnPath: '/selection',
-      });
-      if (!verified) {
-        setShowVerifyModal(true);
-        setIsLoading(false);
-        return;
-      }
-      const { url } = await api.createSubscriptionCheckout(plan);
+      const { url } = await api.createSubscriptionCheckout(planKeyFromSelection(selectedPlan));
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Failed to start checkout. Please try again.');
@@ -417,24 +402,6 @@ const SelectionPage = () => {
         onConfirm={handleConfirmPremium}
         planName={selectedPlan === 'Weekly' ? 'Weekly Sprint' : 'Monthly Mastery'}
         price={selectedPlan === 'Weekly' ? SUBSCRIPTION_PLANS.weekly.label : SUBSCRIPTION_PLANS.monthly.label}
-      />
-
-      <VerifyEmailModal
-        isOpen={showVerifyModal}
-        email={user?.email || email}
-        purpose="checkout"
-        onContinueReading={() => setShowVerifyModal(false)}
-        onGoVerify={() => navigate('/verify-email', { state: { fromCheckout: true } })}
-        onResend={async () => {
-          const target = user?.email || email;
-          if (!target) return;
-          try {
-            await api.sendVerification();
-          } catch {
-            await api.resendVerification(target);
-          }
-          markVerificationEmailSent();
-        }}
       />
     </div>
   );

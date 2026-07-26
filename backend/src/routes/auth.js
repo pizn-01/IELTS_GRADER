@@ -193,17 +193,14 @@ router.post('/register', async (req, res) => {
       };
     }
 
-    // Enforce free trial credits, set email_verified = false, generate verification token.
-    // Verification email is sent at signup; checkout requires verification before Stripe.
-    const verificationToken = generateToken();
-    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
-
+    // Free trial starts unverified. Verification email + token are issued after
+    // successful payment (see CheckoutSuccessPage → issueVerificationEmail).
     await supabaseAdmin.from('profiles').update({
       credits_remaining: FREE_TRIAL_CREDITS,
       credits_allowance: FREE_TRIAL_CREDITS,
       email_verified: false,
-      verification_token: verificationToken,
-      verification_token_expires_at: verificationExpiry,
+      verification_token: null,
+      verification_token_expires_at: null,
     }).eq('id', data.user.id);
 
     profile = {
@@ -222,16 +219,6 @@ router.post('/register', async (req, res) => {
       userId: data.user.id,
       sessionId: typeof session_id === 'string' ? session_id : null,
     }).catch(() => {});
-
-    // Send verification email during signup. Await so failures are logged; do not
-    // fail registration if Resend is temporarily unavailable (user can resend).
-    try {
-      await sendVerificationEmail(email, name, verificationToken, {
-        idempotencyKey: `verify/${data.user.id}/${verificationToken.slice(0, 16)}`,
-      });
-    } catch (err) {
-      console.error('[auth/register] Verification email failed:', err.message);
-    }
 
     const token = signToken(data.user.id, data.user.email);
     const fullProfile = await fetchProfile(data.user.id).catch(() => profile);
