@@ -161,46 +161,43 @@ const PerformanceOverviewPage = ({ onBack }) => {
 
   return (
     <div className="w-full">
-      <div className="relative overflow-visible bg-white border-b border-gray-100">
-        {/* Gradient background */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: 'linear-gradient(90deg, #E0F2FE 0%, #FCE7F3 40%, #FCE7F3 60%, #CFFAFE 100%)',
-          opacity: 0.8
-        }}></div>
+      <div className="relative overflow-hidden border-b border-[#E5E7EB]/60">
+        <div className="absolute inset-0 pointer-events-none dashboard-header-wash" />
+        <div className="absolute inset-0 pointer-events-none hero-atmosphere opacity-80" />
 
-        <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-12 relative z-10">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-5 md:pt-6 relative z-10">
           {!user?.target_band_confirmed && latestBand != null && (
-            <div className="mb-6 bg-[#EFF8FF] border border-[#B2DDFF] rounded-[12px] px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <p className="text-[14px] text-[#175CD3]">
+            <div className="mb-4 bg-[#EFF8FF] border border-[#B2DDFF] rounded-[12px] px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-[13px] text-[#175CD3]">
                 Set your target band to personalize your pathway and progress insights.
               </p>
               <button
                 type="button"
                 onClick={() => setShowTargetPrompt(true)}
-                className="shrink-0 h-[38px] px-4 rounded-[8px] bg-[#175CD3] text-white text-[13px] font-semibold hover:bg-[#1349a8] transition-colors"
+                className="shrink-0 h-[36px] px-4 rounded-[10px] bg-[#175CD3] text-white text-[13px] font-semibold hover:bg-[#1349a8] transition-colors"
               >
                 Set target band
               </button>
             </div>
           )}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => onBack ? onBack() : navigate('/dashboard')}
-                className="w-6 h-6 rounded-full border border-[#101828] flex items-center justify-center text-[#101828] hover:bg-black/5 transition-all bg-transparent"
+                className="w-[28px] h-[28px] rounded-full border border-[#D0D5DD] bg-white/80 flex items-center justify-center text-[#101828] hover:bg-white transition-all shadow-sm shrink-0"
               >
-                <ArrowLeft size={14} strokeWidth={2} />
+                <ArrowLeft size={12} strokeWidth={3} />
               </button>
               {/* Task type dropdown */}
-              <div className="relative">
+              <div className="relative min-w-0">
                 <button
                   onClick={() => setTaskDropdownOpen(o => !o)}
-                  className="flex items-center gap-2 cursor-pointer group"
+                  className="flex items-center gap-2 cursor-pointer group min-w-0"
                 >
-                  <h1 className="text-[22px] md:text-[24px] font-bold text-[#101828] tracking-tight">
+                  <h1 className="text-[18px] md:text-[22px] font-bold text-[#101828] tracking-tight truncate">
                     {TASK_LABELS[activeTask]}
                   </h1>
-                  <ChevronDown size={22} className={`text-[#101828] mt-0.5 transition-transform ${taskDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={20} className={`text-[#101828] shrink-0 transition-transform ${taskDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {taskDropdownOpen && (
                   <div className="absolute top-full left-0 mt-2 bg-white rounded-[14px] border border-gray-100 shadow-xl z-50 py-1 min-w-[200px]">
@@ -217,34 +214,46 @@ const PerformanceOverviewPage = ({ onBack }) => {
                 )}
               </div>
             </div>
-            <button onClick={handleExport} className="w-full md:w-auto px-6 h-[42px] bg-[#344054] text-white rounded-[8px] text-[14px] font-medium hover:bg-[#1D2939] transition-all shadow-sm">
+            <button
+              onClick={handleExport}
+              className="w-full md:w-auto px-5 h-[40px] bg-[#2C3E50] text-white rounded-[10px] text-[13px] font-semibold hover:bg-[#1D2939] transition-all shadow-sm"
+            >
               Export Report
             </button>
           </div>
 
-          {/* Sub Navigation */}
-          <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar">
-            {subTabs.map((tab) => (
-              <div
-                key={tab}
-                className="relative py-4 cursor-pointer group whitespace-nowrap"
-                onClick={() => setActiveTab(tab)}
-              >
-                <span className={`text-[13px] font-semibold transition-colors ${activeTab === tab ? "text-[#101828]" : "text-[#475467] group-hover:text-[#101828]"}`}>
-                  {tab}
-                </span>
-                {activeTab === tab && (
-                  <motion.div
-                    layoutId="activeTabUnderlinePerformance"
-                    className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1A96F3] rounded-t-full"
-                  />
-                )}
-              </div>
-            ))}
+          {/* Sub Navigation — matches report tab chrome */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-t-[14px] border border-b-0 border-[#E5E7EB] px-2 md:px-3 shadow-[0_-2px_12px_rgba(26,31,54,0.03)]">
+            <div className="flex items-center gap-1 md:gap-1.5 overflow-x-auto no-scrollbar">
+              {subTabs.map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`relative px-3 md:px-3.5 py-3 whitespace-nowrap shrink-0 transition-colors ${
+                      isActive ? 'text-[#101828]' : 'text-[#667085] hover:text-[#101828]'
+                    }`}
+                  >
+                    <span className={`text-[12px] md:text-[13px] ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                      {tab}
+                    </span>
+                    {isActive && (
+                      <motion.span
+                        layoutId="activeTabUnderlinePerformance"
+                        className="absolute bottom-0 left-2 right-2 h-[2.5px] rounded-full bg-[#1A96F3]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
+      <div className="bg-[#F4F6F8] min-h-[40vh]">
       <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 md:py-5">
         {activeTab === "Overview" ?
           <PerformanceOverviewDashboard
@@ -424,6 +433,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
              </div>
           </div>
         }
+      </div>
       </div>
 
       <LearningEditionModal

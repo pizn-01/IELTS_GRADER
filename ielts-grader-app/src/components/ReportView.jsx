@@ -713,15 +713,13 @@ const ReportView = ({
                 <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
                   <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#F2F4F7]">
                     <h3 className="text-[15px] font-bold text-[#101828]">Scoring Details</h3>
-                    <p className="text-[12px] text-[#667085] mt-0.5">Base, ceiling, and penalty breakdown</p>
+                    <p className="text-[12px] text-[#667085] mt-0.5">Base score and penalty breakdown</p>
                   </div>
                   <div className="overflow-x-auto">
-                  <div className="p-3 md:p-5 space-y-3 md:space-y-4 min-w-[600px]">
-                    <div className="bg-[#F3F4F6] rounded-[12px] px-3 md:px-5 py-3.5 grid grid-cols-[2fr,repeat(7,1fr)] text-[12px] font-medium">
+                  <div className="p-3 md:p-5 space-y-3 md:space-y-4 min-w-[480px]">
+                    <div className="bg-[#F3F4F6] rounded-[12px] px-3 md:px-6 py-3.5 grid grid-cols-[2.2fr,1.1fr,repeat(4,1fr)] text-[13px] font-semibold">
                       <div className="text-left text-[#101828]">Criterion</div>
                       <div className="text-center text-[#101828]">Base</div>
-                      <div className="text-center text-[#101828]">Ceiling</div>
-                      <div className="text-center text-[#8B5CF6]">Final</div>
                       <div className="text-center text-[#EF4444]">Major</div>
                       <div className="text-center text-[#F59E0B]">High</div>
                       <div className="text-center text-[#3B82F6]">Med</div>
@@ -738,7 +736,7 @@ const ReportView = ({
                           { name: "Grammatical Range & Accuracy", band: data?.grammar_band, key: "Grammatical Range & Accuracy" },
                         ].map((row, i) => {
                           const b = row.band != null ? parseFloat(row.band) : null;
-                          const final = b != null ? b.toFixed(1) : '—';
+                          const base = b != null ? b.toFixed(1) : '—';
                           const color = b == null ? '#9CA3AF' : b >= 7 ? '#10B981' : b >= 5.5 ? '#F59E0B' : '#EF4444';
                           const critErrs = errs.filter(e => e.criteria === row.key);
                           const major = fmtCount(critErrs.filter(e => e.severity === 'Major').length);
@@ -746,15 +744,13 @@ const ReportView = ({
                           const med   = fmtCount(critErrs.filter(e => e.severity === 'Medium').length);
                           const low   = fmtCount(critErrs.filter(e => e.severity === 'Low').length);
                           return (
-                            <div key={i} className="px-5 py-2.5 grid grid-cols-[2fr,repeat(7,1fr)] items-center text-[13px] hover:bg-gray-50 transition-colors">
-                              <div className="text-[#101828] font-medium whitespace-nowrap">{row.name}</div>
-                              <div className="text-center text-[#101828] font-medium">{final}</div>
-                              <div className="text-center text-[#101828] font-medium">{final}</div>
-                              <div className="text-center font-medium" style={{ color }}>{final}</div>
-                              <div className="text-center text-[#101828] font-medium">{major === '-' ? <span className="opacity-40">-</span> : major}</div>
-                              <div className="text-center text-[#101828] font-medium">{high  === '-' ? <span className="opacity-40">-</span> : high}</div>
-                              <div className="text-center text-[#101828] font-medium">{med   === '-' ? <span className="opacity-40">-</span> : med}</div>
-                              <div className="text-center text-[#101828] font-medium">{low   === '-' ? <span className="opacity-40">-</span> : low}</div>
+                            <div key={i} className="px-3 md:px-6 py-3.5 grid grid-cols-[2.2fr,1.1fr,repeat(4,1fr)] items-center text-[15px] hover:bg-gray-50 transition-colors">
+                              <div className="text-[#101828] font-semibold whitespace-nowrap text-[14px] md:text-[15px]">{row.name}</div>
+                              <div className="text-center font-bold tabular-nums text-[16px] md:text-[17px]" style={{ color }}>{base}</div>
+                              <div className={`text-center font-bold tabular-nums ${major === '-' ? 'text-[#D0D5DD]' : 'text-[#EF4444]'}`}>{major}</div>
+                              <div className={`text-center font-bold tabular-nums ${high === '-' ? 'text-[#D0D5DD]' : 'text-[#F59E0B]'}`}>{high}</div>
+                              <div className={`text-center font-bold tabular-nums ${med === '-' ? 'text-[#D0D5DD]' : 'text-[#3B82F6]'}`}>{med}</div>
+                              <div className={`text-center font-bold tabular-nums ${low === '-' ? 'text-[#D0D5DD]' : 'text-[#101828]'}`}>{low}</div>
                             </div>
                           );
                         });
