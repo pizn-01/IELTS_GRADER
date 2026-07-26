@@ -4,6 +4,7 @@ import MockExam from '../components/MockExam';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import SeoHead from '../seo/SeoHead';
 
 const MockExamPage = () => {
   const navigate = useNavigate();
@@ -95,9 +96,16 @@ const MockExamPage = () => {
 
   if (isLoading || (!creditCheckDone && isAuthenticated)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 border-[#2C3E50] border-t-transparent rounded-full animate-spin" />
-      </div>
+      <>
+        <SeoHead
+          title="IELTS Mock Writing Exam | IELTS AI Tutor by IELTSGRADER"
+          description="Practice IELTS Writing in a timed, computer-based mock exam. Get criterion scores, fix cards, and a personalized plan toward your target band. Free first evaluation."
+          path="/mock-exam"
+        />
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-10 h-10 border-4 border-[#2C3E50] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </>
     );
   }
 
@@ -110,11 +118,18 @@ const MockExamPage = () => {
   }
 
   return (
-    <MockExam
-      examType={examType}
-      taskType={taskType}
-      onExit={handleExit}
-    />
+    <>
+      <SeoHead
+        title="IELTS Mock Writing Exam | IELTS AI Tutor by IELTSGRADER"
+        description="Practice IELTS Writing in a timed, computer-based mock exam. Get criterion scores, fix cards, and a personalized plan toward your target band. Free first evaluation."
+        path="/mock-exam"
+      />
+      <MockExam
+        examType={examType}
+        taskType={taskType}
+        onExit={handleExit}
+      />
+    </>
   );
 };
 

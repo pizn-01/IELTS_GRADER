@@ -15,6 +15,7 @@ const STATIC = [
   '/ielts-writing-band-score',
   '/ielts-mock-writing-test',
   '/grade-my-essay',
+  '/mock-exam',
   '/sample-report',
   '/features',
   '/blog',
