@@ -13,7 +13,7 @@ const GradeEssayPage = () => {
     <>
       <SeoHead
         title="Grade My Essay: IELTS AI Tutor Feedback | IELTSGRADER"
-        description="Paste or upload your IELTS essay for criterion scores, sentence-level fixes, and a personalized plan toward your target band. 1 free evaluation. No card required."
+        description="Paste or upload your IELTS essay for criterion scores, sentence-level fixes, and a personalized plan toward your target band. 3 free evaluations. No card required."
         path="/grade-my-essay"
       />
       <div className="fixed inset-0 z-[200] bg-white flex flex-col font-sans overflow-hidden">

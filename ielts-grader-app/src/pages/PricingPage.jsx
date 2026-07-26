@@ -5,6 +5,7 @@ import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import SeoHead from '../seo/SeoHead';
 import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import { trackEvent } from '../utils/trackEvent';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
@@ -19,7 +20,7 @@ const PricingPage = () => {
       price: "$0",
       description: "Get started with your first evaluation.",
       features: [
-        "1 free full evaluation",
+        "3 free full evaluations",
         "Band score breakdown",
         "Fix cards & feedback",
         "No card required"
@@ -47,10 +48,10 @@ const PricingPage = () => {
       period: MONTHLY.period,
       description: "Best value for serious prep.",
       features: [
-        "100 evaluations per month",
+        "80 evaluations per month",
         "Comprehensive reports",
         "Personalized learning guides",
-        "50% less per exam vs weekly"
+        "25% less per exam vs weekly"
       ],
       buttonText: "Get Monthly",
       isPremium: true,
@@ -62,7 +63,7 @@ const PricingPage = () => {
     <div className="min-h-screen bg-[#EFF6FF]">
       <SeoHead
         title="IELTS Writing Practice Plans & Pricing | IELTS AI Tutor"
-        description="Start free with one full IELTS writing evaluation. Upgrade to Weekly Sprint or Monthly Mastery for more AI tutor feedback, mock exams, and study plans."
+        description="Start free with three full IELTS writing evaluations. Upgrade to Weekly Sprint or Monthly Mastery for more AI tutor feedback, mock exams, and study plans."
         path="/pricing"
       />
       <Navbar />
@@ -127,7 +128,14 @@ const PricingPage = () => {
               </div>
 
               <button 
-                onClick={() => plan.isPremium ? setShowPremiumModal(true) : navigate('/report')}
+                onClick={() => {
+                  if (plan.isPremium) {
+                    trackEvent('upgrade_cta_clicked', { source: 'pricing_plan_card', plan: plan.name });
+                    setShowPremiumModal(true);
+                  } else {
+                    navigate('/report');
+                  }
+                }}
                 className={`w-full h-[50px] rounded-[10px] font-bold text-[15px] transition-all mt-auto ${
                   plan.isPremium 
                     ? 'bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 
@@ -162,7 +170,10 @@ const PricingPage = () => {
             </p>
 
             <button 
-              onClick={() => navigate('/upgrade')}
+              onClick={() => {
+                trackEvent('upgrade_cta_clicked', { source: 'pricing_page' });
+                navigate('/upgrade');
+              }}
               className="w-full bg-[#1a1f36] text-white py-[14px] rounded-[10px] font-bold text-[15px] mb-3 hover:bg-[#2a2f46] transition-all"
             >
               Continue to Plans

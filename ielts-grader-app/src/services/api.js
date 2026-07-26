@@ -1,13 +1,17 @@
 import { getAuthToken } from '../utils/authStorage';
+import { getOrCreateSessionId } from '../utils/attribution';
 
 const BASE_URL = '/api';
 
 // Tracking bypasses Vercel proxy so Fly.io sees the real visitor IP for geo lookup.
-const TRACKING_URL = import.meta.env.VITE_TRACKING_URL
-  || (import.meta.env.PROD
-    ? 'https://ielts-grader-backend.fly.dev/api/tracking/pageview'
-    : `${BASE_URL}/tracking/pageview`);
+const TRACKING_BASE = import.meta.env.VITE_TRACKING_URL
+  ? String(import.meta.env.VITE_TRACKING_URL).replace(/\/pageview\/?$/, '')
+  : (import.meta.env.PROD
+    ? 'https://ielts-grader-backend.fly.dev/api/tracking'
+    : `${BASE_URL}/tracking`);
 
+const TRACKING_URL = `${TRACKING_BASE}/pageview`;
+const TRACKING_EVENT_URL = `${TRACKING_BASE}/event`;
 const getHeaders = () => {
   const headers = { 'Content-Type': 'application/json' };
   const token = getAuthToken();
@@ -64,6 +68,27 @@ export const api = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+      });
+    } catch {
+      // Non-blocking — tracking must not break the app
+    }
+  },
+
+  // ─── POST /api/tracking/event ───────────────────────────────────────────────
+  trackEvent: async (eventName, properties = {}) => {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = getAuthToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      await fetch(TRACKING_EVENT_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          event_name: eventName,
+          session_id: getOrCreateSessionId(),
+          properties,
+        }),
       });
     } catch {
       // Non-blocking — tracking must not break the app
@@ -540,6 +565,10 @@ export const api = {
     getAcquisitionOverview: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return fetch(`${BASE_URL}/admin/acquisition/overview?${q}`, { headers: getHeaders() }).then(r => r.json());
+    },
+    getEventsFunnel: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return adminRequest(`${BASE_URL}/admin/events/funnel?${q}`);
     },
     getAcquisitionTimeseries: (params = {}) => {
       const q = new URLSearchParams(params).toString();

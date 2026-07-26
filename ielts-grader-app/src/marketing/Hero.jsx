@@ -34,7 +34,7 @@ const HERO_SLIDES = [
     cue: 'both',
     badge: 'Report · Performance · Personalized plan',
     mobileBadge: 'Your writing plan',
-    chip: { Icon: Gift, text: '1 free full evaluation · No credit card', iconClass: 'text-[#F59E0B]', fill: null },
+    chip: { Icon: Gift, text: '3 free full evaluations · No credit card', iconClass: 'text-[#F59E0B]', fill: null },
     support:
       'Not just a band score. Get sentence-level fixes, track your progress, and follow a clear plan toward Band 7+.',
     accent: '#0EA5E9',
@@ -369,7 +369,7 @@ const Hero = () => {
 
                 <p className="hidden lg:block text-center text-[13px] lg:text-[14px] font-semibold text-[#0f172a] mt-4 mb-0 shrink-0 tracking-[-0.01em]">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FEF9C3] border border-[#FDE68A] text-[#78350F]">
-                    1 free evaluation · No credit card
+                    3 free evaluations · No credit card
                   </span>
                 </p>
               </div>

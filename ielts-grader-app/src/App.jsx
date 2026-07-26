@@ -122,7 +122,7 @@ const HOME_JSON_LD = [
         name: 'Is the first evaluation free?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. New users get one free full evaluation with no credit card required.',
+          text: 'Yes. New users get three free full evaluations with no credit card required.',
         },
       },
     ],

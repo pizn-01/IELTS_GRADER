@@ -253,7 +253,7 @@ export default function GradeEssayForm({
           <div className="flex items-center gap-1 md:gap-3">
             {!user && (
               <p className="hidden lg:block text-[11px] text-gray-500 m-0 max-w-[160px] text-right leading-snug">
-                1 free evaluation. No card required.
+                3 free evaluations. No card required.
               </p>
             )}
             <button

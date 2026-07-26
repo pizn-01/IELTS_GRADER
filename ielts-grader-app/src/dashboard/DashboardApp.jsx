@@ -15,6 +15,7 @@ import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { dashboardGoalSubtitle } from '../utils/goalProgress';
 import LearningEditionModal from '../components/LearningEditionModal';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
+import { trackEvent } from '../utils/trackEvent';
 
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
@@ -167,6 +168,7 @@ function DashboardApp() {
       });
       const remaining = Number(fresh.credits_remaining) || 0;
       if (remaining <= 0) {
+        trackEvent('upgrade_cta_clicked', { source: 'dashboard_upgrade_to_practice' });
         redirectOutOfCredits();
         return;
       }

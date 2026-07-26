@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import TargetBandPrompt from './TargetBandPrompt';
+import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 
 function resolveTaskVariant(examType, taskType) {
   if (taskType === 'Task 1') {
@@ -226,7 +227,7 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
   const userName = user?.full_name || 'User';
   const userEmail = user?.email || '';
   const creditsRem = user?.credits_remaining ?? 0;
-  const creditsMax = Math.max(user?.credits_allowance ?? 1, 1);
+  const creditsMax = Math.max(user?.credits_allowance ?? FREE_TRIAL_CREDITS, 1);
   const creditsOffset = (75.4 * (1 - Math.min(creditsRem, creditsMax) / creditsMax)).toFixed(2);
   const reportDate = data?.created_at
     ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

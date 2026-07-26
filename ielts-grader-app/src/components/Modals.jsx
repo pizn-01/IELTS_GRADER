@@ -3,6 +3,7 @@ import { Mail, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import { trackEvent } from '../utils/trackEvent';
 
 export const VerifyEmailModal = ({
   isOpen,
@@ -141,7 +142,10 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
         </p>
       </div>
       <button
-        onClick={() => navigate('/upgrade')}
+        onClick={() => {
+          trackEvent('upgrade_cta_clicked', { source: 'notification_banner' });
+          navigate('/upgrade');
+        }}
         className="bg-[#2C3E50] text-white w-full sm:w-auto px-5 h-[34px] rounded-[10px] text-[12px] font-semibold hover:bg-[#1D2939] transition-all flex items-center justify-center whitespace-nowrap shrink-0"
       >
         Upgrade

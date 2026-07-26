@@ -8,6 +8,7 @@ const {
   grantSubscriptionPeriodCredits,
   grantCreditsFromSubscription,
 } = require('../services/subscriptionSync');
+const { trackProductEvent } = require('../utils/productEvents');
 
 const router = express.Router();
 
@@ -155,6 +156,16 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
       success_url: `${FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${FRONTEND_URL}/upgrade`,
     });
+
+    trackProductEvent({
+      eventName: 'checkout_started',
+      userId,
+      properties: {
+        plan_key: planKey,
+        stripe_session_id: session.id,
+      },
+    }).catch(() => {});
+
     return res.json({ url: session.url });
   } catch (err) {
     console.error('[stripe/create-upgrade-checkout]', err.message);

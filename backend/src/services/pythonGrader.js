@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const sharp = require('sharp');
 const { supabaseAdmin } = require('./supabase');
 const { refundOneCredit, failStuckSubmission } = require('./gradingReconcile');
+const { trackProductEvent } = require('../utils/productEvents');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
 // Hard ceiling for a single Python grading child. Matches ~UI patience while
@@ -627,6 +628,12 @@ async function gradeEssayAsync(submissionId, submissionData) {
     if (statusErr) {
       throw new Error(`Status update to graded failed: ${statusErr.message}`);
     }
+
+    trackProductEvent({
+      eventName: 'grading_completed',
+      userId: userId || null,
+      properties: { submission_id: submissionId },
+    }).catch(() => {});
 
     console.log(`[pythonGrader] Done: submission=${submissionId} band=${overall_band}`);
     inflightGrading.delete(submissionId);

@@ -1,5 +1,6 @@
 const { supabaseAdmin } = require('./supabase');
-const { getPlanByKey, getPlanKeyFromPriceId } = require('./subscriptionPlans');
+const { FREE_TRIAL_CREDITS, getPlanByKey, getPlanKeyFromPriceId } = require('./subscriptionPlans');
+const { trackProductEvent } = require('../utils/productEvents');
 
 let _stripe = null;
 
@@ -44,7 +45,8 @@ function isCancelScheduled(subscription) {
  * End paid access after the subscription period.
  * Clears period_end so the user returns to free-trial rules:
  * credits_remaining=0 (must upgrade or receive admin credits),
- * credits_allowance=1, and exam eligibility follows credits_remaining only.
+ * credits_allowance=FREE_TRIAL_CREDITS (display baseline), and exam eligibility
+ * follows credits_remaining only.
  */
 async function expireSubscriptionAccess(userId) {
   await supabaseAdmin
@@ -52,7 +54,7 @@ async function expireSubscriptionAccess(userId) {
     .update({
       subscription_status: 'canceled',
       credits_remaining: 0,
-      credits_allowance: 1,
+      credits_allowance: FREE_TRIAL_CREDITS,
       subscription_plan: null,
       subscription_period_end: null,
       updated_at: new Date().toISOString(),
@@ -129,7 +131,7 @@ async function syncSubscriptionRecord(userId, subscription) {
   } else {
     // Period ended / fully canceled: back to free-trial baseline (0 credits).
     updates.credits_remaining = 0;
-    updates.credits_allowance = 1;
+    updates.credits_allowance = FREE_TRIAL_CREDITS;
     updates.subscription_plan = null;
     updates.subscription_period_end = null;
   }
@@ -181,6 +183,17 @@ async function grantSubscriptionPeriodCredits(userId, planKey, { invoiceId, sess
   await supabaseAdmin
     .from('payments')
     .upsert(paymentRow, { onConflict: 'stripe_session_id' });
+
+  trackProductEvent({
+    eventName: 'payment_completed',
+    userId,
+    properties: {
+      plan_key: planKey,
+      pack_name: plan.name,
+      amount_cents: paymentRow.amount_cents,
+      stripe_session_id: paymentRow.stripe_session_id,
+    },
+  }).catch(() => {});
 
   console.log(`[subscription] Granted ${plan.credits} credits (${plan.name}) → user ${userId}`);
   return true;
@@ -299,7 +312,7 @@ async function reconcileUserSubscription(userId) {
 }
 
 function buildSubscriptionStatusPayload(profile) {
-  const allowance = profile.credits_allowance ?? 1;
+  const allowance = profile.credits_allowance ?? FREE_TRIAL_CREDITS;
   const plan = profile.subscription_plan ? getPlanByKey(profile.subscription_plan) : null;
   const periodEnded = isPeriodEnded(profile.subscription_period_end);
   const isActive = profile.subscription_status === 'active' && !periodEnded;

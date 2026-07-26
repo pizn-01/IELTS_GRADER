@@ -44,7 +44,7 @@ export const toolPages = [
     faqs: [
       { q: 'Is this just an essay grader?', a: 'No. A grader gives a number. Your AI tutor explains criteria, suggests fixes, tracks patterns, and builds study plans.' },
       { q: 'Does it cover Task 1 and Task 2?', a: 'Yes. Academic Task 1, General Training letters, and Task 2 essays.' },
-      { q: 'Is the first evaluation free?', a: 'Yes. New users get one free full evaluation with no credit card required.' },
+      { q: 'Is the first evaluation free?', a: 'Yes. New users get three free full evaluations with no credit card required.' },
       { q: 'Will this match my official IELTS score?', a: 'Feedback is aligned with public band descriptors for practice. It is not an official IELTS result and cannot guarantee your test-day score.' },
     ],
     cta: { label: 'Get your free band score', href: '/signup' },
@@ -101,7 +101,7 @@ export const toolPages = [
       { q: 'Can I check Task 1 and Task 2?', a: 'Yes. Academic reports, GT letters, and Task 2 essays are supported.' },
       { q: 'Can I upload handwriting?', a: 'Yes. Clear photos or scans can be processed with OCR.' },
       { q: 'How fast is it?', a: 'Most reports are ready in about 60 seconds.' },
-      { q: 'Is there a free check?', a: 'New accounts include one free full evaluation.' },
+      { q: 'Is there a free check?', a: 'New accounts include three free full evaluations.' },
     ],
     cta: { label: 'Check your essay free', href: '/' },
     secondaryCta: { label: 'View pricing', href: '/pricing' },

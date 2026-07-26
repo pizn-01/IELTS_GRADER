@@ -4,8 +4,15 @@ const { normalizeAttribution } = require('../utils/attribution');
 const { lookupGeo } = require('../utils/geoip');
 const { getClientIp } = require('../utils/getClientIp');
 const { parseUserAgent } = require('../utils/parseUserAgent');
+const { optionalAuth } = require('../middleware/auth');
+const { trackProductEvent, FUNNEL_EVENT_SET } = require('../utils/productEvents');
 
 const router = express.Router();
+
+function isPricingPath(path) {
+  if (!path || typeof path !== 'string') return false;
+  return path === '/pricing' || path.startsWith('/pricing/');
+}
 
 // ─── POST /api/tracking/pageview ─────────────────────────────────────────────
 router.post('/pageview', async (req, res) => {
@@ -96,10 +103,50 @@ router.post('/pageview', async (req, res) => {
     });
     if (pvErr) throw pvErr;
 
+    if (isPricingPath(path)) {
+      trackProductEvent({
+        eventName: 'pricing_viewed',
+        sessionId: session_id,
+        properties: { path },
+      }).catch(() => {});
+    }
+
     return res.json({ ok: true });
   } catch (err) {
     console.error('[tracking/pageview]', err.message);
     return res.status(500).json({ error: 'Failed to record page view.' });
+  }
+});
+
+// ─── POST /api/tracking/event ────────────────────────────────────────────────
+router.post('/event', optionalAuth, async (req, res) => {
+  const { event_name, session_id, properties } = req.body || {};
+
+  if (!event_name || typeof event_name !== 'string') {
+    return res.status(400).json({ error: 'event_name is required.' });
+  }
+
+  if (!FUNNEL_EVENT_SET.has(event_name)) {
+    return res.status(400).json({ error: 'Unknown event_name.' });
+  }
+
+  // Client may only emit these; server owns the rest to avoid double-counting.
+  const CLIENT_ALLOWED = new Set(['test_started', 'upgrade_cta_clicked']);
+  if (!CLIENT_ALLOWED.has(event_name)) {
+    return res.status(400).json({ error: 'This event must be recorded server-side.' });
+  }
+
+  try {
+    await trackProductEvent({
+      eventName: event_name,
+      userId: req.user?.userId || null,
+      sessionId: typeof session_id === 'string' ? session_id : null,
+      properties: properties && typeof properties === 'object' ? properties : {},
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[tracking/event]', err.message);
+    return res.status(500).json({ error: 'Failed to record event.' });
   }
 });
 

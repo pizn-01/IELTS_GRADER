@@ -9,6 +9,7 @@ import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS } from 
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { trackEvent } from '../utils/trackEvent';
 
 const SelectionPage = () => {
   const navigate = useNavigate();
@@ -165,6 +166,7 @@ const SelectionPage = () => {
     setShowPremiumModal(false);
     setIsLoading(true);
     try {
+      trackEvent('upgrade_cta_clicked', { source: 'selection_page' });
       if (!user) {
         await register({ first_name: firstName, last_name: lastName, email, password });
       }

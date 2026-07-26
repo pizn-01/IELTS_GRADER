@@ -1,6 +1,7 @@
 const OpenAI = require('openai');
 const { supabaseAdmin } = require('./supabase');
 const { refundOneCredit } = require('./gradingReconcile');
+const { trackProductEvent } = require('../utils/productEvents');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000 });
 
@@ -336,6 +337,12 @@ async function gradeEssayAsync(submissionId, submissionData) {
       .from('submissions')
       .update({ status: 'graded' })
       .eq('id', submissionId);
+
+    trackProductEvent({
+      eventName: 'grading_completed',
+      userId: userId || null,
+      properties: { submission_id: submissionId },
+    }).catch(() => {});
 
     console.log(`[grader] Done: submission=${submissionId} band=${primary.overall_band}`);
   } catch (err) {

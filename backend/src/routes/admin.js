@@ -1262,6 +1262,54 @@ router.get('/acquisition/overview', async (req, res) => {
   }
 });
 
+// ─── GET /api/admin/events/funnel ──────────────────────────────────────────────
+router.get('/events/funnel', async (req, res) => {
+  const days = parseDays(req.query.days, 7);
+  const since = sinceIso(days);
+  const { FUNNEL_EVENTS } = require('../utils/productEvents');
+
+  try {
+    const rows = await fetchAllRows(() =>
+      supabaseAdmin
+        .from('product_events')
+        .select('event_name, user_id, session_id')
+        .gte('created_at', since)
+        .in('event_name', FUNNEL_EVENTS)
+        .order('created_at', { ascending: false })
+    );
+
+    const byEvent = Object.fromEntries(
+      FUNNEL_EVENTS.map((name) => [name, { count: 0, actors: new Set() }])
+    );
+
+    for (const row of rows) {
+      const bucket = byEvent[row.event_name];
+      if (!bucket) continue;
+      bucket.count += 1;
+      const actor = row.user_id || row.session_id;
+      if (actor) bucket.actors.add(actor);
+    }
+
+    const steps = FUNNEL_EVENTS.map((eventName, index) => {
+      const unique = byEvent[eventName].actors.size;
+      const count = byEvent[eventName].count;
+      let conversion_from_prev = null;
+      if (index > 0) {
+        const prevUnique = byEvent[FUNNEL_EVENTS[index - 1]].actors.size;
+        conversion_from_prev = prevUnique === 0
+          ? 0
+          : Math.round((unique / prevUnique) * 1000) / 10;
+      }
+      return { event_name: eventName, count, unique, conversion_from_prev };
+    });
+
+    return res.json({ period_days: days, steps });
+  } catch (err) {
+    console.error('[admin/events/funnel]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch event funnel.' });
+  }
+});
+
 // ─── GET /api/admin/acquisition/timeseries ─────────────────────────────────────
 router.get('/acquisition/timeseries', async (req, res) => {
   const days = parseDays(req.query.days);

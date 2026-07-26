@@ -6,7 +6,7 @@
 > IELTS AI Tutor by IELTSGRADER is an AI writing tutor for IELTS. Get band scores and criterion-level feedback in 60 seconds. Covers Task 1, Task 2, mock exams, and personalized study plans. Free first evaluation.
 
 **Medium (100 words):**
-> IELTS AI Tutor by IELTSGRADER helps IELTS students improve their writing score with AI-powered tutoring — not just a number. Submit Task 1 reports, GT letters, or Task 2 essays and receive feedback on Task Response, Coherence & Cohesion, Lexical Resource, and Grammar aligned with official band descriptors. Features include mock writing tests, fix cards, model answers, and personalized learning plans. One free full evaluation for new users. Website: https://ieltsgrader.com
+> IELTS AI Tutor by IELTSGRADER helps IELTS students improve their writing score with AI-powered tutoring — not just a number. Submit Task 1 reports, GT letters, or Task 2 essays and receive feedback on Task Response, Coherence & Cohesion, Lexical Resource, and Grammar aligned with official band descriptors. Features include mock writing tests, fix cards, model answers, and personalized learning plans. Three free full evaluations for new users. Website: https://ieltsgrader.com
 
 ## Priority listings (you submit)
 

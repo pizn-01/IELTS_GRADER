@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { useLearningNavBadge } from '../hooks/useLearningNavBadge';
 import BrandLogo from './BrandLogo';
+import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
   const { user, updateUser } = useAuth();
@@ -55,7 +56,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
   ];
 
   const creditsRemaining = user?.credits_remaining ?? 0;
-  const creditsAllowance = user?.credits_allowance ?? 1;
+  const creditsAllowance = user?.credits_allowance ?? FREE_TRIAL_CREDITS;
   const isSubscribed = user?.subscription_status === 'active' || user?.is_subscribed;
   const creditsLabel = isSubscribed ? 'Plan' : 'Free Trial';
   const creditProgress = creditsAllowance > 0 ? Math.min(creditsRemaining / creditsAllowance, 1) : 0;

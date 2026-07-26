@@ -28,7 +28,7 @@ export const legalPages = {
       },
       {
         heading: '6. Subscriptions, credits, and payments',
-        body: 'New users may receive a free evaluation credit as described on the site. Paid plans (for example Weekly Sprint and Monthly Mastery) and credit packs are billed according to the Pricing page and checkout terms. Payments are processed by Stripe. Fees are generally non-refundable except where required by law or expressly stated at purchase. Unused credits expire according to plan rules shown at checkout or in your subscription settings. Taxes may apply based on your location.',
+        body: 'New users may receive free evaluation credits as described on the site. Paid plans (for example Weekly Sprint and Monthly Mastery) and credit packs are billed according to the Pricing page and checkout terms. Payments are processed by Stripe. Fees are generally non-refundable except where required by law or expressly stated at purchase. Unused credits expire according to plan rules shown at checkout or in your subscription settings. Taxes may apply based on your location.',
       },
       {
         heading: '7. AI feedback limitations',

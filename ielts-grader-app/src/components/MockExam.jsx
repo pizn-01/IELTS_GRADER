@@ -10,6 +10,7 @@ import ExamQuestionPanel, { noteForTimeLimit } from './ExamQuestionPanel';
 import { isGeneralTask1Letter } from '../utils/parseLetterQuestion';
 import { detectChartType } from './QuestionChart';
 import { setPendingGradePayload } from '../utils/authStorage';
+import { trackEvent } from '../utils/trackEvent';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -95,6 +96,16 @@ const MockExam = ({ examType, taskType, onExit }) => {
   const [questionLoading, setQuestionLoading] = useState(true);
   const [essay, setEssay] = useState('');
   const examTaskIdRef = useRef(null);
+  const testStartedTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (testStartedTrackedRef.current) return;
+    testStartedTrackedRef.current = true;
+    trackEvent('test_started', {
+      exam_type: examType || 'Academic',
+      task_type: taskType || 'Task 2',
+    });
+  }, [examType, taskType]);
 
   const loadNextQuestion = useCallback(async ({ clearEssay = false } = {}) => {
     const resolvedExam = examType || 'Academic';

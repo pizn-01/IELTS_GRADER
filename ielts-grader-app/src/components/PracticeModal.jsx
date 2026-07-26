@@ -379,7 +379,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
                   </div>
 
                   <p className="text-center text-[12px] text-[#9CA3AF] mt-5 mb-0">
-                    1 free evaluation · Results in about 60 seconds
+                    3 free evaluations · Results in about 60 seconds
                   </p>
 
                   <div className="mt-5">

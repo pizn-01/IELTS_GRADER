@@ -3,6 +3,7 @@ const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { gradeEssayAsync } = require('../services/graderEngine');
 const { isPeriodEnded, expireSubscriptionAccess } = require('../services/subscriptionSync');
+const { trackProductEvent } = require('../utils/productEvents');
 
 const router = express.Router();
 
@@ -119,6 +120,16 @@ router.post('/', authenticateToken, async (req, res) => {
     submission_id: submission.id,
     message: 'Submission received. AI grading in progress.',
   });
+
+  trackProductEvent({
+    eventName: 'test_completed',
+    userId,
+    properties: {
+      submission_id: submission.id,
+      exam_type,
+      task_type,
+    },
+  }).catch(() => {});
 
   // Fire-and-forget grading (credit refund on failure is handled inside grader)
   gradeEssayAsync(submission.id, {

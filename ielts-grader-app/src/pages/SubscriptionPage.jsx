@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_PLANS, FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
+import { trackEvent } from '../utils/trackEvent';
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -79,7 +80,7 @@ const SubscriptionPage = () => {
   };
 
   const remaining = status?.credits_remaining ?? user?.credits_remaining ?? 0;
-  const allowance = status?.credits_allowance ?? user?.credits_allowance ?? 1;
+  const allowance = status?.credits_allowance ?? user?.credits_allowance ?? FREE_TRIAL_CREDITS;
   const isSubscribed = status?.is_subscribed;
   const cancelAtPeriodEnd = status?.cancel_at_period_end;
 
@@ -94,7 +95,7 @@ const SubscriptionPage = () => {
   const periodEndLabel = isSubscribed ? formatDate(status?.subscription_period_end) : '—';
   const billingLabel = isSubscribed
     ? (status?.billing_label || '—')
-    : '1 free evaluation included';
+    : `${FREE_TRIAL_CREDITS} free evaluations included`;
 
   const statusMessage = (() => {
     if (cancelAtPeriodEnd) {
@@ -104,17 +105,17 @@ const SubscriptionPage = () => {
       return 'All evaluations used this period. Credits reset on renewal.';
     }
     if (!isSubscribed && isExhausted) {
-      return 'You have used your free evaluation. Subscribe to keep practicing.';
+      return 'You have used your free evaluations. Subscribe to keep practicing.';
     }
     if (!isSubscribed && remaining > 0) {
-      return `${remaining} free evaluation remaining. No card required until you subscribe.`;
+      return `${remaining} free evaluation${remaining === 1 ? '' : 's'} remaining. No card required until you subscribe.`;
     }
     if (isLow) {
       return `Only ${remaining} credit${remaining === 1 ? '' : 's'} left this period.`;
     }
     return isSubscribed
       ? `${allowance} evaluations included each billing period.`
-      : 'Subscribe for 20/week or 100/month after your free trial.';
+      : 'Subscribe for 20/week or 80/month after your free trial.';
   })();
 
   const statusTone = cancelAtPeriodEnd || (isExhausted && !isSubscribed) || isLow ? 'amber' : 'neutral';
@@ -278,7 +279,7 @@ const SubscriptionPage = () => {
                     Free trial
                   </p>
                   <p className="text-[13px] text-[#667085] leading-relaxed">
-                    <span className="font-semibold text-[#344054]">1 free evaluation</span> included.
+                    <span className="font-semibold text-[#344054]">{FREE_TRIAL_CREDITS} free evaluations</span> included.
                     No card required to sign up. Full band report on your first essay.
                   </p>
                 </div>
@@ -334,7 +335,7 @@ const SubscriptionPage = () => {
             ) : (
               <p className="text-[12px] text-[#667085] leading-relaxed px-1">
                 {isExhausted
-                  ? 'Your free credit is used. View Plans to choose Weekly or Monthly and continue grading.'
+                  ? 'Your free credits are used. View Plans to choose Weekly or Monthly and continue grading.'
                   : 'When you need more practice, View Plans lets you pick Weekly or Monthly. Checkout is on the next screen.'}
               </p>
             )}
@@ -356,7 +357,10 @@ const SubscriptionPage = () => {
               <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => navigate('/upgrade')}
+                  onClick={() => {
+                    trackEvent('upgrade_cta_clicked', { source: 'subscription_page' });
+                    navigate('/upgrade');
+                  }}
                   className="w-full sm:w-auto px-8 h-10 bg-[#344054] text-white rounded-lg text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
                 >
                   View Plans

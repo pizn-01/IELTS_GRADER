@@ -3,9 +3,11 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { supabaseAdmin, supabaseAuth } = require('../services/supabase');
 const { reconcileUserSubscription } = require('../services/subscriptionSync');
+const { FREE_TRIAL_CREDITS } = require('../services/subscriptionPlans');
 const { authenticateToken } = require('../middleware/auth');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/email');
 const { saveUserAttribution } = require('../utils/attribution');
+const { trackProductEvent } = require('../utils/productEvents');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -81,7 +83,7 @@ async function fetchProfile(userId) {
   return {
     ...data,
     credits_remaining: periodEnded ? 0 : data.credits_remaining,
-    credits_allowance: periodEnded ? 1 : (data.credits_allowance ?? 1),
+    credits_allowance: periodEnded ? FREE_TRIAL_CREDITS : (data.credits_allowance ?? FREE_TRIAL_CREDITS),
     has_paid: isSubscribed || (paymentCount ?? 0) > 0,
     is_subscribed: isSubscribed,
     cancel_at_period_end: false,
@@ -172,30 +174,54 @@ router.post('/register', async (req, res) => {
     if (!profile) {
       const { data: inserted, error: insErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ id: data.user.id, full_name: name, credits_remaining: 1 })
+        .insert({
+          id: data.user.id,
+          full_name: name,
+          credits_remaining: FREE_TRIAL_CREDITS,
+          credits_allowance: FREE_TRIAL_CREDITS,
+        })
         .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
         .single();
       if (insErr) console.error('[auth/register] Profile fallback insert error:', insErr.message);
-      profile = inserted || { full_name: name, target_band: 7.5, target_band_confirmed: false, credits_remaining: 1, profile_image_url: null, email_verified: false };
+      profile = inserted || {
+        full_name: name,
+        target_band: 7.5,
+        target_band_confirmed: false,
+        credits_remaining: FREE_TRIAL_CREDITS,
+        profile_image_url: null,
+        email_verified: false,
+      };
     }
 
-    // Enforce 1 free trial credit, set email_verified = false, generate verification token.
+    // Enforce free trial credits, set email_verified = false, generate verification token.
     // Verification email is deferred until after the first free evaluation.
     const verificationToken = generateToken();
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
 
     await supabaseAdmin.from('profiles').update({
-      credits_remaining: 1,
+      credits_remaining: FREE_TRIAL_CREDITS,
+      credits_allowance: FREE_TRIAL_CREDITS,
       email_verified: false,
       verification_token: verificationToken,
       verification_token_expires_at: verificationExpiry,
     }).eq('id', data.user.id);
 
-    profile = { ...profile, credits_remaining: 1, email_verified: false };
+    profile = {
+      ...profile,
+      credits_remaining: FREE_TRIAL_CREDITS,
+      credits_allowance: FREE_TRIAL_CREDITS,
+      email_verified: false,
+    };
 
     await saveUserAttribution(supabaseAdmin, data.user.id, { attribution, session_id, req }).catch(err =>
       console.error('[auth/register] Attribution save failed:', err.message)
     );
+
+    trackProductEvent({
+      eventName: 'signup',
+      userId: data.user.id,
+      sessionId: typeof session_id === 'string' ? session_id : null,
+    }).catch(() => {});
 
     // Send verification email during signup. Await so failures are logged; do not
     // fail registration if Resend is temporarily unavailable (user can resend).
@@ -565,7 +591,8 @@ router.post('/google', async (req, res) => {
           id: user.id,
           full_name: fullName,
           profile_image_url: avatarUrl,
-          credits_remaining: 1,
+          credits_remaining: FREE_TRIAL_CREDITS,
+          credits_allowance: FREE_TRIAL_CREDITS,
           email_verified: true,  // Google accounts are already verified
         })
         .select('full_name, target_band, target_band_confirmed, credits_remaining, profile_image_url, is_admin, email_verified')
@@ -575,7 +602,8 @@ router.post('/google', async (req, res) => {
         full_name: fullName,
         target_band: 7.5,
         target_band_confirmed: false,
-        credits_remaining: 1,
+        credits_remaining: FREE_TRIAL_CREDITS,
+        credits_allowance: FREE_TRIAL_CREDITS,
         profile_image_url: avatarUrl,
         email_verified: true,
       };
@@ -585,15 +613,20 @@ router.post('/google', async (req, res) => {
     const isNewUser = Date.now() - userCreatedAt < 60000;
 
     if (isNewUser) {
-      // Only force free-trial credit when the profile was just created (insert path).
+      // Only force free-trial credits when the profile was just created (insert path).
       // Do not reset credits on every Google login within the 60s window.
-      if (!profile.credits_remaining || profile.credits_remaining < 1) {
+      if (!profile.credits_remaining || profile.credits_remaining < FREE_TRIAL_CREDITS) {
         await supabaseAdmin.from('profiles').update({
-          credits_remaining: 1,
-          credits_allowance: 1,
+          credits_remaining: FREE_TRIAL_CREDITS,
+          credits_allowance: FREE_TRIAL_CREDITS,
           email_verified: true,
         }).eq('id', user.id);
-        profile = { ...profile, credits_remaining: 1, credits_allowance: 1, email_verified: true };
+        profile = {
+          ...profile,
+          credits_remaining: FREE_TRIAL_CREDITS,
+          credits_allowance: FREE_TRIAL_CREDITS,
+          email_verified: true,
+        };
       } else {
         await supabaseAdmin.from('profiles').update({ email_verified: true }).eq('id', user.id);
         profile = { ...profile, email_verified: true };
@@ -602,6 +635,13 @@ router.post('/google', async (req, res) => {
       await saveUserAttribution(supabaseAdmin, user.id, { attribution, session_id, req }).catch(err =>
         console.error('[auth/google] Attribution save failed:', err.message)
       );
+
+      trackProductEvent({
+        eventName: 'signup',
+        userId: user.id,
+        sessionId: typeof session_id === 'string' ? session_id : null,
+        properties: { method: 'google' },
+      }).catch(() => {});
     } else if (!profile.email_verified) {
       // Existing Google user — mark verified (Google guarantees it)
       await supabaseAdmin.from('profiles').update({ email_verified: true }).eq('id', user.id);
