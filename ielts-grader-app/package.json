@@ -8,9 +8,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:prerender": "vite build && node scripts/prerender.mjs",
-    "prerender": "node scripts/prerender.mjs",
+    "build": "vite build && npm run prerender",
+    "build:vite": "vite build",
+    "build:prerender": "vite build && npm run prerender",
+    "prerender": "npx puppeteer browsers install chrome && node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

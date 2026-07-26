@@ -13,6 +13,9 @@ export function useVisitorTracking() {
   }, []);
 
   useEffect(() => {
+    // Skip analytics noise during Puppeteer prerender builds
+    if (typeof navigator !== 'undefined' && navigator.webdriver) return;
+
     const path = location.pathname;
     if (path === lastPathRef.current) return;
 

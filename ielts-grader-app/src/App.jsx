@@ -80,12 +80,87 @@ const SEO_MARKETING_ROUTES = [
 ];
 
 // ── Landing Page Assembly ─────────────────────────────────────────────────────
+const HOME_JSON_LD = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'IELTS AI Tutor by IELTSGRADER',
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.ieltsgrader.com/',
+    description:
+      'AI writing tutor for IELTS that explains mistakes, tracks progress, and builds a personalized plan toward your target band.',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      description: 'Free first evaluation',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'What is an IELTS AI Tutor?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'An IELTS AI Tutor grades your essays, explains mistakes criterion by criterion, and builds personalized study plans. IELTS AI Tutor by IELTSGRADER covers Task 1, Task 2, Academic and General Training.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How does the IELTS AI Tutor help me reach my target band?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'It scores each writing criterion, shows what to fix first, tracks progress across exams, and builds a personalized study plan toward your goal.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is the first evaluation free?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. New users get one free full evaluation with no credit card required.',
+        },
+      },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://www.ieltsgrader.com/#organization',
+        name: 'IELTSGRADER',
+        url: 'https://www.ieltsgrader.com/',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://www.ieltsgrader.com/favicon-512x512.png',
+          width: 512,
+          height: 512,
+        },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://www.ieltsgrader.com/#website',
+        name: 'IELTSGRADER',
+        alternateName: 'IELTS AI Tutor by IELTSGRADER',
+        url: 'https://www.ieltsgrader.com/',
+        publisher: { '@id': 'https://www.ieltsgrader.com/#organization' },
+      },
+    ],
+  },
+];
+
 const LandingPage = () => (
   <>
     <SeoHead
       title="IELTS AI Tutor: Your Assistant to Your Target Band | IELTSGRADER"
       description="Your IELTS AI Tutor—not just a score. Get criterion feedback, track progress, and follow a personalized plan toward your target band. Free evaluation, no card."
       path="/"
+      jsonLd={HOME_JSON_LD}
     />
     <Navbar />
     <Hero />
