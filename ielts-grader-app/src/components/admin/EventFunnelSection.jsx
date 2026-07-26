@@ -16,8 +16,8 @@ function formatEventLabel(name) {
 }
 
 /**
- * Simple Overview section: overall conversion + per-event counts with step %.
- * No bar visualization.
+ * Simple Overview section: overall conversion + one row per event
+ * (count + step conversion %). No duplicate columns / bar viz.
  */
 export default function EventFunnelSection({ steps = [], periodShort = '7d', loading = false }) {
   const firstUnique = steps[0]?.unique ?? 0;
@@ -31,7 +31,7 @@ export default function EventFunnelSection({ steps = [], periodShort = '7d', loa
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
           Event funnel · {periodShort}
         </p>
-        <p className="text-[10px] text-gray-400">Unique actors + step conversion</p>
+        <p className="text-[10px] text-gray-400">Count · conversion from previous step</p>
       </div>
 
       <div className="rounded-[10px] bg-[#F8FAFC] border border-gray-100 px-3.5 py-2.5 flex items-center justify-between gap-3 mb-3">
@@ -39,63 +39,33 @@ export default function EventFunnelSection({ steps = [], periodShort = '7d', loa
         <span className="text-[16px] font-black text-[#101828] tabular-nums">{overallConversion}%</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-        <div>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-            Event counts
-          </p>
-          <div className="border border-gray-100 rounded-[10px] divide-y divide-gray-50">
-            {steps.length === 0 ? (
-              <p className="px-3 py-3 text-[12px] text-gray-400">No events in this period yet.</p>
-            ) : (
-              steps.map((step) => (
-                <div
-                  key={step.event_name}
-                  className="flex items-center justify-between gap-3 px-3 py-1.5"
-                >
-                  <span className="text-[12px] text-gray-500">{formatEventLabel(step.event_name)}</span>
-                  <span className="text-[12px] font-bold text-[#101828] tabular-nums">
-                    {step.count ?? 0}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-            Step conversion
-          </p>
-          <div className="border border-gray-100 rounded-[10px] divide-y divide-gray-50">
-            {steps.length === 0 ? (
-              <p className="px-3 py-3 text-[12px] text-gray-400">—</p>
-            ) : (
-              steps.map((step, index) => (
-                <div
-                  key={`conv-${step.event_name}`}
-                  className="flex items-center justify-between gap-3 px-3 py-1.5"
-                >
-                  <span className="text-[12px] text-gray-500">
-                    {index === 0
-                      ? formatEventLabel(step.event_name)
-                      : `→ ${formatEventLabel(step.event_name)}`}
-                  </span>
-                  <div className="text-right shrink-0">
-                    <span className="text-[12px] font-bold text-[#101828] tabular-nums">
-                      {step.unique ?? 0}
-                    </span>
-                    {index > 0 && (
-                      <p className="text-[10px] text-gray-400 tabular-nums leading-tight">
-                        {step.conversion_from_prev ?? 0}% from prev
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+      <div className="border border-gray-100 rounded-[10px] divide-y divide-gray-50">
+        {steps.length === 0 ? (
+          <p className="px-3 py-3 text-[12px] text-gray-400">No events in this period yet.</p>
+        ) : (
+          steps.map((step, index) => (
+            <div
+              key={step.event_name}
+              className="flex items-center justify-between gap-3 px-3 py-1.5"
+            >
+              <span className="text-[12px] text-gray-500">
+                {index === 0
+                  ? formatEventLabel(step.event_name)
+                  : `→ ${formatEventLabel(step.event_name)}`}
+              </span>
+              <div className="text-right shrink-0">
+                <span className="text-[12px] font-bold text-[#101828] tabular-nums">
+                  {step.count ?? 0}
+                </span>
+                {index > 0 && (
+                  <p className="text-[10px] text-gray-400 tabular-nums leading-tight">
+                    {step.conversion_from_prev ?? 0}% from prev
+                  </p>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
