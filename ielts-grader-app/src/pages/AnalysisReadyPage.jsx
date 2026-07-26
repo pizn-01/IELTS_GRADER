@@ -165,7 +165,7 @@ const AnalysisReadyPage = () => {
   const isSubscribed = user?.subscription_status === 'active' || user?.is_subscribed === true;
   const outOfCreditsMessage = isSubscribed
     ? "You've used all your credits in your current subscription plan. Upgrade or wait for renewal to keep practicing."
-    : "You've used your free credits. Upgrade now to access your results without losing progress.";
+    : "You've used your free credits. Upgrade to keep practicing with more full evaluations and detailed feedback.";
 
   const features = SUBSCRIPTION_FEATURES;
 

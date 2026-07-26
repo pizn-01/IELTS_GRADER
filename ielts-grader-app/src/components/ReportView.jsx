@@ -2,7 +2,12 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import TargetBandPrompt from './TargetBandPrompt';
+import ReportUpgradeCta from './ReportUpgradeCta';
 import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
+import {
+  hasSeenFirstReportTabChips,
+  markFirstReportTabChipsSeen,
+} from '../utils/reportDiscoveryStorage';
 
 function resolveTaskVariant(examType, taskType) {
   if (taskType === 'Task 1') {
@@ -182,9 +187,19 @@ function ErrorCard({ error, index }) {
   );
 }
 
-const ReportView = ({ onBack, data, showHeader = false }) => {
+const ReportView = ({
+  onBack,
+  data,
+  showHeader = false,
+  showUpgradeCta = false,
+  showTabDiscovery = false,
+}) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Overview");
+  // Capture once on mount so marking "seen" does not hide chips mid-visit.
+  const [showTabChips] = useState(
+    () => showTabDiscovery && !hasSeenFirstReportTabChips()
+  );
   const [expandedSections, setExpandedSections] = useState({
     taskResponse: true,
     errorAnalysis: true,
@@ -273,6 +288,15 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
       setActiveTab('Overview');
     }
   }, [reportTabs, activeTab]);
+
+  useEffect(() => {
+    if (!showTabDiscovery || !showTabChips) return;
+    markFirstReportTabChipsSeen();
+  }, [showTabDiscovery, showTabChips]);
+
+  const isSubscribed =
+    user?.subscription_status === 'active' || user?.is_subscribed === true;
+  const showInlineUpgrade = showUpgradeCta && user && !isSubscribed;
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
@@ -485,6 +509,30 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
               </div>
             ))}
           </div>
+
+          {showTabChips && (
+            <div className="pt-3 pb-1">
+              <p className="text-[12px] font-semibold text-[#667085] mb-2">
+                Your full report includes:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {reportTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                      activeTab === tab
+                        ? 'bg-[#2C3E50] text-white border-transparent'
+                        : 'bg-white/70 text-[#344054] border-[#D1D5DB] hover:border-[#1A96F3] hover:text-[#1A96F3]'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -605,6 +653,10 @@ const ReportView = ({ onBack, data, showHeader = false }) => {
                     <div className="p-4 md:p-8"><ul className="space-y-4 md:space-y-5">{(data?.weaknesses || ["Data accuracy issues, numerical values don't match reference", "Coverage gaps, misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-3 md:gap-4"><div className="mt-1 text-[#FF4D4D] shrink-0"><TrendingDown size={18} /></div><span className="text-[13px] md:text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
                 </div>
+
+                {showInlineUpgrade && (
+                  <ReportUpgradeCta creditsRemaining={creditsRem} />
+                )}
 
                 <div className="space-y-4">
                   {(() => {
