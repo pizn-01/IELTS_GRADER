@@ -5,7 +5,10 @@ import { trackEvent } from '../utils/trackEvent';
 /**
  * Inline upgrade CTA for the report Overview (after Strengths/Weaknesses).
  */
-export default function ReportUpgradeCta({ creditsRemaining = 0 }) {
+export default function ReportUpgradeCta({
+  creditsRemaining = 0,
+  onPracticeAgain,
+}) {
   const navigate = useNavigate();
   const hasCredits = (Number(creditsRemaining) || 0) > 0;
 
@@ -23,6 +26,10 @@ export default function ReportUpgradeCta({ creditsRemaining = 0 }) {
   };
 
   const goPractice = () => {
+    if (onPracticeAgain) {
+      onPracticeAgain();
+      return;
+    }
     navigate('/dashboard');
   };
 

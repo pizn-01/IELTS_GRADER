@@ -11,6 +11,7 @@ export default function ReportUpgradeModal({
   isOpen,
   creditsRemaining = 0,
   onDismiss,
+  onPracticeAgain,
 }) {
   const navigate = useNavigate();
   const hasCredits = (Number(creditsRemaining) || 0) > 0;
@@ -33,6 +34,10 @@ export default function ReportUpgradeModal({
 
   const goPractice = () => {
     onDismiss?.();
+    if (onPracticeAgain) {
+      onPracticeAgain();
+      return;
+    }
     navigate('/dashboard');
   };
 

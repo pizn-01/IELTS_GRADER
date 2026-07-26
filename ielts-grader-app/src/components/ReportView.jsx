@@ -193,6 +193,8 @@ const ReportView = ({
   showHeader = false,
   showUpgradeCta = false,
   showTabDiscovery = false,
+  onPracticeAgain,
+  practiceStarting = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Overview");
@@ -458,10 +460,19 @@ const ReportView = ({
             <div className="flex items-center gap-[10px] min-w-0">
               <button
                 onClick={onBack}
+                aria-label="Overall performance"
                 className="w-[24px] h-[24px] border-[2px] border-[#101828] rounded-full flex items-center justify-center shrink-0 hover:bg-[#10182810] transition-all"
               >
                 <ArrowLeft size={12} strokeWidth={3} className="text-[#101828]" />
               </button>
+              <button
+                type="button"
+                onClick={onBack}
+                className="hidden sm:inline text-[13px] font-medium text-[#101828]/70 hover:text-[#101828] transition-colors shrink-0"
+              >
+                Overall performance
+              </button>
+              <div className="hidden sm:block h-4 w-px bg-[#101828]/20 shrink-0" />
               <div className="flex items-center flex-wrap gap-x-1 min-w-0">
                 <h1 className="text-[15px] md:text-[20px] font-bold text-[#101828] leading-none truncate">{taskTitle}</h1>
                 <span className="text-[#101828] opacity-30 font-normal mx-1 text-[15px] md:text-[20px] leading-none hidden sm:inline">·</span>
@@ -471,6 +482,16 @@ const ReportView = ({
 
             {/* Action Buttons */}
             <div className="flex items-center gap-[8px] md:gap-[12px] shrink-0">
+              {onPracticeAgain && (
+                <button
+                  type="button"
+                  onClick={onPracticeAgain}
+                  disabled={practiceStarting}
+                  className="bg-transparent border border-[#1018281A] rounded-[8px] px-[10px] md:px-[18px] py-[6px] md:py-[8px] text-[12px] md:text-[14px] font-medium text-[#101828] hover:bg-white/10 transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {practiceStarting ? 'Checking…' : 'Practice again'}
+                </button>
+              )}
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 className="bg-transparent border border-[#1018281A] rounded-[8px] px-[10px] md:px-[18px] py-[6px] md:py-[8px] text-[12px] md:text-[14px] font-medium text-[#101828] hover:bg-white/10 transition-all whitespace-nowrap"
@@ -655,7 +676,10 @@ const ReportView = ({
                 </div>
 
                 {showInlineUpgrade && (
-                  <ReportUpgradeCta creditsRemaining={creditsRem} />
+                  <ReportUpgradeCta
+                    creditsRemaining={creditsRem}
+                    onPracticeAgain={onPracticeAgain}
+                  />
                 )}
 
                 <div className="space-y-4">
