@@ -1,12 +1,13 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import TargetBandPrompt from './TargetBandPrompt';
 import ReportUpgradeCta from './ReportUpgradeCta';
 import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 import {
-  hasSeenFirstReportTabChips,
-  markFirstReportTabChipsSeen,
+  hasSeenFirstFreeReportDiscovery,
+  markFirstFreeReportDiscoverySeen,
 } from '../utils/reportDiscoveryStorage';
 
 function resolveTaskVariant(examType, taskType) {
@@ -23,6 +24,30 @@ function getTabsForVariant(variant) {
   if (variant === 'task1-letter') return [...base, 'Structure', 'Flow & Logic'];
   return [...base, 'Flow & Logic'];
 }
+
+/** First free evaluation just completed: 2 of 3 credits remain on a free-trial profile. */
+function isFirstFreeReportDiscoveryEligible(user) {
+  if (!user) return false;
+  if (user.is_admin) return false;
+  if (user.is_subscribed || user.subscription_status === 'active') return false;
+  const remaining = Number(user.credits_remaining);
+  if (!Number.isFinite(remaining) || remaining !== FREE_TRIAL_CREDITS - 1) return false;
+  const allowance = Number(user.credits_allowance);
+  if (Number.isFinite(allowance) && allowance > FREE_TRIAL_CREDITS) return false;
+  return true;
+}
+
+const TAB_DISCOVERY_BLURBS = {
+  'Error Analysis': 'See every correction with severity and fixes',
+  'Dual Assessment': 'Compare how two examiners scored your essay',
+  'Model Answer': 'Read a stronger band model for this task',
+  'Vocabulary': 'Upgrade word choice with targeted suggestions',
+  'Grammar': 'Fix patterns that cost you band points',
+  'Argumentation': 'Strengthen claims, evidence, and position',
+  'Data Structure': 'Improve how you organize chart data',
+  'Structure': 'Tighten letter layout and purpose sections',
+  'Flow & Logic': 'Smooth paragraph links and logical steps',
+};
 
 const StarRating = ({ count = 0 }) => (
   <span className="text-[#F59E0B] text-[14px] tracking-tight">
@@ -46,13 +71,13 @@ const BulletList = ({ items, colorClass = 'text-[#101828]' }) => {
 };
 
 const EmptyTabState = ({ title, message }) => (
-  <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
-    <div className="text-center space-y-4">
-      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
-        <FileText className="text-gray-300" />
+  <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
+    <div className="text-center space-y-3">
+      <div className="w-12 h-12 bg-[#EFF8FF] border border-[#B2DDFF] rounded-2xl flex items-center justify-center mx-auto">
+        <FileText className="text-[#1A96F3]" size={22} />
       </div>
-      <h3 className="text-[18px] font-bold text-[#101828]">{title}</h3>
-      <p className="text-gray-400 text-[14px]">{message}</p>
+      <h3 className="text-[16px] font-bold text-[#101828]">{title}</h3>
+      <p className="text-[#667085] text-[13px] max-w-sm mx-auto">{message}</p>
     </div>
   </div>
 );
@@ -198,10 +223,8 @@ const ReportView = ({
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Overview");
-  // Capture once on mount so marking "seen" does not hide chips mid-visit.
-  const [showTabChips] = useState(
-    () => showTabDiscovery && !hasSeenFirstReportTabChips()
-  );
+  const [discoveryVisible, setDiscoveryVisible] = useState(false);
+  const discoveryStarted = useRef(false);
   const [expandedSections, setExpandedSections] = useState({
     taskResponse: true,
     errorAnalysis: true,
@@ -292,13 +315,40 @@ const ReportView = ({
   }, [reportTabs, activeTab]);
 
   useEffect(() => {
-    if (!showTabDiscovery || !showTabChips) return;
-    markFirstReportTabChipsSeen();
-  }, [showTabDiscovery, showTabChips]);
+    if (discoveryStarted.current) return;
+    if (!showTabDiscovery) {
+      discoveryStarted.current = true;
+      return;
+    }
+    if (!user) return;
+
+    // Wait if credits still look unused — AuthContext may not have refreshed yet
+    // after the first free evaluation deducted a credit.
+    const remaining = Number(user.credits_remaining);
+    if (Number.isFinite(remaining) && remaining === FREE_TRIAL_CREDITS) return;
+
+    discoveryStarted.current = true;
+    if (isFirstFreeReportDiscoveryEligible(user) && !hasSeenFirstFreeReportDiscovery()) {
+      setDiscoveryVisible(true);
+      markFirstFreeReportDiscoverySeen();
+    }
+  }, [showTabDiscovery, user]);
+
+  const selectTab = useCallback((tab) => {
+    setActiveTab(tab);
+    if (tab !== 'Overview') {
+      setDiscoveryVisible(false);
+    }
+  }, []);
+
+  const dismissDiscovery = useCallback(() => {
+    setDiscoveryVisible(false);
+  }, []);
 
   const isSubscribed =
     user?.subscription_status === 'active' || user?.is_subscribed === true;
   const showInlineUpgrade = showUpgradeCta && user && !isSubscribed;
+  const showTabAttention = discoveryVisible && activeTab === 'Overview';
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
@@ -450,136 +500,150 @@ const ReportView = ({
         </nav>
       )}
 
-      {/* SECTION 2 — REPORT HEADER (gradient here ONLY) */}
-      <div className="relative z-10 overflow-hidden" style={{
-        background: 'linear-gradient(135deg, #E0F2FE 20%, #FBCFE8 50%, #E0F2FE 80%)'
-      }}>
-        <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-12 relative z-20">
-          <div className="flex items-center justify-between mb-[6px] gap-3">
+      {/* SECTION 2 — REPORT HEADER */}
+      <div className="relative z-10 overflow-hidden border-b border-[#E5E7EB]/60">
+        <div className="absolute inset-0 pointer-events-none dashboard-header-wash" />
+        <div className="absolute inset-0 pointer-events-none hero-atmosphere opacity-80" />
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-5 md:pt-6 relative z-20">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="flex items-center justify-between mb-2 gap-3"
+          >
             {/* Title Row */}
             <div className="flex items-center gap-[10px] min-w-0">
               <button
                 onClick={onBack}
                 aria-label="Overall performance"
-                className="w-[24px] h-[24px] border-[2px] border-[#101828] rounded-full flex items-center justify-center shrink-0 hover:bg-[#10182810] transition-all"
+                className="w-[28px] h-[28px] border border-[#D0D5DD] bg-white/80 rounded-full flex items-center justify-center shrink-0 hover:bg-white transition-all shadow-sm"
               >
                 <ArrowLeft size={12} strokeWidth={3} className="text-[#101828]" />
               </button>
               <button
                 type="button"
                 onClick={onBack}
-                className="hidden sm:inline text-[13px] font-medium text-[#101828]/70 hover:text-[#101828] transition-colors shrink-0"
+                className="hidden sm:inline text-[12px] font-semibold text-[#667085] hover:text-[#101828] transition-colors shrink-0"
               >
                 Overall performance
               </button>
-              <div className="hidden sm:block h-4 w-px bg-[#101828]/20 shrink-0" />
+              <div className="hidden sm:block h-4 w-px bg-[#D0D5DD] shrink-0" />
               <div className="flex items-center flex-wrap gap-x-1 min-w-0">
-                <h1 className="text-[15px] md:text-[20px] font-bold text-[#101828] leading-none truncate">{taskTitle}</h1>
-                <span className="text-[#101828] opacity-30 font-normal mx-1 text-[15px] md:text-[20px] leading-none hidden sm:inline">·</span>
-                <h1 className="text-[13px] md:text-[20px] font-semibold md:font-bold text-[#101828] opacity-70 md:opacity-100 leading-none hidden sm:block">{reportDate}</h1>
+                <h1 className="text-[15px] md:text-[18px] font-bold text-[#101828] leading-none truncate">{taskTitle}</h1>
+                <span className="text-[#101828] opacity-30 font-normal mx-1 text-[15px] md:text-[18px] leading-none hidden sm:inline">·</span>
+                <h1 className="text-[12px] md:text-[16px] font-semibold text-[#667085] md:text-[#101828] leading-none hidden sm:block">{reportDate}</h1>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-[8px] md:gap-[12px] shrink-0">
+            <div className="flex items-center gap-2 md:gap-2.5 shrink-0">
               {onPracticeAgain && (
                 <button
                   type="button"
                   onClick={onPracticeAgain}
                   disabled={practiceStarting}
-                  className="bg-transparent border border-[#1018281A] rounded-[8px] px-[10px] md:px-[18px] py-[6px] md:py-[8px] text-[12px] md:text-[14px] font-medium text-[#101828] hover:bg-white/10 transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="bg-white/90 backdrop-blur-sm border border-[#D0D5DD] rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold text-[#2C3E50] hover:bg-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
                 >
                   {practiceStarting ? 'Checking…' : 'Practice again'}
                 </button>
               )}
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="bg-transparent border border-[#1018281A] rounded-[8px] px-[10px] md:px-[18px] py-[6px] md:py-[8px] text-[12px] md:text-[14px] font-medium text-[#101828] hover:bg-white/10 transition-all whitespace-nowrap"
+                className="bg-white/90 backdrop-blur-sm border border-[#D0D5DD] rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold text-[#2C3E50] hover:bg-white transition-all whitespace-nowrap shadow-sm"
               >
                 View Exam
               </button>
               <button
                 onClick={() => window.print()}
-                className="bg-[#1a1f36] text-white rounded-[8px] px-[10px] md:px-[18px] py-[6px] md:py-[8px] text-[12px] md:text-[14px] font-semibold hover:bg-[#2d3a4a] transition-all border-none whitespace-nowrap"
+                className="bg-[#2C3E50] text-white rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold hover:bg-[#1D2939] transition-all border-none whitespace-nowrap shadow-sm"
               >
                 Export
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Subtitle Row */}
-          <div className="mb-[16px] flex items-center gap-1">
-            <span className="text-[13px] font-semibold text-[#101828]">Overall Band Score</span>
-            <span className="text-[13px] font-semibold text-[#101828]">{data?.overall_band ?? '—'}</span>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="mb-3 flex items-center gap-1.5"
+          >
+            <span className="text-[12px] font-semibold text-[#667085]">Overall Band Score</span>
+            <span className="text-[14px] font-bold text-[#101828] tabular-nums">{data?.overall_band ?? '—'}</span>
+          </motion.div>
 
           {/* Tab Bar Navigation */}
-          <div className="flex items-center gap-[20px] md:gap-[28px] border-b border-[#D1D5DB66] overflow-x-auto no-scrollbar">
-            {reportTabs.map((tab) => (
-              <div
-                key={tab}
-                className="relative pb-[12px] cursor-pointer group whitespace-nowrap shrink-0"
-                onClick={() => setActiveTab(tab)}
-              >
-                <span className={`text-[13px] md:text-[14px] transition-all ${activeTab === tab ? "text-[#101828] font-bold" : "text-[#101828] font-semibold hover:text-[#000000]"}`}>
-                  {tab}
-                </span>
-                {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#3B82F6]"></div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {showTabChips && (
-            <div className="pt-3 pb-1">
-              <p className="text-[12px] font-semibold text-[#667085] mb-2">
-                Your full report includes:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {reportTabs.map((tab) => (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
+            className="bg-white/70 backdrop-blur-sm rounded-t-[14px] border border-b-0 border-[#E5E7EB] px-2 md:px-3 shadow-[0_-2px_12px_rgba(26,31,54,0.03)]"
+          >
+            <div className="flex items-center gap-1 md:gap-1.5 overflow-x-auto no-scrollbar">
+              {reportTabs.map((tab) => {
+                const isActive = activeTab === tab;
+                const showPulse = showTabAttention && !isActive;
+                return (
                   <button
                     key={tab}
                     type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
-                      activeTab === tab
-                        ? 'bg-[#2C3E50] text-white border-transparent'
-                        : 'bg-white/70 text-[#344054] border-[#D1D5DB] hover:border-[#1A96F3] hover:text-[#1A96F3]'
+                    onClick={() => selectTab(tab)}
+                    className={`relative px-3 md:px-3.5 py-3 whitespace-nowrap shrink-0 transition-colors ${
+                      isActive
+                        ? 'text-[#101828]'
+                        : 'text-[#667085] hover:text-[#101828]'
                     }`}
                   >
-                    {tab}
+                    <span className={`text-[12px] md:text-[13px] inline-flex items-center gap-1.5 ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                      {tab}
+                      {showPulse && (
+                        <span
+                          className="report-tab-pulse w-1.5 h-1.5 rounded-full bg-[#1A96F3] shrink-0"
+                          aria-hidden
+                        />
+                      )}
+                    </span>
+                    {isActive && (
+                      <span className="absolute bottom-0 left-2 right-2 h-[2.5px] rounded-full bg-[#1A96F3]" />
+                    )}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
+          </motion.div>
         </div>
       </div>
 
-      {/* SECTION 3 — PAGE CONTENT (white) */}
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-[32px] bg-white">
+      {/* SECTION 3 — PAGE CONTENT */}
+      <div className="bg-[#F4F6F8] min-h-[40vh]">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 md:py-5">
         {activeTab === "Overview" ? (
-          <div className="space-y-6">
-              <div className="space-y-6">
-                <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden shadow-sm">
-                  <div className="px-4 md:px-10 py-5 md:py-6 border-b border-gray-100">
-                    <h3 className="text-[16px] font-bold text-[#101828]">Criteria Breakdown</h3>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.08 }}
+            className="space-y-4"
+          >
+              <div className="space-y-4">
+                <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] overflow-hidden shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
+                  <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#F2F4F7]">
+                    <h3 className="text-[15px] font-bold text-[#101828]">Criteria Breakdown</h3>
                   </div>
-                  <div className="py-8 md:py-14 px-4 md:px-12 flex flex-col md:flex-row items-center gap-8 md:gap-[216px]">
-                    <div className="shrink-0 md:pl-4">
+                  <div className="py-5 md:py-6 px-4 md:px-6 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+                    <div className="shrink-0">
                       <div className="flex flex-col items-center">
-                        <div className="relative w-[120px] h-[120px] md:w-[140px] md:h-[140px] flex items-center justify-center">
+                        <div className="relative w-[110px] h-[110px] md:w-[120px] md:h-[120px] flex items-center justify-center">
                           <svg viewBox="0 0 130 130" className="w-full h-full transform -rotate-90">
                             <circle cx="65" cy="65" r="58" stroke="#F0F7FF" strokeWidth="10" fill="transparent" />
                             <circle cx="65" cy="65" r="58" stroke="#1A96F3" strokeWidth="10" fill="transparent" strokeDasharray="364.42" strokeDashoffset={data?.overall_band != null ? 364.42 * (1 - (parseFloat(data.overall_band) / 9)) : 364.42} strokeLinecap="round" />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[38px] md:text-[44px] font-bold text-[#1A96F3] tracking-tight">{data?.overall_band ?? '—'}</span></div>
+                          <div className="absolute inset-0 flex items-center justify-center"><span className="text-[34px] md:text-[38px] font-bold text-[#1A96F3] tracking-tight tabular-nums">{data?.overall_band ?? '—'}</span></div>
                         </div>
-                        <span className="text-[13px] md:text-[14px] font-bold text-[#101828] mt-3 md:mt-4">Overall Band Score</span>
+                        <span className="text-[12px] md:text-[13px] font-bold text-[#101828] mt-2.5">Overall Band Score</span>
                       </div>
                     </div>
-                    <div className="w-full md:flex-1 space-y-4 md:space-y-6 md:pl-8 md:pr-12">
+                    <div className="w-full md:flex-1 space-y-3 md:space-y-3.5">
                       {[
                         { label: "Task Response", score: data?.response_band },
                         { label: "Coherence & Cohesion", score: data?.coherence_band },
@@ -590,10 +654,10 @@ const ReportView = ({
                         const color = val == null ? "#D1D5DB" : val >= 7 ? "#00C9B1" : val >= 5.5 ? "#FF9F00" : "#EF4444";
                         return (
                         <div key={idx} className="flex items-center gap-3 w-full">
-                          <span className="text-[12px] md:text-[14px] text-[#101828] font-bold shrink-0 w-[110px] md:w-auto">{item.label}</span>
-                          <div className="flex items-center gap-2 md:gap-4 flex-1">
-                            <span className="text-[13px] md:text-[14px] text-[#101828] font-normal w-7 md:w-8 text-right shrink-0">{val ?? '—'}</span>
-                            <div className="h-[8px] md:h-[10px] flex-1 bg-[#F3F4F6] rounded-full overflow-hidden">
+                          <span className="text-[12px] md:text-[13px] text-[#101828] font-bold shrink-0 w-[110px] md:w-[200px]">{item.label}</span>
+                          <div className="flex items-center gap-2 md:gap-3 flex-1">
+                            <span className="text-[13px] text-[#101828] font-semibold w-7 md:w-8 text-right shrink-0 tabular-nums">{val ?? '—'}</span>
+                            <div className="h-[8px] flex-1 bg-[#F3F4F6] rounded-full overflow-hidden">
                               <div className="h-full rounded-full transition-all duration-1000" style={{ width: val != null ? `${((val - 1) / 8) * 100}%` : '0%', backgroundColor: color }}></div>
                             </div>
                           </div>
@@ -604,14 +668,56 @@ const ReportView = ({
                   </div>
                 </div>
 
-                <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-4 md:px-10 py-5 md:py-6 border-b border-gray-100">
-                    <h3 className="text-[16px] font-bold text-[#101828]">Scoring Details</h3>
-                    <p className="text-[13px] text-[#101828] opacity-60 mt-1">Base, ceiling, and penalty breakdown</p>
+                {discoveryVisible && (
+                  <div className="bg-white/95 rounded-[16px] border border-[#B2DDFF] shadow-[0_4px_24px_rgba(26,150,243,0.08)] overflow-hidden">
+                    <div className="px-4 md:px-5 py-3.5 flex items-start justify-between gap-3 border-b border-[#EFF8FF]">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-[#1A96F3] uppercase tracking-widest mb-0.5">
+                          First free report
+                        </p>
+                        <h3 className="text-[15px] font-bold text-[#101828]">
+                          Your full report has more depth
+                        </h3>
+                        <p className="text-[12px] text-[#667085] mt-0.5">
+                          Overview is just the start — open these tabs to see corrections, models, and criterion detail.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={dismissDiscovery}
+                        className="shrink-0 text-[12px] font-semibold text-[#667085] hover:text-[#101828] px-2 py-1 rounded-lg hover:bg-[#F2F4F7] transition-colors"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                    <div className="p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {reportTabs.filter((t) => t !== 'Overview').map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => selectTab(tab)}
+                          className="text-left rounded-[12px] border border-[#E5E7EB] bg-[#F8FAFC] hover:border-[#1A96F3] hover:bg-[#EFF8FF] px-3 py-2.5 transition-all group"
+                        >
+                          <span className="text-[13px] font-bold text-[#101828] group-hover:text-[#1A96F3] block">
+                            {tab}
+                          </span>
+                          <span className="text-[11px] text-[#667085] leading-snug block mt-0.5">
+                            {TAB_DISCOVERY_BLURBS[tab] || `Open the ${tab} tab`}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+                  <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#F2F4F7]">
+                    <h3 className="text-[15px] font-bold text-[#101828]">Scoring Details</h3>
+                    <p className="text-[12px] text-[#667085] mt-0.5">Base, ceiling, and penalty breakdown</p>
                   </div>
                   <div className="overflow-x-auto">
-                  <div className="p-4 md:p-10 space-y-4 md:space-y-6 min-w-[600px]">
-                    <div className="bg-[#F3F4F6] rounded-[14px] px-4 md:px-8 py-5 grid grid-cols-[2fr,repeat(7,1fr)] text-[13px] font-medium">
+                  <div className="p-3 md:p-5 space-y-3 md:space-y-4 min-w-[600px]">
+                    <div className="bg-[#F3F4F6] rounded-[12px] px-3 md:px-5 py-3.5 grid grid-cols-[2fr,repeat(7,1fr)] text-[12px] font-medium">
                       <div className="text-left text-[#101828]">Criterion</div>
                       <div className="text-center text-[#101828]">Base</div>
                       <div className="text-center text-[#101828]">Ceiling</div>
@@ -640,7 +746,7 @@ const ReportView = ({
                           const med   = fmtCount(critErrs.filter(e => e.severity === 'Medium').length);
                           const low   = fmtCount(critErrs.filter(e => e.severity === 'Low').length);
                           return (
-                            <div key={i} className="px-8 py-3 grid grid-cols-[2fr,repeat(7,1fr)] items-center text-[14px] hover:bg-gray-50 transition-colors">
+                            <div key={i} className="px-5 py-2.5 grid grid-cols-[2fr,repeat(7,1fr)] items-center text-[13px] hover:bg-gray-50 transition-colors">
                               <div className="text-[#101828] font-medium whitespace-nowrap">{row.name}</div>
                               <div className="text-center text-[#101828] font-medium">{final}</div>
                               <div className="text-center text-[#101828] font-medium">{final}</div>
@@ -658,20 +764,20 @@ const ReportView = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-4 md:px-8 py-4 md:py-6 border-b border-gray-100">
-                      <h3 className="text-[16px] font-bold text-[#101828] mb-1">Strengths</h3>
-                      <p className="text-[14px] text-gray-500">What you did well</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+                    <div className="px-4 md:px-5 py-3.5 border-b border-[#F2F4F7]">
+                      <h3 className="text-[15px] font-bold text-[#101828] mb-0.5">Strengths</h3>
+                      <p className="text-[12px] text-[#667085]">What you did well</p>
                     </div>
-                    <div className="p-4 md:p-8"><ul className="space-y-4 md:space-y-5">{(data?.strengths || ["Clear introduction identifying chart type and subject", "Logical body structure organized by age group", "Effective use of cohesive devices and linking words", "Good paragraphing with unified topic focus"]).map((text, i) => (<li key={i} className="flex items-start gap-3 md:gap-4"><div className="mt-1 text-[#00C9B1] shrink-0"><TrendingUp size={18} /></div><span className="text-[13px] md:text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-4 md:p-5"><ul className="space-y-3 md:space-y-3.5">{(data?.strengths || ["Clear introduction identifying chart type and subject", "Logical body structure organized by age group", "Effective use of cohesive devices and linking words", "Good paragraphing with unified topic focus"]).map((text, i) => (<li key={i} className="flex items-start gap-3"><div className="mt-0.5 text-[#00C9B1] shrink-0"><TrendingUp size={16} /></div><span className="text-[13px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
-                  <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-4 md:px-8 py-4 md:py-6 border-b border-gray-100">
-                      <h3 className="text-[16px] font-bold text-[#101828] mb-1">Weaknesses</h3>
-                      <p className="text-[14px] text-gray-500">Areas for improvement</p>
+                  <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+                    <div className="px-4 md:px-5 py-3.5 border-b border-[#F2F4F7]">
+                      <h3 className="text-[15px] font-bold text-[#101828] mb-0.5">Weaknesses</h3>
+                      <p className="text-[12px] text-[#667085]">Areas for improvement</p>
                     </div>
-                    <div className="p-4 md:p-8"><ul className="space-y-4 md:space-y-5">{(data?.weaknesses || ["Data accuracy issues, numerical values don't match reference", "Coverage gaps, misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-3 md:gap-4"><div className="mt-1 text-[#FF4D4D] shrink-0"><TrendingDown size={18} /></div><span className="text-[13px] md:text-[14px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-4 md:p-5"><ul className="space-y-3 md:space-y-3.5">{(data?.weaknesses || ["Data accuracy issues, numerical values don't match reference", "Coverage gaps, misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-3"><div className="mt-0.5 text-[#FF4D4D] shrink-0"><TrendingDown size={16} /></div><span className="text-[13px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
                   </div>
                 </div>
 
@@ -774,7 +880,7 @@ const ReportView = ({
                   })()}
                 </div>
               </div>
-            </div>
+            </motion.div>
         ) : activeTab === "Error Analysis" ? (() => {
           // Taxonomy-driven layout (matches examinee ground truth):
           // 1) severity stats  2) distribution by official criteria
@@ -1042,7 +1148,7 @@ const ReportView = ({
         : activeTab === "Model Answer" ? (() => {
           const ma = data?.model_answer;
           if (!ma) return (
-            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+            <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
                 <h3 className="text-[18px] font-bold text-[#101828]">Model Answer</h3>
@@ -1095,7 +1201,7 @@ const ReportView = ({
         : activeTab === "Vocabulary" ? (() => {
           const va = data?.vocabulary_analysis;
           if (!va || !va.categories?.length) return (
-            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+            <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
                 <h3 className="text-[18px] font-bold text-[#101828]">Vocabulary Analysis</h3>
@@ -1147,7 +1253,7 @@ const ReportView = ({
         : activeTab === "Grammar" ? (() => {
           const ga = data?.grammar_analysis;
           if (!ga) return (
-            <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
+            <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
                 <h3 className="text-[18px] font-bold text-[#101828]">Grammar Analysis</h3>
@@ -1811,16 +1917,17 @@ const ReportView = ({
           );
         })()
         : (
-          <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
-                <FileText className="text-gray-300" />
+          <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 bg-[#EFF8FF] border border-[#B2DDFF] rounded-2xl flex items-center justify-center mx-auto">
+                <FileText className="text-[#1A96F3]" size={22} />
               </div>
-              <h3 className="text-[18px] font-bold text-[#101828]">{activeTab} Section</h3>
-              <p className="text-gray-400 text-[14px]">This section is coming soon as part of your detailed analysis.</p>
+              <h3 className="text-[16px] font-bold text-[#101828]">{activeTab} Section</h3>
+              <p className="text-[#667085] text-[13px]">This section is coming soon as part of your detailed analysis.</p>
             </div>
           </div>
         )}
+      </div>
       </div>
 
       <TargetBandPrompt

@@ -169,49 +169,50 @@ function DashboardApp() {
     }
   };
 
+  const learningFootnote =
+    learningStatus?.progressToNextEdition?.completed >= 3
+      ? `${learningStatus.progressToNextEdition.completed}/5 exams toward your next study guide`
+      : null;
+
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
       <div className="w-full max-w-[1440px] mx-auto">
-        {/* Hero band */}
+        {/* Atmospheric header band */}
         <div className="relative overflow-hidden border-b border-[#E5E7EB]/60">
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'linear-gradient(90deg, #E0F2FE 0%, #FCE7F3 40%, #FCE7F3 60%, #CFFAFE 100%)',
-              opacity: 0.75,
-            }}
-          />
-          <div className="relative z-10 px-4 md:px-6 pt-6 md:pt-10 pb-6 md:pb-8">
+          <div className="absolute inset-0 pointer-events-none dashboard-header-wash" />
+          <div className="absolute inset-0 pointer-events-none hero-atmosphere opacity-80" />
+          <div className="relative z-10 px-4 md:px-6 pt-4 md:pt-5 pb-4 md:pb-5">
             <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} credits={creditsRemaining} />
 
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-6 md:mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.4 }}
+                className="min-w-0"
               >
-                <p className="text-[12px] font-bold text-[#1A96F3] uppercase tracking-widest mb-2">Dashboard</p>
-                <h1 className="text-[28px] md:text-[32px] font-bold text-[#101828] tracking-tight mb-2">
+                <p className="text-[11px] font-bold text-[#1A96F3] uppercase tracking-widest mb-1">Dashboard</p>
+                <h1 className="text-[22px] md:text-[26px] font-bold text-[#101828] tracking-tight leading-tight mb-1">
                   Welcome back, {candidateFirstName}
                 </h1>
-                <p className="text-[#667085] font-medium text-sm md:text-[15px] max-w-xl leading-relaxed">
+                <p className="text-[#667085] font-medium text-[13px] md:text-[14px] max-w-xl leading-relaxed">
                   {dashboardSubtitle}
                 </p>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.08 }}
-                className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0"
+                transition={{ duration: 0.4, delay: 0.06 }}
+                className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto shrink-0"
               >
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => navigate('/performance')}
-                  className="bg-white/90 backdrop-blur-sm text-[#2C3E50] border border-[#D0D5DD] w-full sm:w-auto px-5 h-[48px] rounded-[14px] text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-white transition-all shadow-sm"
+                  className="bg-white/90 backdrop-blur-sm text-[#2C3E50] border border-[#D0D5DD] w-full sm:w-auto px-4 h-[42px] rounded-[12px] text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-white transition-all shadow-sm"
                 >
-                  <BarChart3 size={18} />
+                  <BarChart3 size={16} />
                   View Overall Performance
                 </motion.button>
                 <motion.button
@@ -219,45 +220,53 @@ function DashboardApp() {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleStartPractice}
                   disabled={practiceStarting}
-                  className="bg-[#2C3E50] text-white w-full sm:w-auto px-6 h-[48px] rounded-[14px] text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="bg-[#2C3E50] text-white w-full sm:w-auto px-5 h-[42px] rounded-[12px] text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Play size={18} fill="currentColor" />
+                  <Play size={16} fill="currentColor" />
                   {practiceStarting ? 'Checking…' : !hasCredits ? 'Upgrade to Practice' : 'Start New Practice'}
                 </motion.button>
               </motion.div>
             </div>
 
-            <DashboardKpiStrip
-              latestBand={latestBand}
-              targetBand={targetBand}
-              creditsRemaining={creditsRemaining}
-              examsCount={examsCount}
-              loading={isLoading}
-            />
-            {learningStatus?.progressToNextEdition?.completed >= 3 && (
-              <p className="text-[12px] text-[#667085] mt-3 font-medium">
-                {learningStatus.progressToNextEdition.completed}/5 exams toward your next study guide
-              </p>
-            )}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <DashboardKpiStrip
+                latestBand={latestBand}
+                targetBand={targetBand}
+                creditsRemaining={creditsRemaining}
+                examsCount={examsCount}
+                loading={isLoading}
+                learningFootnote={learningFootnote}
+              />
+            </motion.div>
           </div>
         </div>
 
-        {/* Main canvas */}
-        <div className="px-4 md:px-6 py-6 md:py-8">
-          <div className="bg-[#F4F6F8] rounded-[24px] border border-[#E5E7EB]/80 p-4 md:p-6 flex flex-col gap-6">
-            <SkillGrowth
-              hasData={hasData}
-              defaultTask={defaultChartTask}
-              isLoading={isLoading}
-              targetBand={targetBand}
-              onStartPractice={handleStartPractice}
-            />
-            <RecentReports
-              hasData={hasData}
-              dynamicReports={recentSubmissions}
-              onOpenReport={handleOpenRecentReport}
-              onStartPractice={handleStartPractice}
-            />
+        {/* Branded workspace */}
+        <div className="px-4 md:px-6 py-4 md:py-5">
+          <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+              <div className="lg:col-span-7 min-w-0">
+                <SkillGrowth
+                  hasData={hasData}
+                  defaultTask={defaultChartTask}
+                  isLoading={isLoading}
+                  targetBand={targetBand}
+                  onStartPractice={handleStartPractice}
+                />
+              </div>
+              <div className="lg:col-span-5 min-w-0">
+                <RecentReports
+                  hasData={hasData}
+                  dynamicReports={recentSubmissions}
+                  onOpenReport={handleOpenRecentReport}
+                  onStartPractice={handleStartPractice}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

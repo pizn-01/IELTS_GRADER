@@ -146,6 +146,11 @@ html.lenis body {
   50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
 }
 
+@keyframes reportTabPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.85); }
+}
+
 /* --- Animation Utility Classes --- */
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out;
@@ -165,6 +170,17 @@ html.lenis body {
 
 .hero-free-badge {
   animation: heroFreeBadgePulse 2.4s ease-in-out infinite;
+}
+
+.report-tab-pulse {
+  animation: reportTabPulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-tab-pulse {
+    animation: none;
+    opacity: 1;
+  }
 }
 .animate-delay-50 {
   animation-delay: 50ms;
@@ -221,6 +237,16 @@ html.lenis body {
 .hero-atmosphere {
   background:
     radial-gradient(ellipse 50% 40% at 70% 30%, rgba(255, 255, 255, 0.55), transparent 70%);
+}
+
+/* Logged-in dashboard header wash — sky → blush → cyan + soft radials */
+.dashboard-header-wash {
+  background-color: #eef6fb;
+  background-image:
+    linear-gradient(90deg, rgba(224, 242, 254, 0.95) 0%, rgba(252, 231, 243, 0.75) 42%, rgba(252, 231, 243, 0.7) 58%, rgba(207, 250, 254, 0.95) 100%),
+    radial-gradient(ellipse 70% 80% at 8% 20%, rgba(14, 165, 233, 0.12), transparent 55%),
+    radial-gradient(ellipse 55% 60% at 92% 10%, rgba(13, 148, 136, 0.08), transparent 50%),
+    radial-gradient(ellipse 45% 50% at 50% 100%, rgba(251, 191, 36, 0.06), transparent 55%);
 }
 
 @media (min-width: 1024px) {
