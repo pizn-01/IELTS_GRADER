@@ -180,7 +180,7 @@ router.get('/', authenticateToken, async (req, res) => {
   const { limit = 50, offset = 0, task } = req.query;
 
   try {
-    // 1. Fetch submissions (no join — avoids PostgREST relationship detection)
+    // List views don't need full essays — keep a short excerpt for search only.
     let query = supabaseAdmin
       .from('submissions')
       .select('id, exam_type, task_type, word_count, time_spent_seconds, status, created_at, essay_content', { count: 'exact' })
@@ -224,6 +224,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const flattened = submissions.map(s => {
       const r = reportMap[s.id];
+      const essay = s.essay_content || '';
       return {
         id:                s.id,
         exam_type:         s.exam_type,
@@ -232,7 +233,8 @@ router.get('/', authenticateToken, async (req, res) => {
         time_spent_seconds: s.time_spent_seconds,
         status:            s.status,
         created_at:        s.created_at,
-        essay_content:     s.essay_content,
+        // Truncate for list payloads; full essay comes from the report endpoint.
+        essay_content:     essay.length > 280 ? `${essay.slice(0, 280)}…` : essay,
         overall_band:      r ? parseFloat(r.overall_band)   : null,
         response_band:     r ? parseFloat(r.response_band)  : null,
         coherence_band:    r ? parseFloat(r.coherence_band) : null,

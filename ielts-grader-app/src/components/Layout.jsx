@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
 import { useLearningNavBadge } from '../hooks/useLearningNavBadge';
 import BrandLogo from './BrandLogo';
 import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 
 const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, profileImage }) => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const displayName = user?.full_name || 'Candidate';
   const email = user?.email || '';
   const initials = displayName
@@ -31,21 +30,8 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    api.getMe()
-      .then((fresh) => {
-        updateUser({
-          credits_remaining: fresh.credits_remaining,
-          credits_allowance: fresh.credits_allowance,
-          subscription_plan: fresh.subscription_plan,
-          subscription_status: fresh.subscription_status,
-          is_subscribed: fresh.is_subscribed,
-          cancel_at_period_end: fresh.cancel_at_period_end,
-        });
-      })
-      .catch(() => {});
-  }, [user?.id, updateUser]);
+  // Credits/subscription are hydrated by AuthContext bootstrap and refreshed
+  // after grading/checkout — avoid a redundant /auth/me on every Layout mount.
 
   const navItems = [
     { label: 'Dashboard', id: 'dashboard' },

@@ -41,25 +41,11 @@ function DashboardApp() {
 
   const fetchDashboardData = async () => {
     try {
-      const [metrics, submissionsRes, freshUser] = await Promise.all([
+      // AuthContext already hydrated user — don't wait on another /auth/me here.
+      const [metrics, submissionsRes] = await Promise.all([
         api.getDashboardAnalytics(),
         api.getSubmissions({ limit: 10 }),
-        api.getMe().catch(() => null),
       ]);
-
-      if (freshUser) {
-        updateUser({
-          target_band: freshUser.target_band,
-          target_band_confirmed: freshUser.target_band_confirmed,
-          credits_remaining: freshUser.credits_remaining,
-          credits_allowance: freshUser.credits_allowance,
-          subscription_plan: freshUser.subscription_plan,
-          subscription_status: freshUser.subscription_status,
-          is_subscribed: freshUser.is_subscribed,
-          cancel_at_period_end: freshUser.cancel_at_period_end,
-          full_name: freshUser.full_name,
-        });
-      }
 
       setAnalyticsSeries(metrics);
 
@@ -77,11 +63,12 @@ function DashboardApp() {
 
       const hasGraded = formatted.length > 0 || (metrics?.chartData?.length || 0) > 0;
       setHasData(hasGraded);
-      await refreshLearningStatus();
+      // Show charts/tables immediately; learning promo can finish in the background.
+      setIsLoading(false);
+      refreshLearningStatus().catch(() => {});
     } catch (err) {
       console.warn('Dashboard data fetch failed:', err);
       setRecentSubmissions([]);
-    } finally {
       setIsLoading(false);
     }
   };

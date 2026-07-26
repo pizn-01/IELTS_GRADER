@@ -253,7 +253,9 @@ router.post('/register', async (req, res) => {
 // ─── GET /api/auth/me ─────────────────────────────────────────────────────────
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const reconciled = await reconcileUserSubscription(req.user.userId);
+    // DB-only: avoid Stripe on every page load. Live Stripe sync stays on
+    // login / Google / subscriptions/status / checkout (webhooks keep DB current).
+    const reconciled = await reconcileUserSubscription(req.user.userId, { liveStripe: false });
     const profile = await fetchProfile(req.user.userId);
     return res.json({
       id: req.user.userId,

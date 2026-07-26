@@ -19,7 +19,7 @@ const MockExamPage = () => {
   const examType = routeState.examType || essayData.examType || 'Academic';
   const taskType = routeState.taskType || essayData.taskType || 'Task 2';
 
-  // Logged-in users who already used their free credit must verify email first
+  // Logged-in users who have used all free-trial credits must verify email first
   const needsVerify =
     isAuthenticated &&
     user &&

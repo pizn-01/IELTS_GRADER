@@ -228,7 +228,13 @@ async function grantCreditsFromSubscription(subscription, userId, { sessionId } 
   });
 }
 
-async function reconcileUserSubscription(userId) {
+/**
+ * Reconcile subscription state from the DB, optionally refreshing from Stripe.
+ * liveStripe=false is for hot paths like GET /auth/me (called many times per
+ * page load). Stripe webhooks + login/subscription endpoints keep the DB fresh;
+ * /me only needs local period-end expiry.
+ */
+async function reconcileUserSubscription(userId, { liveStripe = true } = {}) {
   const { data: profile, error } = await supabaseAdmin
     .from('profiles')
     .select(`
@@ -269,6 +275,10 @@ async function reconcileUserSubscription(userId) {
       .eq('id', userId)
       .single();
     return { ...refreshed, cancel_at_period_end: false };
+  }
+
+  if (!liveStripe) {
+    return { ...profile, cancel_at_period_end: false };
   }
 
   const stripe = getStripe();

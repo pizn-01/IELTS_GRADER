@@ -4,6 +4,7 @@ import { X, FileCheck2, Clock, Info, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { showFreeTrialEvalMessage } from '../constants/subscriptionPlans';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
 
@@ -30,6 +31,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const hasCredits = (Number(user?.credits_remaining) || 0) > 0;
+  const isFreeTrialOffer = showFreeTrialEvalMessage(user);
   const [step, setStep] = useState(1);
   const [examType, setExamType] = useState('');
   const [taskType, setTaskType] = useState('');
@@ -328,7 +330,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
                 <div className="flex flex-col">
                   <div className="mb-5">
                     <h2 className="text-[18px] font-bold text-[#1a1f36]">
-                      Start your free tutor report
+                      {isFreeTrialOffer ? 'Start your free tutor report' : 'Start your tutor report'}
                     </h2>
                   </div>
 
@@ -379,7 +381,9 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
                   </div>
 
                   <p className="text-center text-[12px] text-[#9CA3AF] mt-5 mb-0">
-                    3 free evaluations · Results in about 60 seconds
+                    {isFreeTrialOffer
+                      ? '3 free evaluations · Results in about 60 seconds'
+                      : 'Results in about 60 seconds'}
                   </p>
 
                   <div className="mt-5">

@@ -15,7 +15,7 @@ const FullPageLoader = () => (
 );
 
 /**
- * After the free evaluation is used, unverified email users must verify
+ * After all free-trial credits are used, unverified email users must verify
  * before using the rest of the product. Report viewing is exempt.
  */
 function needsEmailVerification(user) {
@@ -28,7 +28,7 @@ function needsEmailVerification(user) {
  * Shows loader during bootstrap, redirects to /login if unauthenticated,
  * and preserves the intended destination via location state.
  * When allowUnverified is false (default), also gates unverified users
- * who have already used their free credit.
+ * who have already used their free-trial credits.
  */
 export const AdminRoute = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
