@@ -16,8 +16,8 @@ function formatEventLabel(name) {
 }
 
 /**
- * Simple Overview section: overall conversion + one row per event
- * (count + step conversion %). Free-trial credit depth shown separately.
+ * Overview funnel: signup→payment conversion, free-credit engagement KPIs,
+ * then step list (count + conversion from previous).
  */
 export default function EventFunnelSection({
   steps = [],
@@ -30,8 +30,14 @@ export default function EventFunnelSection({
   const overallConversion =
     firstUnique === 0 ? 0 : Math.round((lastUnique / firstUnique) * 1000) / 10;
 
-  const eng = freeTrialEngagement;
-  const hasEngagement = eng && (eng.used_one_unique > 0 || eng.signup_unique > 0);
+  const eng = freeTrialEngagement || {};
+  const usedOne = eng.used_one_unique ?? 0;
+  const usedAll = eng.used_all_unique ?? 0;
+  const usedOnlySome = eng.used_only_some_unique ?? Math.max(0, usedOne - usedAll);
+  const usedOnePct = eng.used_one_of_signup_pct ?? 0;
+  const usedAllOfOnePct = eng.used_all_of_used_one_pct ?? 0;
+  const usedOnlySomePct = eng.used_only_some_of_used_one_pct
+    ?? (usedOne === 0 ? 0 : Math.round((usedOnlySome / usedOne) * 1000) / 10);
 
   return (
     <div className={`bg-white rounded-[12px] border border-gray-100 shadow-sm p-3.5 transition-opacity ${loading ? 'opacity-60' : ''}`}>
@@ -42,43 +48,33 @@ export default function EventFunnelSection({
         <p className="text-[10px] text-gray-400">Count · conversion from previous step</p>
       </div>
 
-      <div className="rounded-[10px] bg-[#F8FAFC] border border-gray-100 px-3.5 py-2.5 flex items-center justify-between gap-3 mb-3">
-        <span className="text-[12px] text-gray-500">Signup → payment</span>
-        <span className="text-[16px] font-black text-[#101828] tabular-nums">{overallConversion}%</span>
-      </div>
-
-      {hasEngagement && (
-        <div className="rounded-[10px] border border-gray-100 px-3.5 py-2.5 mb-3 space-y-2">
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-            Free trial engagement
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-[8px] bg-[#F8FAFC] px-2.5 py-2">
-              <p className="text-[10px] text-gray-400 leading-tight">Used ≥1 free credit</p>
-              <p className="text-[15px] font-black text-[#101828] tabular-nums mt-0.5">
-                {eng.used_one_unique ?? 0}
-              </p>
-              <p className="text-[10px] text-gray-400 tabular-nums">
-                {eng.used_one_of_signup_pct ?? 0}% of signups
-              </p>
-            </div>
-            <div className="rounded-[8px] bg-[#F8FAFC] px-2.5 py-2">
-              <p className="text-[10px] text-gray-400 leading-tight">Used all 3 free credits</p>
-              <p className="text-[15px] font-black text-[#101828] tabular-nums mt-0.5">
-                {eng.used_all_unique ?? 0}
-              </p>
-              <p className="text-[10px] text-gray-400 tabular-nums">
-                {eng.used_all_of_used_one_pct ?? 0}% of those who used ≥1
-              </p>
-            </div>
-          </div>
-          <p className="text-[10px] text-gray-400 tabular-nums">
-            Only 1–2 credits: {eng.used_only_some_unique ?? 0}
-            {' · '}
-            {eng.used_only_some_of_used_one_pct ?? 0}% of engaged free users
-          </p>
+      <div className="rounded-[10px] bg-[#F8FAFC] border border-gray-100 divide-y divide-gray-100 mb-3">
+        <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
+          <span className="text-[12px] text-gray-500">Signup → payment</span>
+          <span className="text-[16px] font-black text-[#101828] tabular-nums">{overallConversion}%</span>
         </div>
-      )}
+        <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
+          <div>
+            <span className="text-[12px] text-gray-500">Used ≥1 free credit</span>
+            <p className="text-[10px] text-gray-400 tabular-nums">{usedOnePct}% of signups</p>
+          </div>
+          <span className="text-[16px] font-black text-[#101828] tabular-nums">{usedOne}</span>
+        </div>
+        <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
+          <div>
+            <span className="text-[12px] text-gray-500">Used all 3 free credits</span>
+            <p className="text-[10px] text-gray-400 tabular-nums">{usedAllOfOnePct}% of those who used ≥1</p>
+          </div>
+          <span className="text-[16px] font-black text-[#101828] tabular-nums">{usedAll}</span>
+        </div>
+        <div className="px-3.5 py-2 flex items-center justify-between gap-3">
+          <span className="text-[12px] text-gray-500">Only 1–2 free credits</span>
+          <div className="text-right shrink-0">
+            <span className="text-[13px] font-bold text-[#101828] tabular-nums">{usedOnlySome}</span>
+            <p className="text-[10px] text-gray-400 tabular-nums">{usedOnlySomePct}% of engaged</p>
+          </div>
+        </div>
+      </div>
 
       <div className="border border-gray-100 rounded-[10px] divide-y divide-gray-50">
         {steps.length === 0 ? (
