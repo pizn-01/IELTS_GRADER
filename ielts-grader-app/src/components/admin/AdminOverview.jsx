@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../../services/api';
-import EventFunnelModal from './EventFunnelModal';
+import EventFunnelSection from './EventFunnelSection';
 
 const formatRevenue = (cents) =>
   `$${((cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -117,20 +117,22 @@ export default function AdminOverview({ onNavigateTab }) {
   const [stats, setStats] = useState(null);
   const [timeseries, setTimeseries] = useState([]);
   const [byCountry, setByCountry] = useState([]);
+  const [funnelSteps, setFunnelSteps] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [funnelOpen, setFunnelOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, ts, co] = await Promise.all([
+      const [s, ts, co, funnel] = await Promise.all([
         api.admin.getStats({ days }),
         api.admin.getAcquisitionTimeseries({ days }),
         api.admin.getAcquisitionByCountry({ days }),
+        api.admin.getEventsFunnel({ days }).catch(() => ({ steps: [] })),
       ]);
       setStats(s);
       setTimeseries(ts.data || []);
       setByCountry(co.data || []);
+      setFunnelSteps(Array.isArray(funnel?.steps) ? funnel.steps : []);
     } catch {
       // keep prior data on error
     } finally {
@@ -333,12 +335,7 @@ export default function AdminOverview({ onNavigateTab }) {
       <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 transition-opacity ${loading ? 'opacity-60' : ''}`}>
         <DashboardPanel
           title={`Acquisition · ${periodShort}`}
-          footer={
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-              <PanelLink label="View Acquisition →" onClick={() => onNavigateTab?.('Acquisition')} />
-              <PanelLink label="View event funnel →" onClick={() => setFunnelOpen(true)} />
-            </div>
-          }
+          footer={<PanelLink label="View Acquisition →" onClick={() => onNavigateTab?.('Acquisition')} />}
         >
           <StatRow label="Pageviews" value={acq?.total_pageviews ?? 0} />
           <StatRow label="Bounce rate" value={`${acq?.bounce_rate ?? 0}%`} />
@@ -380,18 +377,12 @@ export default function AdminOverview({ onNavigateTab }) {
         </DashboardPanel>
       </div>
 
+      <EventFunnelSection steps={funnelSteps} periodShort={periodShort} loading={loading} />
+
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <ExploreBar links={exploreLinks} onNavigate={onNavigateTab} />
-        <span className="text-gray-300 select-none">·</span>
-        <PanelLink label="Event funnel →" onClick={() => setFunnelOpen(true)} />
         <span className="text-[10px] text-gray-400">Counts for {periodShort}</span>
       </div>
-
-      <EventFunnelModal
-        open={funnelOpen}
-        onClose={() => setFunnelOpen(false)}
-        initialDays={days}
-      />
     </div>
   );
 }
