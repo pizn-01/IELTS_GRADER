@@ -1266,7 +1266,11 @@ router.get('/acquisition/overview', async (req, res) => {
 router.get('/events/funnel', async (req, res) => {
   const days = parseDays(req.query.days, 7);
   const since = sinceIso(days);
-  const { FUNNEL_EVENTS } = require('../utils/productEvents');
+  const {
+    FUNNEL_EVENTS,
+    FREE_TRIAL_ENGAGEMENT_EVENTS,
+    TRACKED_EVENTS,
+  } = require('../utils/productEvents');
 
   try {
     const rows = await fetchAllRows(() =>
@@ -1274,12 +1278,12 @@ router.get('/events/funnel', async (req, res) => {
         .from('product_events')
         .select('event_name, user_id, session_id')
         .gte('created_at', since)
-        .in('event_name', FUNNEL_EVENTS)
+        .in('event_name', TRACKED_EVENTS)
         .order('created_at', { ascending: false })
     );
 
     const byEvent = Object.fromEntries(
-      FUNNEL_EVENTS.map((name) => [name, { count: 0, actors: new Set() }])
+      TRACKED_EVENTS.map((name) => [name, { count: 0, actors: new Set() }])
     );
 
     for (const row of rows) {
@@ -1303,7 +1307,29 @@ router.get('/events/funnel', async (req, res) => {
       return { event_name: eventName, count, unique, conversion_from_prev };
     });
 
-    return res.json({ period_days: days, steps });
+    const signupUnique = byEvent.signup.actors.size;
+    const usedOneUnique = byEvent.free_credit_1_used.actors.size;
+    const usedAllUnique = byEvent.free_credits_all_used.actors.size;
+    const usedOnlySomeUnique = Math.max(0, usedOneUnique - usedAllUnique);
+    const pct = (num, den) => (den === 0 ? 0 : Math.round((num / den) * 1000) / 10);
+
+    const free_trial_engagement = {
+      events: FREE_TRIAL_ENGAGEMENT_EVENTS.map((eventName) => ({
+        event_name: eventName,
+        count: byEvent[eventName].count,
+        unique: byEvent[eventName].actors.size,
+      })),
+      signup_unique: signupUnique,
+      used_one_unique: usedOneUnique,
+      used_all_unique: usedAllUnique,
+      used_only_some_unique: usedOnlySomeUnique,
+      used_one_of_signup_pct: pct(usedOneUnique, signupUnique),
+      used_all_of_signup_pct: pct(usedAllUnique, signupUnique),
+      used_all_of_used_one_pct: pct(usedAllUnique, usedOneUnique),
+      used_only_some_of_used_one_pct: pct(usedOnlySomeUnique, usedOneUnique),
+    };
+
+    return res.json({ period_days: days, steps, free_trial_engagement });
   } catch (err) {
     console.error('[admin/events/funnel]', err.message);
     return res.status(500).json({ error: 'Failed to fetch event funnel.' });

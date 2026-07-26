@@ -4,8 +4,17 @@ const { authenticateToken } = require('../middleware/auth');
 const { gradeEssayAsync } = require('../services/graderEngine');
 const { isPeriodEnded, expireSubscriptionAccess } = require('../services/subscriptionSync');
 const { trackProductEvent } = require('../utils/productEvents');
+const { FREE_TRIAL_CREDITS } = require('../services/subscriptionPlans');
 
 const router = express.Router();
+
+function isFreeTrialProfile(profile) {
+  if (!profile || profile.is_admin) return false;
+  if (profile.subscription_status === 'active') return false;
+  const allowance = Number(profile.credits_allowance);
+  if (Number.isFinite(allowance) && allowance > FREE_TRIAL_CREDITS) return false;
+  return true;
+}
 
 // ─── POST /api/submissions ────────────────────────────────────────────────────
 router.post('/', authenticateToken, async (req, res) => {
@@ -44,7 +53,7 @@ router.post('/', authenticateToken, async (req, res) => {
   // Fetch current credit balance and subscription access
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('credits_remaining, subscription_status, subscription_period_end')
+    .select('credits_remaining, credits_allowance, subscription_status, subscription_period_end, is_admin')
     .eq('id', userId)
     .single();
 
@@ -130,6 +139,39 @@ router.post('/', authenticateToken, async (req, res) => {
       task_type,
     },
   }).catch(() => {});
+
+  // Free-trial engagement: first credit vs all 3 exhausted
+  if (isFreeTrialProfile(profile)) {
+    const creditsBefore = profile.credits_remaining;
+    const creditsAfter = creditsBefore - 1;
+    const allowance = Number(profile.credits_allowance);
+    const freeAllowance = Number.isFinite(allowance) && allowance > 0
+      ? Math.min(allowance, FREE_TRIAL_CREDITS)
+      : FREE_TRIAL_CREDITS;
+    const engagementProps = {
+      submission_id: submission.id,
+      exam_type,
+      task_type,
+      credits_before: creditsBefore,
+      credits_after: creditsAfter,
+      free_allowance: freeAllowance,
+    };
+
+    if (creditsBefore === freeAllowance) {
+      trackProductEvent({
+        eventName: 'free_credit_1_used',
+        userId,
+        properties: engagementProps,
+      }).catch(() => {});
+    }
+    if (creditsAfter === 0) {
+      trackProductEvent({
+        eventName: 'free_credits_all_used',
+        userId,
+        properties: engagementProps,
+      }).catch(() => {});
+    }
+  }
 
   // Fire-and-forget grading (credit refund on failure is handled inside grader)
   gradeEssayAsync(submission.id, {

@@ -118,6 +118,7 @@ export default function AdminOverview({ onNavigateTab }) {
   const [timeseries, setTimeseries] = useState([]);
   const [byCountry, setByCountry] = useState([]);
   const [funnelSteps, setFunnelSteps] = useState([]);
+  const [freeTrialEngagement, setFreeTrialEngagement] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -133,6 +134,7 @@ export default function AdminOverview({ onNavigateTab }) {
       setTimeseries(ts.data || []);
       setByCountry(co.data || []);
       setFunnelSteps(Array.isArray(funnel?.steps) ? funnel.steps : []);
+      setFreeTrialEngagement(funnel?.free_trial_engagement || null);
     } catch {
       // keep prior data on error
     } finally {
@@ -377,7 +379,12 @@ export default function AdminOverview({ onNavigateTab }) {
         </DashboardPanel>
       </div>
 
-      <EventFunnelSection steps={funnelSteps} periodShort={periodShort} loading={loading} />
+      <EventFunnelSection
+        steps={funnelSteps}
+        freeTrialEngagement={freeTrialEngagement}
+        periodShort={periodShort}
+        loading={loading}
+      />
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <ExploreBar links={exploreLinks} onNavigate={onNavigateTab} />
