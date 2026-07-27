@@ -524,28 +524,22 @@ const ReportView = ({
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 md:gap-2.5 shrink-0">
-              {onPracticeAgain && (
-                <button
-                  type="button"
-                  onClick={onPracticeAgain}
-                  disabled={practiceStarting}
-                  className="bg-white/90 backdrop-blur-sm border border-[#D0D5DD] rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold text-[#2C3E50] hover:bg-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
-                >
-                  {practiceStarting ? 'Checking…' : 'Practice again'}
-                </button>
-              )}
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 className="bg-white/90 backdrop-blur-sm border border-[#D0D5DD] rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold text-[#2C3E50] hover:bg-white transition-all whitespace-nowrap shadow-sm"
               >
                 View Exam
               </button>
-              <button
-                onClick={() => window.print()}
-                className="bg-[#2C3E50] text-white rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold hover:bg-[#1D2939] transition-all border-none whitespace-nowrap shadow-sm"
-              >
-                Export
-              </button>
+              {onPracticeAgain && (
+                <button
+                  type="button"
+                  onClick={onPracticeAgain}
+                  disabled={practiceStarting}
+                  className="bg-[#2C3E50] text-white rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold hover:bg-[#1D2939] transition-all border-none whitespace-nowrap shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {practiceStarting ? 'Checking…' : 'Practice again'}
+                </button>
+              )}
             </div>
           </motion.div>
 
