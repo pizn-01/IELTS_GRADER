@@ -93,8 +93,8 @@ export function OverviewInsightPanels({
   className = '',
 }) {
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0 ${className}`}>
-      <Panel title="Executive Summary" className="min-h-[140px]">
+    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0 h-full ${className}`}>
+      <Panel title="Executive Summary" className="min-h-[140px] h-full">
         <div className="p-3 space-y-2 flex-1 overflow-y-auto min-h-0 custom-scrollbar">
           {loading ? (
             <div className="space-y-2">
@@ -117,7 +117,7 @@ export function OverviewInsightPanels({
         </div>
       </Panel>
 
-      <Panel title={insightsPanel?.title || 'Strengths & Weaknesses'} className="min-h-[140px]">
+      <Panel title={insightsPanel?.title || 'Strengths & Weaknesses'} className="min-h-[140px] h-full">
         <div className="p-3 flex-1 overflow-y-auto min-h-0 custom-scrollbar">
           {loading ? (
             <div className="space-y-2">

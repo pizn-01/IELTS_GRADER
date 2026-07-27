@@ -331,8 +331,8 @@ function DashboardApp() {
           <div className="px-4 md:px-6 py-4 md:py-5">
             {activeTab === 'Overview' ? (
               <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4 space-y-3">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-                  <div className="lg:col-span-7 min-w-0 flex flex-col gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                  <div className="lg:col-span-7 min-w-0 min-h-0 h-full">
                     <SkillGrowth
                       hasData={hasData}
                       defaultTask={defaultChartTask}
@@ -340,7 +340,18 @@ function DashboardApp() {
                       targetBand={targetBand}
                       onStartPractice={handleStartPractice}
                     />
+                  </div>
+                  <div className="lg:col-span-5 min-w-0 min-h-0 h-full overflow-hidden">
+                    <RecentReports
+                      hasData={hasData}
+                      dynamicReports={recentSubmissions}
+                      onOpenReport={handleOpenRecentReport}
+                      onStartPractice={handleStartPractice}
+                    />
+                  </div>
+                  <div className="lg:col-span-7 min-w-0 min-h-0 h-full">
                     <OverviewInsightPanels
+                      className="h-full"
                       loading={perf.loading}
                       trendLabel={perf.trendLabel}
                       trendDetail={perf.trendDetail}
@@ -374,25 +385,15 @@ function DashboardApp() {
                       }}
                     />
                   </div>
-                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3 min-h-0">
-                    <div className="h-[248px] shrink-0 overflow-hidden flex flex-col">
-                      <RecentReports
-                        hasData={hasData}
-                        dynamicReports={recentSubmissions}
-                        onOpenReport={handleOpenRecentReport}
-                        onStartPractice={handleStartPractice}
-                      />
-                    </div>
-                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                      <ErrorsImpactPanel
-                        frequentErrors={perf.frequentErrors}
-                        totalInstances={perf.totalInstances}
-                        uniqueTypes={perf.uniqueTypes}
-                        loading={perf.loading}
-                        onOpenFixCards={() => setActiveTab('Fix Cards')}
-                        className="h-full min-h-0"
-                      />
-                    </div>
+                  <div className="lg:col-span-5 min-w-0 min-h-0 h-full overflow-hidden">
+                    <ErrorsImpactPanel
+                      frequentErrors={perf.frequentErrors}
+                      totalInstances={perf.totalInstances}
+                      uniqueTypes={perf.uniqueTypes}
+                      loading={perf.loading}
+                      onOpenFixCards={() => setActiveTab('Fix Cards')}
+                      className="h-full min-h-0"
+                    />
                   </div>
                 </div>
 
