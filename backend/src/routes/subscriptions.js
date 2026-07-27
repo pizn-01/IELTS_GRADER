@@ -5,7 +5,7 @@ const {
   buildSubscriptionStatusPayload,
   reconcileUserSubscription,
 } = require('../services/subscriptionSync');
-const { getAllPlans } = require('../services/subscriptionPlans');
+const { getAllPlans, getNewUserPromoPayload } = require('../services/subscriptionPlans');
 
 const router = express.Router();
 
@@ -40,15 +40,17 @@ router.get('/status', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Failed to load subscription status.' });
     }
 
+    const hasPaid = (paymentCount ?? 0) > 0;
     const payload = buildSubscriptionStatusPayload({
       ...profile,
       ...reconciled,
-      has_paid: (paymentCount ?? 0) > 0,
+      has_paid: hasPaid,
     });
 
     return res.json({
       ...payload,
       plans: getAllPlans(),
+      promo: getNewUserPromoPayload({ eligible: !payload.has_paid }),
     });
   } catch (err) {
     console.error('[subscriptions/status]', err.message);

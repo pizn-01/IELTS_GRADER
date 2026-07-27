@@ -4,13 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import SeoHead from '../seo/SeoHead';
-import { SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE, formatPromoPrice, NEW_USER_PROMO } from '../constants/subscriptionPlans';
 import { trackEvent } from '../utils/trackEvent';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
 const PricingPage = () => {
   const navigate = useNavigate();
+
+  const weeklyPromo = formatPromoPrice(WEEKLY, { showPromo: true });
+  const monthlyPromo = formatPromoPrice(MONTHLY, { showPromo: true });
 
   const plans = [
     {
@@ -29,7 +32,9 @@ const PricingPage = () => {
     {
       name: "Weekly Sprint",
       planKey: WEEKLY.key,
-      price: WEEKLY.price,
+      price: weeklyPromo.displayPrice,
+      originalPrice: weeklyPromo.originalPrice,
+      promoBadge: weeklyPromo.badge,
       period: WEEKLY.period,
       description: "Intensive practice for fast results.",
       features: [
@@ -44,7 +49,9 @@ const PricingPage = () => {
     {
       name: "Monthly Mastery",
       planKey: MONTHLY.key,
-      price: MONTHLY.price,
+      price: monthlyPromo.displayPrice,
+      originalPrice: monthlyPromo.originalPrice,
+      promoBadge: monthlyPromo.badge,
       period: MONTHLY.period,
       description: "Best value for serious prep.",
       features: [
@@ -86,6 +93,9 @@ const PricingPage = () => {
         <div className="text-center mb-12 md:mb-16">
           <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1a1f36] mb-3 md:mb-4">Choose Your Path to Success</h1>
           <p className="text-[14px] md:text-[16px] text-[#6B7280] mb-4">Select the plan that fits your IELTS preparation goals.</p>
+          <p className="inline-block text-[13px] md:text-[14px] font-semibold text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] rounded-full px-4 py-2 mb-3">
+            {NEW_USER_PROMO.badge} for new users
+          </p>
           <p className="inline-block text-[13px] md:text-[14px] font-medium text-[#475467] bg-white border border-[#E5E7EB] rounded-full px-4 py-2 shadow-sm">
             {SUBSCRIPTION_PLAN_NOTE}
           </p>
@@ -107,10 +117,20 @@ const PricingPage = () => {
               
               <div className="mb-8">
                 <h3 className="text-[20px] font-bold text-[#1a1f36] mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-[42px] font-extrabold text-[#1a1f36]">{plan.price}</span>
+                <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                  {plan.originalPrice && (
+                    <span className="text-[22px] font-semibold text-[#9CA3AF] line-through">
+                      {plan.originalPrice}
+                    </span>
+                  )}
+                  <span className={`text-[42px] font-extrabold ${plan.originalPrice ? 'text-[#10B981]' : 'text-[#1a1f36]'}`}>
+                    {plan.price}
+                  </span>
                   {plan.period && <span className="text-[16px] text-[#6B7280]">{plan.period}</span>}
                 </div>
+                {plan.promoBadge && (
+                  <p className="text-[13px] font-semibold text-[#047857] mb-2">{plan.promoBadge}</p>
+                )}
                 <p className="text-[14px] text-[#6B7280]">{plan.description}</p>
               </div>
 

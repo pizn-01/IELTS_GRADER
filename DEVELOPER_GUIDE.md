@@ -103,6 +103,12 @@ GRADING_SECRET=any-random-string-for-local-dev
 
 FRONTEND_URL=http://localhost:5173
 
+# Stripe — subscriptions + new-user promo (create coupon in Dashboard: 50% off, repeating 1 month)
+# STRIPE_SECRET_KEY=sk_test_...
+# STRIPE_PRICE_WEEKLY_SPRINT=price_...
+# STRIPE_PRICE_MONTHLY_MASTERY=price_...
+# STRIPE_COUPON_NEW_USER=coupon_...   # required for 50% first-month checkout discount
+
 # Optional — only needed if testing email flows locally
 RESEND_API_KEY=re_...
 EMAIL_FROM=IELTS Grader <noreply@yourdomain.com>
@@ -328,7 +334,10 @@ This triggers an automatic redeploy. Examples:
 fly secrets set OPENAI_API_KEY=sk-proj-new-key
 fly secrets set RESEND_API_KEY=re_xxxxxxxxxxxx
 fly secrets set STRIPE_PRICE_WEEKLY_SPRINT=price_xxxxxxxxxxxx
+fly secrets set STRIPE_COUPON_NEW_USER=coupon_xxxxxxxxxxxx
 ```
+
+**New-user 50% promo (optional but required for the campaign):** Create a Stripe Coupon named `New user - 50% first month` with **50% off**, duration **Repeating / 1 month** (test + live). Set `STRIPE_COUPON_NEW_USER` to that coupon ID in `backend/.env` and Fly secrets. Without it, checkout charges full price while the UI may still show the sale.
 
 To see all currently set secrets (values are hidden, only names shown):
 ```bash

@@ -1,7 +1,13 @@
 const express = require('express');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
-const { SUBSCRIPTION_PLANS, getPlanByKey, getPlanKeyFromPriceId } = require('../services/subscriptionPlans');
+const {
+  SUBSCRIPTION_PLANS,
+  NEW_USER_PROMO,
+  isNewUserPromoConfigured,
+  getPlanByKey,
+  getPlanKeyFromPriceId,
+} = require('../services/subscriptionPlans');
 const {
   findUserIdForSubscription,
   syncSubscriptionRecord,
@@ -138,7 +144,33 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
       .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
       .eq('id', userId);
 
-    const session = await stripe.checkout.sessions.create({
+    const [{ data: profile }, { count: paymentCount }] = await Promise.all([
+      supabaseAdmin
+        .from('profiles')
+        .select('subscription_status, subscription_period_end')
+        .eq('id', userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('payments')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'completed'),
+    ]);
+
+    const periodEnded = profile?.subscription_period_end
+      && new Date(profile.subscription_period_end) <= new Date();
+    const isSubscribed = profile?.subscription_status === 'active' && !periodEnded;
+    const hasPaid = isSubscribed || (paymentCount ?? 0) > 0;
+    const promoEligible = !hasPaid && isNewUserPromoConfigured();
+    const couponId = process.env.STRIPE_COUPON_NEW_USER;
+
+    if (!hasPaid && !isNewUserPromoConfigured()) {
+      console.warn(
+        '[stripe/create-upgrade-checkout] New-user promo eligible but STRIPE_COUPON_NEW_USER is not set; charging full price.'
+      );
+    }
+
+    const sessionParams = {
       mode: 'subscription',
       payment_method_types: ['card'],
       customer: customerId,
@@ -149,13 +181,24 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
         plan_key: planKey,
         plan_name: plan.name,
         type: 'subscription',
+        ...(promoEligible ? { promo: NEW_USER_PROMO.key } : {}),
       },
       subscription_data: {
-        metadata: { user_id: userId, plan_key: planKey },
+        metadata: {
+          user_id: userId,
+          plan_key: planKey,
+          ...(promoEligible ? { promo: NEW_USER_PROMO.key } : {}),
+        },
       },
       success_url: `${FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${FRONTEND_URL}/upgrade`,
-    });
+    };
+
+    if (promoEligible) {
+      sessionParams.discounts = [{ coupon: couponId }];
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     trackProductEvent({
       eventName: 'checkout_started',
@@ -163,6 +206,7 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
       properties: {
         plan_key: planKey,
         stripe_session_id: session.id,
+        promo: promoEligible ? NEW_USER_PROMO.key : null,
       },
     }).catch(() => {});
 

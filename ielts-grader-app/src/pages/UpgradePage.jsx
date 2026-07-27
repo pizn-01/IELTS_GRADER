@@ -2,7 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
-import { SUBSCRIPTION_PLANS, SUBSCRIPTION_FEATURES, SUBSCRIPTION_PLAN_NOTE } from '../constants/subscriptionPlans';
+import {
+  SUBSCRIPTION_PLANS,
+  SUBSCRIPTION_FEATURES,
+  SUBSCRIPTION_PLAN_NOTE,
+  formatPromoPrice,
+  NEW_USER_PROMO,
+} from '../constants/subscriptionPlans';
 
 const PLANS = [SUBSCRIPTION_PLANS.weekly, SUBSCRIPTION_PLANS.monthly];
 
@@ -44,8 +50,14 @@ const UpgradePage = () => {
   const isSubscribed = status?.is_subscribed;
   const isWeekly = isSubscribed && currentPlan === 'weekly';
   const isMonthly = isSubscribed && currentPlan === 'monthly';
+  // Prefer API eligibility (requires STRIPE_COUPON_NEW_USER); fall back for older backends
+  const promoEligible = status?.promo
+    ? Boolean(status.promo.eligible)
+    : Boolean(status && !status.has_paid && !isSubscribed);
 
   const selectedPlan = PLANS.find(p => p.key === selectedKey) || PLANS[0];
+  const selectedPricing = formatPromoPrice(selectedPlan, { showPromo: promoEligible });
+  const monthlyPricing = formatPromoPrice(SUBSCRIPTION_PLANS.monthly, { showPromo: false });
 
   const clearCheckoutParams = () => {
     const next = new URLSearchParams(searchParams);
@@ -161,6 +173,14 @@ const UpgradePage = () => {
           )}
         </div>
 
+        {!isWeekly && promoEligible && (
+          <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-full px-4 py-2.5 mb-4 text-center">
+            <p className="text-[13px] font-semibold text-[#047857] leading-snug">
+              {NEW_USER_PROMO.badge}
+            </p>
+          </div>
+        )}
+
         {!isWeekly && (
           <div className="bg-[#F2F4F7] rounded-full px-4 py-2.5 mb-6 text-center">
             <p className="text-[13px] font-medium text-[#475467] leading-snug">
@@ -173,6 +193,7 @@ const UpgradePage = () => {
           {PLANS.map(plan => {
             const isCurrent = isWeekly && plan.key === 'weekly';
             const disabled = isCurrent;
+            const pricing = formatPromoPrice(plan, { showPromo: promoEligible && !isCurrent });
             return (
               <button
                 key={plan.key}
@@ -198,10 +219,20 @@ const UpgradePage = () => {
                   </span>
                 )}
                 <p className="text-[13px] font-medium text-[#667085] mb-1">{plan.name}</p>
-                <p className="text-[20px] font-bold text-[#101828]">
-                  {plan.price}
-                  <span className="text-[14px] font-semibold text-[#667085]">{plan.period}</span>
-                </p>
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  {pricing.showPromo && pricing.originalPrice && (
+                    <span className="text-[14px] font-semibold text-[#98A2B3] line-through">
+                      {pricing.originalPrice}
+                    </span>
+                  )}
+                  <p className={`text-[20px] font-bold ${pricing.showPromo ? 'text-[#12B76A]' : 'text-[#101828]'}`}>
+                    {pricing.displayPrice}
+                    <span className="text-[14px] font-semibold text-[#667085]">{pricing.period}</span>
+                  </p>
+                </div>
+                {pricing.showPromo && (
+                  <p className="text-[10px] font-semibold text-[#047857] mt-1">{pricing.badge}</p>
+                )}
                 <p className="text-[11px] text-[#667085] mt-1">{plan.credits} evaluations</p>
               </button>
             );
@@ -232,7 +263,9 @@ const UpgradePage = () => {
             disabled={portalLoading}
             className="w-full h-[52px] bg-[#101828] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 mb-4"
           >
-            {portalLoading ? 'Opening…' : `Upgrade to Monthly (${SUBSCRIPTION_PLANS.monthly.price}${SUBSCRIPTION_PLANS.monthly.period})`}
+            {portalLoading
+              ? 'Opening…'
+              : `Upgrade to Monthly (${monthlyPricing.displayPrice}${monthlyPricing.period})`}
           </button>
         ) : (
           <button
@@ -243,14 +276,16 @@ const UpgradePage = () => {
           >
             {loading
               ? 'Redirecting to Stripe…'
-              : `Subscribe (${selectedPlan.price}${selectedPlan.period})`}
+              : `Subscribe (${selectedPricing.displayPrice}${selectedPricing.period})`}
           </button>
         )}
 
         <p className="text-center text-[13px] text-[#667085]">
           {isWeekly
             ? 'Switch plans or cancel anytime in Manage Subscription.'
-            : 'Cancel anytime. No long-term commitment.'}
+            : promoEligible
+              ? 'First month at 50% off. Cancel anytime.'
+              : 'Cancel anytime. No long-term commitment.'}
         </p>
       </div>
     </div>
