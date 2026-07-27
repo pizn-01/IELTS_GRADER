@@ -145,7 +145,7 @@ export function ErrorsImpactPanel({
   const topErrors = frequentErrors.slice(0, 8);
 
   return (
-    <Panel title="Errors & Impact" className={`min-h-[280px] flex-1 ${className}`}>
+    <Panel title="Errors & Impact" className={`h-full min-h-0 ${className}`}>
       <div className="p-3 flex flex-col flex-1 min-h-0 overflow-hidden">
         <div className="bg-[#F9FAFB] rounded-lg px-2 py-1.5 flex items-center justify-between mb-2 shrink-0 text-[10px] font-semibold text-[#475467]">
           <span>Total: <span className="text-[#101828]">{loading ? '…' : totalInstances}</span></span>
@@ -159,7 +159,7 @@ export function ErrorsImpactPanel({
         <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-0.5">
           {loading ? (
             <div className="space-y-2 py-1">
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-7 bg-[#F2F4F7] rounded animate-pulse" />
               ))}
             </div>

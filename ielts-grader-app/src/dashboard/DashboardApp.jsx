@@ -296,43 +296,31 @@ function DashboardApp() {
             </motion.div>
 
             {/* Performance tabs — prominent under KPI */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-              <div className="bg-white/90 backdrop-blur-sm rounded-t-[14px] border border-b-0 border-[#E5E7EB] px-2 md:px-3 shadow-[0_-2px_12px_rgba(26,31,54,0.04)] flex-1 min-w-0">
-                <div className="flex items-center gap-1 md:gap-2 overflow-x-auto no-scrollbar">
-                  {PERFORMANCE_TABS.map((tab) => {
-                    const isActive = activeTab === tab;
-                    return (
-                      <button
-                        key={tab}
-                        type="button"
-                        onClick={() => setActiveTab(tab)}
-                        className={`relative px-3.5 md:px-4 py-3.5 whitespace-nowrap shrink-0 transition-colors ${
-                          isActive ? 'text-[#101828]' : 'text-[#667085] hover:text-[#101828]'
-                        }`}
-                      >
-                        <span className={`text-[13px] md:text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>
-                          {tab}
-                        </span>
-                        {isActive && (
-                          <motion.span
-                            layoutId="activeTabUnderlineDashboardPerformance"
-                            className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full bg-[#1A96F3]"
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pb-2 sm:pb-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="h-[36px] px-3.5 rounded-[10px] bg-[#2C3E50] text-white text-[12px] font-semibold hover:bg-[#1D2939] transition-colors shadow-sm"
-                >
-                  Export Report
-                </button>
+            <div className="bg-white/90 backdrop-blur-sm rounded-t-[14px] border border-b-0 border-[#E5E7EB] px-2 md:px-3 shadow-[0_-2px_12px_rgba(26,31,54,0.04)]">
+              <div className="flex items-center gap-1 md:gap-2 overflow-x-auto no-scrollbar">
+                {PERFORMANCE_TABS.map((tab) => {
+                  const isActive = activeTab === tab;
+                  return (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveTab(tab)}
+                      className={`relative px-3.5 md:px-4 py-3.5 whitespace-nowrap shrink-0 transition-colors ${
+                        isActive ? 'text-[#101828]' : 'text-[#667085] hover:text-[#101828]'
+                      }`}
+                    >
+                      <span className={`text-[13px] md:text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                        {tab}
+                      </span>
+                      {isActive && (
+                        <motion.span
+                          layoutId="activeTabUnderlineDashboardPerformance"
+                          className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full bg-[#1A96F3]"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -343,7 +331,7 @@ function DashboardApp() {
           <div className="px-4 md:px-6 py-4 md:py-5">
             {activeTab === 'Overview' ? (
               <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4 space-y-3">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
                   <div className="lg:col-span-7 min-w-0 flex flex-col gap-3">
                     <SkillGrowth
                       hasData={hasData}
@@ -386,8 +374,8 @@ function DashboardApp() {
                       }}
                     />
                   </div>
-                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3 lg:min-h-full">
-                    <div className="min-h-0 flex-[1.15] flex flex-col">
+                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3">
+                    <div className="h-[248px] min-h-0">
                       <RecentReports
                         hasData={hasData}
                         dynamicReports={recentSubmissions}
@@ -395,14 +383,16 @@ function DashboardApp() {
                         onStartPractice={handleStartPractice}
                       />
                     </div>
-                    <ErrorsImpactPanel
-                      frequentErrors={perf.frequentErrors}
-                      totalInstances={perf.totalInstances}
-                      uniqueTypes={perf.uniqueTypes}
-                      loading={perf.loading}
-                      onOpenFixCards={() => setActiveTab('Fix Cards')}
-                      className="flex-[0.85]"
-                    />
+                    <div className="h-[248px] min-h-0">
+                      <ErrorsImpactPanel
+                        frequentErrors={perf.frequentErrors}
+                        totalInstances={perf.totalInstances}
+                        uniqueTypes={perf.uniqueTypes}
+                        loading={perf.loading}
+                        onOpenFixCards={() => setActiveTab('Fix Cards')}
+                        className="h-full"
+                      />
+                    </div>
                   </div>
                 </div>
 

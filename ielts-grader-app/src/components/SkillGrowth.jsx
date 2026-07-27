@@ -15,7 +15,7 @@ const LEGEND_ITEMS = [
 ];
 
 const cardClass =
-  'bg-white/95 backdrop-blur-sm rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden flex flex-col h-full';
+  'bg-white/95 backdrop-blur-sm rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden flex flex-col h-auto';
 
 const EmptyChartState = ({ title, description, onStartPractice }) => (
   <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-6 px-4">
@@ -188,7 +188,7 @@ const SkillGrowth = ({
     >
       {sectionHeader}
 
-      <div className="flex-1 flex flex-col p-3 md:p-4 min-h-0">
+      <div className="flex flex-col p-3 md:p-4">
         {loading ? (
           <div className="h-[200px] md:h-[220px] w-full flex flex-col items-center justify-center gap-3">
             <div className="w-7 h-7 border-[3px] border-[#1A96F3] border-t-transparent rounded-full animate-spin" />

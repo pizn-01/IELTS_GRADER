@@ -107,7 +107,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport, on
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-[220px] max-h-[520px] lg:max-h-none p-1.5 md:p-2">
+      <div className="flex-1 overflow-y-auto min-h-0 p-1.5 md:p-2">
         {(displayReports || []).map((report, idx) => {
           const tone = typeTone(report.type);
           return (
