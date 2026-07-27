@@ -102,10 +102,14 @@ export function usePerformanceAnalytics(taskType = '', { enabled = true } = {}) 
       const vals = chartData.map((d) => d[c.field]).filter((v) => v != null);
       const first = vals.length > 0 ? parseFloat(vals[0]).toFixed(1) : null;
       const latest = vals.length > 0 ? parseFloat(vals[vals.length - 1]).toFixed(1) : null;
+      const average = vals.length
+        ? (vals.reduce((a, b) => a + parseFloat(b), 0) / vals.length).toFixed(1)
+        : null;
       const growth = first && latest ? (parseFloat(latest) - parseFloat(first)).toFixed(1) : null;
       return {
         label: c.label,
         first: first ?? '—',
+        average: average ?? '—',
         latest: latest ?? '—',
         growth: growth != null ? (parseFloat(growth) >= 0 ? `+${growth}` : growth) : '—',
         positive: growth != null ? parseFloat(growth) >= 0 : true,

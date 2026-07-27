@@ -7,13 +7,13 @@ import RecentReports from '../components/RecentReports';
 import PracticeModal from '../components/PracticeModal';
 import { NotificationBanner } from '../components/Modals';
 import DashboardKpiStrip from './DashboardKpiStrip';
-import PerformanceOverviewDashboard, { ErrorsImpactPanel } from '../components/PerformanceOverviewDashboard';
+import PerformanceOverviewDashboard, { ErrorsImpactPanel, OverviewInsightPanels } from '../components/PerformanceOverviewDashboard';
 import PerformanceFixCards from '../components/PerformanceFixCards';
 import FourteenDaySprint from '../components/FourteenDaySprint';
 import StrategyRoadmap from '../components/StrategyRoadmap';
 import TargetBandPrompt from '../components/TargetBandPrompt';
 import { motion } from 'framer-motion';
-import { ChevronDown, Play, TrendingUp, TrendingDown } from 'lucide-react';
+import { Play, TrendingUp, TrendingDown } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
@@ -24,15 +24,6 @@ import { usePerformanceAnalytics } from '../hooks/usePerformanceAnalytics';
 import { trackEvent } from '../utils/trackEvent';
 
 const PERFORMANCE_TABS = ['Overview', 'Fix Cards', 'Strategy', '14-Day sprint'];
-const VALID_TASKS = ['Academic Task 1', 'Academic Task 2', 'General Task 1', 'General Task 2'];
-const TASK_OPTIONS = ['', ...VALID_TASKS];
-const TASK_LABELS = {
-  '': 'All Tasks',
-  'Academic Task 1': 'Academic Task 1',
-  'Academic Task 2': 'Academic Task 2',
-  'General Task 1': 'General Task 1',
-  'General Task 2': 'General Task 2',
-};
 
 function normalizeTab(raw) {
   if (!raw) return 'Overview';
@@ -59,7 +50,6 @@ function DashboardApp() {
   const [showBanner, setShowBanner] = useState(true);
   const [profileImage, setProfileImage] = useState(user?.profile_image_url || null);
   const [showTargetPrompt, setShowTargetPrompt] = useState(false);
-  const [taskDropdownOpen, setTaskDropdownOpen] = useState(false);
 
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
   const [recentSubmissions, setRecentSubmissions] = useState(null);
@@ -67,28 +57,15 @@ function DashboardApp() {
   const [isLoading, setIsLoading] = useState(true);
 
   const activeTab = normalizeTab(searchParams.get('tab'));
-  const taskFromUrl = searchParams.get('task') || '';
-  const activeTask = VALID_TASKS.includes(taskFromUrl) ? taskFromUrl : '';
 
   const setActiveTab = useCallback((tab) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (tab === 'Overview') next.delete('tab');
       else next.set('tab', tab);
+      next.delete('task');
       return next;
     }, { replace: true });
-  }, [setSearchParams]);
-
-  const setActiveTask = useCallback((task) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (!task) next.delete('task');
-      else next.set('task', task);
-      // Reset to Overview when task filter changes (same as Performance page)
-      next.delete('tab');
-      return next;
-    }, { replace: true });
-    setTaskDropdownOpen(false);
   }, [setSearchParams]);
 
   const {
@@ -100,7 +77,7 @@ function DashboardApp() {
     showModal: showLearningModal,
   } = useLearningEditionPromo();
 
-  const perf = usePerformanceAnalytics(activeTask);
+  const perf = usePerformanceAnalytics('');
 
   const fetchDashboardData = async () => {
     try {
@@ -190,11 +167,10 @@ function DashboardApp() {
   );
 
   const defaultChartTask = useMemo(() => {
-    if (activeTask) return activeTask;
     const recent = recentSubmissions?.[0];
     if (!recent?.type || !recent?.task) return 'Academic Task 2';
     return `${recent.type} ${recent.task}`;
-  }, [recentSubmissions, activeTask]);
+  }, [recentSubmissions]);
 
   const bandForPrompt = latestBand ?? perf.latestBand;
 
@@ -350,32 +326,6 @@ function DashboardApp() {
               </div>
 
               <div className="flex items-center gap-2 pb-2 sm:pb-3 shrink-0">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setTaskDropdownOpen((o) => !o)}
-                    className="flex items-center gap-1.5 h-[36px] px-3 rounded-[10px] bg-white/90 border border-[#D0D5DD] text-[12px] font-semibold text-[#101828] hover:bg-white transition-colors shadow-sm"
-                  >
-                    {TASK_LABELS[activeTask]}
-                    <ChevronDown size={14} className={`transition-transform ${taskDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {taskDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-1.5 bg-white rounded-[12px] border border-gray-100 shadow-xl z-50 py-1 min-w-[180px]">
-                      {TASK_OPTIONS.map((opt) => (
-                        <button
-                          key={opt || 'all'}
-                          type="button"
-                          onClick={() => setActiveTask(opt)}
-                          className={`w-full text-left px-4 py-2.5 text-[13px] font-medium hover:bg-gray-50 transition-colors ${
-                            activeTask === opt ? 'text-[#1A96F3] font-bold' : 'text-[#101828]'
-                          }`}
-                        >
-                          {TASK_LABELS[opt]}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
                 <button
                   type="button"
                   onClick={() => window.print()}
@@ -394,7 +344,7 @@ function DashboardApp() {
             {activeTab === 'Overview' ? (
               <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4 space-y-3">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-                  <div className="lg:col-span-7 min-w-0">
+                  <div className="lg:col-span-7 min-w-0 flex flex-col gap-3">
                     <SkillGrowth
                       hasData={hasData}
                       defaultTask={defaultChartTask}
@@ -402,9 +352,42 @@ function DashboardApp() {
                       targetBand={targetBand}
                       onStartPractice={handleStartPractice}
                     />
+                    <OverviewInsightPanels
+                      loading={perf.loading}
+                      trendLabel={perf.trendLabel}
+                      trendDetail={perf.trendDetail}
+                      topPriorityText={perf.topPriorityText}
+                      insightsPanel={{
+                        title: 'Strengths & Weaknesses',
+                        content: (
+                          <div className="space-y-2">
+                            <div className="p-2.5 bg-[#F4FCF9] rounded-lg border border-[#E6F8F3] flex items-start gap-2">
+                              <TrendingUp className="text-[#30C3A9] shrink-0 mt-0.5" size={14} strokeWidth={2.5} />
+                              <p className="text-[11px] leading-snug">
+                                <span className="font-bold text-[#30C3A9]">{perf.strongestCrit.name}:</span>{' '}
+                                <span className="font-bold text-[#101828]">
+                                  {perf.strongestCrit.avg != null ? `currently ${perf.strongestCrit.avg.toFixed(1)}` : 'Complete exams to see data'}
+                                </span>
+                                {' '}(Keep this stable while you lift your weakest areas).
+                              </p>
+                            </div>
+                            <div className="p-2.5 bg-[#FFF7F7] rounded-lg border border-[#FEEDED] flex items-start gap-2">
+                              <TrendingDown className="text-[#EA4335] shrink-0 mt-0.5" size={14} strokeWidth={2.5} />
+                              <p className="text-[11px] leading-snug">
+                                <span className="font-bold text-[#EA4335]">{perf.bottleneckCrit.name}:</span>{' '}
+                                <span className="font-bold text-[#101828]">
+                                  {perf.bottleneckCrit.avg != null ? `currently ${perf.bottleneckCrit.avg.toFixed(1)}` : 'Complete exams to see data'}
+                                </span>
+                                {' '}(This is your primary bottleneck, focus here).
+                              </p>
+                            </div>
+                          </div>
+                        ),
+                      }}
+                    />
                   </div>
-                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3">
-                    <div className="min-h-0 flex-1">
+                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3 lg:min-h-full">
+                    <div className="min-h-0 flex-[1.15] flex flex-col">
                       <RecentReports
                         hasData={hasData}
                         dynamicReports={recentSubmissions}
@@ -418,51 +401,12 @@ function DashboardApp() {
                       uniqueTypes={perf.uniqueTypes}
                       loading={perf.loading}
                       onOpenFixCards={() => setActiveTab('Fix Cards')}
-                      className="flex-1"
+                      className="flex-[0.85]"
                     />
                   </div>
                 </div>
 
-                <PerformanceOverviewDashboard
-                  loading={perf.loading}
-                  firstBand={perf.firstBand}
-                  avgBand={perf.avgBand}
-                  bestBand={perf.bestBand}
-                  change={perf.bandChange}
-                  changePositive={perf.bandChange == null || parseFloat(perf.bandChange) >= 0}
-                  studyPeriod={perf.studyPeriod}
-                  trendLabel={perf.trendLabel}
-                  trendDetail={perf.trendDetail}
-                  topPriorityText={perf.topPriorityText}
-                  insightsPanel={{
-                    title: 'Strengths & Weaknesses',
-                    content: (
-                      <div className="space-y-2">
-                        <div className="p-2.5 bg-[#F4FCF9] rounded-lg border border-[#E6F8F3] flex items-start gap-2">
-                          <TrendingUp className="text-[#30C3A9] shrink-0 mt-0.5" size={14} strokeWidth={2.5} />
-                          <p className="text-[11px] leading-snug">
-                            <span className="font-bold text-[#30C3A9]">{perf.strongestCrit.name}:</span>{' '}
-                            <span className="font-bold text-[#101828]">
-                              {perf.strongestCrit.avg != null ? `currently ${perf.strongestCrit.avg.toFixed(1)}` : 'Complete exams to see data'}
-                            </span>
-                            {' '}(Keep this stable while you lift your weakest areas).
-                          </p>
-                        </div>
-                        <div className="p-2.5 bg-[#FFF7F7] rounded-lg border border-[#FEEDED] flex items-start gap-2">
-                          <TrendingDown className="text-[#EA4335] shrink-0 mt-0.5" size={14} strokeWidth={2.5} />
-                          <p className="text-[11px] leading-snug">
-                            <span className="font-bold text-[#EA4335]">{perf.bottleneckCrit.name}:</span>{' '}
-                            <span className="font-bold text-[#101828]">
-                              {perf.bottleneckCrit.avg != null ? `currently ${perf.bottleneckCrit.avg.toFixed(1)}` : 'Complete exams to see data'}
-                            </span>
-                            {' '}(This is your primary bottleneck, focus here).
-                          </p>
-                        </div>
-                      </div>
-                    ),
-                  }}
-                  criterionCards={perf.criterionCards}
-                />
+                <PerformanceOverviewDashboard criterionCards={perf.criterionCards} />
               </div>
             ) : activeTab === 'Fix Cards' ? (
               <PerformanceFixCards
@@ -486,7 +430,7 @@ function DashboardApp() {
                 bottleneckCrit={perf.bottleneckCrit}
                 latestBand={perf.latestBand ?? latestBand}
                 targetBand={targetBand}
-                activeTask={activeTask}
+                activeTask=""
                 examCount={perf.examCount}
               />
             ) : null}
