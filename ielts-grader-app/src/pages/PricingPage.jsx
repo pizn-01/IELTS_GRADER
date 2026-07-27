@@ -1,17 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import SeoHead from '../seo/SeoHead';
-import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE } from '../constants/subscriptionPlans';
 import { trackEvent } from '../utils/trackEvent';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
 const PricingPage = () => {
   const navigate = useNavigate();
-  const [trainingType, setTrainingType] = useState('Academic'); // Academic, General
 
   const plans = [
     {
@@ -84,28 +83,12 @@ const PricingPage = () => {
       <Navbar />
       
       <main className="max-w-[1200px] mx-auto px-6 py-12 md:px-[60px] md:py-[80px]">
-        {/* Tab Switcher */}
-        <div className="flex justify-center mb-8 md:mb-12">
-          <div className="bg-white p-1 rounded-full border border-[#E5E7EB] flex items-center shadow-sm w-full max-w-sm md:w-auto">
-            {['Academic', 'General Training'].map(type => (
-              <button
-                key={type}
-                onClick={() => setTrainingType(type)}
-                className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-2.5 rounded-full text-[13px] md:text-[14px] font-bold transition-all ${
-                  trainingType === type 
-                    ? 'bg-[#1a1f36] text-white' 
-                    : 'text-[#6B7280] hover:text-[#1a1f36]'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="text-center mb-12 md:mb-16">
           <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1a1f36] mb-3 md:mb-4">Choose Your Path to Success</h1>
-          <p className="text-[14px] md:text-[16px] text-[#6B7280]">Select the plan that fits your IELTS preparation goals.</p>
+          <p className="text-[14px] md:text-[16px] text-[#6B7280] mb-4">Select the plan that fits your IELTS preparation goals.</p>
+          <p className="inline-block text-[13px] md:text-[14px] font-medium text-[#475467] bg-white border border-[#E5E7EB] rounded-full px-4 py-2 shadow-sm">
+            {SUBSCRIPTION_PLAN_NOTE}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-[1100px] mx-auto">

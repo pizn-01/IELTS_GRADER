@@ -7,7 +7,7 @@ import { api } from '../services/api';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
-import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE } from '../constants/subscriptionPlans';
 import {
   peekPendingGradePayload,
   consumePendingGradePayload,
@@ -18,7 +18,6 @@ const AnalysisReadyPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, updateUser } = useAuth();
-  const [trainingType, setTrainingType] = useState('Academic');
   const [selectedPlan, setSelectedPlan] = useState('Monthly');
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeError, setSubscribeError] = useState('');
@@ -298,21 +297,10 @@ const AnalysisReadyPage = () => {
                 </div>
               </div>
 
-              {/* Toggle Switch */}
-              <div className="bg-[#F8FAFC] border border-[#F1F5F9] p-1 rounded-full flex items-center mb-6">
-                {['Academic', 'General Training'].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setTrainingType(type)}
-                    className={`flex-1 py-2 text-[12px] font-semibold rounded-full transition-all duration-300 ${
-                      trainingType === type 
-                        ? 'bg-[#0095FF] text-white shadow-[0_2px_4px_rgba(0,149,255,0.2)]' 
-                        : 'text-[#6B7280] hover:text-[#1a1f36]'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
+              <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-full px-4 py-2.5 mb-6 text-center">
+                <p className="text-[12px] font-medium text-[#475467] leading-snug">
+                  {SUBSCRIPTION_PLAN_NOTE}
+                </p>
               </div>
 
               {/* Plan Options */}

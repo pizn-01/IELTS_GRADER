@@ -43,6 +43,10 @@ export const SUBSCRIPTION_FEATURES = [
   'Personalized learning guides',
 ];
 
+/** Shown where the old Academic/GT toggle sat — plan covers both. */
+export const SUBSCRIPTION_PLAN_NOTE =
+  'One plan covers Academic & General Training · Instant access · Cancel anytime';
+
 export function planKeyFromSelection(selected) {
   return selected === 'Weekly' ? 'weekly' : 'monthly';
 }

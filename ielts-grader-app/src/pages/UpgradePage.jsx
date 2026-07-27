@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
-import { SUBSCRIPTION_PLANS, SUBSCRIPTION_FEATURES } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_PLANS, SUBSCRIPTION_FEATURES, SUBSCRIPTION_PLAN_NOTE } from '../constants/subscriptionPlans';
 
 const PLANS = [SUBSCRIPTION_PLANS.weekly, SUBSCRIPTION_PLANS.monthly];
 
@@ -17,7 +17,6 @@ const UpgradePage = () => {
   const autoCheckout = searchParams.get('checkout') === '1';
   const autoCheckoutStarted = useRef(false);
 
-  const [examType, setExamType] = useState('Academic');
   const [selectedKey, setSelectedKey] = useState(planFromUrl || PLANS[0].key);
   const [loading, setLoading] = useState(autoCheckout);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -163,21 +162,10 @@ const UpgradePage = () => {
         </div>
 
         {!isWeekly && (
-          <div className="flex bg-[#F2F4F7] rounded-full p-1 mb-6">
-            {['Academic', 'General Training'].map(type => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setExamType(type)}
-                className={`flex-1 py-2 rounded-full text-[13px] font-semibold transition-all ${
-                  examType === type
-                    ? 'bg-[#1A96F3] text-white shadow-sm'
-                    : 'text-[#667085] hover:text-[#344054]'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
+          <div className="bg-[#F2F4F7] rounded-full px-4 py-2.5 mb-6 text-center">
+            <p className="text-[13px] font-medium text-[#475467] leading-snug">
+              {SUBSCRIPTION_PLAN_NOTE}
+            </p>
           </div>
         )}
 
