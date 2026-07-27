@@ -1,9 +1,15 @@
 const OpenAI = require('openai');
 const { supabaseAdmin } = require('./supabase');
-const { refundOneCredit } = require('./gradingReconcile');
+const { beginGrading, endGrading, scheduleRegrade } = require('./gradingReconcile');
 const { trackProductEvent } = require('../utils/productEvents');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000 });
+const JS_IN_PROCESS_RETRIES = Number(process.env.JS_IN_PROCESS_RETRIES || 3);
+const JS_RETRY_BASE_MS = Number(process.env.JS_RETRY_BASE_MS || 15_000);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // Clamp a raw score to valid IELTS 0.5-increment bands (1.0–9.0)
 function clampBand(raw) {
@@ -199,169 +205,204 @@ async function gradeEssayAsync(submissionId, submissionData) {
   const word_count = essay_content.trim().split(/\s+/).filter(Boolean).length;
 
   console.log(`[grader] Starting: submission=${submissionId} task=${exam_type} ${task_type} words=${word_count}`);
+  const slot = beginGrading(submissionId, { userId });
+  if (slot === 'duplicate') {
+    console.log(`[grader] Already inflight — skip duplicate start submission=${submissionId}`);
+    return;
+  }
+  if (slot === 'busy') {
+    console.log(`[grader] Concurrency full — deferring submission=${submissionId}`);
+    scheduleRegrade(submissionId, 'concurrency_wait', 60_000);
+    return;
+  }
 
   try {
-    const bankQuestion = await getQuestionText(exam_task_id);
-    const questionText = bankQuestion || uploadedQuestionText || null;
-
-    // ── Call 1: Primary grading ──────────────────────────────────────────────
-    const primaryCompletion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'user',
-          content: buildPrimaryPrompt(exam_type, task_type, questionText, essay_content, word_count),
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.2,
-      max_tokens: 4096,
-    });
-
-    let primary;
-    try {
-      primary = JSON.parse(primaryCompletion.choices[0].message.content);
-    } catch (parseErr) {
-      throw new Error(`Primary grading JSON parse failed: ${parseErr.message}`);
-    }
-
-    // Validate and sanitize all band scores
-    primary.overall_band   = clampBand(primary.overall_band);
-    primary.response_band  = clampBand(primary.response_band);
-    primary.coherence_band = clampBand(primary.coherence_band);
-    primary.vocabulary_band = clampBand(primary.vocabulary_band);
-    primary.grammar_band   = clampBand(primary.grammar_band);
-    primary.strengths        = Array.isArray(primary.strengths) ? primary.strengths : [];
-    primary.weaknesses       = Array.isArray(primary.weaknesses) ? primary.weaknesses : [];
-    primary.high_impact_fixes = Array.isArray(primary.high_impact_fixes) ? primary.high_impact_fixes : [];
-    primary.errors           = Array.isArray(primary.errors) ? primary.errors : [];
-
-    // ── Call 2 + 3 (parallel): Deep analysis & secondary grade ──────────────
-    const [deepCompletion, secondaryCompletion] = await Promise.all([
-      openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: buildDeepPrompt(exam_type, task_type, questionText, essay_content, primary) }],
-        response_format: { type: 'json_object' },
-        temperature: 0.3,
-        max_tokens: 4096,
-      }),
-      openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [{ role: 'user', content: buildSecondaryGradePrompt(exam_type, task_type, questionText, essay_content, word_count) }],
-        response_format: { type: 'json_object' },
-        temperature: 0.2,
-        max_tokens: 256,
-      }),
-    ]);
-
-    let deep;
-    try {
-      deep = JSON.parse(deepCompletion.choices[0].message.content);
-    } catch (parseErr) {
-      console.error('[grader] Deep analysis JSON parse failed:', parseErr.message);
-      deep = { model_answer: null, vocabulary_analysis: null, grammar_analysis: null, data_structure_analysis: null };
-    }
-
-    let secondaryBands = null;
-    try {
-      const sec = JSON.parse(secondaryCompletion.choices[0].message.content);
-      secondaryBands = {
-        model: 'gpt-4o',
-        overall_band:   clampBand(sec.overall_band),
-        response_band:  clampBand(sec.response_band),
-        coherence_band: clampBand(sec.coherence_band),
-        vocabulary_band: clampBand(sec.vocabulary_band),
-        grammar_band:   clampBand(sec.grammar_band),
-      };
-    } catch (parseErr) {
-      console.error('[grader] Secondary grade JSON parse failed:', parseErr.message);
-    }
-
-    // ── Insert report ────────────────────────────────────────────────────────
-    const { data: report, error: repError } = await supabaseAdmin
-      .from('reports')
-      .insert({
-        submission_id:         submissionId,
-        overall_band:          primary.overall_band,
-        response_band:         primary.response_band,
-        coherence_band:        primary.coherence_band,
-        vocabulary_band:       primary.vocabulary_band,
-        grammar_band:          primary.grammar_band,
-        strengths:             primary.strengths,
-        weaknesses:            primary.weaknesses,
-        high_impact_fixes:     primary.high_impact_fixes,
-        model_answer:          deep.model_answer || null,
-        vocabulary_analysis:   deep.vocabulary_analysis || null,
-        grammar_analysis:      deep.grammar_analysis || null,
-        data_structure_analysis: deep.data_structure_analysis || null,
-        raw_grader_output:     { primary: { ...primary, model: 'gpt-4o-mini' }, deep, secondary_bands: secondaryBands },
-      })
-      .select('id')
-      .single();
-
-    if (repError) {
-      throw new Error(`Report insert failed: ${repError.message}`);
-    }
-
-    // ── Insert error cards ───────────────────────────────────────────────────
-    if (primary.errors.length > 0) {
-      const validSeverities = new Set(['Major', 'High', 'Medium', 'Low']);
-      const validCriteria   = new Set(['Task Response', 'Coherence & Cohesion', 'Lexical Resource', 'Grammatical Range & Accuracy']);
-
-      const errorRows = primary.errors
-        .filter(e => e.original_text && e.correction_text && e.explanation)
-        .map(e => ({
-          report_id:       report.id,
-          title:           (e.title || 'Error').substring(0, 255),
-          severity:        validSeverities.has(e.severity) ? e.severity : 'Medium',
-          criteria:        validCriteria.has(e.criteria) ? e.criteria : 'Grammatical Range & Accuracy',
-          sub_category:    (e.sub_category || 'General').substring(0, 255),
-          location_text:   (e.location_text || 'Essay').substring(0, 255),
-          original_text:   e.original_text,
-          correction_text: e.correction_text,
-          explanation:     e.explanation,
-        }));
-
-      if (errorRows.length > 0) {
-        const { error: errInsertError } = await supabaseAdmin
-          .from('report_errors')
-          .insert(errorRows);
-        if (errInsertError) {
-          console.error('[grader] Error cards insert failed:', errInsertError.message);
+    let lastErr;
+    const attempts = Math.max(1, JS_IN_PROCESS_RETRIES);
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        if (attempt > 1) {
+          const delay = JS_RETRY_BASE_MS * (attempt - 1);
+          console.warn(`[grader] retry ${attempt}/${attempts} submission=${submissionId} after ${delay}ms`);
+          await sleep(delay);
         }
+        await gradeEssayOnce(submissionId, {
+          exam_type,
+          task_type,
+          essay_content,
+          exam_task_id,
+          uploadedQuestionText,
+          userId,
+          word_count,
+        });
+        endGrading(submissionId);
+        return;
+      } catch (err) {
+        lastErr = err;
+        console.error(`[grader] attempt ${attempt}/${attempts} failed submission=${submissionId}:`, err.message);
       }
     }
-
-    // ── Mark submission as graded ────────────────────────────────────────────
-    await supabaseAdmin
-      .from('submissions')
-      .update({ status: 'graded' })
-      .eq('id', submissionId);
-
-    trackProductEvent({
-      eventName: 'grading_completed',
-      userId: userId || null,
-      properties: { submission_id: submissionId },
-    }).catch(() => {});
-
-    console.log(`[grader] Done: submission=${submissionId} band=${primary.overall_band}`);
+    throw lastErr;
   } catch (err) {
     console.error(`[grader] Failed: submission=${submissionId}`, err.message);
+    endGrading(submissionId);
+    scheduleRegrade(submissionId, 'js_grade_failed');
+  }
+}
 
-    // Mark as failed only if still grading, then +1 refund
-    const { data: failedRow } = await supabaseAdmin
-      .from('submissions')
-      .update({ status: 'failed' })
-      .eq('id', submissionId)
-      .eq('status', 'grading')
-      .select('id')
-      .maybeSingle();
+async function gradeEssayOnce(submissionId, {
+  exam_type,
+  task_type,
+  essay_content,
+  exam_task_id,
+  uploadedQuestionText,
+  userId,
+  word_count,
+}) {
+  const bankQuestion = await getQuestionText(exam_task_id);
+  const questionText = bankQuestion || uploadedQuestionText || null;
 
-    if (failedRow && userId) {
-      const refunded = await refundOneCredit(userId);
-      if (refunded) console.log(`[grader] Credit refunded (+1) for user=${userId}`);
+  // ── Call 1: Primary grading ──────────────────────────────────────────────
+  const primaryCompletion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'user',
+        content: buildPrimaryPrompt(exam_type, task_type, questionText, essay_content, word_count),
+      },
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.2,
+    max_tokens: 4096,
+  });
+
+  let primary;
+  try {
+    primary = JSON.parse(primaryCompletion.choices[0].message.content);
+  } catch (parseErr) {
+    throw new Error(`Primary grading JSON parse failed: ${parseErr.message}`);
+  }
+
+  // Validate and sanitize all band scores
+  primary.overall_band   = clampBand(primary.overall_band);
+  primary.response_band  = clampBand(primary.response_band);
+  primary.coherence_band = clampBand(primary.coherence_band);
+  primary.vocabulary_band = clampBand(primary.vocabulary_band);
+  primary.grammar_band   = clampBand(primary.grammar_band);
+  primary.strengths        = Array.isArray(primary.strengths) ? primary.strengths : [];
+  primary.weaknesses       = Array.isArray(primary.weaknesses) ? primary.weaknesses : [];
+  primary.high_impact_fixes = Array.isArray(primary.high_impact_fixes) ? primary.high_impact_fixes : [];
+  primary.errors           = Array.isArray(primary.errors) ? primary.errors : [];
+
+  // ── Call 2 + 3 (parallel): Deep analysis & secondary grade ──────────────
+  const [deepCompletion, secondaryCompletion] = await Promise.all([
+    openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: buildDeepPrompt(exam_type, task_type, questionText, essay_content, primary) }],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+      max_tokens: 4096,
+    }),
+    openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: buildSecondaryGradePrompt(exam_type, task_type, questionText, essay_content, word_count) }],
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
+      max_tokens: 256,
+    }),
+  ]);
+
+  let deep;
+  try {
+    deep = JSON.parse(deepCompletion.choices[0].message.content);
+  } catch (parseErr) {
+    console.error('[grader] Deep analysis JSON parse failed:', parseErr.message);
+    deep = { model_answer: null, vocabulary_analysis: null, grammar_analysis: null, data_structure_analysis: null };
+  }
+
+  let secondaryBands = null;
+  try {
+    const sec = JSON.parse(secondaryCompletion.choices[0].message.content);
+    secondaryBands = {
+      model: 'gpt-4o',
+      overall_band:   clampBand(sec.overall_band),
+      response_band:  clampBand(sec.response_band),
+      coherence_band: clampBand(sec.coherence_band),
+      vocabulary_band: clampBand(sec.vocabulary_band),
+      grammar_band:   clampBand(sec.grammar_band),
+    };
+  } catch (parseErr) {
+    console.error('[grader] Secondary grade JSON parse failed:', parseErr.message);
+  }
+
+  // ── Insert report ────────────────────────────────────────────────────────
+  const { data: report, error: repError } = await supabaseAdmin
+    .from('reports')
+    .insert({
+      submission_id:         submissionId,
+      overall_band:          primary.overall_band,
+      response_band:         primary.response_band,
+      coherence_band:        primary.coherence_band,
+      vocabulary_band:       primary.vocabulary_band,
+      grammar_band:          primary.grammar_band,
+      strengths:             primary.strengths,
+      weaknesses:            primary.weaknesses,
+      high_impact_fixes:     primary.high_impact_fixes,
+      model_answer:          deep.model_answer || null,
+      vocabulary_analysis:   deep.vocabulary_analysis || null,
+      grammar_analysis:      deep.grammar_analysis || null,
+      data_structure_analysis: deep.data_structure_analysis || null,
+      raw_grader_output:     { primary: { ...primary, model: 'gpt-4o-mini' }, deep, secondary_bands: secondaryBands },
+    })
+    .select('id')
+    .single();
+
+  if (repError) {
+    throw new Error(`Report insert failed: ${repError.message}`);
+  }
+
+  // ── Insert error cards ───────────────────────────────────────────────────
+  if (primary.errors.length > 0) {
+    const validSeverities = new Set(['Major', 'High', 'Medium', 'Low']);
+    const validCriteria   = new Set(['Task Response', 'Coherence & Cohesion', 'Lexical Resource', 'Grammatical Range & Accuracy']);
+
+    const errorRows = primary.errors
+      .filter(e => e.original_text && e.correction_text && e.explanation)
+      .map(e => ({
+        report_id:       report.id,
+        title:           (e.title || 'Error').substring(0, 255),
+        severity:        validSeverities.has(e.severity) ? e.severity : 'Medium',
+        criteria:        validCriteria.has(e.criteria) ? e.criteria : 'Grammatical Range & Accuracy',
+        sub_category:    (e.sub_category || 'General').substring(0, 255),
+        location_text:   (e.location_text || 'Essay').substring(0, 255),
+        original_text:   e.original_text,
+        correction_text: e.correction_text,
+        explanation:     e.explanation,
+      }));
+
+    if (errorRows.length > 0) {
+      const { error: errInsertError } = await supabaseAdmin
+        .from('report_errors')
+        .insert(errorRows);
+      if (errInsertError) {
+        console.error('[grader] Error cards insert failed:', errInsertError.message);
+      }
     }
   }
+
+  // ── Mark submission as graded ────────────────────────────────────────────
+  await supabaseAdmin
+    .from('submissions')
+    .update({ status: 'graded' })
+    .eq('id', submissionId);
+
+  trackProductEvent({
+    eventName: 'grading_completed',
+    userId: userId || null,
+    properties: { submission_id: submissionId },
+  }).catch(() => {});
+
+  console.log(`[grader] Done: submission=${submissionId} band=${primary.overall_band}`);
 }
 
 module.exports = { gradeEssayAsync };

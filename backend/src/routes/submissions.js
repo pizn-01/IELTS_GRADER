@@ -173,7 +173,7 @@ router.post('/', authenticateToken, async (req, res) => {
     }
   }
 
-  // Fire-and-forget grading (credit refund on failure is handled inside grader)
+  // Fire-and-forget grading — transient failures are retried until a report exists
   gradeEssayAsync(submission.id, {
     exam_type,
     task_type,

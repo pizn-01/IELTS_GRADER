@@ -104,7 +104,7 @@ const AnalysisReadyPage = () => {
     // Keep modal open (gradingStatus stays 'processing') while we poll the backend.
     // The modal will disappear naturally when we navigate away on completion.
     let attempts = 0;
-    const maxAttempts = 100; // ~5 min at 3s — python mega-batch can exceed 2 min
+    const maxAttempts = 300; // ~15 min at 3s — retries after OOM/restart can take longer
 
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
@@ -124,7 +124,8 @@ const AnalysisReadyPage = () => {
           const report = await api.getReport(currentSubId);
           setGradingStatus('completed');
           navigate('/report', { state: { reportData: report } });
-        } else if (status === 'failed' || attempts >= maxAttempts) {
+        } else if (attempts >= maxAttempts) {
+          // Still grading in background — don't treat as hard failure; user can open Reports later
           clearInterval(pollRef.current);
           setGradingStatus('completed');
           navigate('/dashboard');

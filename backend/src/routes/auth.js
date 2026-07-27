@@ -59,6 +59,24 @@ async function issueVerificationEmail(userId, email, fullName) {
   return { token: newToken };
 }
 
+function isActiveSubscription(status, periodEnd) {
+  return status === 'active'
+    && !(periodEnd && new Date(periodEnd) <= new Date());
+}
+
+/** Prefer reconciled credits but never show free-trial allowance below FREE_TRIAL_CREDITS. */
+function mergeCreditsFields(reconciled, profile) {
+  const remaining = reconciled?.credits_remaining ?? profile.credits_remaining;
+  const rawAllowance = reconciled?.credits_allowance ?? profile.credits_allowance ?? FREE_TRIAL_CREDITS;
+  const subscribed = reconciled
+    ? isActiveSubscription(reconciled.subscription_status, reconciled.subscription_period_end)
+    : !!profile.is_subscribed;
+  return {
+    credits_remaining: remaining,
+    credits_allowance: subscribed ? rawAllowance : Math.max(rawAllowance, FREE_TRIAL_CREDITS),
+  };
+}
+
 async function fetchProfile(userId) {
   const [{ data, error }, { count: paymentCount }] = await Promise.all([
     supabaseAdmin
@@ -80,10 +98,15 @@ async function fetchProfile(userId) {
   const periodEnded = data.subscription_period_end
     && new Date(data.subscription_period_end) <= new Date();
   const isSubscribed = data.subscription_status === 'active' && !periodEnded;
+  const rawAllowance = data.credits_allowance ?? FREE_TRIAL_CREDITS;
+  // Free-trial profiles may still have the old 1-credit allowance in DB; floor at 3 for display.
+  const creditsAllowance = periodEnded || !isSubscribed
+    ? Math.max(rawAllowance, FREE_TRIAL_CREDITS)
+    : rawAllowance;
   return {
     ...data,
     credits_remaining: periodEnded ? 0 : data.credits_remaining,
-    credits_allowance: periodEnded ? FREE_TRIAL_CREDITS : (data.credits_allowance ?? FREE_TRIAL_CREDITS),
+    credits_allowance: creditsAllowance,
     has_paid: isSubscribed || (paymentCount ?? 0) > 0,
     is_subscribed: isSubscribed,
     cancel_at_period_end: false,
@@ -115,15 +138,13 @@ router.post('/login', async (req, res) => {
         id: data.user.id,
         email: data.user.email,
         ...profile,
-        credits_remaining: reconciled?.credits_remaining ?? profile.credits_remaining,
-        credits_allowance: reconciled?.credits_allowance ?? profile.credits_allowance,
+        ...mergeCreditsFields(reconciled, profile),
         subscription_plan: reconciled?.subscription_plan ?? profile.subscription_plan,
         subscription_status: reconciled?.subscription_status ?? profile.subscription_status,
         subscription_period_end: reconciled?.subscription_period_end ?? profile.subscription_period_end,
         cancel_at_period_end: reconciled?.cancel_at_period_end ?? false,
         is_subscribed: reconciled
-          ? reconciled.subscription_status === 'active'
-            && !(reconciled.subscription_period_end && new Date(reconciled.subscription_period_end) <= new Date())
+          ? isActiveSubscription(reconciled.subscription_status, reconciled.subscription_period_end)
           : profile.is_subscribed,
       },
     });
@@ -248,13 +269,11 @@ router.get('/me', authenticateToken, async (req, res) => {
       id: req.user.userId,
       email: req.user.email,
       ...profile,
-      credits_remaining: reconciled?.credits_remaining ?? profile.credits_remaining,
-      credits_allowance: reconciled?.credits_allowance ?? profile.credits_allowance,
+      ...mergeCreditsFields(reconciled, profile),
       subscription_plan: reconciled?.subscription_plan ?? profile.subscription_plan,
       subscription_status: reconciled?.subscription_status ?? profile.subscription_status,
       is_subscribed: reconciled
-        ? reconciled.subscription_status === 'active'
-          && !(reconciled.subscription_period_end && new Date(reconciled.subscription_period_end) <= new Date())
+        ? isActiveSubscription(reconciled.subscription_status, reconciled.subscription_period_end)
         : profile.is_subscribed,
       cancel_at_period_end: reconciled?.cancel_at_period_end ?? false,
     });
@@ -648,15 +667,13 @@ router.post('/google', async (req, res) => {
         id: user.id,
         email: user.email,
         ...fullProfile,
-        credits_remaining: reconciled?.credits_remaining ?? fullProfile.credits_remaining,
-        credits_allowance: reconciled?.credits_allowance ?? fullProfile.credits_allowance,
+        ...mergeCreditsFields(reconciled, fullProfile),
         subscription_plan: reconciled?.subscription_plan ?? fullProfile.subscription_plan,
         subscription_status: reconciled?.subscription_status ?? fullProfile.subscription_status,
         subscription_period_end: reconciled?.subscription_period_end ?? fullProfile.subscription_period_end,
         cancel_at_period_end: reconciled?.cancel_at_period_end ?? false,
         is_subscribed: reconciled
-          ? reconciled.subscription_status === 'active'
-            && !(reconciled.subscription_period_end && new Date(reconciled.subscription_period_end) <= new Date())
+          ? isActiveSubscription(reconciled.subscription_status, reconciled.subscription_period_end)
           : fullProfile.is_subscribed,
       },
     });

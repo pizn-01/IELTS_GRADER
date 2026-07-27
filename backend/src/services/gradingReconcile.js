@@ -1,16 +1,61 @@
 const { supabaseAdmin } = require('./supabase');
 
-// Python mega-batch grading can take 1–3+ minutes. Anything still "grading"
-// past this within a living process is almost certainly hung.
-const STALE_GRADING_MS = Number(process.env.GRADING_STALE_MS || 6 * 60 * 1000);
+// Must exceed PYTHON_GRADING_TIMEOUT_MS (default 8m) so a live child is never
+// treated as abandoned. After this window with no in-process job, we regrade.
+const STALE_GRADING_MS = Number(process.env.GRADING_STALE_MS || 15 * 60 * 1000);
 const RECONCILE_INTERVAL_MS = Number(process.env.GRADING_RECONCILE_INTERVAL_MS || 60 * 1000);
-// Process start — used so boot cleanup never touches submissions created after we came up.
+const REGRADE_DELAY_MS = Number(process.env.GRADING_REGRADE_DELAY_MS || 20 * 1000);
+// Mega-batch Python graders are memory-heavy — never run more than one at a time
+// on the Fly VM (even at 2GB concurrent batches caused OOMs at 512MB).
+const MAX_CONCURRENT_GRADING = Number(process.env.GRADING_MAX_CONCURRENT || 1);
+// Process start — boot requeue only touches submissions created before we came up.
 const PROCESS_STARTED_AT = Date.now();
+
+// Shared across python + JS engines so reconciler never double-starts a job.
+const inflightGrading = new Map(); // submissionId -> { startedAt, scriptName, userId }
+
+/**
+ * Claim an in-process grading slot.
+ * @returns {'ok'|'duplicate'|'busy'}
+ */
+function beginGrading(submissionId, meta = {}) {
+  if (!submissionId) return 'busy';
+  if (inflightGrading.has(submissionId)) return 'duplicate';
+  if (inflightGrading.size >= MAX_CONCURRENT_GRADING) return 'busy';
+  inflightGrading.set(submissionId, {
+    startedAt: Date.now(),
+    scriptName: meta.scriptName || null,
+    userId: meta.userId || null,
+  });
+  return 'ok';
+}
+
+function touchGrading(submissionId, patch = {}) {
+  const meta = inflightGrading.get(submissionId);
+  if (!meta) return;
+  Object.assign(meta, patch);
+}
+
+function endGrading(submissionId) {
+  inflightGrading.delete(submissionId);
+}
+
+function isGradingInflight(submissionId) {
+  return inflightGrading.has(submissionId);
+}
+
+function listInflightGrading() {
+  return [...inflightGrading.entries()].map(([id, meta]) => ({
+    submissionId: id,
+    userId: meta.userId,
+    scriptName: meta.scriptName,
+    ageMs: Date.now() - meta.startedAt,
+  }));
+}
 
 /**
  * Refund exactly one credit by incrementing current balance.
- * Avoids the old absolute original_credits snapshot which could clobber
- * concurrent deductions/refunds.
+ * Kept for rare permanent abandon paths / admin tools — normal grading no longer refunds on transient failure.
  */
 async function refundOneCredit(userId) {
   if (!userId) return false;
@@ -37,8 +82,7 @@ async function refundOneCredit(userId) {
 }
 
 /**
- * Mark a submission failed only if it is still grading, then refund 1 credit.
- * Returns true when the row transitioned grading → failed.
+ * Legacy helper — mark failed + refund. Prefer requeueGrading for transient errors.
  */
 async function failStuckSubmission(submissionId, userId, reason) {
   const { data, error } = await supabaseAdmin
@@ -53,32 +97,131 @@ async function failStuckSubmission(submissionId, userId, reason) {
     console.error(`[gradingReconcile] fail update failed id=${submissionId}:`, error.message);
     return false;
   }
-  if (!data) {
-    // Already graded/failed — another path won the race
-    return false;
-  }
+  if (!data) return false;
 
   const refunded = await refundOneCredit(userId);
   console.log(
     `[gradingReconcile] marked failed id=${submissionId} reason=${reason} refunded=${refunded}`,
   );
+  return true;
+}
+
+async function loadSubmissionForRegrade(submissionId) {
+  const { data, error } = await supabaseAdmin
+    .from('submissions')
+    .select('id, user_id, exam_type, task_type, essay_content, exam_task_id, status')
+    .eq('id', submissionId)
+    .maybeSingle();
+  if (error) {
+    console.error(`[gradingReconcile] load failed id=${submissionId}:`, error.message);
+    return null;
+  }
+  return data;
+}
+
+async function hasReport(submissionId) {
+  const { data, error } = await supabaseAdmin
+    .from('reports')
+    .select('id')
+    .eq('submission_id', submissionId)
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.error(`[gradingReconcile] report check failed id=${submissionId}:`, error.message);
+    return false;
+  }
+  return Boolean(data?.id);
+}
+
+/**
+ * Ensure status is grading and kick gradeEssayAsync. Safe to call repeatedly —
+ * beginGrading / already-graded / existing report short-circuit duplicates.
+ */
+async function requeueGrading(submissionId, reason = 'requeue') {
+  if (!submissionId) return false;
+  if (isGradingInflight(submissionId)) {
+    console.log(`[gradingReconcile] skip requeue id=${submissionId} reason=${reason} (inflight)`);
+    return false;
+  }
+
+  if (await hasReport(submissionId)) {
+    await supabaseAdmin
+      .from('submissions')
+      .update({ status: 'graded' })
+      .eq('id', submissionId)
+      .in('status', ['grading', 'failed', 'pending']);
+    console.log(`[gradingReconcile] already has report id=${submissionId} — marked graded`);
+    return false;
+  }
+
+  const row = await loadSubmissionForRegrade(submissionId);
+  if (!row) return false;
+  if (row.status === 'graded') return false;
+
+  if (row.status !== 'grading') {
+    const { data: claimed, error } = await supabaseAdmin
+      .from('submissions')
+      .update({ status: 'grading' })
+      .eq('id', submissionId)
+      .eq('status', row.status)
+      .select('id')
+      .maybeSingle();
+    if (error) {
+      console.error(`[gradingReconcile] claim failed id=${submissionId}:`, error.message);
+      return false;
+    }
+    if (!claimed) {
+      console.log(`[gradingReconcile] skip requeue id=${submissionId} (claim lost)`);
+      return false;
+    }
+  }
+
+  console.log(`[gradingReconcile] requeue id=${submissionId} reason=${reason}`);
+
+  // Lazy require avoids circular load with graderEngine → pythonGrader → this file.
+  const { gradeEssayAsync } = require('./graderEngine');
+  gradeEssayAsync(row.id, {
+    exam_type: row.exam_type,
+    task_type: row.task_type,
+    essay_content: row.essay_content,
+    exam_task_id: row.exam_task_id || null,
+    userId: row.user_id,
+  }).catch((err) => {
+    console.error(`[gradingReconcile] requeue grade failed id=${submissionId}:`, err.message);
+  });
 
   return true;
 }
 
-async function failGradingRows(rows, reason) {
-  let failed = 0;
+function scheduleRegrade(submissionId, reason = 'delayed_retry', delayMs = REGRADE_DELAY_MS) {
+  if (!submissionId) return;
+  const wait = Math.max(0, Number(delayMs) || REGRADE_DELAY_MS);
+  console.log(`[gradingReconcile] schedule regrade id=${submissionId} in ${wait}ms reason=${reason}`);
+  setTimeout(() => {
+    requeueGrading(submissionId, reason).catch((err) => {
+      console.error(`[gradingReconcile] scheduled regrade failed id=${submissionId}:`, err.message);
+    });
+  }, wait);
+}
+
+async function requeueRows(rows, reason) {
+  let queued = 0;
   for (const row of rows) {
-    const ok = await failStuckSubmission(row.id, row.user_id, reason);
-    if (ok) failed += 1;
+    if (inflightGrading.size >= MAX_CONCURRENT_GRADING) {
+      console.log(
+        `[gradingReconcile] concurrency full (${MAX_CONCURRENT_GRADING}) — deferring remaining requeues`,
+      );
+      break;
+    }
+    const ok = await requeueGrading(row.id, reason);
+    if (ok) queued += 1;
   }
-  return { checked: rows.length, failed };
+  return { checked: rows.length, queued };
 }
 
 /**
- * After a deploy/restart, in-process grading from the previous machine is gone.
- * Immediately fail+refund any grading rows created before this process started
- * (single-machine deployment — no other worker can still be grading them).
+ * After deploy/restart/OOM, previous in-process work is gone.
+ * Re-grade anything still "grading" from before this process started.
  */
 async function reconcileBootOrphans() {
   const cutoff = new Date(PROCESS_STARTED_AT - 1000).toISOString();
@@ -91,18 +234,18 @@ async function reconcileBootOrphans() {
 
   if (error) {
     console.error('[gradingReconcile] boot query failed:', error.message);
-    return { checked: 0, failed: 0 };
+    return { checked: 0, queued: 0 };
   }
   if (!stuck || stuck.length === 0) {
-    return { checked: 0, failed: 0 };
+    return { checked: 0, queued: 0 };
   }
 
-  console.log(`[gradingReconcile] boot orphans found=${stuck.length}`);
-  return failGradingRows(stuck, 'boot_orphan');
+  console.log(`[gradingReconcile] boot orphans found=${stuck.length} — requeueing`);
+  return requeueRows(stuck, 'boot_orphan');
 }
 
 /**
- * Recover submissions stuck in grading longer than STALE_GRADING_MS (hung jobs).
+ * Recover submissions stuck in grading with no live in-process job.
  */
 async function reconcileStuckGrading() {
   const cutoff = new Date(Date.now() - STALE_GRADING_MS).toISOString();
@@ -114,40 +257,94 @@ async function reconcileStuckGrading() {
     .limit(50);
 
   if (error) {
-    console.error('[gradingReconcile] query failed:', error.message);
-    return { checked: 0, failed: 0 };
+    console.error('[gradingReconcile] stale query failed:', error.message);
+    return { checked: 0, queued: 0 };
   }
   if (!stuck || stuck.length === 0) {
-    return { checked: 0, failed: 0 };
+    return { checked: 0, queued: 0 };
   }
 
-  return failGradingRows(stuck, 'stale_grading');
+  const abandoned = stuck.filter((row) => !isGradingInflight(row.id));
+  if (abandoned.length === 0) {
+    return { checked: stuck.length, queued: 0 };
+  }
+
+  console.log(`[gradingReconcile] stale abandoned=${abandoned.length}/${stuck.length} — requeueing`);
+  return requeueRows(abandoned, 'stale_grading');
+}
+
+/**
+ * Past failures (OOM era) with no report — reclaim and grade until the user gets results.
+ */
+async function reconcileFailedWithoutReport() {
+  const { data: failed, error } = await supabaseAdmin
+    .from('submissions')
+    .select('id, user_id, created_at')
+    .eq('status', 'failed')
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  if (error) {
+    console.error('[gradingReconcile] failed query failed:', error.message);
+    return { checked: 0, queued: 0 };
+  }
+  if (!failed || failed.length === 0) {
+    return { checked: 0, queued: 0 };
+  }
+
+  const needs = [];
+  for (const row of failed) {
+    if (isGradingInflight(row.id)) continue;
+    if (await hasReport(row.id)) {
+      await supabaseAdmin.from('submissions').update({ status: 'graded' }).eq('id', row.id);
+      continue;
+    }
+    needs.push(row);
+  }
+
+  if (needs.length === 0) {
+    return { checked: failed.length, queued: 0 };
+  }
+
+  console.log(`[gradingReconcile] failed-without-report=${needs.length} — requeueing`);
+  return requeueRows(needs, 'failed_retry');
 }
 
 function startGradingReconcile() {
-  // Deploy/restart orphans first — don't wait for the 6–10 min stale window.
   setTimeout(() => {
-    reconcileBootOrphans().catch((err) => {
-      console.error('[gradingReconcile] boot tick failed:', err.message);
-    });
+    reconcileBootOrphans()
+      .then(() => reconcileFailedWithoutReport())
+      .catch((err) => {
+        console.error('[gradingReconcile] boot tick failed:', err.message);
+      });
   }, 3_000);
 
   setInterval(() => {
-    reconcileStuckGrading().catch((err) => {
-      console.error('[gradingReconcile] tick failed:', err.message);
-    });
+    reconcileStuckGrading()
+      .then(() => reconcileFailedWithoutReport())
+      .catch((err) => {
+        console.error('[gradingReconcile] tick failed:', err.message);
+      });
   }, RECONCILE_INTERVAL_MS);
 
   console.log(
-    `[gradingReconcile] started staleMs=${STALE_GRADING_MS} intervalMs=${RECONCILE_INTERVAL_MS} bootOrphan=on`,
+    `[gradingReconcile] started staleMs=${STALE_GRADING_MS} intervalMs=${RECONCILE_INTERVAL_MS} maxConcurrent=${MAX_CONCURRENT_GRADING} bootRequeue=on failedRetry=on`,
   );
 }
 
 module.exports = {
   refundOneCredit,
   failStuckSubmission,
+  requeueGrading,
+  scheduleRegrade,
   reconcileStuckGrading,
   reconcileBootOrphans,
+  reconcileFailedWithoutReport,
   startGradingReconcile,
+  beginGrading,
+  touchGrading,
+  endGrading,
+  isGradingInflight,
+  listInflightGrading,
   STALE_GRADING_MS,
 };

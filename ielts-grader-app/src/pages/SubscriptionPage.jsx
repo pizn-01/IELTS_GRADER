@@ -80,8 +80,9 @@ const SubscriptionPage = () => {
   };
 
   const remaining = status?.credits_remaining ?? user?.credits_remaining ?? 0;
-  const allowance = status?.credits_allowance ?? user?.credits_allowance ?? FREE_TRIAL_CREDITS;
+  const rawAllowance = status?.credits_allowance ?? user?.credits_allowance ?? FREE_TRIAL_CREDITS;
   const isSubscribed = status?.is_subscribed;
+  const allowance = isSubscribed ? rawAllowance : Math.max(rawAllowance, FREE_TRIAL_CREDITS);
   const cancelAtPeriodEnd = status?.cancel_at_period_end;
 
   const barPct = allowance > 0 ? Math.min(100, Math.round((remaining / allowance) * 100)) : 0;

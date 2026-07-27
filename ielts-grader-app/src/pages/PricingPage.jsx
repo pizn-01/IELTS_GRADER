@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Sparkles, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
@@ -12,7 +12,6 @@ const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 const PricingPage = () => {
   const navigate = useNavigate();
   const [trainingType, setTrainingType] = useState('Academic'); // Academic, General
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const plans = [
     {
@@ -30,6 +29,7 @@ const PricingPage = () => {
     },
     {
       name: "Weekly Sprint",
+      planKey: WEEKLY.key,
       price: WEEKLY.price,
       period: WEEKLY.period,
       description: "Intensive practice for fast results.",
@@ -44,6 +44,7 @@ const PricingPage = () => {
     },
     {
       name: "Monthly Mastery",
+      planKey: MONTHLY.key,
       price: MONTHLY.price,
       period: MONTHLY.period,
       description: "Best value for serious prep.",
@@ -58,6 +59,20 @@ const PricingPage = () => {
       highlight: "Best Value"
     }
   ];
+
+  const handlePlanClick = (plan) => {
+    if (!plan.isPremium) {
+      navigate('/report');
+      return;
+    }
+    trackEvent('upgrade_cta_clicked', {
+      source: 'pricing_plan_card',
+      plan: plan.name,
+      plan_key: plan.planKey,
+    });
+    // Skip modal + plan re-pick: go straight to upgrade checkout for this plan
+    navigate(`/upgrade?plan=${plan.planKey}&checkout=1`);
+  };
 
   return (
     <div className="min-h-screen bg-[#EFF6FF]">
@@ -128,14 +143,7 @@ const PricingPage = () => {
               </div>
 
               <button 
-                onClick={() => {
-                  if (plan.isPremium) {
-                    trackEvent('upgrade_cta_clicked', { source: 'pricing_plan_card', plan: plan.name });
-                    setShowPremiumModal(true);
-                  } else {
-                    navigate('/report');
-                  }
-                }}
+                onClick={() => handlePlanClick(plan)}
                 className={`w-full h-[50px] rounded-[10px] font-bold text-[15px] transition-all mt-auto ${
                   plan.isPremium 
                     ? 'bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 
@@ -148,45 +156,6 @@ const PricingPage = () => {
           ))}
         </div>
       </main>
-
-      {/* Premium Confirmation Modal */}
-      {showPremiumModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[16px] shadow-[0_20px_60px_rgba(0,0,0,0.2)] p-8 w-full max-w-[400px] text-center relative animate-fadeIn">
-            <button 
-              onClick={() => setShowPremiumModal(false)}
-              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#1a1f36]"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <div className="w-16 h-16 bg-[#EFF6FF] rounded-full flex items-center justify-center mx-auto mb-6">
-              <Sparkles className="w-8 h-8 text-[#3B82F6]" />
-            </div>
-            
-            <h2 className="text-[22px] font-bold text-[#1a1f36] mb-2">Subscribe to Premium</h2>
-            <p className="text-[14px] text-[#6B7280] mb-8 leading-relaxed">
-              Weekly Sprint ({WEEKLY.label}, {WEEKLY.credits} exams) or Monthly Mastery ({MONTHLY.label}, {MONTHLY.credits} exams). Cancel anytime.
-            </p>
-
-            <button 
-              onClick={() => {
-                trackEvent('upgrade_cta_clicked', { source: 'pricing_page' });
-                navigate('/upgrade');
-              }}
-              className="w-full bg-[#1a1f36] text-white py-[14px] rounded-[10px] font-bold text-[15px] mb-3 hover:bg-[#2a2f46] transition-all"
-            >
-              Continue to Plans
-            </button>
-            <button 
-              onClick={() => setShowPremiumModal(false)}
-              className="w-full py-[12px] text-[14px] font-medium text-[#6B7280] hover:text-[#1a1f36]"
-            >
-              Maybe Later
-            </button>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>

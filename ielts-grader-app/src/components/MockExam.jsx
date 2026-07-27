@@ -354,11 +354,8 @@ const MockExam = ({ examType, taskType, onExit }) => {
           }
 
           if (status === 'failed') {
-            if (!cancelled) {
-              setGradingError('Grading failed. Please try again or check your credits.');
-              setIsGrading(false);
-            }
-            return;
+            // Backend requeues failed jobs automatically — keep waiting for results.
+            continue;
           }
         } catch {
           // Network blip — keep polling

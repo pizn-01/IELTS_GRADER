@@ -254,7 +254,7 @@ const ReportView = ({
   const userName = user?.full_name || 'User';
   const userEmail = user?.email || '';
   const creditsRem = user?.credits_remaining ?? 0;
-  const creditsMax = Math.max(user?.credits_allowance ?? FREE_TRIAL_CREDITS, 1);
+  const creditsMax = Math.max(user?.credits_allowance ?? FREE_TRIAL_CREDITS, FREE_TRIAL_CREDITS);
   const creditsOffset = (75.4 * (1 - Math.min(creditsRem, creditsMax) / creditsMax)).toFixed(2);
   const reportDate = data?.created_at
     ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

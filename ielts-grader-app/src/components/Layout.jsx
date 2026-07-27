@@ -41,8 +41,9 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
   ];
 
   const creditsRemaining = user?.credits_remaining ?? 0;
-  const creditsAllowance = user?.credits_allowance ?? FREE_TRIAL_CREDITS;
   const isSubscribed = user?.subscription_status === 'active' || user?.is_subscribed;
+  const rawAllowance = user?.credits_allowance ?? FREE_TRIAL_CREDITS;
+  const creditsAllowance = isSubscribed ? rawAllowance : Math.max(rawAllowance, FREE_TRIAL_CREDITS);
   const creditsLabel = isSubscribed ? 'Plan' : 'Free Trial';
   const creditProgress = creditsAllowance > 0 ? Math.min(creditsRemaining / creditsAllowance, 1) : 0;
   const learningNavBadge = useLearningNavBadge();

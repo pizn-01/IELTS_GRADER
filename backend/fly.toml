@@ -32,6 +32,6 @@ primary_region = 'iad'
   destination = '/app/social-media/output'
 
 [[vm]]
-  memory = '512mb'
+  memory = '2gb'
   cpu_kind = 'shared'
   cpus = 1

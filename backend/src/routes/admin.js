@@ -4,6 +4,7 @@ const pdfParse = require('pdf-parse');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
+const { FREE_TRIAL_CREDITS } = require('../services/subscriptionPlans');
 const {
   inferExamTaskType,
   normalizeCreatePayload,
@@ -326,7 +327,7 @@ router.patch('/users/:id', async (req, res) => {
     const c = parseInt(credits_remaining);
     if (isNaN(c) || c < 0) return res.status(400).json({ error: 'credits_remaining must be a non-negative integer.' });
     updates.credits_remaining = c;
-    updates.credits_allowance = Math.max(c, 1);
+    updates.credits_allowance = Math.max(c, FREE_TRIAL_CREDITS);
   }
   if (target_band !== undefined) {
     const b = parseFloat(target_band);
@@ -628,7 +629,7 @@ router.post('/users/:id/credits', async (req, res) => {
 
     const creditUpdates = {
       credits_remaining: newBalance,
-      credits_allowance: Math.max(newBalance, profile.credits_allowance ?? 1, 1),
+      credits_allowance: Math.max(newBalance, profile.credits_allowance ?? FREE_TRIAL_CREDITS, FREE_TRIAL_CREDITS),
       updated_at: new Date().toISOString(),
     };
     // Only clear expired/canceled periods — keep active subscription period intact

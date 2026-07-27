@@ -5,13 +5,23 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const sharp = require('sharp');
 const { supabaseAdmin } = require('./supabase');
-const { refundOneCredit, failStuckSubmission } = require('./gradingReconcile');
+const {
+  beginGrading,
+  touchGrading,
+  endGrading,
+  listInflightGrading,
+  scheduleRegrade,
+} = require('./gradingReconcile');
 const { trackProductEvent } = require('../utils/productEvents');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
 // Hard ceiling for a single Python grading child. Matches ~UI patience while
 // still allowing the 19-call mega-batch to finish on slow OpenAI days.
 const PYTHON_GRADING_TIMEOUT_MS = Number(process.env.PYTHON_GRADING_TIMEOUT_MS || 8 * 60 * 1000);
+// Transient failures (OOM child kill, OpenAI blip, JSON parse) — retry in-process
+// before handing off to the reconciler for another full attempt.
+const PYTHON_IN_PROCESS_RETRIES = Number(process.env.PYTHON_IN_PROCESS_RETRIES || 3);
+const PYTHON_RETRY_BASE_MS = Number(process.env.PYTHON_RETRY_BASE_MS || 15_000);
 
 // Mirrors the executable resolution logic in the client's own server.js —
 // prefer a project virtualenv (created at Docker build time in production,
@@ -38,8 +48,33 @@ function extractJson(output) {
   return JSON.parse(output.slice(start, end + 1));
 }
 
-// In-flight grading jobs — used to detect deploy/SIGTERM killing work mid-grade (H1)
-const inflightGrading = new Map(); // submissionId -> { startedAt, scriptName }
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function runPythonScriptWithRetries(scriptName, args, submissionId) {
+  let lastErr;
+  const attempts = Math.max(1, PYTHON_IN_PROCESS_RETRIES);
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      if (attempt > 1) {
+        const delay = PYTHON_RETRY_BASE_MS * (attempt - 1);
+        console.warn(
+          `[pythonGrader] retry ${attempt}/${attempts} submission=${submissionId} script=${scriptName} after ${delay}ms`,
+        );
+        await sleep(delay);
+      }
+      return await runPythonScript(scriptName, args, submissionId);
+    } catch (err) {
+      lastErr = err;
+      console.error(
+        `[pythonGrader] attempt ${attempt}/${attempts} failed submission=${submissionId}:`,
+        err.message,
+      );
+    }
+  }
+  throw lastErr;
+}
 
 function runPythonScript(scriptName, args, submissionId) {
   return new Promise((resolve, reject) => {
@@ -96,19 +131,15 @@ function installGradingShutdownHandler() {
   _shutdownHandlerInstalled = true;
 
   const onShutdown = (signal) => {
-    const jobs = [...inflightGrading.entries()].map(([id, meta]) => ({
-      submissionId: id,
-      userId: meta.userId,
-      scriptName: meta.scriptName,
-      ageMs: Date.now() - meta.startedAt,
-    }));
-    console.error(`[pythonGrader] ${signal} with ${jobs.length} inflight grading job(s) — failing + refunding`);
-    // Best-effort; Fly kill grace may cut this short — reconciler is the backstop.
-    Promise.allSettled(
-      jobs.map((j) => failStuckSubmission(j.submissionId, j.userId, `shutdown_${signal}`)),
-    ).finally(() => {
-      inflightGrading.clear();
-    });
+    const jobs = listInflightGrading();
+    // Leave rows as "grading" — boot reconciler will requeue until the user gets a report.
+    // Do NOT fail+refund: the credit stays consumed for the eventual successful grade.
+    console.error(
+      `[pythonGrader] ${signal} with ${jobs.length} inflight grading job(s) — leaving as grading for boot requeue`,
+    );
+    for (const j of jobs) {
+      endGrading(j.submissionId);
+    }
   };
 
   process.on('SIGTERM', () => onShutdown('SIGTERM'));
@@ -417,7 +448,16 @@ async function gradeEssayAsync(submissionId, submissionData) {
   } = submissionData;
 
   console.log(`[pythonGrader] Starting: submission=${submissionId} task=${exam_type} ${task_type}`);
-  inflightGrading.set(submissionId, { startedAt: Date.now(), scriptName: null, userId });
+  const slot = beginGrading(submissionId, { userId, scriptName: null });
+  if (slot === 'duplicate') {
+    console.log(`[pythonGrader] Already inflight — skip duplicate start submission=${submissionId}`);
+    return;
+  }
+  if (slot === 'busy') {
+    console.log(`[pythonGrader] Concurrency full — deferring submission=${submissionId}`);
+    scheduleRegrade(submissionId, 'concurrency_wait', 60_000);
+    return;
+  }
 
   try {
     const taskVariant = resolveTaskVariant(exam_type, task_type);
@@ -520,9 +560,8 @@ async function gradeEssayAsync(submissionId, submissionData) {
 
     let result;
     try {
-      const meta = inflightGrading.get(submissionId);
-      if (meta) meta.scriptName = scriptName;
-      result = mapPythonResult(await runPythonScript(scriptName, args, submissionId));
+      touchGrading(submissionId, { scriptName });
+      result = mapPythonResult(await runPythonScriptWithRetries(scriptName, args, submissionId));
     } finally {
       if (chartSvgPath) {
         fs.promises.unlink(chartSvgPath).catch(() => {});
@@ -636,24 +675,12 @@ async function gradeEssayAsync(submissionId, submissionData) {
     }).catch(() => {});
 
     console.log(`[pythonGrader] Done: submission=${submissionId} band=${overall_band}`);
-    inflightGrading.delete(submissionId);
+    endGrading(submissionId);
   } catch (err) {
     console.error(`[pythonGrader] Failed: submission=${submissionId}`, err.message);
-
-    // Mark as failed only if still grading, then +1 refund (not absolute snapshot)
-    const { data: failedRow } = await supabaseAdmin
-      .from('submissions')
-      .update({ status: 'failed' })
-      .eq('id', submissionId)
-      .eq('status', 'grading')
-      .select('id')
-      .maybeSingle();
-
-    if (failedRow && userId) {
-      const refunded = await refundOneCredit(userId);
-      if (refunded) console.log(`[pythonGrader] Credit refunded (+1) for user=${userId}`);
-    }
-    inflightGrading.delete(submissionId);
+    // Keep status=grading and retry until a report is delivered — no fail/refund.
+    endGrading(submissionId);
+    scheduleRegrade(submissionId, 'python_grade_failed');
   }
 }
 

@@ -100,10 +100,10 @@ const submissionsWriteLimiter = rateLimit({
 });
 
 // Submission READ (GET list + status polling) — must be very permissive:
-// status polling fires every 3s for up to 2 minutes per grading session.
+// status polling fires every 3s for up to ~15 minutes while grading retries.
 const submissionsReadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 600,
+  max: 1200,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientIpKey,

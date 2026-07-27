@@ -215,9 +215,9 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
       return;
     }
 
-    // Poll until graded (python mega-batch can exceed 2 minutes)
+    // Poll until graded (backend retries until a report exists)
     let attempts = 0;
-    const maxAttempts = 100; // ~5 min at 3s intervals
+    const maxAttempts = 300; // ~15 min at 3s intervals
 
     pollRef.current = setInterval(async () => {
       attempts++;
@@ -238,20 +238,17 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
               onAnalysisComplete(submissionId, null);
             }
           }, 800);
-        } else if (status === 'failed' || attempts >= maxAttempts) {
+        } else if (attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           stopProgressAnimation();
-          if (status === 'failed') {
-            setGradingError('Grading failed. Your credit has been refunded. Please try again.');
-          } else {
-            setGradingError('Grading is taking longer than expected. Please check Reports in a few minutes before submitting again — your credit is only refunded if grading fails.');
-          }
+          setGradingError('Grading is taking longer than expected. Please check Reports in a few minutes — we keep retrying until your results are ready.');
         }
+        // status === 'failed' / 'grading': keep polling — backend requeues automatically
       } catch {
         if (attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           stopProgressAnimation();
-          setGradingError('Connection lost. Please refresh and try again.');
+          setGradingError('Connection lost. Please refresh and check Reports — grading continues in the background.');
         }
       }
     }, 3000);

@@ -1,30 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { SUBSCRIPTION_PLANS, SUBSCRIPTION_FEATURES } from '../constants/subscriptionPlans';
 
 const PLANS = [SUBSCRIPTION_PLANS.weekly, SUBSCRIPTION_PLANS.monthly];
 
+function normalizePlanKey(value) {
+  if (value === 'weekly' || value === 'monthly') return value;
+  return null;
+}
+
 const UpgradePage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const planFromUrl = normalizePlanKey(searchParams.get('plan'));
+  const autoCheckout = searchParams.get('checkout') === '1';
+  const autoCheckoutStarted = useRef(false);
+
   const [examType, setExamType] = useState('Academic');
-  const [selectedKey, setSelectedKey] = useState(PLANS[0].key);
-  const [loading, setLoading] = useState(false);
+  const [selectedKey, setSelectedKey] = useState(planFromUrl || PLANS[0].key);
+  const [loading, setLoading] = useState(autoCheckout);
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState(null);
   const [statusLoading, setStatusLoading] = useState(true);
 
   useEffect(() => {
+    if (planFromUrl) setSelectedKey(planFromUrl);
+  }, [planFromUrl]);
+
+  useEffect(() => {
     api.getSubscriptionStatus()
       .then((data) => {
         setStatus(data);
-        if (data?.is_subscribed && data.subscription_plan === 'weekly') {
+        if (data?.is_subscribed && data.subscription_plan === 'weekly' && !planFromUrl) {
           setSelectedKey('monthly');
         }
       })
       .catch((err) => setError(err.message))
       .finally(() => setStatusLoading(false));
-  }, []);
+  }, [planFromUrl]);
 
   const currentPlan = status?.subscription_plan;
   const isSubscribed = status?.is_subscribed;
@@ -33,18 +48,48 @@ const UpgradePage = () => {
 
   const selectedPlan = PLANS.find(p => p.key === selectedKey) || PLANS[0];
 
-  const handleSubscribe = async () => {
+  const clearCheckoutParams = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('checkout');
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleSubscribe = async (planKey = selectedKey) => {
     if (isSubscribed) return;
     setLoading(true);
     setError('');
     try {
-      const { url } = await api.createSubscriptionCheckout(selectedKey);
+      const { url } = await api.createSubscriptionCheckout(planKey);
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
       setLoading(false);
+      clearCheckoutParams();
     }
   };
+
+  // From marketing /pricing: skip the second plan picker and jump to Stripe
+  useEffect(() => {
+    if (statusLoading || !autoCheckout || autoCheckoutStarted.current) return;
+    if (!status) {
+      // Status fetch failed — drop auto-checkout so the user can retry manually
+      if (error) {
+        autoCheckoutStarted.current = true;
+        setLoading(false);
+        clearCheckoutParams();
+      }
+      return;
+    }
+    if (status.is_subscribed) {
+      clearCheckoutParams();
+      setLoading(false);
+      return;
+    }
+    autoCheckoutStarted.current = true;
+    const planKey = planFromUrl || selectedKey;
+    handleSubscribe(planKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when status is ready for checkout deep-link
+  }, [statusLoading, status, autoCheckout, planFromUrl, selectedKey, error]);
 
   const openBillingPortal = async (flow) => {
     setPortalLoading(true);
@@ -60,10 +105,12 @@ const UpgradePage = () => {
     }
   };
 
-  if (statusLoading) {
+  if (statusLoading || (autoCheckout && loading && !error)) {
     return (
       <div className="flex flex-col items-center px-4 py-12">
-        <p className="text-[14px] text-gray-400">Loading plans…</p>
+        <p className="text-[14px] text-gray-400">
+          {autoCheckout ? 'Redirecting to Stripe…' : 'Loading plans…'}
+        </p>
       </div>
     );
   }
@@ -202,7 +249,7 @@ const UpgradePage = () => {
         ) : (
           <button
             type="button"
-            onClick={handleSubscribe}
+            onClick={() => handleSubscribe()}
             disabled={loading}
             className="w-full h-[52px] bg-[#101828] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 mb-4"
           >

@@ -254,7 +254,7 @@ async function reconcileUserSubscription(userId, { liveStripe = true } = {}) {
   let cancelAtPeriodEnd = false;
 
   // Only expire paid access when a subscription period has actually ended.
-  // Free-trial users (no period_end) are untouched — they keep their 1 credit.
+  // Free-trial users (no period_end) are untouched — they keep their free-trial credits.
   if (
     isPeriodEnded(profile.subscription_period_end)
     && (profile.subscription_status === 'active'
@@ -327,6 +327,9 @@ function buildSubscriptionStatusPayload(profile) {
   const periodEnded = isPeriodEnded(profile.subscription_period_end);
   const isActive = profile.subscription_status === 'active' && !periodEnded;
   const cancelAtPeriodEnd = !!profile.cancel_at_period_end && isActive;
+  const creditsAllowance = periodEnded || !isActive
+    ? Math.max(allowance, FREE_TRIAL_CREDITS)
+    : allowance;
 
   return {
     subscription_plan: profile.subscription_plan || null,
@@ -336,7 +339,7 @@ function buildSubscriptionStatusPayload(profile) {
     plan_name: plan?.name || (isActive ? 'Subscription' : 'Free Trial'),
     billing_label: plan?.label || null,
     credits_remaining: periodEnded ? 0 : (profile.credits_remaining ?? 0),
-    credits_allowance: periodEnded ? 1 : allowance,
+    credits_allowance: periodEnded ? FREE_TRIAL_CREDITS : creditsAllowance,
     is_subscribed: isActive,
     has_paid: isActive || (profile.has_paid ?? false),
   };
