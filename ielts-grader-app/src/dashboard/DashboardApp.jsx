@@ -374,7 +374,7 @@ function DashboardApp() {
                       }}
                     />
                   </div>
-                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3 min-h-0">
+                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3 min-h-0 lg:h-0 lg:min-h-full">
                     <div className="h-[248px] shrink-0 overflow-hidden flex flex-col">
                       <RecentReports
                         hasData={hasData}
