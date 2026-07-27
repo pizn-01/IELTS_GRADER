@@ -58,34 +58,103 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       grammar: parseFloat(row.grammar_band),
     }));
 
-    // 3. Frequent errors across all reports
+    // 3. Frequent errors across all reports (enriched with rewrite samples)
     let frequentErrors = [];
     const reportIds = sortedReports.map(r => r.id);
+    const reportExamIndex = Object.fromEntries(
+      sortedReports.map((r, idx) => [r.id, idx + 1])
+    );
+
+    const SEVERITY_RANK = { Major: 4, High: 3, Medium: 2, Low: 1 };
 
     if (reportIds.length > 0) {
       const { data: errors } = await supabaseAdmin
         .from('report_errors')
-        .select('title, severity')
-        .in('report_id', reportIds);
+        .select('title, severity, criteria, sub_category, original_text, correction_text, explanation, report_id, created_at')
+        .in('report_id', reportIds)
+        .order('created_at', { ascending: true });
 
-      // Aggregate by title
+      // Aggregate by title; keep worst severity + most recent rewrite sample
       const errorMap = {};
-      (errors || []).forEach(({ title, severity }) => {
+      (errors || []).forEach((err) => {
+        const {
+          title,
+          severity,
+          criteria,
+          sub_category,
+          original_text,
+          correction_text,
+          explanation,
+          report_id,
+        } = err;
+
         if (!errorMap[title]) {
-          errorMap[title] = { label: title, count: 0, severity };
+          errorMap[title] = {
+            label: title,
+            count: 0,
+            worstSeverity: severity || 'Medium',
+            criteriaCounts: {},
+            subCategoryCounts: {},
+            sample: null,
+            examIndexes: new Set(),
+          };
         }
-        errorMap[title].count++;
+
+        const entry = errorMap[title];
+        entry.count++;
+
+        const rank = SEVERITY_RANK[severity] || 0;
+        const worstRank = SEVERITY_RANK[entry.worstSeverity] || 0;
+        if (rank > worstRank) entry.worstSeverity = severity;
+
+        if (criteria) {
+          entry.criteriaCounts[criteria] = (entry.criteriaCounts[criteria] || 0) + 1;
+        }
+        if (sub_category) {
+          entry.subCategoryCounts[sub_category] = (entry.subCategoryCounts[sub_category] || 0) + 1;
+        }
+
+        const examIndex = reportExamIndex[report_id] ?? null;
+        if (examIndex != null) entry.examIndexes.add(examIndex);
+
+        // Prefer the most recent exam's rewrite sample
+        if (original_text || correction_text || explanation) {
+          const prevExam = entry.sample?.examIndex ?? -1;
+          if (examIndex == null || examIndex >= prevExam) {
+            entry.sample = {
+              original_text: original_text || '',
+              correction_text: correction_text || '',
+              explanation: explanation || '',
+              examIndex,
+            };
+          }
+        }
       });
+
+      const modeKey = (counts) => {
+        const entries = Object.entries(counts);
+        if (entries.length === 0) return null;
+        entries.sort((a, b) => b[1] - a[1]);
+        return entries[0][0];
+      };
 
       frequentErrors = Object.values(errorMap)
         .sort((a, b) => b.count - a.count)
         .slice(0, 8)
-        .map(e => ({
-          label: e.label,
-          count: e.count,
-          impact: ['Major', 'High'].includes(e.severity) ? 'High Impact' : 'Medium Impact',
-          type: ['Major', 'High'].includes(e.severity) ? 'red' : 'yellow',
-        }));
+        .map((e) => {
+          const isHigh = ['Major', 'High'].includes(e.worstSeverity);
+          const isMed = e.worstSeverity === 'Medium';
+          return {
+            label: e.label,
+            count: e.count,
+            impact: isHigh ? 'High Impact' : isMed ? 'Medium Impact' : 'Low Impact',
+            type: isHigh ? 'red' : isMed ? 'yellow' : 'gray',
+            criteria: modeKey(e.criteriaCounts),
+            sub_category: modeKey(e.subCategoryCounts),
+            examCount: e.examIndexes.size,
+            sample: e.sample,
+          };
+        });
     }
 
     return res.json({ chartData, frequentErrors });

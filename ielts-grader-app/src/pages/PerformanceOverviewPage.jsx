@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PerformanceOverviewDashboard from '../components/PerformanceOverviewDashboard';
+import PerformanceFixCards from '../components/PerformanceFixCards';
 import FourteenDaySprint from '../components/FourteenDaySprint';
 import StrategyRoadmap from '../components/StrategyRoadmap';
 import TargetBandPrompt from '../components/TargetBandPrompt';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
-import { formatGoalGap, goalStatusText } from '../utils/goalProgress';
 import { api } from '../services/api';
 import LearningEditionModal from '../components/LearningEditionModal';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
@@ -153,7 +153,6 @@ const PerformanceOverviewPage = ({ onBack }) => {
 
   const subTabs = [
     "Overview",
-    "Detailed Breakdown",
     "Fix Cards",
     "Strategy",
     "14-Day sprint",
@@ -300,109 +299,14 @@ const PerformanceOverviewPage = ({ onBack }) => {
             uniqueTypes={uniqueTypes}
             criterionCards={criterionCards}
             targetBand={targetBand}
+            onOpenFixCards={() => setActiveTab('Fix Cards')}
           />
-        : activeTab === "Detailed Breakdown" ?
-          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E5E7EB] space-y-8">
-            {/* Top Status Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="bg-[#F8FAFC] rounded-[12px] px-6 py-5 flex items-center justify-between border border-[#E5E7EB]">
-                <div>
-                  <h4 className="text-[14px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Total Growth</h4>
-                  <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Since First Attempt</p>
-                </div>
-                <span className="text-[24px] font-bold text-[#00C9B1]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{bandChange != null ? (parseFloat(bandChange) >= 0 ? `+${bandChange}` : bandChange) : '—'}</span>
-              </div>
-              <div className="bg-[#F8FAFC] rounded-[12px] px-6 py-5 flex items-center justify-between border border-[#E5E7EB]">
-                <div>
-                  <h4 className="text-[14px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Current Status</h4>
-                  <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Overall Band Score</p>
-                </div>
-                <span className="text-[24px] font-bold text-[#00C9B1]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{latestBand ?? '—'}</span>
-              </div>
-              <div className="bg-[#F8FAFC] rounded-[12px] px-6 py-5 flex items-center justify-between border border-[#E5E7EB]">
-                <div>
-                  <h4 className="text-[14px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Your Goal</h4>
-                  <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Target Band</p>
-                </div>
-                <span className="text-[24px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{targetBand.toFixed(1)}</span>
-              </div>
-            </div>
-
-            {/* Tutor's Verdict */}
-            <div className="space-y-4 pt-2">
-              <div>
-                <h3 className="text-[16px] font-bold text-[#101828]">Tutor's Verdict</h3>
-                <p className="text-[13px] text-[#667085] mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Personalized assessment</p>
-              </div>
-
-              <p className="text-[15px] font-normal text-[#101828] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                {latestBand != null
-                  ? `${goalStatusText(latestBand, targetBand)}${bandChange != null ? ` Since your first attempt, your score has ${parseFloat(bandChange) >= 0 ? 'improved' : 'changed'} by ${parseFloat(bandChange) >= 0 ? '+' : ''}${bandChange}.` : ''}`
-                  : 'Complete your first exam to see your personalized verdict.'}
-              </p>
-
-              {bandChange != null && Math.abs(parseFloat(bandChange)) < 0.5 && overallScores.length >= 3 && (
-                <div className="bg-[#FFF9F2] border border-[#FFE4BA] rounded-[12px] px-5 py-4">
-                  <p className="text-[14px] leading-relaxed text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    <span className="text-[#DC6803] font-bold">Tutor Notice (Plateau):</span> You've been scoring exactly the same over the last 5 attempts (stagnant). This is a habit loop. Focus entirely on your highest priority Fix Cards to break it.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Pathway to target band */}
-            <div className="space-y-4 pt-2 border-t border-[#F2F4F7]">
-              <div className="pt-4">
-                <h3 className="text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Pathway to Band {targetBand.toFixed(1)}</h3>
-                <p className="text-[14px] text-[#475467] leading-relaxed mt-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                  If you raise one criterion by the shown delta (while others stay stable), your mean should cross the IELTS rounding threshold and your overall band can round up.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-5">
-                <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">
-                  <p className="text-[11px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>RAW Points Needed</p>
-                  <p className="text-[22px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    {formatGoalGap(latestBand, targetBand)}
-                  </p>
-                </div>
-                <div className="bg-white border border-[#E5E7EB] rounded-[14px] px-6 py-5 shadow-sm flex flex-col gap-2">
-                  <p className="text-[11px] text-[#98A2B3] font-bold uppercase tracking-widest" style={{ fontFamily: "'Nunito', sans-serif" }}>Lowest Hanging Fruit</p>
-                  <p className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    {bottleneckCrit.avg != null ? bottleneckCrit.name : '—'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         : activeTab === "Fix Cards" ?
-          <div className="space-y-8">
-            <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] flex flex-col overflow-hidden">
-               <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#F2F4F7]">
-                 <h3 className="text-[18px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>Fix Cards: Priority Errors</h3>
-                 <p className="text-[14px] text-[#475467]" style={{ fontFamily: "'Nunito', sans-serif" }}>Your most frequent error patterns across all submissions.</p>
-               </div>
-               <div className="p-4 md:p-8 space-y-3 md:space-y-4">
-                 {frequentErrors.length === 0 ? (
-                   <p className="text-[14px] text-gray-400 text-center py-8">Complete more exams to generate your Fix Cards.</p>
-                 ) : frequentErrors.map((e, idx) => {
-                   const isHigh = e.type === 'red' || e.impact === 'High Impact';
-                   const isMed  = !isHigh && (e.type === 'yellow' || e.impact === 'Medium Impact');
-                   const colors = isHigh ? "text-[#EA4335] bg-[#EA43351A] text-[14px]" : isMed ? "text-[#F59E0B] bg-[#F59E0B1A] text-[13px]" : "text-[#101828] bg-[#1018280D] text-[14px]";
-                   const impact = isHigh ? 'High Impact' : isMed ? 'Medium Impact' : 'Low Impact';
-                   return (
-                     <div key={idx} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4 p-4 md:p-6 bg-white border border-[#E5E7EB] rounded-[12px] hover:shadow-md transition-all">
-                       <h4 className="text-[14px] md:text-[16px] font-bold text-[#101828]" style={{ fontFamily: "'Nunito', sans-serif" }}>{e.label}</h4>
-                       <div className="flex items-center gap-3 md:gap-6 shrink-0">
-                         <div className={`px-3 md:px-4 py-1.5 rounded-full font-bold ${colors} whitespace-nowrap text-center`} style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>{impact}</div>
-                         <div className="px-3 md:px-4 py-1.5 bg-[#1018280D] rounded-full text-[13px] md:text-[14px] font-bold text-[#101828] whitespace-nowrap text-center" style={{ fontFamily: "'Nunito', sans-serif", lineHeight: '100%' }}>Count: {e.count}</div>
-                       </div>
-                     </div>
-                   );
-                 })}
-               </div>
-            </div>
-          </div>
+          <PerformanceFixCards
+            frequentErrors={frequentErrors}
+            bottleneckCrit={bottleneckCrit}
+            loading={loading}
+          />
         : activeTab === "Strategy" ?
           <StrategyRoadmap
             strongestCrit={strongestCrit}
@@ -422,16 +326,7 @@ const PerformanceOverviewPage = ({ onBack }) => {
             activeTask={activeTask}
             examCount={examCount}
           />
-        :
-          <div className="bg-white rounded-[24px] p-20 flex items-center justify-center border border-gray-100 shadow-sm">
-             <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
-                   <MoreHorizontal className="text-gray-300" />
-                </div>
-                <h3 className="text-[18px] font-bold text-[#101828]">{activeTab} Section</h3>
-                <p className="text-gray-400 text-[14px]">This section is coming soon as part of your dynamic roadmap.</p>
-             </div>
-          </div>
+        : null
         }
       </div>
       </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, AlertTriangle, MinusCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ChevronRight, MinusCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 import { formatGoalGap, goalProgressPercent } from '../utils/goalProgress';
@@ -124,6 +124,7 @@ export default function PerformanceOverviewDashboard({
   uniqueTypes = 0,
   criterionCards = [],
   targetBand = null,
+  onOpenFixCards,
 }) {
   const changeColor = change == null ? '#101828' : changePositive ? '#00C9B1' : '#EF4444';
   const formattedChange = change == null ? '—' : `${changePositive && parseFloat(change) >= 0 ? '+' : ''}${change}`;
@@ -132,6 +133,7 @@ export default function PerformanceOverviewDashboard({
   const goalGap = targetBand != null ? formatGoalGap(latestBand, targetBand) : '—';
   const goalPct = targetBand != null ? goalProgressPercent(latestBand, targetBand) : 0;
   const reachedGoal = latestBand != null && targetBand != null && latestBand >= targetBand;
+  const topErrors = frequentErrors.slice(0, 3);
 
   return (
     <div className="bg-[#F4F6F8] rounded-2xl border border-[#E5E7EB] p-3 lg:p-4 overflow-hidden">
@@ -295,7 +297,7 @@ export default function PerformanceOverviewDashboard({
             </div>
           </div>
 
-          {/* Right: merged errors & impact */}
+          {/* Right: top errors teaser */}
           <div className="lg:col-span-4 flex flex-col min-h-0 min-w-0 overflow-hidden">
             <Panel title="Errors & Impact" className="flex-1 min-h-[280px]">
               <div className="p-3 flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -309,12 +311,22 @@ export default function PerformanceOverviewDashboard({
                   <span className="flex items-center gap-1"><MinusCircle size={10} className="text-[#667085]" /> Low</span>
                 </div>
                 <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-0.5">
-                  {frequentErrors.length === 0 ? (
+                  {topErrors.length === 0 ? (
                     <p className="text-[11px] text-gray-400 py-2">No error data yet.</p>
                   ) : (
-                    frequentErrors.map((item, i) => <ErrorImpactRow key={i} item={item} />)
+                    topErrors.map((item, i) => <ErrorImpactRow key={i} item={item} />)
                   )}
                 </div>
+                {typeof onOpenFixCards === 'function' && (
+                  <button
+                    type="button"
+                    onClick={onOpenFixCards}
+                    className="mt-2 shrink-0 w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-[11px] font-bold text-[#175CD3] bg-[#EFF8FF] border border-[#B2DDFF] hover:bg-[#D1E9FF] transition-colors"
+                  >
+                    See all Fix Cards
+                    <ChevronRight size={14} strokeWidth={2.5} />
+                  </button>
+                )}
               </div>
             </Panel>
           </div>
