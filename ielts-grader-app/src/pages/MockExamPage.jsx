@@ -76,7 +76,7 @@ const MockExamPage = () => {
         const report = await api.getReport(data.submissionId);
         navigate('/report', { state: { reportData: report } });
       } catch {
-        navigate('/performance');
+        navigate('/dashboard');
       }
     } else {
       navigate(isAuthenticated ? '/dashboard' : '/');

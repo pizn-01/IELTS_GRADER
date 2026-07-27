@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Lenis from 'lenis';
 import Layout from '../components/Layout';
 import SkillGrowth from '../components/SkillGrowth';
@@ -7,28 +7,89 @@ import RecentReports from '../components/RecentReports';
 import PracticeModal from '../components/PracticeModal';
 import { NotificationBanner } from '../components/Modals';
 import DashboardKpiStrip from './DashboardKpiStrip';
+import PerformanceOverviewDashboard, { ErrorsImpactPanel } from '../components/PerformanceOverviewDashboard';
+import PerformanceFixCards from '../components/PerformanceFixCards';
+import FourteenDaySprint from '../components/FourteenDaySprint';
+import StrategyRoadmap from '../components/StrategyRoadmap';
+import TargetBandPrompt from '../components/TargetBandPrompt';
 import { motion } from 'framer-motion';
-import { BarChart3, Play } from 'lucide-react';
+import { ChevronDown, Play, TrendingUp, TrendingDown } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TARGET_BAND } from '../constants/ieltsBands';
 import { dashboardGoalSubtitle } from '../utils/goalProgress';
 import LearningEditionModal from '../components/LearningEditionModal';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
+import { usePerformanceAnalytics } from '../hooks/usePerformanceAnalytics';
 import { trackEvent } from '../utils/trackEvent';
+
+const PERFORMANCE_TABS = ['Overview', 'Fix Cards', 'Strategy', '14-Day sprint'];
+const VALID_TASKS = ['Academic Task 1', 'Academic Task 2', 'General Task 1', 'General Task 2'];
+const TASK_OPTIONS = ['', ...VALID_TASKS];
+const TASK_LABELS = {
+  '': 'All Tasks',
+  'Academic Task 1': 'Academic Task 1',
+  'Academic Task 2': 'Academic Task 2',
+  'General Task 1': 'General Task 1',
+  'General Task 2': 'General Task 2',
+};
+
+function normalizeTab(raw) {
+  if (!raw) return 'Overview';
+  const decoded = decodeURIComponent(raw).trim();
+  const match = PERFORMANCE_TABS.find((t) => t.toLowerCase() === decoded.toLowerCase());
+  if (match) return match;
+  const aliases = {
+    'fix-cards': 'Fix Cards',
+    fixcards: 'Fix Cards',
+    strategy: 'Strategy',
+    sprint: '14-Day sprint',
+    '14-day-sprint': '14-Day sprint',
+    overview: 'Overview',
+  };
+  return aliases[decoded.toLowerCase()] || 'Overview';
+}
 
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [showModal, setShowModal] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [profileImage, setProfileImage] = useState(user?.profile_image_url || null);
+  const [showTargetPrompt, setShowTargetPrompt] = useState(false);
+  const [taskDropdownOpen, setTaskDropdownOpen] = useState(false);
 
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
   const [recentSubmissions, setRecentSubmissions] = useState(null);
   const [hasData, setHasData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const activeTab = normalizeTab(searchParams.get('tab'));
+  const taskFromUrl = searchParams.get('task') || '';
+  const activeTask = VALID_TASKS.includes(taskFromUrl) ? taskFromUrl : '';
+
+  const setActiveTab = useCallback((tab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (tab === 'Overview') next.delete('tab');
+      else next.set('tab', tab);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setActiveTask = useCallback((task) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (!task) next.delete('task');
+      else next.set('task', task);
+      // Reset to Overview when task filter changes (same as Performance page)
+      next.delete('tab');
+      return next;
+    }, { replace: true });
+    setTaskDropdownOpen(false);
+  }, [setSearchParams]);
 
   const {
     learningStatus,
@@ -39,9 +100,10 @@ function DashboardApp() {
     showModal: showLearningModal,
   } = useLearningEditionPromo();
 
+  const perf = usePerformanceAnalytics(activeTask);
+
   const fetchDashboardData = async () => {
     try {
-      // AuthContext already hydrated user — don't wait on another /auth/me here.
       const [metrics, submissionsRes] = await Promise.all([
         api.getDashboardAnalytics(),
         api.getSubmissions({ limit: 10 }),
@@ -50,9 +112,9 @@ function DashboardApp() {
       setAnalyticsSeries(metrics);
 
       const formatted = (submissionsRes.data || [])
-        .filter(s => s.status === 'graded')
+        .filter((s) => s.status === 'graded')
         .slice(0, 10)
-        .map(s => ({
+        .map((s) => ({
           id: s.id,
           type: s.exam_type,
           task: s.task_type,
@@ -63,7 +125,6 @@ function DashboardApp() {
 
       const hasGraded = formatted.length > 0 || (metrics?.chartData?.length || 0) > 0;
       setHasData(hasGraded);
-      // Show charts/tables immediately; learning promo can finish in the background.
       setIsLoading(false);
       refreshLearningStatus().catch(() => {});
     } catch (err) {
@@ -94,13 +155,12 @@ function DashboardApp() {
       const report = await api.getReport(submissionId);
       navigate('/report', { state: { reportData: report } });
     } catch {
-      navigate('/performance');
+      navigate('/dashboard');
     }
   };
 
   const handleNavigate = (target, label) => {
-    if (target === 'reports') { navigate('/performance'); }
-    else if (target === 'learning') { navigate('/learning'); }
+    if (target === 'learning') { navigate('/learning'); }
     else if (target === 'dashboard') { navigate('/dashboard'); }
     else if (target === 'subscription') { navigate('/subscription'); }
     else if (target === 'settings') { navigate('/settings', { state: { activeTab: label } }); }
@@ -114,7 +174,7 @@ function DashboardApp() {
   const [practiceStarting, setPracticeStarting] = useState(false);
 
   const latestBand = useMemo(() => {
-    const scores = analyticsSeries?.chartData?.map(d => d.overall).filter(v => v != null) ?? [];
+    const scores = analyticsSeries?.chartData?.map((d) => d.overall).filter((v) => v != null) ?? [];
     return scores.length ? parseFloat(scores[scores.length - 1]) : null;
   }, [analyticsSeries]);
 
@@ -130,10 +190,21 @@ function DashboardApp() {
   );
 
   const defaultChartTask = useMemo(() => {
+    if (activeTask) return activeTask;
     const recent = recentSubmissions?.[0];
     if (!recent?.type || !recent?.task) return 'Academic Task 2';
     return `${recent.type} ${recent.task}`;
-  }, [recentSubmissions]);
+  }, [recentSubmissions, activeTask]);
+
+  const bandForPrompt = latestBand ?? perf.latestBand;
+
+  // Target band prompt after first grade (same behavior as former Performance page)
+  useEffect(() => {
+    if (isLoading || perf.loading) return;
+    if (!user || user.target_band_confirmed === true) return;
+    if (bandForPrompt == null) return;
+    setShowTargetPrompt(true);
+  }, [isLoading, perf.loading, user, bandForPrompt]);
 
   const redirectOutOfCredits = () => {
     navigate('/analysis-ready', { state: { outOfCredits: true } });
@@ -143,7 +214,6 @@ function DashboardApp() {
     if (practiceStarting) return;
     setPracticeStarting(true);
     try {
-      // Always re-fetch — cached AuthContext credits can be stale after the free exam.
       const fresh = await api.getMe();
       updateUser({
         credits_remaining: fresh.credits_remaining,
@@ -161,7 +231,6 @@ function DashboardApp() {
       }
       setShowModal(true);
     } catch (err) {
-      // Fail closed: never open practice if we cannot verify credits.
       console.warn('Credit check failed:', err?.message);
       redirectOutOfCredits();
     } finally {
@@ -181,8 +250,23 @@ function DashboardApp() {
         <div className="relative overflow-hidden border-b border-[#E5E7EB]/60">
           <div className="absolute inset-0 pointer-events-none dashboard-header-wash" />
           <div className="absolute inset-0 pointer-events-none hero-atmosphere opacity-80" />
-          <div className="relative z-10 px-4 md:px-6 pt-4 md:pt-5 pb-4 md:pb-5">
+          <div className="relative z-10 px-4 md:px-6 pt-4 md:pt-5 pb-0">
             <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} credits={creditsRemaining} />
+
+            {!user?.target_band_confirmed && bandForPrompt != null && (
+              <div className="mb-4 bg-[#EFF8FF] border border-[#B2DDFF] rounded-[12px] px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-[13px] text-[#175CD3]">
+                  Set your target band to personalize your pathway and progress insights.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowTargetPrompt(true)}
+                  className="shrink-0 h-[36px] px-4 rounded-[10px] bg-[#175CD3] text-white text-[13px] font-semibold hover:bg-[#1349a8] transition-colors"
+                >
+                  Set target band
+                </button>
+              </div>
+            )}
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
               <motion.div
@@ -209,15 +293,6 @@ function DashboardApp() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate('/performance')}
-                  className="bg-white/90 backdrop-blur-sm text-[#2C3E50] border border-[#D0D5DD] w-full sm:w-auto px-4 h-[42px] rounded-[12px] text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-white transition-all shadow-sm"
-                >
-                  <BarChart3 size={16} />
-                  View Overall Performance
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   onClick={handleStartPractice}
                   disabled={practiceStarting}
                   className="bg-[#2C3E50] text-white w-full sm:w-auto px-5 h-[42px] rounded-[12px] text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
@@ -232,6 +307,7 @@ function DashboardApp() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
+              className="mb-4"
             >
               <DashboardKpiStrip
                 latestBand={latestBand}
@@ -242,31 +318,178 @@ function DashboardApp() {
                 learningFootnote={learningFootnote}
               />
             </motion.div>
+
+            {/* Performance tabs — prominent under KPI */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+              <div className="bg-white/90 backdrop-blur-sm rounded-t-[14px] border border-b-0 border-[#E5E7EB] px-2 md:px-3 shadow-[0_-2px_12px_rgba(26,31,54,0.04)] flex-1 min-w-0">
+                <div className="flex items-center gap-1 md:gap-2 overflow-x-auto no-scrollbar">
+                  {PERFORMANCE_TABS.map((tab) => {
+                    const isActive = activeTab === tab;
+                    return (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab)}
+                        className={`relative px-3.5 md:px-4 py-3.5 whitespace-nowrap shrink-0 transition-colors ${
+                          isActive ? 'text-[#101828]' : 'text-[#667085] hover:text-[#101828]'
+                        }`}
+                      >
+                        <span className={`text-[13px] md:text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                          {tab}
+                        </span>
+                        {isActive && (
+                          <motion.span
+                            layoutId="activeTabUnderlineDashboardPerformance"
+                            className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full bg-[#1A96F3]"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pb-2 sm:pb-3 shrink-0">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setTaskDropdownOpen((o) => !o)}
+                    className="flex items-center gap-1.5 h-[36px] px-3 rounded-[10px] bg-white/90 border border-[#D0D5DD] text-[12px] font-semibold text-[#101828] hover:bg-white transition-colors shadow-sm"
+                  >
+                    {TASK_LABELS[activeTask]}
+                    <ChevronDown size={14} className={`transition-transform ${taskDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {taskDropdownOpen && (
+                    <div className="absolute top-full right-0 mt-1.5 bg-white rounded-[12px] border border-gray-100 shadow-xl z-50 py-1 min-w-[180px]">
+                      {TASK_OPTIONS.map((opt) => (
+                        <button
+                          key={opt || 'all'}
+                          type="button"
+                          onClick={() => setActiveTask(opt)}
+                          className={`w-full text-left px-4 py-2.5 text-[13px] font-medium hover:bg-gray-50 transition-colors ${
+                            activeTask === opt ? 'text-[#1A96F3] font-bold' : 'text-[#101828]'
+                          }`}
+                        >
+                          {TASK_LABELS[opt]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="h-[36px] px-3.5 rounded-[10px] bg-[#2C3E50] text-white text-[12px] font-semibold hover:bg-[#1D2939] transition-colors shadow-sm"
+                >
+                  Export Report
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Branded workspace */}
-        <div className="px-4 md:px-6 py-4 md:py-5">
-          <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-              <div className="lg:col-span-7 min-w-0">
-                <SkillGrowth
-                  hasData={hasData}
-                  defaultTask={defaultChartTask}
-                  isLoading={isLoading}
-                  targetBand={targetBand}
-                  onStartPractice={handleStartPractice}
+        <div className="bg-[#F4F6F8] min-h-[40vh]">
+          <div className="px-4 md:px-6 py-4 md:py-5">
+            {activeTab === 'Overview' ? (
+              <div className="bg-[#F4F6F8] rounded-[20px] border border-[#E5E7EB]/80 p-3 md:p-4 space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+                  <div className="lg:col-span-7 min-w-0">
+                    <SkillGrowth
+                      hasData={hasData}
+                      defaultTask={defaultChartTask}
+                      isLoading={isLoading}
+                      targetBand={targetBand}
+                      onStartPractice={handleStartPractice}
+                    />
+                  </div>
+                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3">
+                    <div className="min-h-0 flex-1">
+                      <RecentReports
+                        hasData={hasData}
+                        dynamicReports={recentSubmissions}
+                        onOpenReport={handleOpenRecentReport}
+                        onStartPractice={handleStartPractice}
+                      />
+                    </div>
+                    <ErrorsImpactPanel
+                      frequentErrors={perf.frequentErrors}
+                      totalInstances={perf.totalInstances}
+                      uniqueTypes={perf.uniqueTypes}
+                      loading={perf.loading}
+                      onOpenFixCards={() => setActiveTab('Fix Cards')}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+
+                <PerformanceOverviewDashboard
+                  loading={perf.loading}
+                  firstBand={perf.firstBand}
+                  avgBand={perf.avgBand}
+                  bestBand={perf.bestBand}
+                  change={perf.bandChange}
+                  changePositive={perf.bandChange == null || parseFloat(perf.bandChange) >= 0}
+                  studyPeriod={perf.studyPeriod}
+                  trendLabel={perf.trendLabel}
+                  trendDetail={perf.trendDetail}
+                  topPriorityText={perf.topPriorityText}
+                  insightsPanel={{
+                    title: 'Strengths & Weaknesses',
+                    content: (
+                      <div className="space-y-2">
+                        <div className="p-2.5 bg-[#F4FCF9] rounded-lg border border-[#E6F8F3] flex items-start gap-2">
+                          <TrendingUp className="text-[#30C3A9] shrink-0 mt-0.5" size={14} strokeWidth={2.5} />
+                          <p className="text-[11px] leading-snug">
+                            <span className="font-bold text-[#30C3A9]">{perf.strongestCrit.name}:</span>{' '}
+                            <span className="font-bold text-[#101828]">
+                              {perf.strongestCrit.avg != null ? `currently ${perf.strongestCrit.avg.toFixed(1)}` : 'Complete exams to see data'}
+                            </span>
+                            {' '}(Keep this stable while you lift your weakest areas).
+                          </p>
+                        </div>
+                        <div className="p-2.5 bg-[#FFF7F7] rounded-lg border border-[#FEEDED] flex items-start gap-2">
+                          <TrendingDown className="text-[#EA4335] shrink-0 mt-0.5" size={14} strokeWidth={2.5} />
+                          <p className="text-[11px] leading-snug">
+                            <span className="font-bold text-[#EA4335]">{perf.bottleneckCrit.name}:</span>{' '}
+                            <span className="font-bold text-[#101828]">
+                              {perf.bottleneckCrit.avg != null ? `currently ${perf.bottleneckCrit.avg.toFixed(1)}` : 'Complete exams to see data'}
+                            </span>
+                            {' '}(This is your primary bottleneck, focus here).
+                          </p>
+                        </div>
+                      </div>
+                    ),
+                  }}
+                  criterionCards={perf.criterionCards}
                 />
               </div>
-              <div className="lg:col-span-5 min-w-0">
-                <RecentReports
-                  hasData={hasData}
-                  dynamicReports={recentSubmissions}
-                  onOpenReport={handleOpenRecentReport}
-                  onStartPractice={handleStartPractice}
-                />
-              </div>
-            </div>
+            ) : activeTab === 'Fix Cards' ? (
+              <PerformanceFixCards
+                frequentErrors={perf.frequentErrors}
+                bottleneckCrit={perf.bottleneckCrit}
+                loading={perf.loading}
+              />
+            ) : activeTab === 'Strategy' ? (
+              <StrategyRoadmap
+                strongestCrit={perf.strongestCrit}
+                bottleneckCrit={perf.bottleneckCrit}
+                frequentErrors={perf.frequentErrors}
+                examCount={perf.examCount}
+              />
+            ) : activeTab === '14-Day sprint' ? (
+              <FourteenDaySprint
+                loading={perf.loading}
+                userId={user?.id}
+                frequentErrors={perf.frequentErrors}
+                strongestCrit={perf.strongestCrit}
+                bottleneckCrit={perf.bottleneckCrit}
+                latestBand={perf.latestBand ?? latestBand}
+                targetBand={targetBand}
+                activeTask={activeTask}
+                examCount={perf.examCount}
+              />
+            ) : null}
           </div>
         </div>
 
@@ -277,6 +500,12 @@ function DashboardApp() {
           freeAccess={learningStatus?.freeAccess}
           onDismiss={dismissModal}
           onView={goToLearning}
+        />
+
+        <TargetBandPrompt
+          isOpen={showTargetPrompt}
+          onClose={() => setShowTargetPrompt(false)}
+          score={bandForPrompt != null ? parseFloat(bandForPrompt).toFixed(1) : null}
         />
 
         <PracticeModal
@@ -319,6 +548,7 @@ function DashboardApp() {
             } catch {} // non-critical
 
             fetchDashboardData();
+            perf.refresh();
             await refreshLearningStatus();
 
             if (reportData) {
@@ -328,10 +558,10 @@ function DashboardApp() {
                 const report = await api.getReport(submissionId);
                 navigate('/report', { state: { reportData: report } });
               } catch {
-                navigate('/performance');
+                navigate('/dashboard');
               }
             } else {
-              navigate('/performance');
+              navigate('/dashboard');
             }
           }}
         />

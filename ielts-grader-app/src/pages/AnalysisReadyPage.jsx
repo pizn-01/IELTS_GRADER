@@ -88,7 +88,7 @@ const AnalysisReadyPage = () => {
           if (err.message && err.message.toLowerCase().includes('credit')) {
             navigate('/analysis-ready', { state: { outOfCredits: true } });
           } else {
-            navigate('/performance');
+            navigate('/dashboard');
           }
           return;
         } finally {
@@ -96,7 +96,7 @@ const AnalysisReadyPage = () => {
         }
       } else {
         setGradingStatus('completed');
-        navigate('/performance');
+        navigate('/dashboard');
         return;
       }
     }
@@ -127,13 +127,13 @@ const AnalysisReadyPage = () => {
         } else if (status === 'failed' || attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           setGradingStatus('completed');
-          navigate('/performance');
+          navigate('/dashboard');
         }
       } catch {
         if (attempts >= maxAttempts) {
           clearInterval(pollRef.current);
           setGradingStatus('completed');
-          navigate('/performance');
+          navigate('/dashboard');
         }
       }
     }, 3000);

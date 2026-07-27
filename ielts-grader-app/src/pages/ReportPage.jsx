@@ -49,11 +49,11 @@ const ReportPage = () => {
   }, [reportData, refreshLearningStatus]);
 
   if (!reportData) {
-    return <Navigate to="/performance" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleLeaveReport = () => {
-    navigate('/performance');
+    navigate('/dashboard');
   };
 
   const redirectOutOfCredits = () => {
@@ -181,10 +181,10 @@ const ReportPage = () => {
               const report = await api.getReport(submissionId);
               navigate('/report', { state: { reportData: report } });
             } catch {
-              navigate('/performance');
+              navigate('/dashboard');
             }
           } else {
-            navigate('/performance');
+            navigate('/dashboard');
           }
         }}
       />

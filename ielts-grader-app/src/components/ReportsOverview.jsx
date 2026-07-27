@@ -241,7 +241,7 @@ const ReportsOverview = ({ onBack }) => {
               </div>
             </div>
             <button 
-              onClick={() => navigate(`/performance?task=${encodeURIComponent(activeTask)}`)}
+              onClick={() => navigate(`/dashboard?task=${encodeURIComponent(activeTask)}`)}
               className="w-full md:w-auto px-10 h-[48px] bg-[#2C3E50] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
             >
               View Performance

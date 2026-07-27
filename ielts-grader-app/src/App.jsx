@@ -45,7 +45,6 @@ import SubscriptionPage from './pages/SubscriptionPage';
 import MockExamPage from './pages/MockExamPage';
 import ReportPage from './pages/ReportPage';
 import AnalysisReadyPage from './pages/AnalysisReadyPage';
-import PerformanceOverviewPage from './pages/PerformanceOverviewPage';
 import PersonalizedLearningPage from './pages/PersonalizedLearningPage';
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -175,11 +174,13 @@ const LandingPage = () => (
   </>
 );
 
-// Legacy /reports URLs → overall performance page
-const ReportsRedirect = () => {
+// Legacy /reports and /performance URLs → Dashboard (Performance tabs live there)
+const PerformanceRedirect = () => {
   const [searchParams] = useSearchParams();
-  const query = searchParams.toString();
-  return <Navigate to={query ? `/performance?${query}` : '/performance'} replace />;
+  const next = new URLSearchParams(searchParams);
+  // Preserve task; map legacy params into dashboard tab query when present
+  const query = next.toString();
+  return <Navigate to={query ? `/dashboard?${query}` : '/dashboard'} replace />;
 };
 
 // ── Home Route — redirects authenticated users to dashboard ───────────────────
@@ -204,7 +205,6 @@ function App() {
   // Shared navigation handler for protected routes
   const handleProtectedNavigate = (target, label) => {
     if (target === 'dashboard') navigate('/dashboard');
-    else if (target === 'reports') navigate('/performance');
     else if (target === 'learning') navigate('/learning');
     else if (target === 'subscription') navigate('/subscription');
     else if (target === 'settings') navigate('/settings', { state: { activeTab: label } });
@@ -307,7 +307,7 @@ function App() {
         <Route path="/report" element={
           <ProtectedRoute>
             <Layout 
-              currentView="reports" 
+              currentView="dashboard" 
               onNavigate={handleProtectedNavigate} 
               profileImage={profileImage}
             >
@@ -319,18 +319,10 @@ function App() {
           <ProtectedRoute><AnalysisReadyPage /></ProtectedRoute>
         } />
         <Route path="/reports" element={
-          <ProtectedRoute><ReportsRedirect /></ProtectedRoute>
+          <ProtectedRoute><PerformanceRedirect /></ProtectedRoute>
         } />
         <Route path="/performance" element={
-          <ProtectedRoute>
-            <Layout 
-              currentView="reports" 
-              onNavigate={handleProtectedNavigate} 
-              profileImage={profileImage}
-            >
-              <PerformanceOverviewPage onBack={() => navigate('/dashboard')} />
-            </Layout>
-          </ProtectedRoute>
+          <ProtectedRoute><PerformanceRedirect /></ProtectedRoute>
         } />
         <Route path="/learning" element={
           <ProtectedRoute>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BarChart3, BookOpen } from 'lucide-react';
+import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLearningNavBadge } from '../hooks/useLearningNavBadge';
 import BrandLogo from './BrandLogo';
@@ -35,7 +35,6 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
 
   const navItems = [
     { label: 'Dashboard', id: 'dashboard' },
-    { label: 'Performance', id: 'reports' },
     { label: 'Personalized Learning', id: 'learning' },
     { label: 'Your Subscription', id: 'subscription' },
     { label: 'Settings', id: 'settings' },
@@ -256,7 +255,6 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
             <div className="px-3 pb-2">
               {[
                 { label: 'Dashboard',    icon: <LayoutDashboard size={20} />, id: 'dashboard' },
-                { label: 'Performance',  icon: <BarChart3 size={20} />,       id: 'reports' },
                 { label: 'Learning',     icon: <BookOpen size={20} />,        id: 'learning' },
                 { label: 'Profile',      icon: <User size={20} />,            id: 'settings' },
                 { label: 'Subscription', icon: <CircleDollarSign size={20} />,id: 'subscription' },

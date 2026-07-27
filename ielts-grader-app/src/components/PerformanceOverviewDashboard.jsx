@@ -1,16 +1,5 @@
 import React from 'react';
 import { AlertCircle, AlertTriangle, ChevronRight, MinusCircle } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-
-import { formatGoalGap, goalProgressPercent } from '../utils/goalProgress';
-
-const CHART_LINES = [
-  { label: 'Overall Band', dataKey: 'overall', color: '#EA4335' },
-  { label: 'Task Response', dataKey: 'response', color: '#F59E0B' },
-  { label: 'Coherence', dataKey: 'coherence', color: '#00C9B1' },
-  { label: 'Vocabulary', dataKey: 'vocabulary', color: '#8B62F3' },
-  { label: 'Grammar', dataKey: 'grammar', color: '#1A96F3' },
-];
 
 function Panel({ title, children, className = '' }) {
   return (
@@ -90,247 +79,132 @@ function ErrorImpactRow({ item }) {
   );
 }
 
-function normalizeChartData(chartData) {
-  return chartData.map((d, i) => {
-    const examNum = i + 1;
-    const legacyWeek = typeof d.name === 'string' && /^W\d+$/i.test(d.name);
-    return {
-      ...d,
-      name: legacyWeek || !d.name ? `${examNum}` : String(d.name).replace(/^W(\d+)$/i, '$1'),
-      examLabel: d.examLabel || `Exam ${examNum}`,
-    };
-  });
+/** Standalone Errors & Impact panel for Dashboard Overview right column. */
+export function ErrorsImpactPanel({
+  frequentErrors = [],
+  totalInstances = 0,
+  uniqueTypes = 0,
+  loading = false,
+  onOpenFixCards,
+  className = '',
+}) {
+  const topErrors = frequentErrors.slice(0, 3);
+
+  return (
+    <Panel title="Errors & Impact" className={`min-h-[200px] ${className}`}>
+      <div className="p-3 flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="bg-[#F9FAFB] rounded-lg px-2 py-1.5 flex items-center justify-between mb-2 shrink-0 text-[10px] font-semibold text-[#475467]">
+          <span>Total: <span className="text-[#101828]">{loading ? '…' : totalInstances}</span></span>
+          <span>Types: <span className="text-[#101828]">{loading ? '…' : uniqueTypes}</span></span>
+        </div>
+        <div className="flex items-center gap-3 mb-2 shrink-0 text-[9px] font-semibold text-[#667085]">
+          <span className="flex items-center gap-1"><AlertCircle size={10} className="text-[#D92D20]" /> High</span>
+          <span className="flex items-center gap-1"><AlertTriangle size={10} className="text-[#DC6803]" /> Medium</span>
+          <span className="flex items-center gap-1"><MinusCircle size={10} className="text-[#667085]" /> Low</span>
+        </div>
+        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-0.5">
+          {loading ? (
+            <div className="space-y-2 py-1">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-7 bg-[#F2F4F7] rounded animate-pulse" />
+              ))}
+            </div>
+          ) : topErrors.length === 0 ? (
+            <p className="text-[11px] text-gray-400 py-2">No error data yet.</p>
+          ) : (
+            topErrors.map((item, i) => <ErrorImpactRow key={i} item={item} />)
+          )}
+        </div>
+        {typeof onOpenFixCards === 'function' && (
+          <button
+            type="button"
+            onClick={onOpenFixCards}
+            className="mt-2 shrink-0 w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-[11px] font-bold text-[#175CD3] bg-[#EFF8FF] border border-[#B2DDFF] hover:bg-[#D1E9FF] transition-colors"
+          >
+            See all Fix Cards
+            <ChevronRight size={14} strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
+    </Panel>
+  );
 }
 
+/**
+ * Unique Overview insights (no duplicate Latest/Target/Exams KPI, goal bar, or Skill Growth chart).
+ * Errors & Impact lives in ErrorsImpactPanel on the Dashboard right column.
+ */
 export default function PerformanceOverviewDashboard({
   loading = false,
-  latestBand,
   firstBand,
   avgBand,
   bestBand,
   change,
   changePositive = true,
-  examCount,
   studyPeriod,
   trendLabel,
   trendDetail,
   topPriorityText,
   insightsPanel,
-  chartData = [],
-  chartYDomain = [0, 9],
-  chartTicks,
-  frequentErrors = [],
-  totalInstances = 0,
-  uniqueTypes = 0,
   criterionCards = [],
-  targetBand = null,
-  onOpenFixCards,
 }) {
   const changeColor = change == null ? '#101828' : changePositive ? '#00C9B1' : '#EF4444';
   const formattedChange = change == null ? '—' : `${changePositive && parseFloat(change) >= 0 ? '+' : ''}${change}`;
-  const series = normalizeChartData(chartData);
-  const tickInterval = series.length > 12 ? Math.ceil(series.length / 8) - 1 : 0;
-  const goalGap = targetBand != null ? formatGoalGap(latestBand, targetBand) : '—';
-  const goalPct = targetBand != null ? goalProgressPercent(latestBand, targetBand) : 0;
-  const reachedGoal = latestBand != null && targetBand != null && latestBand >= targetBand;
-  const topErrors = frequentErrors.slice(0, 3);
 
   return (
-    <div className="bg-[#F4F6F8] rounded-2xl border border-[#E5E7EB] p-3 lg:p-4 overflow-hidden">
-      <div className="flex flex-col gap-3 min-w-0">
-        {/* KPI strip */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] flex items-center divide-x divide-[#E5E7EB] h-[68px] shrink-0 overflow-x-auto">
-          <div className="flex-1 min-w-[100px] pl-4 flex flex-col justify-center">
-            <span className="text-[28px] font-semibold text-[#101828] leading-none">{loading ? '…' : latestBand ?? '—'}</span>
-            <span className="text-[11px] text-[#667085] mt-1 font-medium">Latest Band</span>
+    <div className="flex flex-col gap-3 min-w-0">
+      {/* First / Avg / Best / Change — Latest lives in Dashboard KPI */}
+      <div className="bg-white rounded-xl border border-[#E5E7EB] flex items-center divide-x divide-[#E5E7EB] h-[60px] shrink-0 overflow-x-auto">
+        {[
+          { label: 'First', value: firstBand },
+          { label: 'Average', value: avgBand },
+          { label: 'Best', value: bestBand },
+          { label: 'Change', value: formattedChange, color: changeColor },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="flex-1 min-w-[72px] flex flex-col items-center justify-center px-2">
+            <span className="text-[10px] text-[#667085] font-medium">{label}</span>
+            <span className="text-[18px] font-semibold leading-tight" style={{ color: color || '#101828' }}>
+              {loading ? '…' : value ?? '—'}
+            </span>
           </div>
-          {[
-            { label: 'First', value: firstBand },
-            { label: 'Average', value: avgBand },
-            { label: 'Best', value: bestBand },
-            { label: 'Change', value: formattedChange, color: changeColor },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="flex-1 min-w-[72px] flex flex-col items-center justify-center px-2">
-              <span className="text-[10px] text-[#667085] font-medium">{label}</span>
-              <span className="text-[18px] font-semibold leading-tight" style={{ color: color || '#101828' }}>
-                {loading ? '…' : value ?? '—'}
-              </span>
-            </div>
-          ))}
-        </div>
+        ))}
+      </div>
 
-        {targetBand != null && (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] px-4 py-3 shrink-0">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Your Goal</p>
-                <p className="text-[14px] font-semibold text-[#101828] mt-0.5">
-                  Target Band {targetBand.toFixed(1)}
-                  {latestBand != null && (
-                    <span className="text-[#667085] font-medium"> · Latest {Number(latestBand).toFixed(1)}</span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-4 shrink-0">
-                <div className="text-right">
-                  <p className="text-[10px] text-[#667085] font-medium">To goal</p>
-                  <p className={`text-[16px] font-bold ${reachedGoal ? 'text-[#00C9B1]' : 'text-[#101828]'}`}>{loading ? '…' : goalGap}</p>
-                </div>
-                <div className="w-[120px]">
-                  <div className="h-2 bg-[#F2F4F7] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${reachedGoal ? 'bg-[#00C9B1]' : 'bg-[#1A96F3]'}`}
-                      style={{ width: `${loading ? 0 : goalPct}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-[#667085] mt-1 text-right">{loading ? '…' : `${goalPct}%`}</p>
-                </div>
-              </div>
+      {/* Insight row — Study Period only (Exams Done is in Dashboard KPI) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 shrink-0 min-w-0">
+        <Panel title="Activity Profile">
+          <div className="p-3 flex-1 min-w-0">
+            <p className="text-[10px] text-[#667085] font-medium mb-0.5">Study Period</p>
+            <p className="text-[13px] font-bold text-[#101828] leading-snug break-words">
+              {loading ? '…' : studyPeriod}
+            </p>
+          </div>
+        </Panel>
+
+        <Panel title="Executive Summary">
+          <div className="p-3 space-y-2 flex-1 overflow-y-auto min-h-0 custom-scrollbar">
+            <div>
+              <p className="text-[12px] font-bold text-[#101828]">{trendLabel}</p>
+              <p className="text-[11px] text-[#475467] leading-snug mt-0.5">{trendDetail}</p>
+            </div>
+            <div>
+              <p className="text-[12px] font-bold text-[#101828]">Top Priority Fixes</p>
+              <p className="text-[11px] text-[#475467] leading-snug mt-0.5">{topPriorityText}</p>
             </div>
           </div>
-        )}
+        </Panel>
 
-        {/* Insight row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 shrink-0 min-w-0">
-          <Panel title="Activity Profile">
-            <div className="p-3 grid grid-cols-2 gap-3 flex-1 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] text-[#667085] font-medium mb-0.5">Exams Completed</p>
-                <p className="text-[20px] font-bold text-[#101828] leading-none">{loading ? '…' : examCount}</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-[#667085] font-medium mb-0.5">Study Period</p>
-                <p className="text-[12px] font-bold text-[#101828] leading-snug break-words">{loading ? '…' : studyPeriod}</p>
-              </div>
-            </div>
-          </Panel>
-
-          <Panel title="Executive Summary">
-            <div className="p-3 space-y-2 flex-1 overflow-y-auto min-h-0 custom-scrollbar">
-              <div>
-                <p className="text-[12px] font-bold text-[#101828]">{trendLabel}</p>
-                <p className="text-[11px] text-[#475467] leading-snug mt-0.5">{trendDetail}</p>
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-[#101828]">Top Priority Fixes</p>
-                <p className="text-[11px] text-[#475467] leading-snug mt-0.5">{topPriorityText}</p>
-              </div>
-            </div>
-          </Panel>
-
-          <Panel title={insightsPanel?.title || 'Insights'}>
-            <div className="p-3 flex-1 overflow-y-auto min-h-0 custom-scrollbar">
-              {insightsPanel?.content}
-            </div>
-          </Panel>
-        </div>
-
-        {/* Main analytics body */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0 min-w-0 overflow-hidden">
-          {/* Left: chart + criterion grid */}
-          <div className="lg:col-span-8 flex flex-col gap-3 min-h-0 min-w-0 overflow-hidden">
-            <Panel className="flex-1 min-h-[180px]">
-              <div className="px-3 pt-2 pb-1 flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <h3 className="text-[13px] font-bold text-[#101828]">Skill Growth</h3>
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  {CHART_LINES.map((line) => (
-                    <div key={line.dataKey} className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: line.color }} />
-                      <span className="text-[9px] font-bold text-[#667085]">{line.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-1 min-h-[140px] px-1 pb-2 min-w-0">
-                {loading ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-[#1A96F3] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={series} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#667085', fontSize: 10, fontWeight: 600 }}
-                        dy={4}
-                        interval={tickInterval}
-                        label={{ value: 'Exam #', position: 'insideBottom', offset: -2, style: { fill: '#98A2B3', fontSize: 9, fontWeight: 600 } }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#667085', fontSize: 10, fontWeight: 600 }}
-                        domain={chartYDomain}
-                        ticks={chartTicks}
-                        tickFormatter={(v) => v.toFixed(1)}
-                      />
-                      <Tooltip
-                        contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)', padding: '8px', fontSize: '11px' }}
-                        itemStyle={{ fontSize: '11px', fontWeight: 700 }}
-                        labelFormatter={(_, payload) => payload?.[0]?.payload?.examLabel || ''}
-                      />
-                      {targetBand != null && (
-                        <ReferenceLine
-                          y={targetBand}
-                          stroke="#2C3E50"
-                          strokeDasharray="5 5"
-                          strokeWidth={1.5}
-                          label={{ value: `Goal ${targetBand.toFixed(1)}`, position: 'insideTopRight', fill: '#2C3E50', fontSize: 10, fontWeight: 700 }}
-                        />
-                      )}
-                      {CHART_LINES.map((line) => (
-                        <Line key={line.dataKey} type="linear" dataKey={line.dataKey} stroke={line.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                      ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </Panel>
-
-            <div className="grid grid-cols-2 gap-2 shrink-0 min-w-0">
-              {[criterionCards[0], criterionCards[2], criterionCards[1], criterionCards[3]].filter(Boolean).map((item) => (
-                <CriterionMini key={item.label} item={item} />
-              ))}
-            </div>
+        <Panel title={insightsPanel?.title || 'Insights'}>
+          <div className="p-3 flex-1 overflow-y-auto min-h-0 custom-scrollbar">
+            {insightsPanel?.content}
           </div>
+        </Panel>
+      </div>
 
-          {/* Right: top errors teaser */}
-          <div className="lg:col-span-4 flex flex-col min-h-0 min-w-0 overflow-hidden">
-            <Panel title="Errors & Impact" className="flex-1 min-h-[280px]">
-              <div className="p-3 flex flex-col flex-1 min-h-0 overflow-hidden">
-                <div className="bg-[#F9FAFB] rounded-lg px-2 py-1.5 flex items-center justify-between mb-2 shrink-0 text-[10px] font-semibold text-[#475467]">
-                  <span>Total: <span className="text-[#101828]">{totalInstances}</span></span>
-                  <span>Types: <span className="text-[#101828]">{uniqueTypes}</span></span>
-                </div>
-                <div className="flex items-center gap-3 mb-2 shrink-0 text-[9px] font-semibold text-[#667085]">
-                  <span className="flex items-center gap-1"><AlertCircle size={10} className="text-[#D92D20]" /> High</span>
-                  <span className="flex items-center gap-1"><AlertTriangle size={10} className="text-[#DC6803]" /> Medium</span>
-                  <span className="flex items-center gap-1"><MinusCircle size={10} className="text-[#667085]" /> Low</span>
-                </div>
-                <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-0.5">
-                  {topErrors.length === 0 ? (
-                    <p className="text-[11px] text-gray-400 py-2">No error data yet.</p>
-                  ) : (
-                    topErrors.map((item, i) => <ErrorImpactRow key={i} item={item} />)
-                  )}
-                </div>
-                {typeof onOpenFixCards === 'function' && (
-                  <button
-                    type="button"
-                    onClick={onOpenFixCards}
-                    className="mt-2 shrink-0 w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-[11px] font-bold text-[#175CD3] bg-[#EFF8FF] border border-[#B2DDFF] hover:bg-[#D1E9FF] transition-colors"
-                  >
-                    See all Fix Cards
-                    <ChevronRight size={14} strokeWidth={2.5} />
-                  </button>
-                )}
-              </div>
-            </Panel>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 shrink-0 min-w-0">
+        {[criterionCards[0], criterionCards[2], criterionCards[1], criterionCards[3]].filter(Boolean).map((item) => (
+          <CriterionMini key={item.label} item={item} />
+        ))}
       </div>
     </div>
   );
