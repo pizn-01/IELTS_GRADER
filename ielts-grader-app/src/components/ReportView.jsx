@@ -18,7 +18,7 @@ function resolveTaskVariant(examType, taskType) {
 }
 
 function getTabsForVariant(variant) {
-  const base = ['Overview', 'Error Analysis', 'Dual Assessment', 'Model Answer', 'Vocabulary', 'Grammar'];
+  const base = ['Overview', 'Error Analysis', 'Model Answer', 'Vocabulary', 'Grammar'];
   if (variant === 'task2') return [...base, 'Argumentation', 'Flow & Logic'];
   if (variant === 'task1-report') return [...base, 'Data Structure', 'Flow & Logic'];
   if (variant === 'task1-letter') return [...base, 'Structure', 'Flow & Logic'];
@@ -39,7 +39,6 @@ function isFirstFreeReportDiscoveryEligible(user) {
 
 const TAB_DISCOVERY_BLURBS = {
   'Error Analysis': 'See every correction with severity and fixes',
-  'Dual Assessment': 'Compare how two examiners scored your essay',
   'Model Answer': 'Read a stronger band model for this task',
   'Vocabulary': 'Upgrade word choice with targeted suggestions',
   'Grammar': 'Fix patterns that cost you band points',
@@ -228,7 +227,6 @@ const ReportView = ({
   const [expandedSections, setExpandedSections] = useState({
     taskResponse: true,
     errorAnalysis: true,
-    dualAssessment: [0, 1], // Indices of expanded sections
     vocabulary: [0], // Indices of expanded sections
     trendVerbs: true,
     introAnalysis: true,
@@ -710,56 +708,6 @@ const ReportView = ({
                   </div>
                 )}
 
-                <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
-                  <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#F2F4F7]">
-                    <h3 className="text-[15px] font-bold text-[#101828]">Scoring Details</h3>
-                    <p className="text-[12px] text-[#667085] mt-0.5">Base score and penalty breakdown</p>
-                  </div>
-                  <div className="overflow-x-auto">
-                  <div className="p-3 md:p-5 space-y-3 md:space-y-4 min-w-[480px]">
-                    <div className="bg-[#F3F4F6] rounded-[12px] px-3 md:px-6 py-3.5 grid grid-cols-[2.2fr,1.1fr,repeat(4,1fr)] text-[13px] font-semibold">
-                      <div className="text-left text-[#101828]">Criterion</div>
-                      <div className="text-center text-[#101828]">Base</div>
-                      <div className="text-center text-[#EF4444]">Major</div>
-                      <div className="text-center text-[#F59E0B]">High</div>
-                      <div className="text-center text-[#3B82F6]">Med</div>
-                      <div className="text-center text-[#101828]">Low</div>
-                    </div>
-                    <div className="divide-y divide-gray-100">
-                      {(() => {
-                        const errs = data?.errors || [];
-                        const fmtCount = (n) => n > 0 ? n : '-';
-                        return [
-                          { name: "Task Response", band: data?.response_band, key: "Task Response" },
-                          { name: "Coherence & Cohesion", band: data?.coherence_band, key: "Coherence & Cohesion" },
-                          { name: "Lexical Resource", band: data?.vocabulary_band, key: "Lexical Resource" },
-                          { name: "Grammatical Range & Accuracy", band: data?.grammar_band, key: "Grammatical Range & Accuracy" },
-                        ].map((row, i) => {
-                          const b = row.band != null ? parseFloat(row.band) : null;
-                          const base = b != null ? b.toFixed(1) : '—';
-                          const color = b == null ? '#9CA3AF' : b >= 7 ? '#10B981' : b >= 5.5 ? '#F59E0B' : '#EF4444';
-                          const critErrs = errs.filter(e => e.criteria === row.key);
-                          const major = fmtCount(critErrs.filter(e => e.severity === 'Major').length);
-                          const high  = fmtCount(critErrs.filter(e => e.severity === 'High').length);
-                          const med   = fmtCount(critErrs.filter(e => e.severity === 'Medium').length);
-                          const low   = fmtCount(critErrs.filter(e => e.severity === 'Low').length);
-                          return (
-                            <div key={i} className="px-3 md:px-6 py-3.5 grid grid-cols-[2.2fr,1.1fr,repeat(4,1fr)] items-center text-[15px] hover:bg-gray-50 transition-colors">
-                              <div className="text-[#101828] font-semibold whitespace-nowrap text-[14px] md:text-[15px]">{row.name}</div>
-                              <div className="text-center font-bold tabular-nums text-[16px] md:text-[17px]" style={{ color }}>{base}</div>
-                              <div className={`text-center font-bold tabular-nums ${major === '-' ? 'text-[#D0D5DD]' : 'text-[#EF4444]'}`}>{major}</div>
-                              <div className={`text-center font-bold tabular-nums ${high === '-' ? 'text-[#D0D5DD]' : 'text-[#F59E0B]'}`}>{high}</div>
-                              <div className={`text-center font-bold tabular-nums ${med === '-' ? 'text-[#D0D5DD]' : 'text-[#3B82F6]'}`}>{med}</div>
-                              <div className={`text-center font-bold tabular-nums ${low === '-' ? 'text-[#D0D5DD]' : 'text-[#101828]'}`}>{low}</div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  </div>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
                     <div className="px-4 md:px-5 py-3.5 border-b border-[#F2F4F7]">
@@ -1042,106 +990,7 @@ const ReportView = ({
             </div>
           </div>
           );
-        })() : activeTab === "Dual Assessment" ? (() => {
-          const rawOutput = data?.raw_grader_output || {};
-          const primaryData = rawOutput.primary || {};
-          const secondaryBands = rawOutput.secondary_bands || null;
-          const subCategoryScores = primaryData.sub_category_scores || {};
-
-          const criteriaConfig = [
-            { title: "Task Response",                key: "Task Response",                primaryBand: data?.response_band,  secBand: secondaryBands?.response_band },
-            { title: "Coherence & Cohesion",         key: "Coherence & Cohesion",         primaryBand: data?.coherence_band, secBand: secondaryBands?.coherence_band },
-            { title: "Lexical Resource",             key: "Lexical Resource",             primaryBand: data?.vocabulary_band,secBand: secondaryBands?.vocabulary_band },
-            { title: "Grammatical Range & Accuracy", key: "Grammatical Range & Accuracy", primaryBand: data?.grammar_band,   secBand: secondaryBands?.grammar_band },
-          ];
-
-          const bandColor = (b) => b >= 7 ? "text-[#30C3A9]" : b >= 5.5 ? "text-[#F59E0B]" : "text-[#EF4444]";
-          const fmt = (v) => v != null ? parseFloat(v).toFixed(1) : '—';
-          const avg = (a, b) => (a != null && b != null) ? ((parseFloat(a) + parseFloat(b)) / 2).toFixed(1) : fmt(a ?? b);
-
-          return (
-          <div className="space-y-4">
-            {criteriaConfig.map((crit, sIdx) => {
-              const pb = crit.primaryBand != null ? parseFloat(crit.primaryBand) : null;
-              const sb = crit.secBand != null ? parseFloat(crit.secBand) : null;
-              const overallBand = pb != null ? pb : sb;
-              const subRows = subCategoryScores[crit.key] || [];
-              return (
-              <div key={sIdx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-4 md:px-8 py-4 md:py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('dualAssessment', sIdx)}>
-                  <div className="flex items-center gap-4">
-                    <span className={`text-[22px] font-black ${overallBand != null ? bandColor(overallBand) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif", minWidth: 44 }}>
-                      {fmt(overallBand)}
-                    </span>
-                    <h3 className="text-[15px] font-bold text-[#101828]">{crit.title}</h3>
-                  </div>
-                  <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${expandedSections.dualAssessment.includes(sIdx) ? "rotate-180" : ""}`} />
-                </div>
-
-                {expandedSections.dualAssessment.includes(sIdx) && (
-                  <div className="px-4 md:px-8 pb-4 md:pb-6 pt-4 border-t border-[#E5E7EB] animate-in fade-in slide-in-from-top-2 duration-200 space-y-6">
-
-                    {/* Dual model score row */}
-                    <div className="flex flex-wrap items-center gap-4 md:gap-6 bg-[#F9FAFB] rounded-[10px] px-4 md:px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">gpt-4o-mini</span>
-                        <span className={`text-[20px] font-black ${pb != null ? bandColor(pb) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{fmt(pb)}</span>
-                      </div>
-                      <div className="w-px h-8 bg-[#E5E7EB]"></div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">gpt-4o</span>
-                        <span className={`text-[20px] font-black ${sb != null ? bandColor(sb) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{fmt(sb)}</span>
-                      </div>
-                      {sb != null && pb != null && (
-                        <>
-                          <div className="w-px h-8 bg-[#E5E7EB]"></div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Average</span>
-                            <span className={`text-[20px] font-black ${bandColor(parseFloat(avg(pb, sb)))}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{avg(pb, sb)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Sub-category scores table */}
-                    {subRows.length > 0 ? (
-                      <div className="overflow-x-auto border border-[#E5E7EB] rounded-[12px]">
-                        <table className="w-full text-left">
-                          <thead>
-                            <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Sub Category</th>
-                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Band</th>
-                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Strength</th>
-                              <th className="px-5 py-3.5 text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Weakness</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#F2F4F7]">
-                            {subRows.map((row, rIdx) => {
-                              const rb = row.band != null ? parseFloat(row.band) : null;
-                              return (
-                                <tr key={rIdx} className="hover:bg-gray-50/50 transition-colors">
-                                  <td className="px-5 py-4 text-[13px] font-semibold text-[#101828]">{row.name}</td>
-                                  <td className={`px-5 py-4 text-[14px] font-black ${rb != null ? bandColor(rb) : 'text-gray-300'}`} style={{ fontFamily: "'Nunito', sans-serif" }}>{fmt(rb)}</td>
-                                  <td className="px-5 py-4 text-[13px] text-[#374151] leading-snug">{row.strength}</td>
-                                  <td className="px-5 py-4 text-[13px] text-[#374151] leading-snug">{row.weakness}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-[13px] text-gray-400 text-center py-4">Sub-category data will appear on your next graded submission.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-              );
-            })}
-          </div>
-          );
-        })()
-        : activeTab === "Model Answer" ? (() => {
+        })() : activeTab === "Model Answer" ? (() => {
           const ma = data?.model_answer;
           if (!ma) return (
             <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
