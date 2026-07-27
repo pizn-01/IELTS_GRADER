@@ -15,7 +15,7 @@ const LEGEND_ITEMS = [
 ];
 
 const cardClass =
-  'bg-white/95 backdrop-blur-sm rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden flex flex-col h-full';
+  'bg-white/95 backdrop-blur-sm rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden flex flex-col h-auto';
 
 const EmptyChartState = ({ title, description, onStartPractice }) => (
   <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-6 px-4">
