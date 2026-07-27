@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut, BookOpen, SpellCheck, Lightbulb, ListChecks } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import TargetBandPrompt from './TargetBandPrompt';
@@ -224,30 +224,19 @@ const ReportView = ({
   const [activeTab, setActiveTab] = useState("Overview");
   const [discoveryVisible, setDiscoveryVisible] = useState(false);
   const discoveryStarted = useRef(false);
-  const [expandedSections, setExpandedSections] = useState({
-    taskResponse: true,
-    errorAnalysis: true,
-    vocabulary: [0], // Indices of expanded sections
-    trendVerbs: true,
-    introAnalysis: true,
-    dataCoverageMap: true,
-    flowParagraph: true,
-    logicalIssues: true,
-    paragraphUnity: false,
-    sentenceFlow: false,
-    cohesiveDevices: false
-  });
+  const [expandedSections, setExpandedSections] = useState({});
+
+  const isExpanded = (key) => expandedSections[key] !== false;
 
   const toggleSection = (section, index = null) => {
     setExpandedSections(prev => {
       if (index === null) {
-        return { ...prev, [section]: !prev[section] };
+        const currentlyOpen = prev[section] !== false;
+        return { ...prev, [section]: !currentlyOpen };
       }
-      const current = prev[section] || [];
-      const next = current.includes(index)
-        ? current.filter(i => i !== index)
-        : [...current, index];
-      return { ...prev, [section]: next };
+      const key = `${section}_${index}`;
+      const currentlyOpen = prev[key] !== false;
+      return { ...prev, [key]: !currentlyOpen };
     });
   };
 
@@ -758,7 +747,7 @@ const ReportView = ({
                     return sections.map((section, idx) => {
                       const bandVal = section.band != null ? parseFloat(section.band) : null;
                       const bandStr = bandVal != null ? bandVal.toFixed(1) : '—';
-                      const isExpanded = expandedSections[section.id];
+                      const isExpandedSection = isExpanded(section.id);
                       const subRows = subCategoryScores[section.key] || [];
                       // Fallback for older reports graded before sub_category_scores
                       // existed: show raw error instances instead of an empty state.
@@ -773,9 +762,9 @@ const ReportView = ({
                               <span className="text-[14px] md:text-[16px] font-bold text-[#101828]">{section.title}</span>
                               <span className="inline-flex items-center justify-center bg-[#E6FFFA] text-[#00C9B1] border border-[#B2F5EA] text-[11px] md:text-[12px] font-bold px-3 md:px-4 py-1 md:py-1.5 rounded-full uppercase leading-none shrink-0">Band {bandStr}</span>
                             </div>
-                            <ChevronDown size={18} className={`text-gray-400 transition-transform duration-300 shrink-0 ${isExpanded ? "rotate-180" : ""}`} />
+                            <ChevronDown size={18} className={`text-gray-400 transition-transform duration-300 shrink-0 ${isExpandedSection ? "rotate-180" : ""}`} />
                           </div>
-                          {isExpanded && (
+                          {isExpandedSection && (
                             <div className="border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
                               {subRows.length > 0 ? subRows.map((row, i) => {
                                 const rb = row.band != null ? parseFloat(row.band) : null;
@@ -1048,39 +1037,58 @@ const ReportView = ({
           if (!va || !va.categories?.length) return (
             <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
               <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
+                <div className="w-16 h-16 bg-[#F5F3FF] rounded-full flex items-center justify-center mx-auto border border-[#DDD6FE]">
+                  <BookOpen className="text-[#7C3AED]" size={26} />
+                </div>
                 <h3 className="text-[18px] font-bold text-[#101828]">Vocabulary Analysis</h3>
                 <p className="text-gray-400 text-[14px]">Vocabulary analysis is being generated. Please check back shortly.</p>
               </div>
             </div>
           );
           return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {va.categories.map((cat, catIdx) => {
-              const sectionKey = `vocab_${catIdx}`;
-              const isOpen = expandedSections.vocabulary?.includes(catIdx) ?? catIdx === 0;
+              const isOpen = isExpanded(`vocabulary_${catIdx}`);
               return (
-              <div key={catIdx} className="bg-white rounded-[16px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-                <div className="px-4 md:px-10 py-4 md:py-6 border-b border-[#E5E7EB] flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors" onClick={() => toggleSection('vocabulary', catIdx)}>
-                  <div>
-                    <h3 className="text-[16px] font-bold text-[#101828]">{cat.name}</h3>
-                    {cat.description && <p className="text-[14px] text-[#101828] mt-1 font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{cat.description}</p>}
+              <div key={catIdx} className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+                <div
+                  className="px-4 md:px-6 py-4 md:py-5 flex items-center justify-between cursor-pointer hover:bg-[#FAF5FF]/60 transition-colors border-b border-[#F2F4F7]"
+                  onClick={() => toggleSection('vocabulary', catIdx)}
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#F5F3FF] border border-[#DDD6FE] flex items-center justify-center text-[#7C3AED] shrink-0">
+                      <BookOpen size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-[15px] md:text-[16px] font-bold text-[#101828]">{cat.name}</h3>
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE]">
+                          {(cat.words || []).length} {(cat.words || []).length === 1 ? 'word' : 'words'}
+                        </span>
+                      </div>
+                      {cat.description && (
+                        <p className="text-[13px] text-[#667085] mt-1 leading-relaxed">{cat.description}</p>
+                      )}
+                    </div>
                   </div>
-                  <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown size={18} className={`text-[#98A2B3] transition-transform duration-300 shrink-0 ${isOpen ? "rotate-180" : ""}`} />
                 </div>
                 {isOpen && (
-                  <div className="p-4 md:p-8 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-3 md:p-5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 bg-[#FAFBFC]">
                     {(cat.words || []).map((item, idx) => (
-                      <div key={idx} className="bg-white border border-[#D1D5DB] rounded-[12px] overflow-hidden">
-                        <div className="px-4 md:px-6 py-4 border-b border-[#E5E7EB]">
+                      <div key={idx} className="bg-white border border-[#E5E7EB] rounded-[14px] overflow-hidden shadow-sm">
+                        <div className="px-4 md:px-5 py-3 border-b border-[#F2F4F7] flex items-center gap-2 bg-gradient-to-r from-[#FAF5FF] to-white">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] shrink-0" />
                           <h4 className="text-[15px] font-bold text-[#101828]">{item.word}</h4>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#E5E7EB]">
-                          <div className="px-6 py-5">
-                            <p className="text-[14px] text-[#475467] leading-relaxed font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.definition}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#F2F4F7]">
+                          <div className="px-4 md:px-5 py-4">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] mb-1.5">Meaning</p>
+                            <p className="text-[13px] md:text-[14px] text-[#344054] leading-relaxed">{item.definition}</p>
                           </div>
-                          <div className="px-6 py-5 flex items-center">
-                            <div className="w-full bg-[#1018280D] rounded-[10px] px-5 py-3 text-[14px] text-[#101828] font-semibold border border-[#10182826] leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          <div className="px-4 md:px-5 py-4 bg-[#F8FAFC]/80">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488] mb-1.5">Example</p>
+                            <div className="rounded-[10px] px-3.5 py-2.5 text-[13px] md:text-[14px] text-[#101828] font-semibold leading-relaxed bg-[#F0FDFA] border border-[#99F6E4]">
                               {item.example}
                             </div>
                           </div>
@@ -1100,60 +1108,95 @@ const ReportView = ({
           if (!ga) return (
             <div className="bg-white/95 rounded-[16px] p-8 md:p-10 flex items-center justify-center border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)]">
               <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto"><FileText className="text-gray-300" /></div>
+                <div className="w-16 h-16 bg-[#EFF8FF] rounded-full flex items-center justify-center mx-auto border border-[#B2DDFF]">
+                  <SpellCheck className="text-[#1A96F3]" size={26} />
+                </div>
                 <h3 className="text-[18px] font-bold text-[#101828]">Grammar Analysis</h3>
                 <p className="text-gray-400 text-[14px]">Grammar analysis is being generated. Please check back shortly.</p>
               </div>
             </div>
           );
           return (
-          <div className="space-y-8">
-            {/* Overview Card */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden px-4 md:px-8 py-4 md:py-6 flex flex-col gap-4">
-              <h3 className="text-[18px] font-bold text-[#101828] leading-snug" style={{ fontFamily: "'Nunito', sans-serif" }}>Overview</h3>
-              <div className="space-y-3">
-                <p className="text-[15px] text-[#101828] leading-relaxed font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                  <span className="font-bold">Strengths:</span> {ga.overview_strengths || '—'}
-                </p>
-                <p className="text-[15px] text-[#101828] leading-relaxed font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                  <span className="font-bold">Weaknesses:</span> {ga.overview_weaknesses || '—'}
-                </p>
+          <div className="space-y-4">
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+              <div className="px-4 md:px-6 py-4 border-b border-[#F2F4F7] flex items-center gap-3 bg-gradient-to-r from-[#EFF8FF] to-white">
+                <div className="w-9 h-9 rounded-xl bg-[#EFF8FF] border border-[#B2DDFF] flex items-center justify-center text-[#1A96F3] shrink-0">
+                  <SpellCheck size={16} />
+                </div>
+                <div>
+                  <h3 className="text-[15px] md:text-[16px] font-bold text-[#101828]">Overview</h3>
+                  <p className="text-[12px] text-[#667085]">What is working and what to fix next</p>
+                </div>
+              </div>
+              <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="rounded-[12px] border border-[#CCFBEF] bg-[#F0FDF9] p-3.5 md:p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#0D9488] mb-1.5 flex items-center gap-1.5">
+                    <TrendingUp size={13} /> Strengths
+                  </p>
+                  <p className="text-[13px] md:text-[14px] text-[#101828] leading-relaxed font-medium">
+                    {ga.overview_strengths || '—'}
+                  </p>
+                </div>
+                <div className="rounded-[12px] border border-[#FEE2E2] bg-[#FFF5F5] p-3.5 md:p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#DC2626] mb-1.5 flex items-center gap-1.5">
+                    <TrendingDown size={13} /> Weaknesses
+                  </p>
+                  <p className="text-[13px] md:text-[14px] text-[#101828] leading-relaxed font-medium">
+                    {ga.overview_weaknesses || '—'}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Grammatical Structures Used */}
-            <div className="bg-white rounded-[24px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-4 md:px-10 py-4 md:py-6 border-b border-[#E5E7EB]">
-                <h3 className="text-[16px] font-bold text-[#101828]">Grammatical Structures Used</h3>
-                <p className="text-[13px] text-gray-400 mt-0.5">Structures identified in the report</p>
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+              <div className="px-4 md:px-6 py-4 border-b border-[#F2F4F7] flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#F0FDF9] border border-[#99F6E4] flex items-center justify-center text-[#0D9488] shrink-0">
+                  <ListChecks size={16} />
+                </div>
+                <div>
+                  <h3 className="text-[15px] md:text-[16px] font-bold text-[#101828]">Grammatical Structures Used</h3>
+                  <p className="text-[12px] text-[#667085]">Structures identified in your writing</p>
+                </div>
               </div>
-              <div className="p-4 md:p-10">
-                <ul className="space-y-6">
-                  {/* List of structures */}
+              <div className="p-4 md:p-5">
+                <ul className="space-y-2.5">
                   {(ga.structures_used || []).map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-4">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-2 shrink-0" />
-                      <span className="text-[16px] text-[#101828] leading-none font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>{item}</span>
+                    <li key={idx} className="flex items-start gap-3 rounded-[10px] border border-[#E5E7EB] bg-[#F8FAFC] px-3.5 py-3">
+                      <span className="mt-0.5 w-5 h-5 rounded-full bg-[#E6FFFA] text-[#0D9488] text-[11px] font-bold flex items-center justify-center shrink-0 border border-[#B2F5EA]">
+                        {idx + 1}
+                      </span>
+                      <span className="text-[14px] text-[#101828] leading-snug font-semibold">{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
 
-            {/* Suggested Grammatical Enrichments */}
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#E5E7EB]">
-                <h3 className="text-[18px] font-bold text-[#101828] leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Suggested Grammatical Enrichments</h3>
-                <p className="text-[16px] text-[#475467] mt-2 leading-none font-normal" style={{ fontFamily: "'Nunito', sans-serif" }}>Techniques to boost your grammar score</p>
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+              <div className="px-4 md:px-6 py-4 border-b border-[#F2F4F7] flex items-center gap-3 bg-gradient-to-r from-[#FFF7ED] to-white">
+                <div className="w-9 h-9 rounded-xl bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-center text-[#EA580C] shrink-0">
+                  <Lightbulb size={16} />
+                </div>
+                <div>
+                  <h3 className="text-[15px] md:text-[16px] font-bold text-[#101828]">Suggested Grammatical Enrichments</h3>
+                  <p className="text-[12px] text-[#667085]">Rewrite patterns that raise your band</p>
+                </div>
               </div>
-
-              <div className="p-4 md:p-8 space-y-8 md:space-y-10">
+              <div className="p-4 md:p-5 space-y-3">
                 {(ga.enrichment_suggestions || []).map((item, idx) => (
-                  <div key={idx} className="space-y-3">
-                    <h4 className="text-[18px] font-semibold text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.original}</h4>
-                    <p className="text-[16px] text-[#101828] leading-none" style={{ fontFamily: "'Nunito', sans-serif" }}>{item.explanation}</p>
-                    <div className="bg-[#1018280D] rounded-[10px] px-6 py-3 flex items-center text-[16px] text-[#101828] font-semibold leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                      {item.improved}
+                  <div key={idx} className="rounded-[14px] border border-[#E5E7EB] overflow-hidden bg-white">
+                    <div className="px-4 py-3 border-b border-[#F2F4F7] bg-[#F8FAFC] flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#667085]">Original</span>
+                      <span className="text-[14px] font-semibold text-[#101828]">{item.original}</span>
+                    </div>
+                    <div className="px-4 py-3 space-y-2.5">
+                      <p className="text-[13px] text-[#475467] leading-relaxed">{item.explanation}</p>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488] mb-1.5">Improved</p>
+                        <div className="rounded-[10px] px-3.5 py-2.5 text-[14px] text-[#101828] font-semibold leading-relaxed bg-[#F0FDF9] border border-[#99F6E4]">
+                          {item.improved}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1161,16 +1204,21 @@ const ReportView = ({
             </div>
 
             {ga.expert_tips && ga.expert_tips.length > 0 && (
-            <div className="bg-white rounded-[10px] border border-[#D1D5DB] shadow-sm overflow-hidden">
-              <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#E5E7EB]">
-                <h3 className="text-[18px] font-bold text-[#101828] leading-[20px]" style={{ fontFamily: "'Nunito', sans-serif" }}>Expert Tips</h3>
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
+              <div className="px-4 md:px-6 py-4 border-b border-[#F2F4F7] flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#EFF8FF] border border-[#B2DDFF] flex items-center justify-center text-[#1A96F3] shrink-0">
+                  <Lightbulb size={16} />
+                </div>
+                <h3 className="text-[15px] md:text-[16px] font-bold text-[#101828]">Expert Tips</h3>
               </div>
-              <div className="p-4 md:p-8">
-                <ul className="space-y-6">
+              <div className="p-4 md:p-5">
+                <ul className="space-y-2.5">
                   {ga.expert_tips.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-4">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#101828] mt-2 shrink-0" />
-                      <span className="text-[16px] text-[#101828] leading-[1.15] font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>{item}</span>
+                    <li key={idx} className="flex items-start gap-3 rounded-[10px] border border-[#B2DDFF] bg-[#EFF8FF]/70 px-3.5 py-3">
+                      <span className="mt-0.5 w-5 h-5 rounded-full bg-white text-[#1A96F3] text-[11px] font-bold flex items-center justify-center shrink-0 border border-[#B2DDFF]">
+                        {idx + 1}
+                      </span>
+                      <span className="text-[14px] text-[#101828] leading-snug font-medium">{item}</span>
                     </li>
                   ))}
                 </ul>

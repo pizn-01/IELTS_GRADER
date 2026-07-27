@@ -53,9 +53,9 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport, on
   if (!hasData || (isLoaded && dynamicReports.length === 0)) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.12 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, delay: 0.08 }}
         className={cardClass}
       >
         <div className="px-3.5 pt-3 pb-2.5 border-b border-[#F2F4F7] flex items-center gap-2">
@@ -90,9 +90,9 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport, on
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.12 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35, delay: 0.08 }}
       className={cardClass}
     >
       <div className="px-3.5 pt-3 pb-2.5 border-b border-[#F2F4F7] flex items-center justify-between gap-3 shrink-0">
@@ -107,16 +107,16 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport, on
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 p-1.5 md:p-2">
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-1.5 md:p-2 custom-scrollbar"
+        data-lenis-prevent
+      >
         {(displayReports || []).map((report, idx) => {
           const tone = typeTone(report.type);
           return (
-            <motion.button
+            <button
               key={report.id}
               type="button"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: idx * 0.025 }}
               onClick={() => onOpenReport?.(report.id)}
               className="group w-full text-left rounded-[10px] cursor-pointer transition-colors
                 hover:bg-[#F8FBFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A96F3]/30
@@ -143,7 +143,7 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport, on
                 className="text-[#D0D5DD] group-hover:text-[#1A96F3] shrink-0 transition-colors"
                 aria-hidden
               />
-            </motion.button>
+            </button>
           );
         })}
       </div>

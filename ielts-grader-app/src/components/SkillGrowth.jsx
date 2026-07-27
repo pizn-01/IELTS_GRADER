@@ -137,9 +137,9 @@ const SkillGrowth = ({
   if (parentLoading) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35 }}
         className={`${cardClass} min-h-[280px] justify-center items-center`}
       >
         <div className="w-7 h-7 border-[3px] border-[#1A96F3] border-t-transparent rounded-full animate-spin mb-3" />
@@ -164,9 +164,9 @@ const SkillGrowth = ({
   if (!hasData) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.08 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, delay: 0.08 }}
         className={cardClass}
       >
         {sectionHeader}
@@ -181,9 +181,9 @@ const SkillGrowth = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.08 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35, delay: 0.08 }}
       className={cardClass}
     >
       {sectionHeader}
