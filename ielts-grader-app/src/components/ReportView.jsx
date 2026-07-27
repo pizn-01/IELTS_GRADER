@@ -1588,35 +1588,72 @@ const ReportView = ({
               )}
 
               {Object.keys(opening).length > 0 && (
-                <CollapsibleCard title="Opening & Salutation Analysis" sectionKey="lsOpening" expanded={expandedSections.lsOpening} onToggle={toggleSection}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-[15px] font-bold text-[#101828]">Opening Quality</h4>
-                    <StarRating count={opening.overall_quality_stars || 0} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <CollapsibleCard title="Opening & Salutation Analysis" sectionKey="lsOpening" expanded={isExpanded('lsOpening')} onToggle={toggleSection}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
                     <div>
-                      <p className="text-[12px] font-bold text-[#475467] uppercase mb-1">Salutation</p>
-                      <p className="text-[14px] font-semibold text-[#101828]">{opening.salutation_used || 'Not found'}</p>
-                      <p className="text-[13px] text-[#475467] mt-1">{opening.salutation_correct}</p>
-                      {opening.salutation_should_be && <p className="text-[13px] text-[#00C9B1] mt-1">Should be: {opening.salutation_should_be}</p>}
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#667085]">Opening Quality</p>
+                      <p className="text-[13px] text-[#344054] mt-0.5">How well the letter starts and sets purpose</p>
                     </div>
-                    <div>
-                      <p className="text-[12px] font-bold text-[#475467] uppercase mb-1">Purpose</p>
-                      <p className="text-[14px] font-semibold text-[#101828]">{opening.purpose_clarity || 'N/A'}</p>
-                      {opening.purpose_quote && <p className="text-[13px] italic text-[#475467] mt-2">"{opening.purpose_quote}"</p>}
-                    </div>
-                    <div>
-                      <p className="text-[12px] font-bold text-[#475467] uppercase mb-1">Register</p>
-                      <p className="text-[14px] font-semibold text-[#101828]">{opening.register_established || 'N/A'}</p>
-                      {opening.register_issues && <p className="text-[13px] text-[#EA4335] mt-1">{opening.register_issues}</p>}
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-3 py-1.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-[#B45309]">Quality</span>
+                      <StarRating count={opening.overall_quality_stars || 0} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <div><h4 className="text-[15px] font-bold text-[#00C9B1] mb-2">Strengths</h4><BulletList items={opening.strengths} /></div>
-                    <div><h4 className="text-[15px] font-bold text-[#FF4D4D] mb-2">Weaknesses</h4><BulletList items={opening.weaknesses} /></div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="rounded-[12px] border border-[#E5E7EB] bg-[#F8FAFC] p-3.5 md:p-4 space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#1A96F3]">Salutation</p>
+                      <p className="text-[15px] font-bold text-[#101828] leading-snug">{opening.salutation_used || 'Not found'}</p>
+                      {opening.salutation_correct && (
+                        <p className="text-[12px] text-[#475467] leading-relaxed">{opening.salutation_correct}</p>
+                      )}
+                      {opening.salutation_should_be && (
+                        <div className="rounded-[8px] border border-[#99F6E4] bg-[#F0FDFA] px-2.5 py-1.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#0D9488]">Should be</p>
+                          <p className="text-[13px] font-semibold text-[#101828] mt-0.5">{opening.salutation_should_be}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-[12px] border border-[#E5E7EB] bg-[#F8FAFC] p-3.5 md:p-4 space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#7C3AED]">Purpose</p>
+                      <p className="text-[15px] font-bold text-[#101828] leading-snug">{opening.purpose_clarity || 'N/A'}</p>
+                      {opening.purpose_quote && (
+                        <div className="rounded-[8px] border border-[#DDD6FE] bg-[#FAF5FF] px-2.5 py-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#7C3AED] mb-1">From your letter</p>
+                          <p className="text-[13px] italic text-[#344054] leading-relaxed">"{opening.purpose_quote}"</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-[12px] border border-[#E5E7EB] bg-[#F8FAFC] p-3.5 md:p-4 space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488]">Register</p>
+                      <p className="text-[15px] font-bold text-[#101828] leading-snug">{opening.register_established || 'N/A'}</p>
+                      {opening.register_issues && (
+                        <div className="rounded-[8px] border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#DC2626] mb-1">Issues</p>
+                          <p className="text-[13px] text-[#7F1D1D] leading-relaxed">{opening.register_issues}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-[12px] border border-[#CCFBEF] bg-[#F0FDF9] p-3.5 md:p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#0D9488] mb-2">Strengths</p>
+                      <BulletList items={opening.strengths} />
+                    </div>
+                    <div className="rounded-[12px] border border-[#FECACA] bg-[#FFF5F5] p-3.5 md:p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#DC2626] mb-2">Weaknesses</p>
+                      <BulletList items={opening.weaknesses} />
+                    </div>
+                  </div>
+
                   {opening.recommendation && (
-                    <div className="bg-[#E6FFFA] border border-[#B2F5EA] rounded-[10px] p-4 text-[14px] mt-4">{opening.recommendation}</div>
+                    <div className="rounded-[12px] border border-[#B2DDFF] bg-[#EFF8FF] px-4 py-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#175CD3] mb-1">Recommendation</p>
+                      <p className="text-[13px] md:text-[14px] text-[#101828] leading-relaxed font-medium">{opening.recommendation}</p>
+                    </div>
                   )}
                 </CollapsibleCard>
               )}
