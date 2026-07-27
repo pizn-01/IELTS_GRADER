@@ -4,7 +4,7 @@ import { Sparkles, X } from 'lucide-react';
 import { trackEvent } from '../utils/trackEvent';
 
 /**
- * Post-report upgrade offer. Parent must open only after TargetBand / Verify /
+ * Post-report upgrade offer. Parent must open only after TargetBand /
  * LearningEdition are closed so overlays never stack.
  */
 export default function ReportUpgradeModal({

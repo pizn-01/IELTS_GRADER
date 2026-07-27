@@ -40,7 +40,6 @@ const MockExamPage = () => {
           subscription_status: fresh.subscription_status,
           is_subscribed: fresh.is_subscribed,
           cancel_at_period_end: fresh.cancel_at_period_end,
-          email_verified: fresh.email_verified,
         });
         const remaining = Number(fresh.credits_remaining) || 0;
         if (remaining <= 0) {
@@ -69,7 +68,6 @@ const MockExamPage = () => {
           updateUser({
             credits_remaining: fresh.credits_remaining,
             credits_allowance: fresh.credits_allowance,
-            email_verified: fresh.email_verified,
           });
         } catch {}
 

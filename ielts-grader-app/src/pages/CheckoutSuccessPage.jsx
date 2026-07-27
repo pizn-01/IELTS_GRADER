@@ -3,23 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Loader } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { VerifyEmailModal } from '../components/Modals';
-import {
-  markVerificationEmailSent,
-  wasVerificationEmailSent,
-} from '../utils/authStorage';
 
 const CheckoutSuccessPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
   const sessionId = searchParams.get('session_id');
 
   const [status, setStatus] = useState('polling'); // 'polling' | 'success' | 'timeout'
   const [packName, setPackName] = useState('');
   const [creditsGranted, setCreditsGranted] = useState(0);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [freshEmail, setFreshEmail] = useState('');
   const redirectTimerRef = useRef(null);
 
   const goDashboard = () => {
@@ -34,29 +27,6 @@ const CheckoutSuccessPage = () => {
     const maxAttempts = 15; // 30 seconds at 2s intervals
     let cancelled = false;
 
-    const promptVerifyIfNeeded = async (fresh) => {
-      if (!fresh || fresh.email_verified) {
-        redirectTimerRef.current = setTimeout(() => navigate('/dashboard'), 3000);
-        return;
-      }
-
-      setFreshEmail(fresh.email || user?.email || '');
-      if (fresh.email && !wasVerificationEmailSent()) {
-        try {
-          const result = await api.sendVerification();
-          if (!result?.already_verified) markVerificationEmailSent();
-        } catch {
-          try {
-            await api.resendVerification(fresh.email);
-            markVerificationEmailSent();
-          } catch {
-            /* modal can resend */
-          }
-        }
-      }
-      if (!cancelled) setShowVerifyModal(true);
-    };
-
     const poll = async () => {
       try {
         const result = await api.verifyStripeSession(sessionId);
@@ -66,9 +36,8 @@ const CheckoutSuccessPage = () => {
           setCreditsGranted(result.credits_granted || 0);
           setStatus('success');
 
-          let fresh = null;
           try {
-            fresh = await api.getMe();
+            const fresh = await api.getMe();
             updateUser({
               credits_remaining: fresh.credits_remaining,
               credits_allowance: fresh.credits_allowance,
@@ -76,11 +45,12 @@ const CheckoutSuccessPage = () => {
               subscription_status: fresh.subscription_status,
               is_subscribed: fresh.is_subscribed,
               has_paid: fresh.has_paid,
-              email_verified: fresh.email_verified,
             });
           } catch {}
 
-          await promptVerifyIfNeeded(fresh);
+          if (!cancelled) {
+            redirectTimerRef.current = setTimeout(() => navigate('/dashboard'), 3000);
+          }
           return;
         }
       } catch {}
@@ -122,18 +92,7 @@ const CheckoutSuccessPage = () => {
             <p className="text-[15px] text-[#4B5563] mb-1">
               <span className="font-bold text-[#1a1f36]">{creditsGranted} credits</span> on <span className="font-semibold">{packName}</span> are now active.
             </p>
-            {!showVerifyModal && (
-              <p className="text-[13px] text-[#9CA3AF] mt-4">Redirecting you to the dashboard…</p>
-            )}
-            {showVerifyModal && (
-              <button
-                type="button"
-                onClick={goDashboard}
-                className="mt-6 w-full h-[48px] bg-[#1a1f36] text-white rounded-[10px] font-bold text-[14px] hover:bg-[#2a2f46] transition-all"
-              >
-                Continue to Dashboard
-              </button>
-            )}
+            <p className="text-[13px] text-[#9CA3AF] mt-4">Redirecting you to the dashboard…</p>
           </>
         )}
 
@@ -155,24 +114,6 @@ const CheckoutSuccessPage = () => {
           </>
         )}
       </div>
-
-      <VerifyEmailModal
-        isOpen={showVerifyModal}
-        email={freshEmail || user?.email}
-        purpose="post_payment"
-        onContinueReading={goDashboard}
-        onGoVerify={() => navigate('/verify-email', { state: { fromPayment: true } })}
-        onResend={async () => {
-          const target = freshEmail || user?.email;
-          if (!target) return;
-          try {
-            await api.sendVerification();
-          } catch {
-            await api.resendVerification(target);
-          }
-          markVerificationEmailSent();
-        }}
-      />
     </div>
   );
 };

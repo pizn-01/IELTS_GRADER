@@ -18,7 +18,6 @@ const FullPageLoader = () => (
  * ProtectedRoute — wraps any route that requires authentication.
  * Shows loader during bootstrap, redirects to /login if unauthenticated,
  * and preserves the intended destination via location state.
- * Email verification is gated only at subscribe/checkout, not on free practice.
  */
 export const AdminRoute = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();

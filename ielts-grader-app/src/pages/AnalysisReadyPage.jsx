@@ -118,7 +118,6 @@ const AnalysisReadyPage = () => {
             fresh = await api.getMe();
             updateUser({
               credits_remaining: fresh.credits_remaining,
-              email_verified: fresh.email_verified,
             });
           } catch {}
           const report = await api.getReport(currentSubId);

@@ -24,9 +24,7 @@ import LoginPage from './auth/LoginPage1';
 import SignupPage from './auth/SignupPage5';
 import ForgotPasswordPage from './auth/ForgotPasswordPage7';
 import CheckEmailPage from './auth/CheckEmailPage9';
-import VerifyEmailPage from './auth/VerifyEmailPage10';
 import ResetPasswordPage from './auth/ResetPasswordPage11';
-import AccountVerifiedPage from './auth/AccountVerifiedPage12';
 import PasswordResetSuccessPage from './auth/PasswordResetSuccessPage13';
 import OAuthCallbackPage from './auth/OAuthCallbackPage';
 
@@ -292,9 +290,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/check-email" element={<CheckEmailPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/account-verified" element={<AccountVerifiedPage />} />
         <Route path="/password-reset-success" element={<PasswordResetSuccessPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 

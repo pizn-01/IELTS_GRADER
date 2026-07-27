@@ -112,45 +112,6 @@ async function sendEmail({ to, subject, html, text, tags = [], idempotencyKey })
   throw lastError || new Error('Failed to send email.');
 }
 
-async function sendVerificationEmail(email, fullName, token, { idempotencyKey } = {}) {
-  const link = `${FRONTEND_URL}/account-verified?token=${encodeURIComponent(token)}`;
-  const greeting = fullName || 'there';
-  const html = wrap(
-    'Confirm your email',
-    `Hi ${greeting},<br/><br/>Please confirm your email address for your IELTS Grader account. This keeps your reports secure and lets you continue practicing.`,
-    'Confirm email address',
-    link,
-    'This link expires in 24 hours. If you did not create an account, you can ignore this email.'
-  );
-  const text = [
-    `Hi ${greeting},`,
-    '',
-    'Please confirm your email address for your IELTS Grader account.',
-    '',
-    `Confirm email: ${link}`,
-    '',
-    'This link expires in 24 hours. If you did not create an account, you can ignore this email.',
-    '',
-    '- IELTS Grader',
-  ].join('\n');
-
-  try {
-    return await sendEmail({
-      to: email,
-      subject: 'Confirm your IELTS Grader email',
-      html,
-      text,
-      tags: [
-        { name: 'category', value: 'email_verification' },
-      ],
-      idempotencyKey: idempotencyKey || `verify/${token}`,
-    });
-  } catch (error) {
-    console.error('[email/sendVerification]', error?.message || error);
-    throw new Error('Failed to send verification email. Please try again in a moment.');
-  }
-}
-
 async function sendPasswordResetEmail(email, fullName, token, { idempotencyKey } = {}) {
   const link = `${FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
   const greeting = fullName || 'there';
@@ -190,4 +151,4 @@ async function sendPasswordResetEmail(email, fullName, token, { idempotencyKey }
   }
 }
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail };
+module.exports = { sendPasswordResetEmail };

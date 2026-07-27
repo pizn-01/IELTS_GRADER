@@ -106,7 +106,7 @@ export const legalPages = {
           'Provide grading, reports, mock exams, and personalized learning.',
           'Authenticate users, secure accounts, and prevent fraud or abuse.',
           'Process subscriptions, credits, and customer support.',
-          'Send transactional email (verification, password reset, receipts).',
+          'Send transactional email (password reset, receipts).',
           'Analyze product usage to improve reliability and features.',
           'Comply with legal obligations.',
         ],

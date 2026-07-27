@@ -63,7 +63,6 @@ export function consumePostAuthRedirect(fallback = '/dashboard') {
 }
 
 const PENDING_GRADE_KEY = 'pending_grade_payload';
-const VERIFY_EMAIL_SENT_KEY = 'verify_email_sent_after_eval';
 
 /**
  * Persist essay/exam payload across login/signup (and Google OAuth full-page redirect).
@@ -96,28 +95,4 @@ export function consumePendingGradePayload() {
     /* ignore */
   }
   return payload;
-}
-
-export function markVerificationEmailSent() {
-  try {
-    sessionStorage.setItem(VERIFY_EMAIL_SENT_KEY, '1');
-  } catch {
-    /* ignore */
-  }
-}
-
-export function wasVerificationEmailSent() {
-  try {
-    return sessionStorage.getItem(VERIFY_EMAIL_SENT_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-export function clearVerificationEmailSent() {
-  try {
-    sessionStorage.removeItem(VERIFY_EMAIL_SENT_KEY);
-  } catch {
-    /* ignore */
-  }
 }

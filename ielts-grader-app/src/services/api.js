@@ -431,41 +431,6 @@ export const api = {
     }
   },
 
-  // ─── POST /api/auth/verify-email ─────────────────────────────────────────────
-  verifyEmail: async (token) => {
-    try {
-      const res = await fetch(`${BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`, { headers: getHeaders() });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Verification failed.');
-      return data;
-    } catch (err) {
-      throw err;
-    }
-  },
-
-  // ─── POST /api/auth/send-verification ────────────────────────────────────────
-  sendVerification: async () => {
-    const res = await fetch(`${BASE_URL}/auth/send-verification`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Failed to send verification email.');
-    return data;
-  },
-
-  // ─── POST /api/auth/resend-verification ──────────────────────────────────────
-  resendVerification: async (email) => {
-    const res = await fetch(`${BASE_URL}/auth/resend-verification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Failed to resend verification email.');
-    return data;
-  },
-
   // ─── Stripe API ───────────────────────────────────────────────────────────────
   // plan: 'weekly' | 'monthly'
   createSubscriptionCheckout: async (plan) => {

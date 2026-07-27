@@ -5,7 +5,7 @@ const { supabaseAdmin, supabaseAuth } = require('../services/supabase');
 const { reconcileUserSubscription } = require('../services/subscriptionSync');
 const { FREE_TRIAL_CREDITS } = require('../services/subscriptionPlans');
 const { authenticateToken } = require('../middleware/auth');
-const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/email');
+const { sendPasswordResetEmail } = require('../services/email');
 const { saveUserAttribution } = require('../utils/attribution');
 const { trackProductEvent } = require('../utils/productEvents');
 
@@ -41,22 +41,6 @@ async function findAuthUserByEmail(email) {
     page += 1;
     if (page > 50) return null; // safety cap
   }
-}
-
-async function issueVerificationEmail(userId, email, fullName) {
-  const newToken = generateToken();
-  const newExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-  await supabaseAdmin.from('profiles').update({
-    verification_token: newToken,
-    verification_token_expires_at: newExpiry,
-  }).eq('id', userId);
-
-  await sendVerificationEmail(email, fullName, newToken, {
-    idempotencyKey: `verify/${userId}/${newToken.slice(0, 16)}`,
-  });
-
-  return { token: newToken };
 }
 
 function isActiveSubscription(status, periodEnd) {
@@ -210,16 +194,15 @@ router.post('/register', async (req, res) => {
         target_band_confirmed: false,
         credits_remaining: FREE_TRIAL_CREDITS,
         profile_image_url: null,
-        email_verified: false,
+        email_verified: true,
       };
     }
 
-    // Free trial starts unverified. Verification email + token are issued after
-    // successful payment (see CheckoutSuccessPage → issueVerificationEmail).
+    // Email verification is not required — mark verified on signup.
     await supabaseAdmin.from('profiles').update({
       credits_remaining: FREE_TRIAL_CREDITS,
       credits_allowance: FREE_TRIAL_CREDITS,
-      email_verified: false,
+      email_verified: true,
       verification_token: null,
       verification_token_expires_at: null,
     }).eq('id', data.user.id);
@@ -228,7 +211,7 @@ router.post('/register', async (req, res) => {
       ...profile,
       credits_remaining: FREE_TRIAL_CREDITS,
       credits_allowance: FREE_TRIAL_CREDITS,
-      email_verified: false,
+      email_verified: true,
     };
 
     await saveUserAttribution(supabaseAdmin, data.user.id, { attribution, session_id, req }).catch(err =>
@@ -281,112 +264,6 @@ router.get('/me', authenticateToken, async (req, res) => {
     console.error('[auth/me]', err.message);
     return res.status(500).json({ error: 'Failed to fetch profile.' });
   }
-});
-
-// ─── GET /api/auth/verify-email ───────────────────────────────────────────────
-// Called when user clicks the link in the verification email
-// ?token=<hex-token>
-router.get('/verify-email', async (req, res) => {
-  const { token } = req.query;
-
-  if (!token) {
-    return res.status(400).json({ error: 'Verification token is required.' });
-  }
-
-  try {
-    const { data: profile, error } = await supabaseAdmin
-      .from('profiles')
-      .select('id, email_verified, verification_token_expires_at')
-      .eq('verification_token', token)
-      .single();
-
-    if (error || !profile) {
-      return res.status(400).json({ error: 'Invalid or expired verification link.' });
-    }
-
-    if (profile.email_verified) {
-      return res.json({ message: 'Email already verified.' });
-    }
-
-    if (new Date(profile.verification_token_expires_at) < new Date()) {
-      return res.status(400).json({ error: 'Verification link has expired. Please request a new one.' });
-    }
-
-    await supabaseAdmin
-      .from('profiles')
-      .update({
-        email_verified: true,
-        // Keep verification_token so duplicate clicks / React remounts stay idempotent
-        verification_token_expires_at: null,
-      })
-      .eq('id', profile.id);
-
-    return res.json({ message: 'Email verified successfully.' });
-  } catch (err) {
-    console.error('[auth/verify-email]', err.message);
-    return res.status(500).json({ error: 'Verification failed. Please try again.' });
-  }
-});
-
-// ─── POST /api/auth/send-verification ─────────────────────────────────────────
-// Authenticated: generate/refresh token and send verification email (used after
-// first free evaluation). Always safe to call; no-ops if already verified.
-router.post('/send-verification', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const email = req.user.email;
-
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('id, full_name, email_verified')
-      .eq('id', userId)
-      .single();
-
-    if (!profile) {
-      return res.status(404).json({ error: 'Profile not found.' });
-    }
-
-    if (profile.email_verified) {
-      return res.json({ message: 'Email already verified.', already_verified: true });
-    }
-
-    await issueVerificationEmail(userId, email, profile.full_name);
-    return res.json({ message: 'Verification email sent.', sent: true });
-  } catch (err) {
-    console.error('[auth/send-verification]', err.message);
-    return res.status(500).json({ error: err.message || 'Failed to send verification email.' });
-  }
-});
-
-// ─── POST /api/auth/resend-verification ──────────────────────────────────────
-router.post('/resend-verification', async (req, res) => {
-  const email = String(req.body?.email || '').trim().toLowerCase();
-
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required.' });
-  }
-
-  // Always return success to prevent email enumeration — but still await the send
-  // so failures are logged and retries can succeed on the next click.
-  try {
-    const authUser = await findAuthUserByEmail(email);
-
-    if (authUser) {
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('id, full_name, email_verified')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profile && !profile.email_verified) {
-        await issueVerificationEmail(profile.id, email, profile.full_name);
-      }
-    }
-  } catch (err) {
-    console.error('[auth/resend-verification]', err.message);
-  }
-
-  return res.json({ message: 'If an account exists, a new verification email has been sent.' });
 });
 
 // ─── POST /api/auth/forgot-password ──────────────────────────────────────────
