@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import SeoHead from '../seo/SeoHead';
-import { SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE, formatPromoPrice, NEW_USER_PROMO } from '../constants/subscriptionPlans';
+import { NewUserPromoBanner, PromoPriceDisplay } from '../components/PromoPricing';
+import { SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE, formatPromoPrice } from '../constants/subscriptionPlans';
 import { trackEvent } from '../utils/trackEvent';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
@@ -17,53 +18,53 @@ const PricingPage = () => {
 
   const plans = [
     {
-      name: "Free Trial",
-      price: "$0",
-      description: "Get started with your first evaluation.",
+      name: 'Free Trial',
+      price: '$0',
+      description: 'Get started with your first evaluation.',
       features: [
-        "3 free full evaluations",
-        "Band score breakdown",
-        "Fix cards & feedback",
-        "No card required"
+        '3 free full evaluations',
+        'Band score breakdown',
+        'Fix cards & feedback',
+        'No card required',
       ],
-      buttonText: "Start Free",
-      isPremium: false
+      buttonText: 'Start Free',
+      isPremium: false,
     },
     {
-      name: "Weekly Sprint",
+      name: 'Weekly Sprint',
       planKey: WEEKLY.key,
       price: weeklyPromo.displayPrice,
       originalPrice: weeklyPromo.originalPrice,
       promoBadge: weeklyPromo.badge,
       period: WEEKLY.period,
-      description: "Intensive practice for fast results.",
+      description: 'Intensive practice for fast results.',
       features: [
-        "20 evaluations per week",
-        "Detailed fix cards",
-        "All task types",
-        "Priority support"
+        '20 evaluations per week',
+        'Detailed fix cards',
+        'All task types',
+        'Priority support',
       ],
-      buttonText: "Get Sprint",
-      isPremium: true
+      buttonText: 'Get Sprint — 50% off',
+      isPremium: true,
     },
     {
-      name: "Monthly Mastery",
+      name: 'Monthly Mastery',
       planKey: MONTHLY.key,
       price: monthlyPromo.displayPrice,
       originalPrice: monthlyPromo.originalPrice,
       promoBadge: monthlyPromo.badge,
       period: MONTHLY.period,
-      description: "Best value for serious prep.",
+      description: 'Best value for serious prep.',
       features: [
-        "80 evaluations per month",
-        "Comprehensive reports",
-        "Personalized learning guides",
-        "25% less per exam vs weekly"
+        '80 evaluations per month',
+        'Comprehensive reports',
+        'Personalized learning guides',
+        '25% less per exam vs weekly',
       ],
-      buttonText: "Get Monthly",
+      buttonText: 'Get Monthly — 50% off',
       isPremium: true,
-      highlight: "Best Value"
-    }
+      highlight: 'Best Value',
+    },
   ];
 
   const handlePlanClick = (plan) => {
@@ -76,7 +77,6 @@ const PricingPage = () => {
       plan: plan.name,
       plan_key: plan.planKey,
     });
-    // Skip modal + plan re-pick: go straight to upgrade checkout for this plan
     navigate(`/upgrade?plan=${plan.planKey}&checkout=1`);
   };
 
@@ -84,18 +84,20 @@ const PricingPage = () => {
     <div className="min-h-screen bg-[#EFF6FF]">
       <SeoHead
         title="IELTS Writing Practice Plans & Pricing | IELTS AI Tutor"
-        description="Start free with three full IELTS writing evaluations. Upgrade to Weekly Sprint or Monthly Mastery for more AI tutor feedback, mock exams, and study plans."
+        description="New users get 50% off the first month. Start free with three full IELTS writing evaluations, then upgrade to Weekly Sprint or Monthly Mastery."
         path="/pricing"
       />
       <Navbar />
-      
+
       <main className="max-w-[1200px] mx-auto px-6 py-12 md:px-[60px] md:py-[80px]">
-        <div className="text-center mb-12 md:mb-16">
-          <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1a1f36] mb-3 md:mb-4">Choose Your Path to Success</h1>
-          <p className="text-[14px] md:text-[16px] text-[#6B7280] mb-4">Select the plan that fits your IELTS preparation goals.</p>
-          <p className="inline-block text-[13px] md:text-[14px] font-semibold text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] rounded-full px-4 py-2 mb-3">
-            {NEW_USER_PROMO.badge} for new users
+        <div className="text-center mb-8 md:mb-10">
+          <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1a1f36] mb-3 md:mb-4">
+            Choose Your Path to Success
+          </h1>
+          <p className="text-[14px] md:text-[16px] text-[#6B7280] mb-5">
+            Select the plan that fits your IELTS preparation goals.
           </p>
+          <NewUserPromoBanner />
           <p className="inline-block text-[13px] md:text-[14px] font-medium text-[#475467] bg-white border border-[#E5E7EB] rounded-full px-4 py-2 shadow-sm">
             {SUBSCRIPTION_PLAN_NOTE}
           </p>
@@ -103,10 +105,14 @@ const PricingPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-[1100px] mx-auto">
           {plans.map((plan, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className={`bg-white rounded-[16px] p-6 md:p-8 border-2 transition-all hover:shadow-xl flex flex-col ${
-                plan.highlight ? 'border-[#3B82F6] relative shadow-lg md:scale-105 z-10 mt-4 md:mt-0' : 'border-[#E5E7EB]'
+                plan.highlight
+                  ? 'border-[#3B82F6] relative shadow-lg md:scale-105 z-10 mt-4 md:mt-0'
+                  : plan.isPremium
+                    ? 'border-[#6EE7B7] relative shadow-md'
+                    : 'border-[#E5E7EB]'
               }`}
             >
               {plan.highlight && (
@@ -114,22 +120,27 @@ const PricingPage = () => {
                   {plan.highlight}
                 </span>
               )}
-              
+              {plan.isPremium && (
+                <span className="absolute -top-3 right-4 bg-[#059669] text-white text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm">
+                  50% OFF
+                </span>
+              )}
+
               <div className="mb-8">
-                <h3 className="text-[20px] font-bold text-[#1a1f36] mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-                  {plan.originalPrice && (
-                    <span className="text-[22px] font-semibold text-[#9CA3AF] line-through">
-                      {plan.originalPrice}
-                    </span>
-                  )}
-                  <span className={`text-[42px] font-extrabold ${plan.originalPrice ? 'text-[#10B981]' : 'text-[#1a1f36]'}`}>
-                    {plan.price}
-                  </span>
-                  {plan.period && <span className="text-[16px] text-[#6B7280]">{plan.period}</span>}
-                </div>
-                {plan.promoBadge && (
-                  <p className="text-[13px] font-semibold text-[#047857] mb-2">{plan.promoBadge}</p>
+                <h3 className="text-[20px] font-bold text-[#1a1f36] mb-3">{plan.name}</h3>
+                {plan.originalPrice ? (
+                  <div className="mb-3">
+                    <PromoPriceDisplay
+                      originalPrice={plan.originalPrice}
+                      displayPrice={plan.price}
+                      period={plan.period}
+                      size="lg"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-baseline gap-1 mb-3">
+                    <span className="text-[42px] font-extrabold text-[#1a1f36]">{plan.price}</span>
+                  </div>
                 )}
                 <p className="text-[14px] text-[#6B7280]">{plan.description}</p>
               </div>
@@ -145,11 +156,12 @@ const PricingPage = () => {
                 ))}
               </div>
 
-              <button 
+              <button
+                type="button"
                 onClick={() => handlePlanClick(plan)}
                 className={`w-full h-[50px] rounded-[10px] font-bold text-[15px] transition-all mt-auto ${
-                  plan.isPremium 
-                    ? 'bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 
+                  plan.isPremium
+                    ? 'bg-[#059669] text-white hover:bg-[#047857] shadow-[0_4px_14px_rgba(5,150,105,0.4)]'
                     : 'bg-white text-[#1a1f36] border border-[#E5E7EB] hover:border-[#1a1f36]'
                 }`}
               >

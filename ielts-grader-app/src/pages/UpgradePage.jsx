@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
+import { NewUserPromoBanner, PromoPriceDisplay } from '../components/PromoPricing';
 import {
   SUBSCRIPTION_PLANS,
   SUBSCRIPTION_FEATURES,
   SUBSCRIPTION_PLAN_NOTE,
   formatPromoPrice,
-  NEW_USER_PROMO,
 } from '../constants/subscriptionPlans';
 
 const PLANS = [SUBSCRIPTION_PLANS.weekly, SUBSCRIPTION_PLANS.monthly];
@@ -50,12 +50,14 @@ const UpgradePage = () => {
   const isSubscribed = status?.is_subscribed;
   const isWeekly = isSubscribed && currentPlan === 'weekly';
   const isMonthly = isSubscribed && currentPlan === 'monthly';
-  // Prefer API eligibility (requires STRIPE_COUPON_NEW_USER); fall back for older backends
-  const promoEligible = status?.promo
-    ? Boolean(status.promo.eligible)
-    : Boolean(status && !status.has_paid && !isSubscribed);
 
-  const selectedPlan = PLANS.find(p => p.key === selectedKey) || PLANS[0];
+  // Show sale UI for unpaid users. Prefer API eligible; also show when !has_paid
+  // so the discount is visible even if promo.active briefly mismatches.
+  const promoEligible = status
+    ? Boolean(status.promo?.eligible) || (!status.has_paid && !isSubscribed)
+    : false;
+
+  const selectedPlan = PLANS.find((p) => p.key === selectedKey) || PLANS[0];
   const selectedPricing = formatPromoPrice(selectedPlan, { showPromo: promoEligible });
   const monthlyPricing = formatPromoPrice(SUBSCRIPTION_PLANS.monthly, { showPromo: false });
 
@@ -79,11 +81,9 @@ const UpgradePage = () => {
     }
   };
 
-  // From marketing /pricing: skip the second plan picker and jump to Stripe
   useEffect(() => {
     if (statusLoading || !autoCheckout || autoCheckoutStarted.current) return;
     if (!status) {
-      // Status fetch failed — drop auto-checkout so the user can retry manually
       if (error) {
         autoCheckoutStarted.current = true;
         setLoading(false);
@@ -159,12 +159,12 @@ const UpgradePage = () => {
 
   return (
     <div className="flex flex-col items-center px-4 py-12">
-      <h1 className="text-[28px] md:text-[32px] font-bold text-[#101828] mb-10 text-center">
+      <h1 className="text-[28px] md:text-[32px] font-bold text-[#101828] mb-6 text-center">
         {isWeekly ? 'Upgrade Your Plan' : 'Choose a Plan'}
       </h1>
 
       <div className="w-full max-w-[540px] bg-white border border-[#E5E7EB] rounded-[24px] shadow-sm p-8 md:p-10">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-5">
           <h2 className="text-[22px] font-bold text-[#101828]">Premium Plan</h2>
           {!isWeekly && (
             <span className="text-[13px] font-semibold text-[#475467] bg-[#F2F4F7] px-4 py-1.5 rounded-full">
@@ -173,13 +173,7 @@ const UpgradePage = () => {
           )}
         </div>
 
-        {!isWeekly && promoEligible && (
-          <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-full px-4 py-2.5 mb-4 text-center">
-            <p className="text-[13px] font-semibold text-[#047857] leading-snug">
-              {NEW_USER_PROMO.badge}
-            </p>
-          </div>
-        )}
+        {!isWeekly && promoEligible && <NewUserPromoBanner compact />}
 
         {!isWeekly && (
           <div className="bg-[#F2F4F7] rounded-full px-4 py-2.5 mb-6 text-center">
@@ -190,7 +184,7 @@ const UpgradePage = () => {
         )}
 
         <div className="grid grid-cols-2 gap-3 mb-8">
-          {PLANS.map(plan => {
+          {PLANS.map((plan) => {
             const isCurrent = isWeekly && plan.key === 'weekly';
             const disabled = isCurrent;
             const pricing = formatPromoPrice(plan, { showPromo: promoEligible && !isCurrent });
@@ -200,40 +194,44 @@ const UpgradePage = () => {
                 type="button"
                 onClick={() => !disabled && setSelectedKey(plan.key)}
                 disabled={disabled}
-                className={`p-5 rounded-[16px] border-2 text-left transition-all relative ${
+                className={`p-5 rounded-[16px] border-2 text-left transition-all relative overflow-hidden ${
                   isCurrent
                     ? 'border-[#12B76A] bg-[#ECFDF5] opacity-90 cursor-default'
                     : selectedKey === plan.key
-                    ? 'border-[#1A96F3] bg-[#EFF8FF]'
-                    : 'border-[#E5E7EB] bg-white hover:border-[#D0D5DD]'
-                } ${disabled ? '' : ''}`}
+                      ? 'border-[#059669] bg-[#ECFDF5] shadow-[0_0_0_1px_rgba(5,150,105,0.2)]'
+                      : 'border-[#E5E7EB] bg-white hover:border-[#6EE7B7]'
+                }`}
               >
+                {pricing.showPromo && (
+                  <span className="absolute top-0 right-0 bg-[#059669] text-white text-[9px] font-extrabold uppercase tracking-wide px-2 py-1 rounded-bl-[10px]">
+                    50% OFF
+                  </span>
+                )}
                 {isCurrent && (
                   <span className="absolute top-3 right-3 text-[10px] font-bold text-[#12B76A] uppercase">
                     Current
                   </span>
                 )}
-                {plan.recommended && !isCurrent && (
+                {plan.recommended && !isCurrent && !pricing.showPromo && (
                   <span className="absolute top-3 right-3 text-[10px] font-bold text-[#1A96F3] uppercase">
                     Best value
                   </span>
                 )}
-                <p className="text-[13px] font-medium text-[#667085] mb-1">{plan.name}</p>
-                <div className="flex items-baseline gap-1.5 flex-wrap">
-                  {pricing.showPromo && pricing.originalPrice && (
-                    <span className="text-[14px] font-semibold text-[#98A2B3] line-through">
-                      {pricing.originalPrice}
-                    </span>
-                  )}
-                  <p className={`text-[20px] font-bold ${pricing.showPromo ? 'text-[#12B76A]' : 'text-[#101828]'}`}>
+                <p className="text-[13px] font-medium text-[#667085] mb-2">{plan.name}</p>
+                {pricing.showPromo ? (
+                  <PromoPriceDisplay
+                    originalPrice={pricing.originalPrice}
+                    displayPrice={pricing.displayPrice}
+                    period={pricing.period}
+                    size="md"
+                  />
+                ) : (
+                  <p className="text-[20px] font-bold text-[#101828]">
                     {pricing.displayPrice}
                     <span className="text-[14px] font-semibold text-[#667085]">{pricing.period}</span>
                   </p>
-                </div>
-                {pricing.showPromo && (
-                  <p className="text-[10px] font-semibold text-[#047857] mt-1">{pricing.badge}</p>
                 )}
-                <p className="text-[11px] text-[#667085] mt-1">{plan.credits} evaluations</p>
+                <p className="text-[11px] text-[#667085] mt-2">{plan.credits} evaluations</p>
               </button>
             );
           })}
@@ -272,11 +270,13 @@ const UpgradePage = () => {
             type="button"
             onClick={() => handleSubscribe()}
             disabled={loading}
-            className="w-full h-[52px] bg-[#101828] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#1D2939] transition-all shadow-sm disabled:opacity-60 mb-4"
+            className="w-full h-[52px] bg-[#059669] text-white rounded-[12px] text-[15px] font-bold hover:bg-[#047857] transition-all shadow-[0_4px_14px_rgba(5,150,105,0.35)] disabled:opacity-60 mb-4"
           >
             {loading
               ? 'Redirecting to Stripe…'
-              : `Subscribe (${selectedPricing.displayPrice}${selectedPricing.period})`}
+              : promoEligible
+                ? `Subscribe — ${selectedPricing.displayPrice}${selectedPricing.period} (50% off)`
+                : `Subscribe (${selectedPricing.displayPrice}${selectedPricing.period})`}
           </button>
         )}
 
@@ -284,7 +284,7 @@ const UpgradePage = () => {
           {isWeekly
             ? 'Switch plans or cancel anytime in Manage Subscription.'
             : promoEligible
-              ? 'First month at 50% off. Cancel anytime.'
+              ? 'First month at 50% off. Then regular price. Cancel anytime.'
               : 'Cancel anytime. No long-term commitment.'}
         </p>
       </div>
