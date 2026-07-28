@@ -293,10 +293,25 @@ const ReportView = ({
     setShowTargetPrompt(true);
   }, [user, data?.overall_band, data?.overallBand]);
 
-  // Use provided data or fallback to defaults
-  const essayContent = data?.essay || "Some people argue that imposing longer prison sentences is the most effective way to reduce crime, while others believe that alternative measures can achieve better results. Although stricter punishments may deter certain offenders, I believe that addressing the root causes of crime is a more sustainable and effective solution.";
-  const taskTitle = data ? `${data.exam_type || data.examType || ''} ${data.task_type || data.taskType || ''}`.trim() : "Task 2- Academic";
-  const taskQuestion = data?.taskQuestion || "Task : Some people think that the best way to reduce crime is to give longer prison sentences. Others, however, believe there are better alternative ways of reducing crime.";
+  // Use API payload only — never invent a Task 2 demo prompt for Task 1 reports.
+  const essayContent = data?.essay || '';
+  const taskTitle = data
+    ? `${data.exam_type || data.examType || ''} ${data.task_type || data.taskType || ''}`.trim()
+    : 'Exam';
+  const taskQuestion =
+    data?.taskQuestion
+    || data?.question_text
+    || (data ? 'Question unavailable for this report.' : '');
+
+  // #region agent log
+  useEffect(() => {
+    if (!data) return;
+    const prisonFallback = 'best way to reduce crime is to give longer prison sentences';
+    const strengths = Array.isArray(data.strengths) ? data.strengths : [];
+    const essay = String(data.essay || '');
+    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'post-fix',hypothesisId:'A,B,C,D',location:'ReportView.jsx:report-render',message:'ReportView resolved exam prompt and strengths',data:{exam_type:data.exam_type||data.examType||null,task_type:data.task_type||data.taskType||null,task_variant:data.task_variant||null,hasTaskQuestion:Boolean(data.taskQuestion||data.question_text),taskQuestionSource:(data.taskQuestion||data.question_text)?'api':'missing',taskQuestionPreview:String(taskQuestion).slice(0,120),usingPrisonFallback:String(taskQuestion).includes(prisonFallback),hasExamTaskId:Boolean(data.exam_task_id||data.examTaskId),strengthsCount:strengths.length,strengthsFromApi:strengths.length>0,firstStrengthPreview:String(strengths[0]||'').slice(0,140),essayPreview:essay.slice(0,160),essayLooksLikeQuestion:/graph below|Write at least|Summarise the information|prison sentences/i.test(essay),bands:{overall:data.overall_band,tr:data.response_band,cc:data.coherence_band,lr:data.vocabulary_band,gra:data.grammar_band},reportKeys:Object.keys(data||{})},timestamp:Date.now()})}).catch(()=>{});
+  }, [data, taskQuestion]);
+  // #endregion
 
   const taskVariant = useMemo(
     () => data?.task_variant || resolveTaskVariant(data?.exam_type || data?.examType, data?.task_type || data?.taskType),
@@ -707,14 +722,14 @@ const ReportView = ({
                       <h3 className="text-[15px] font-bold text-[#101828] mb-0.5">Strengths</h3>
                       <p className="text-[12px] text-[#667085]">What you did well</p>
                     </div>
-                    <div className="p-4 md:p-5"><ul className="space-y-3 md:space-y-3.5">{(data?.strengths || ["Clear introduction identifying chart type and subject", "Logical body structure organized by age group", "Effective use of cohesive devices and linking words", "Good paragraphing with unified topic focus"]).map((text, i) => (<li key={i} className="flex items-start gap-3"><div className="mt-0.5 text-[#00C9B1] shrink-0"><TrendingUp size={16} /></div><span className="text-[13px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-4 md:p-5"><ul className="space-y-3 md:space-y-3.5">{(Array.isArray(data?.strengths) && data.strengths.length > 0 ? data.strengths : []).map((text, i) => (<li key={i} className="flex items-start gap-3"><div className="mt-0.5 text-[#00C9B1] shrink-0"><TrendingUp size={16} /></div><span className="text-[13px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul>{(!Array.isArray(data?.strengths) || data.strengths.length === 0) && (<p className="text-[13px] text-[#667085]">No strengths recorded for this report.</p>)}</div>
                   </div>
                   <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">
                     <div className="px-4 md:px-5 py-3.5 border-b border-[#F2F4F7]">
                       <h3 className="text-[15px] font-bold text-[#101828] mb-0.5">Weaknesses</h3>
                       <p className="text-[12px] text-[#667085]">Areas for improvement</p>
                     </div>
-                    <div className="p-4 md:p-5"><ul className="space-y-3 md:space-y-3.5">{(data?.weaknesses || ["Data accuracy issues, numerical values don't match reference", "Coverage gaps, misses key features from the reference chart", "Limited sentence variety (predominantly simple/compound)", "Basic comparative phrasing rather than precise quantified comparisons"]).map((text, i) => (<li key={i} className="flex items-start gap-3"><div className="mt-0.5 text-[#FF4D4D] shrink-0"><TrendingDown size={16} /></div><span className="text-[13px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul></div>
+                    <div className="p-4 md:p-5"><ul className="space-y-3 md:space-y-3.5">{(Array.isArray(data?.weaknesses) && data.weaknesses.length > 0 ? data.weaknesses : []).map((text, i) => (<li key={i} className="flex items-start gap-3"><div className="mt-0.5 text-[#FF4D4D] shrink-0"><TrendingDown size={16} /></div><span className="text-[13px] text-[#101828] font-medium leading-relaxed">{text}</span></li>))}</ul>{(!Array.isArray(data?.weaknesses) || data.weaknesses.length === 0) && (<p className="text-[13px] text-[#667085]">No weaknesses recorded for this report.</p>)}</div>
                   </div>
                 </div>
 

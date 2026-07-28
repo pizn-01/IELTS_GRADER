@@ -13,6 +13,7 @@ const {
   scheduleRegrade,
 } = require('./gradingReconcile');
 const { trackProductEvent } = require('../utils/productEvents');
+const { looksLikePromptCopy, buildPromptCopyGradeResult } = require('../utils/promptCopyDetection');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
 // Hard ceiling for a single Python grading child. Matches ~UI patience while
@@ -465,6 +466,81 @@ async function gradeEssayAsync(submissionId, submissionData) {
     // Prefer bank task prompt; fall back to uploaded prompt (practice upload flow).
     const questionText = taskRow?.question_text || uploadedQuestionText || '';
     const examName = taskRow?.title || `${exam_type} ${task_type}`;
+
+    // #region agent log
+    try {
+      fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-247e96.log', JSON.stringify({
+        sessionId: '247e96',
+        runId: 'post-fix',
+        hypothesisId: 'D',
+        location: 'pythonGrader.js:pre-grade',
+        message: 'Prompt-copy check before grading',
+        data: {
+          submissionId,
+          taskVariant,
+          exam_task_id: exam_task_id || null,
+          promptCopy: looksLikePromptCopy(essay_content, questionText),
+          essayPreview: String(essay_content || '').slice(0, 140),
+          questionPreview: String(questionText || '').slice(0, 140),
+        },
+        timestamp: Date.now(),
+      }) + '\n');
+    } catch (_) {}
+    // #endregion
+
+    if (looksLikePromptCopy(essay_content, questionText)) {
+      console.warn(`[pythonGrader] Prompt-copy detected — short-circuit grade submission=${submissionId}`);
+      const canned = buildPromptCopyGradeResult(taskVariant);
+      const { data: report, error: repError } = await supabaseAdmin
+        .from('reports')
+        .insert({
+          submission_id: submissionId,
+          overall_band: canned.overall_band,
+          response_band: canned.response_band,
+          coherence_band: canned.coherence_band,
+          vocabulary_band: canned.vocabulary_band,
+          grammar_band: canned.grammar_band,
+          strengths: canned.strengths,
+          weaknesses: canned.weaknesses,
+          high_impact_fixes: canned.high_impact_fixes,
+          model_answer: null,
+          vocabulary_analysis: null,
+          grammar_analysis: null,
+          data_structure_analysis: null,
+          raw_grader_output: {
+            task_variant: taskVariant,
+            prompt_copy_detected: true,
+            primary: {
+              overall_band: canned.overall_band,
+              response_band: canned.response_band,
+              coherence_band: canned.coherence_band,
+              vocabulary_band: canned.vocabulary_band,
+              grammar_band: canned.grammar_band,
+              strengths: canned.strengths,
+              weaknesses: canned.weaknesses,
+              high_impact_fixes: canned.high_impact_fixes,
+              errors: [],
+              sub_category_scores: {},
+              model: 'prompt-copy-guard',
+            },
+            deep: {},
+            secondary_bands: null,
+          },
+        })
+        .select('id')
+        .single();
+      if (repError) throw new Error(`Report insert failed: ${repError.message}`);
+      const { error: statusErr } = await supabaseAdmin.from('submissions').update({ status: 'graded' }).eq('id', submissionId);
+      if (statusErr) throw new Error(`Status update to graded failed: ${statusErr.message}`);
+      trackProductEvent({
+        eventName: 'grading_completed',
+        userId: userId || null,
+        properties: { submission_id: submissionId, prompt_copy_detected: true },
+      }).catch(() => {});
+      console.log(`[pythonGrader] Done (prompt-copy): submission=${submissionId} band=${canned.overall_band}`);
+      endGrading(submissionId);
+      return;
+    }
 
     let bulletPoints = Array.isArray(uploadedBulletPoints) ? uploadedBulletPoints : [];
     let letterType = uploadedLetterType || 'formal';

@@ -134,6 +134,9 @@ const MockExam = ({ examType, taskType, onExit }) => {
             chartSvg: data.chart_svg || null,
             chartImage: data.chart_image || null,
           };
+          // #region agent log
+          fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'pre-fix',hypothesisId:'E',location:'MockExam.jsx:loadNextQuestion',message:'Assigned mock task from API',data:{requestedExam:resolvedExam,requestedTask:resolvedTask,taskId:data.id,taskExam:data.exam_type,taskType:data.task_type,promptPreview:String(data.question_text).slice(0,180),looksLikeTask2:/prison sentences|Discuss both|To what extent/i.test(String(data.question_text)),looksLikeTask1:/graph below|chart below|table below|map below|Summarise the information/i.test(String(data.question_text)),hasChartSvg:Boolean(data.chart_svg),hasChartImage:Boolean(data.chart_image)},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
           setCurrentQuestion(q);
           setExamTaskId(data.id);
           examTaskIdRef.current = data.id;
@@ -232,6 +235,9 @@ const MockExam = ({ examType, taskType, onExit }) => {
     const timeSpent = startSeconds + 1 - timeLeft;
     startTimeRef.current = Date.now();
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'pre-fix',hypothesisId:'D,E',location:'MockExam.jsx:submitEssay',message:'Submitting mock essay',data:{examType:examType||'Academic',taskType:taskType||'Task 2',examTaskId:examTaskId?.startsWith('fallback-')?null:examTaskId,isFallback:Boolean(examTaskId?.startsWith('fallback-')),essayLen:(essay||'').length,essayPreview:String(essay||'').slice(0,160),promptPreview:String(currentQuestion?.prompt||'').slice(0,160)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       const res = await api.submitAttempt({
         exam_type: examType || 'Academic',
         task_type: taskType || 'Task 2',

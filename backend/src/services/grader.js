@@ -2,6 +2,8 @@ const OpenAI = require('openai');
 const { supabaseAdmin } = require('./supabase');
 const { beginGrading, endGrading, scheduleRegrade } = require('./gradingReconcile');
 const { trackProductEvent } = require('../utils/productEvents');
+const { looksLikePromptCopy, buildPromptCopyGradeResult } = require('../utils/promptCopyDetection');
+const { resolveTaskVariant } = require('../utils/taskVariant');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000 });
 const JS_IN_PROCESS_RETRIES = Number(process.env.JS_IN_PROCESS_RETRIES || 3);
@@ -261,6 +263,45 @@ async function gradeEssayOnce(submissionId, {
 }) {
   const bankQuestion = await getQuestionText(exam_task_id);
   const questionText = bankQuestion || uploadedQuestionText || null;
+  const taskVariant = resolveTaskVariant(exam_type, task_type);
+
+  if (looksLikePromptCopy(essay_content, questionText || '')) {
+    console.warn(`[grader] Prompt-copy detected — short-circuit grade submission=${submissionId}`);
+    const canned = buildPromptCopyGradeResult(taskVariant);
+    const { error: repError } = await supabaseAdmin
+      .from('reports')
+      .insert({
+        submission_id: submissionId,
+        overall_band: canned.overall_band,
+        response_band: canned.response_band,
+        coherence_band: canned.coherence_band,
+        vocabulary_band: canned.vocabulary_band,
+        grammar_band: canned.grammar_band,
+        strengths: canned.strengths,
+        weaknesses: canned.weaknesses,
+        high_impact_fixes: canned.high_impact_fixes,
+        model_answer: null,
+        vocabulary_analysis: null,
+        grammar_analysis: null,
+        data_structure_analysis: null,
+        raw_grader_output: {
+          task_variant: taskVariant,
+          prompt_copy_detected: true,
+          primary: { ...canned, model: 'prompt-copy-guard' },
+          deep: {},
+          secondary_bands: null,
+        },
+      });
+    if (repError) throw new Error(`Report insert failed: ${repError.message}`);
+    await supabaseAdmin.from('submissions').update({ status: 'graded' }).eq('id', submissionId);
+    trackProductEvent({
+      eventName: 'grading_completed',
+      userId: userId || null,
+      properties: { submission_id: submissionId, prompt_copy_detected: true },
+    }).catch(() => {});
+    console.log(`[grader] Done (prompt-copy): submission=${submissionId} band=${canned.overall_band}`);
+    return;
+  }
 
   // ── Call 1: Primary grading ──────────────────────────────────────────────
   const primaryCompletion = await openai.chat.completions.create({

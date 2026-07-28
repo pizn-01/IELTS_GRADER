@@ -13,7 +13,7 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
   // Verify ownership first
   const { data: submission, error: subError } = await supabaseAdmin
     .from('submissions')
-    .select('id, exam_type, task_type, essay_content, word_count, created_at, status')
+    .select('id, exam_type, task_type, essay_content, word_count, created_at, status, exam_task_id')
     .eq('id', submissionId)
     .eq('user_id', userId)
     .single();
@@ -73,6 +73,50 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
   const primary = rawOutput.primary || {};
   const subCategoryScores = primary.sub_category_scores || {};
 
+  let taskQuestion = null;
+  if (submission.exam_task_id) {
+    const { data: taskRow } = await supabaseAdmin
+      .from('exam_tasks')
+      .select('question_text')
+      .eq('id', submission.exam_task_id)
+      .maybeSingle();
+    taskQuestion = taskRow?.question_text || null;
+  }
+
+  // #region agent log
+  try {
+    const fs = require('fs');
+    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-247e96.log', JSON.stringify({
+      sessionId: '247e96',
+      runId: 'post-fix',
+      hypothesisId: 'A,B',
+      location: 'reports.js:GET',
+      message: 'Report API response shape',
+      data: {
+        submissionId,
+        exam_type: submission.exam_type,
+        task_type: submission.task_type,
+        task_variant,
+        exam_task_id: submission.exam_task_id || null,
+        includesTaskQuestion: Boolean(taskQuestion),
+        taskQuestionPreview: String(taskQuestion || '').slice(0, 140),
+        usingPrisonFallback: false,
+        strengthsCount: Array.isArray(report.strengths) ? report.strengths.length : 0,
+        firstStrength: String((report.strengths || [])[0] || '').slice(0, 140),
+        essayPreview: String(submission.essay_content || '').slice(0, 160),
+        bands: {
+          overall: report.overall_band,
+          tr: report.response_band,
+          cc: report.coherence_band,
+          lr: report.vocabulary_band,
+          gra: report.grammar_band,
+        },
+      },
+      timestamp: Date.now(),
+    }) + '\n');
+  } catch (_) {}
+  // #endregion
+
   return res.json({
     id: submissionId,
     overall_band: parseFloat(report.overall_band),
@@ -97,6 +141,9 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
     // Submission context
     exam_type: submission.exam_type,
     task_type: submission.task_type,
+    exam_task_id: submission.exam_task_id || null,
+    taskQuestion,
+    question_text: taskQuestion,
     essay: submission.essay_content,
     word_count: submission.word_count,
     created_at: submission.created_at,
