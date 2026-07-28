@@ -374,8 +374,8 @@ function DashboardApp() {
                       }}
                     />
                   </div>
-                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3 min-h-0 lg:h-0 lg:min-h-full">
-                    <div className="h-[248px] shrink-0 overflow-hidden flex flex-col">
+                  <div className="lg:col-span-5 min-w-0 flex flex-col gap-3 lg:h-0 lg:min-h-full">
+                    <div className="h-auto lg:h-[248px] lg:shrink-0 lg:overflow-hidden flex flex-col">
                       <RecentReports
                         hasData={hasData}
                         dynamicReports={recentSubmissions}
@@ -383,7 +383,7 @@ function DashboardApp() {
                         onStartPractice={handleStartPractice}
                       />
                     </div>
-                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                    <div className="max-h-[280px] overflow-hidden flex flex-col lg:max-h-none lg:flex-1 lg:min-h-0">
                       <ErrorsImpactPanel
                         frequentErrors={perf.frequentErrors}
                         totalInstances={perf.totalInstances}

@@ -2,12 +2,12 @@ import React from 'react';
 import { formatGoalGap, goalProgressPercent } from '../utils/goalProgress';
 
 const SupportMetric = ({ label, value, loading, accent }) => (
-  <div className="flex flex-col justify-center min-w-0 px-3 py-2 sm:px-3.5">
-    <p className="text-[9px] md:text-[10px] font-bold text-[#667085] uppercase tracking-widest mb-0.5">
+  <div className="flex flex-col justify-center min-w-0 px-2 py-2 sm:px-3.5">
+    <p className="text-[8px] sm:text-[9px] md:text-[10px] font-bold text-[#667085] uppercase tracking-widest mb-0.5 truncate">
       {label}
     </p>
     <p
-      className={`text-[17px] md:text-[19px] font-bold leading-none tabular-nums ${
+      className={`text-[16px] sm:text-[17px] md:text-[19px] font-bold leading-none tabular-nums ${
         accent ? 'text-[#1A96F3]' : 'text-[#101828]'
       }`}
     >

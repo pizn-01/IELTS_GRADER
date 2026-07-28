@@ -15,10 +15,38 @@ function Panel({ title, children, className = '' }) {
 }
 
 function CriterionMini({ item }) {
+  const growthClass = item.positive
+    ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A94D]'
+    : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]';
+
   return (
     <div className="bg-white rounded-xl border border-[#E5E7EB] p-2.5 flex flex-col gap-1.5 min-w-0 overflow-hidden">
       <h4 className="text-[11px] font-bold text-[#101828] truncate">{item.label}</h4>
-      <div className="grid grid-cols-4 gap-1 text-center min-w-0">
+
+      {/* Mobile (below sm): clearer 2×2 metric grid */}
+      <div className="sm:hidden grid grid-cols-2 gap-1.5 text-center min-w-0">
+        <div className="min-w-0">
+          <p className="text-[10px] text-[#667085] font-medium">First</p>
+          <p className="text-[13px] font-bold text-gray-400 truncate">{item.first}</p>
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] text-[#667085] font-medium">Average</p>
+          <p className="text-[13px] font-bold text-[#101828] truncate">{item.average}</p>
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] text-[#667085] font-medium">Latest</p>
+          <p className="text-[13px] font-bold text-[#101828] truncate">{item.latest}</p>
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] text-[#667085] font-medium">Growth</p>
+          <span className={`inline-block max-w-full truncate px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${growthClass}`}>
+            {item.growth}
+          </span>
+        </div>
+      </div>
+
+      {/* sm+: compact 4-col row */}
+      <div className="hidden sm:grid grid-cols-4 gap-1 text-center min-w-0">
         <div className="min-w-0">
           <p className="text-[9px] text-[#667085] font-medium">First</p>
           <p className="text-[12px] font-bold text-gray-400 truncate">{item.first}</p>
@@ -33,7 +61,7 @@ function CriterionMini({ item }) {
         </div>
         <div className="min-w-0">
           <p className="text-[9px] text-[#667085] font-medium">Growth</p>
-          <span className={`inline-block max-w-full truncate px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${item.positive ? 'bg-[#F0FDF9] text-[#30C3A9] border-[#30C3A94D]' : 'bg-[#FFF5F5] text-[#EF4444] border-[#FEE2E2]'}`}>
+          <span className={`inline-block max-w-full truncate px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${growthClass}`}>
             {item.growth}
           </span>
         </div>
@@ -75,7 +103,7 @@ function ErrorImpactRow({ item }) {
     <div className="flex items-center gap-2 py-2 border-b border-[#F2F4F7] last:border-0 min-w-0">
       <ImpactIcon item={item} />
       <span className="text-[11px] font-semibold text-[#344054] truncate flex-1 min-w-0">{item.label}</span>
-      <span className="text-[10px] font-bold text-[#667085] shrink-0 hidden sm:inline">{impactLabel}</span>
+      <span className="text-[10px] font-bold text-[#667085] shrink-0">{impactLabel}</span>
       <span className="px-1.5 py-0.5 bg-[#1018280D] rounded-full text-[10px] font-bold text-[#101828] shrink-0">
         {item.count ?? 0}
       </span>

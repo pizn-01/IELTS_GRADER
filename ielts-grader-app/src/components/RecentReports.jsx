@@ -120,29 +120,51 @@ const RecentReports = ({ hasData = true, dynamicReports = null, onOpenReport, on
               onClick={() => onOpenReport?.(report.id)}
               className="group w-full text-left rounded-[10px] cursor-pointer transition-colors
                 hover:bg-[#F8FBFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A96F3]/30
-                px-2.5 py-2 flex items-center gap-2.5 border border-transparent hover:border-[#E0F2FE]"
+                px-2.5 py-2 border border-transparent hover:border-[#E0F2FE]"
             >
-              <span
-                className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border shrink-0 ${tone}`}
-              >
-                {report.type}
-              </span>
+              {/* Mobile: two-line row */}
+              <div className="md:hidden flex flex-col gap-1 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border shrink-0 ${tone}`}
+                  >
+                    {report.type}
+                  </span>
+                  <span className="text-[12px] font-semibold text-[#344054] truncate min-w-0 flex-1">
+                    {report.task}
+                  </span>
+                  <ScoreBadge score={report.score} />
+                  <ChevronRight
+                    size={14}
+                    className="text-[#D0D5DD] group-hover:text-[#1A96F3] shrink-0 transition-colors"
+                    aria-hidden
+                  />
+                </div>
+                <span className="text-[11px] font-medium text-[#98A2B3] truncate pl-0.5">
+                  {report.date}
+                </span>
+              </div>
 
-              <span className="text-[12px] font-semibold text-[#344054] shrink-0">
-                {report.task}
-              </span>
-
-              <span className="text-[11px] font-medium text-[#98A2B3] truncate min-w-0 flex-1">
-                {report.date}
-              </span>
-
-              <ScoreBadge score={report.score} />
-
-              <ChevronRight
-                size={14}
-                className="text-[#D0D5DD] group-hover:text-[#1A96F3] shrink-0 transition-colors"
-                aria-hidden
-              />
+              {/* md+: single-line row */}
+              <div className="hidden md:flex items-center gap-2.5 min-w-0">
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border shrink-0 ${tone}`}
+                >
+                  {report.type}
+                </span>
+                <span className="text-[12px] font-semibold text-[#344054] shrink-0">
+                  {report.task}
+                </span>
+                <span className="text-[11px] font-medium text-[#98A2B3] truncate min-w-0 flex-1">
+                  {report.date}
+                </span>
+                <ScoreBadge score={report.score} />
+                <ChevronRight
+                  size={14}
+                  className="text-[#D0D5DD] group-hover:text-[#1A96F3] shrink-0 transition-colors"
+                  aria-hidden
+                />
+              </div>
             </button>
           );
         })}
