@@ -5,7 +5,7 @@ const { lookupGeo } = require('../utils/geoip');
 const { getClientIp } = require('../utils/getClientIp');
 const { parseUserAgent } = require('../utils/parseUserAgent');
 const { optionalAuth } = require('../middleware/auth');
-const { trackProductEvent, FUNNEL_EVENT_SET } = require('../utils/productEvents');
+const { trackProductEvent, FUNNEL_EVENT_SET, isAdminUserId } = require('../utils/productEvents');
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ function isPricingPath(path) {
 }
 
 // ─── POST /api/tracking/pageview ─────────────────────────────────────────────
-router.post('/pageview', async (req, res) => {
+router.post('/pageview', optionalAuth, async (req, res) => {
   const {
     session_id,
     path,
@@ -104,11 +104,16 @@ router.post('/pageview', async (req, res) => {
     if (pvErr) throw pvErr;
 
     if (isPricingPath(path)) {
-      trackProductEvent({
-        eventName: 'pricing_viewed',
-        sessionId: session_id,
-        properties: { path },
-      }).catch(() => {});
+      const userId = req.user?.userId || null;
+      // Admins browsing pricing must not inflate the funnel.
+      if (!(userId && await isAdminUserId(userId))) {
+        trackProductEvent({
+          eventName: 'pricing_viewed',
+          userId,
+          sessionId: session_id,
+          properties: { path },
+        }).catch(() => {});
+      }
     }
 
     return res.json({ ok: true });
@@ -137,9 +142,14 @@ router.post('/event', optionalAuth, async (req, res) => {
   }
 
   try {
+    const userId = req.user?.userId || null;
+    if (userId && await isAdminUserId(userId)) {
+      return res.json({ ok: true, skipped: 'admin' });
+    }
+
     await trackProductEvent({
       eventName: event_name,
-      userId: req.user?.userId || null,
+      userId,
       sessionId: typeof session_id === 'string' ? session_id : null,
       properties: properties && typeof properties === 'object' ? properties : {},
     });

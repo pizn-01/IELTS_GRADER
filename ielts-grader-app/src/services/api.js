@@ -64,9 +64,13 @@ export const api = {
   // ─── POST /api/tracking/pageview ─────────────────────────────────────────────
   trackPageView: async (payload) => {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = getAuthToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       await fetch(TRACKING_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       });
     } catch {

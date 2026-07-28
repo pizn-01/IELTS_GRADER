@@ -1266,38 +1266,57 @@ router.get('/acquisition/overview', async (req, res) => {
 // ─── GET /api/admin/events/funnel ──────────────────────────────────────────────
 router.get('/events/funnel', async (req, res) => {
   const days = parseDays(req.query.days, 7);
-  const since = sinceIso(days);
+  const periodSince = sinceIso(days);
   const {
     FUNNEL_EVENTS,
     FREE_TRIAL_ENGAGEMENT_EVENTS,
     TRACKED_EVENTS,
+    FUNNEL_METRICS_SINCE,
+    fetchAdminUserIds,
   } = require('../utils/productEvents');
 
+  // Restart baseline: ignore pre-reset events even if the selected period is wider.
+  const since = periodSince > FUNNEL_METRICS_SINCE ? periodSince : FUNNEL_METRICS_SINCE;
+
   try {
-    const rows = await fetchAllRows(() =>
-      supabaseAdmin
-        .from('product_events')
-        .select('event_name, user_id, session_id')
-        .gte('created_at', since)
-        .in('event_name', TRACKED_EVENTS)
-        .order('created_at', { ascending: false })
-    );
+    const [rows, adminIds] = await Promise.all([
+      fetchAllRows(() =>
+        supabaseAdmin
+          .from('product_events')
+          .select('event_name, user_id, session_id')
+          .gte('created_at', since)
+          .in('event_name', TRACKED_EVENTS)
+          .order('created_at', { ascending: false })
+      ),
+      fetchAdminUserIds(),
+    ]);
+
+    // Sessions that ever appear with an admin user_id — exclude those from session-only rows.
+    const adminSessions = new Set();
+    for (const row of rows) {
+      if (row.user_id && adminIds.has(row.user_id) && row.session_id) {
+        adminSessions.add(row.session_id);
+      }
+    }
 
     const byEvent = Object.fromEntries(
-      TRACKED_EVENTS.map((name) => [name, { count: 0, actors: new Set() }])
+      TRACKED_EVENTS.map((name) => [name, { actors: new Set() }])
     );
 
     for (const row of rows) {
       const bucket = byEvent[row.event_name];
       if (!bucket) continue;
-      bucket.count += 1;
+
+      if (row.user_id && adminIds.has(row.user_id)) continue;
+      if (!row.user_id && row.session_id && adminSessions.has(row.session_id)) continue;
+
+      // Unique actors: prefer user_id; fall back to session for anonymous events.
       const actor = row.user_id || row.session_id;
       if (actor) bucket.actors.add(actor);
     }
 
     const steps = FUNNEL_EVENTS.map((eventName, index) => {
       const unique = byEvent[eventName].actors.size;
-      const count = byEvent[eventName].count;
       let conversion_from_prev = null;
       if (index > 0) {
         const prevUnique = byEvent[FUNNEL_EVENTS[index - 1]].actors.size;
@@ -1305,7 +1324,8 @@ router.get('/events/funnel', async (req, res) => {
           ? 0
           : Math.round((unique / prevUnique) * 1000) / 10;
       }
-      return { event_name: eventName, count, unique, conversion_from_prev };
+      // count === unique: funnel is unique-user based (repeat events don't inflate).
+      return { event_name: eventName, count: unique, unique, conversion_from_prev };
     });
 
     const signupUnique = byEvent.signup.actors.size;
@@ -1317,7 +1337,7 @@ router.get('/events/funnel', async (req, res) => {
     const free_trial_engagement = {
       events: FREE_TRIAL_ENGAGEMENT_EVENTS.map((eventName) => ({
         event_name: eventName,
-        count: byEvent[eventName].count,
+        count: byEvent[eventName].actors.size,
         unique: byEvent[eventName].actors.size,
       })),
       signup_unique: signupUnique,
@@ -1330,7 +1350,12 @@ router.get('/events/funnel', async (req, res) => {
       used_only_some_of_used_one_pct: pct(usedOnlySomeUnique, usedOneUnique),
     };
 
-    return res.json({ period_days: days, steps, free_trial_engagement });
+    return res.json({
+      period_days: days,
+      metrics_since: since,
+      steps,
+      free_trial_engagement,
+    });
   } catch (err) {
     console.error('[admin/events/funnel]', err.message);
     return res.status(500).json({ error: 'Failed to fetch event funnel.' });

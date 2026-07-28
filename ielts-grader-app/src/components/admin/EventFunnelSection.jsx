@@ -16,8 +16,8 @@ function formatEventLabel(name) {
 }
 
 /**
- * Overview funnel: signup→payment conversion, free-credit engagement KPIs,
- * then step list (count + conversion from previous).
+ * Overview funnel: signup→payment conversion (unique users, admins excluded),
+ * free-credit engagement KPIs, then step list (unique · conversion from previous).
  */
 export default function EventFunnelSection({
   steps = [],
@@ -45,7 +45,7 @@ export default function EventFunnelSection({
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
           Event funnel · {periodShort}
         </p>
-        <p className="text-[10px] text-gray-400">Count · conversion from previous step</p>
+        <p className="text-[10px] text-gray-400">Unique users · conversion from previous step</p>
       </div>
 
       <div className="rounded-[10px] bg-[#F8FAFC] border border-gray-100 divide-y divide-gray-100 mb-3">
@@ -92,7 +92,7 @@ export default function EventFunnelSection({
               </span>
               <div className="text-right shrink-0">
                 <span className="text-[12px] font-bold text-[#101828] tabular-nums">
-                  {step.count ?? 0}
+                  {step.unique ?? step.count ?? 0}
                 </span>
                 {index > 0 && (
                   <p className="text-[10px] text-gray-400 tabular-nums leading-tight">
