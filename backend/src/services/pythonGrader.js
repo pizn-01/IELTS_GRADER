@@ -14,6 +14,7 @@ const {
 } = require('./gradingReconcile');
 const { trackProductEvent } = require('../utils/productEvents');
 const { looksLikePromptCopy, buildPromptCopyGradeResult } = require('../utils/promptCopyDetection');
+const { elevateModelBand } = require('../utils/modelAnswerBand');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
 // Hard ceiling for a single Python grading child. Matches ~UI patience while
@@ -308,14 +309,15 @@ function mapPythonResult(raw) {
     if (rows.length > 0) sub_category_scores[criterion] = rows;
   }
 
-  // model_answer from the revision pass
+  // model_answer from the revision pass — band must beat candidate by ≥0.5
   const revision = raw.revision_data || {};
   let model_answer = null;
   if (revision.revision) {
     const bandMatch = (revision.revised_score_line || '').match(/(\d+(?:\.\d+)?)/);
+    const parsedBand = bandMatch ? parseFloat(bandMatch[1]) : null;
     model_answer = {
       text: revision.revision,
-      estimated_band: bandMatch ? parseFloat(bandMatch[1]) : null,
+      estimated_band: elevateModelBand(parsedBand, raw.overall_band),
       key_changes: Array.isArray(revision.key_improvements) ? revision.key_improvements : [],
     };
   }

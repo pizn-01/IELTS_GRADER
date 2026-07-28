@@ -1768,9 +1768,10 @@ Return ONLY a valid JSON object exactly matching this structure:
     ORIGINAL STUDENT LETTER:
     {user_answer}
 
-    TASK: Improve the student's letter above — do NOT write a new letter from scratch.
-    Preserve the student's core ideas, intent, and general content.
-    Apply targeted corrections and upgrades in these areas:
+    TASK: Edit the student's letter in place to correct mistakes — do NOT rewrite it as a new letter.
+    Keep the same paragraph order and bullet coverage whenever possible.
+    Preserve the student's core ideas, intent, and requests.
+    Apply targeted corrections in these areas:
     • Fix the salutation and closing phrase if they don't match the {letter_type} register
         (e.g. formal: "Dear Mr Smith / Yours sincerely", semi-formal/informal: "Dear John / Best wishes")
     • Correct any bullet points that are underdeveloped — each should have 2–3 sentences of support
@@ -1779,12 +1780,14 @@ Return ONLY a valid JSON object exactly matching this structure:
     • Improve sentence flow and cohesive devices appropriate to the register
     • Fix punctuation, spelling, and layout (date, address block if formal)
     • Ensure the opening paragraph clearly states the letter's purpose
+    • Ensure a clear closing paragraph / sign-off (improve existing closing; do not invent unrelated content)
 
-    After revising, estimate the IELTS band score the improved letter would achieve (use 0.5 increments, 1.0–9.0).
-    Base this honestly on the quality of the revised text — do NOT default to 9.0.
+    The improved letter must be clearly stronger than the original.
+    In revised_score_line, estimate a band at least 0.5 higher than a fair score for the original
+    (0.5 increments, max 9.0). Do NOT default to 9.0 unless the revision truly merits it.
 
-    For "key_improvements", list exactly 5 specific changes you made — each must reference
-    what was wrong in the original and what was done to fix it in the revised version.
+    For "key_improvements", list exactly 5 specific edits — each must reference
+    what was wrong in the original and what was corrected in the revised version.
     Examples of good improvement entries:
     - "Corrected closing from 'Yours faithfully' to 'Yours sincerely' because the salutation used the recipient's name"
     - "Expanded bullet point 2 from one vague sentence to three sentences with specific detail"
@@ -1794,7 +1797,7 @@ Return ONLY a valid JSON object exactly matching this structure:
 
     Return ONLY a valid JSON object:
     {{
-    "revision": "The full improved letter text here, preserving the student's ideas...",
+    "revision": "The improved letter text here — same structure as the student letter, with corrections applied...",
     "revised_score_line": "Improved Letter (Band X.X)",
     "word_count": 175,
     "key_improvements": [

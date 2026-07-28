@@ -1905,19 +1905,22 @@ Return ONLY a valid JSON object exactly matching this structure:
     ORIGINAL STUDENT REPORT:
     {user_answer}
 
-    TASK: Improve the student's report above — do NOT write a new report from scratch.
-    Preserve the student's core observations, selected data points, and general structure.
-    Apply targeted corrections and upgrades in these areas:
+    TASK: Edit the student's report in place to correct mistakes — do NOT rewrite it as a new report.
+    Keep the same paragraph count and order whenever possible (intro → overview → body).
+    Preserve the student's selected data points and comparisons; correct accuracy and language only.
+    Apply targeted corrections in these areas:
 
-    STRUCTURE (fix if broken):
-    • Introduction: should paraphrase the prompt and identify what the chart shows — not copy it verbatim
-    • Overview: should highlight 2–3 most significant trends/patterns with NO specific figures
-    • Body: should present specific data logically, group related information, and include precise comparisons
+    STRUCTURE (fix if broken; do not invent a wholly new outline):
+    • Introduction: paraphrase the prompt and identify what the chart shows — not copy it verbatim
+    • Overview: highlight 2–3 most significant trends/patterns with NO specific figures
+    • Body: present specific data logically with precise comparisons
+    • End with a brief objective wrap-up of the main ranking/pattern in the final body paragraph
+      (Academic Task 1 must NOT use an opinion-style "In conclusion" paragraph)
     • Remove any opinions, predictions, or speculation — Task 1 must be fully objective
 
     CONTENT:
-    • Add any key trends or data points from the chart context that the student omitted
-    • Remove or correct any data the student misread or stated inaccurately
+    • Correct any data the student misread or stated inaccurately
+    • Add only essential omitted key figures from the chart context if needed for accuracy
     • Improve grouping of data where the student listed figures without logical organisation
 
     LANGUAGE:
@@ -1927,11 +1930,12 @@ Return ONLY a valid JSON object exactly matching this structure:
     • Improve cohesive devices and sentence variety
     • Fix punctuation and spelling
 
-    After revising, estimate the IELTS band score the improved report would achieve (use 0.5 increments, 1.0–9.0).
-    Base this honestly on the quality of the revised text — do NOT default to 9.0.
+    The improved report must be clearly stronger than the original.
+    In revised_score_line, estimate a band at least 0.5 higher than a fair score for the original
+    (0.5 increments, max 9.0). Do NOT default to 9.0 unless the revision truly merits it.
 
-    For "key_improvements", list exactly 4 specific changes you made — each must reference
-    what was wrong in the original and what was done to fix it in the revised version.
+    For "key_improvements", list exactly 4 specific edits — each must reference
+    what was wrong in the original and what was corrected in the revised version.
     Examples of good improvement entries:
     - "Introduction was a direct copy of the prompt — rewritten as a paraphrase identifying chart type and subject"
     - "Overview paragraph contained specific figures — removed data and replaced with general trend statements"
@@ -1941,7 +1945,7 @@ Return ONLY a valid JSON object exactly matching this structure:
 
     Return ONLY a valid JSON object:
     {{
-    "revision": "The full improved report text here with actual paragraph breaks, preserving the student's observations...",
+    "revision": "The improved report text here — same structure as the student report, with corrections applied...",
     "revised_score_line": "Improved Report (Band X.X)",
     "word_count": 175,
     "key_improvements": [

@@ -1010,21 +1010,42 @@ const ReportView = ({
             </div>
           );
           const wordCount = ma.text ? ma.text.trim().split(/\s+/).length : 0;
+          const candidateOverall = parseFloat(data?.overall_band ?? data?.overallBand);
+          const rawModelBand = ma.estimated_band != null ? parseFloat(ma.estimated_band) : null;
+          const minModelBand = Number.isFinite(candidateOverall)
+            ? Math.min(9, Math.round((candidateOverall + 0.5) * 2) / 2)
+            : 8;
+          const displayBand = Number.isFinite(rawModelBand)
+            ? Math.max(rawModelBand, minModelBand)
+            : minModelBand;
+          const improvedLabel = taskVariant === 'task1-letter'
+            ? 'Improved Letter'
+            : taskVariant === 'task2'
+              ? 'Improved Essay'
+              : 'Improved Report';
+          const revisedLabel = taskVariant === 'task1-letter'
+            ? 'Revised Letter'
+            : taskVariant === 'task2'
+              ? 'Revised Essay'
+              : 'Revised Report';
+          // #region agent log
+          fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'post-fix',hypothesisId:'MA1,MA2',location:'ReportView.jsx:model-answer-tab',message:'Model answer band display',data:{taskVariant,candidateOverall,rawModelBand,displayBand,improvedLabel,hasConclusion:/\\bconclusion\\b|in conclusion|to conclude|to sum up/i.test(String(ma.text||'')),wordCount},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
           return (
           <div className="space-y-8">
             <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-4 md:px-10 py-4 md:py-6 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                  <h3 className="text-[16px] font-bold text-[#101828]">Improved Report</h3>
+                  <h3 className="text-[16px] font-bold text-[#101828]">{improvedLabel}</h3>
                   <p className="text-[13px] text-gray-400 mt-0.5">Word count: {wordCount}</p>
                 </div>
                 <div className="bg-[#ECFDF5] text-[#10B981] px-4 py-1.5 rounded-full text-[12px] font-black tracking-tight border border-[#D1FAE5]">
-                  BAND {ma.estimated_band ?? 8.0}
+                  BAND {Number(displayBand).toFixed(1).replace(/\.0$/, '')}
                 </div>
               </div>
               <div className="p-4 md:p-10">
                 <div className="bg-[#F0FDF4] rounded-[16px] p-4 md:p-10 border border-[#DCFCE7]">
-                  <h4 className="text-[14px] font-bold text-[#101828] mb-6 uppercase tracking-wider">Revised Report</h4>
+                  <h4 className="text-[14px] font-bold text-[#101828] mb-6 uppercase tracking-wider">{revisedLabel}</h4>
                   <p className="text-[15px] text-[#101828] leading-[1.8] font-semibold whitespace-pre-wrap">{ma.text}</p>
                 </div>
               </div>

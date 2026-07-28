@@ -1297,29 +1297,34 @@ Return ONLY a valid JSON object exactly matching this structure:
     ORIGINAL STUDENT ESSAY:
     {user_answer}
 
-    TASK: Improve the student's essay above — do NOT write a new essay from scratch.
-    Preserve the student's core ideas, argument structure, and general approach.
-    Apply targeted corrections and upgrades in these areas:
+    TASK: Edit the student's essay in place to correct mistakes — do NOT rewrite it as a new essay.
+    Keep the same paragraph count and order whenever possible.
+    Preserve the student's core ideas, examples, and argument stance.
+    Only change what is needed to fix errors and raise quality:
     • Fix grammatical errors (tense, agreement, articles, prepositions)
     • Replace informal or imprecise vocabulary with academic alternatives
-    • Strengthen topic sentences and logical flow between paragraphs
+    • Strengthen weak topic sentences and logical links between sentences
     • Ensure the position is clearly stated and maintained throughout
-    • Add or sharpen supporting evidence/explanation where ideas are underdeveloped
+    • Add a short clarifying phrase where an idea is underdeveloped — do not invent new arguments
     • Correct punctuation and spelling
+    • MUST end with a dedicated conclusion paragraph that restates the writer's position
+      (add one only if the original is missing a conclusion; otherwise improve the existing one)
 
-    After revising, estimate the IELTS band score the improved essay would achieve (use 0.5 increments, 1.0–9.0).
-    Base this honestly on the quality of the revised text — do NOT default to 9.0.
+    The improved essay must be clearly stronger than the original.
+    In revised_score_line, estimate a band at least 0.5 higher than a fair score for the original
+    (0.5 increments, max 9.0). Do NOT default to 9.0 unless the revision truly merits it.
 
-    For "key_improvements", list exactly 4 specific changes you made — each must reference
-    what was wrong in the original and what was done to fix it in the revised version.
+    For "key_improvements", list exactly 4 specific edits — each must reference
+    what was wrong in the original and what was corrected in the revised version.
     Examples of good improvement entries:
     - "Replaced informal contraction 'don't' with 'do not' to maintain academic register"
     - "Strengthened topic sentence in Body Paragraph 2 from vague opener to clear claim"
     - "Added causal explanation to the education argument which previously lacked development"
+    - "Added a conclusion paragraph restating the position (missing in the original)"
 
     Return ONLY a valid JSON object:
     {{
-    "revision": "The full improved essay text here, preserving the student's ideas...",
+    "revision": "The improved essay text here — same structure as the student essay, with corrections applied...",
     "revised_score_line": "Improved Essay (Band X.X)",
     "word_count": 265,
     "key_improvements": [

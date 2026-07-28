@@ -4,6 +4,7 @@ const { beginGrading, endGrading, scheduleRegrade } = require('./gradingReconcil
 const { trackProductEvent } = require('../utils/productEvents');
 const { looksLikePromptCopy, buildPromptCopyGradeResult } = require('../utils/promptCopyDetection');
 const { resolveTaskVariant } = require('../utils/taskVariant');
+const { elevateModelBand } = require('../utils/modelAnswerBand');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000 });
 const JS_IN_PROCESS_RETRIES = Number(process.env.JS_IN_PROCESS_RETRIES || 3);
@@ -136,14 +137,14 @@ Return ONLY a valid JSON object with this exact structure:
 
 {
   "model_answer": {
-    "text": "<Complete model answer essay for the same prompt at Band 8.0 level. Write all paragraphs fully. Task 2: 260–310 words. Task 1 Academic: 165–185 words. Task 1 General: 165–185 words.>",
-    "estimated_band": 8.0,
+    "text": "<Edit the candidate essay/report/letter IN PLACE to correct mistakes. Keep the same paragraph order and core ideas. Do NOT write a wholly new answer from scratch. Task 2 MUST end with a conclusion paragraph. Task 1 Academic must NOT use an opinion conclusion — end with an objective wrap-up of the main pattern. Task 1 General: keep appropriate salutation/closing.>",
+    "estimated_band": ${Math.min(9, (parseFloat(primaryResult.overall_band) || 7) + 0.5)},
     "key_changes": [
-      "<Change 1 — what was improved vs the candidate essay and why>",
-      "<Change 2>",
-      "<Change 3>",
-      "<Change 4>",
-      "<Change 5>"
+      "<Specific edit 1 — what was wrong in the candidate text and what was corrected>",
+      "<Specific edit 2>",
+      "<Specific edit 3>",
+      "<Specific edit 4>",
+      "<Specific edit 5>"
     ]
   },
   "vocabulary_analysis": {
@@ -376,6 +377,15 @@ async function gradeEssayOnce(submissionId, {
     console.error('[grader] Secondary grade JSON parse failed:', parseErr.message);
   }
 
+  // Elevate model-answer band so it is always ≥ candidate + 0.5
+  let modelAnswer = deep.model_answer || null;
+  if (modelAnswer && (modelAnswer.text || modelAnswer.estimated_band != null)) {
+    modelAnswer = {
+      ...modelAnswer,
+      estimated_band: elevateModelBand(modelAnswer.estimated_band, primary.overall_band),
+    };
+  }
+
   // ── Insert report ────────────────────────────────────────────────────────
   const { data: report, error: repError } = await supabaseAdmin
     .from('reports')
@@ -389,11 +399,11 @@ async function gradeEssayOnce(submissionId, {
       strengths:             primary.strengths,
       weaknesses:            primary.weaknesses,
       high_impact_fixes:     primary.high_impact_fixes,
-      model_answer:          deep.model_answer || null,
+      model_answer:          modelAnswer,
       vocabulary_analysis:   deep.vocabulary_analysis || null,
       grammar_analysis:      deep.grammar_analysis || null,
       data_structure_analysis: deep.data_structure_analysis || null,
-      raw_grader_output:     { primary: { ...primary, model: 'gpt-4o-mini' }, deep, secondary_bands: secondaryBands },
+      raw_grader_output:     { primary: { ...primary, model: 'gpt-4o-mini' }, deep: { ...deep, model_answer: modelAnswer }, secondary_bands: secondaryBands },
     })
     .select('id')
     .single();
