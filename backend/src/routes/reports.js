@@ -2,6 +2,7 @@ const express = require('express');
 const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { resolveTaskVariant } = require('../utils/taskVariant');
+const { elevateModelBand } = require('../utils/modelAnswerBand');
 
 const router = express.Router();
 
@@ -117,6 +118,34 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
   } catch (_) {}
   // #endregion
 
+  let modelAnswer = report.model_answer || null;
+  if (modelAnswer && typeof modelAnswer === 'object') {
+    const elevated = elevateModelBand(modelAnswer.estimated_band, report.overall_band);
+    modelAnswer = { ...modelAnswer, estimated_band: elevated };
+  }
+
+  // #region agent log
+  try {
+    const fs = require('fs');
+    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-247e96.log', JSON.stringify({
+      sessionId: '247e96',
+      runId: 'post-fix',
+      hypothesisId: 'MA1',
+      location: 'reports.js:model-band-elevate',
+      message: 'Elevated model_answer band on read',
+      data: {
+        submissionId,
+        overall_band: report.overall_band,
+        raw_model_band: report.model_answer?.estimated_band ?? null,
+        elevated_model_band: modelAnswer?.estimated_band ?? null,
+        beats_candidate: modelAnswer?.estimated_band != null
+          && Number(modelAnswer.estimated_band) > Number(report.overall_band),
+      },
+      timestamp: Date.now(),
+    }) + '\n');
+  } catch (_) {}
+  // #endregion
+
   return res.json({
     id: submissionId,
     overall_band: parseFloat(report.overall_band),
@@ -127,7 +156,7 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
     strengths: report.strengths || [],
     weaknesses: report.weaknesses || [],
     high_impact_fixes: report.high_impact_fixes || [],
-    model_answer: report.model_answer || null,
+    model_answer: modelAnswer,
     vocabulary_analysis: report.vocabulary_analysis || null,
     grammar_analysis: report.grammar_analysis || null,
     data_structure_analysis,
