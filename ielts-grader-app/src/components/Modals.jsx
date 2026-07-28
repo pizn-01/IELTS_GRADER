@@ -1,16 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_PLANS, FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 import { trackEvent } from '../utils/trackEvent';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
-export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
+export const NotificationBanner = ({ isOpen, onClose, credits = null, allowance = null }) => {
   const navigate = useNavigate();
   // Only show when explicitly open and when credits are low or exhausted
   if (!isOpen) return null;
-  if (credits !== null && credits > 2) return null; // hide when user has enough credits
-
+  if (credits !== null) {
+    const fullBalance = Number.isFinite(Number(allowance)) && Number(allowance) > 0
+      ? Number(allowance)
+      : FREE_TRIAL_CREDITS;
+    if (credits >= fullBalance) return null; // hide when user has a full balance
+  }
   const message = credits === 0
     ? `You've used all your evaluation credits. Subscribe to keep practicing: Weekly ${WEEKLY.label} (${WEEKLY.credits} exams) or Monthly ${MONTHLY.label} (${MONTHLY.credits} exams).`
     : `Only ${credits} evaluation credit${credits === 1 ? '' : 's'} remaining. Subscribe to Monthly Mastery for ${MONTHLY.credits} exams/month.`;

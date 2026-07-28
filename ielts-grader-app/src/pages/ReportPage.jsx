@@ -91,12 +91,12 @@ const ReportPage = () => {
   const isSubscribed =
     user?.subscription_status === 'active' || user?.is_subscribed === true;
   const learningIsOpen = showLearningModal && !needsTargetBand;
-  // Plan CTA after 2nd free try (1 credit left) and when free credits are gone
+  // Plan CTA after last free credit is used
   const showUpgradeModal =
     !upgradeDismissed &&
     !isSubscribed &&
     Boolean(user) &&
-    creditsRemaining <= 1 &&
+    creditsRemaining <= 0 &&
     !needsTargetBand &&
     !learningIsOpen &&
     !showPracticeModal;

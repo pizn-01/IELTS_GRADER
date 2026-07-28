@@ -62,13 +62,13 @@ export default function EventFunnelSection({
         </div>
         <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
           <div>
-            <span className="text-[12px] text-gray-500">Used all 3 free credits</span>
+            <span className="text-[12px] text-gray-500">Used all 2 free credits</span>
             <p className="text-[10px] text-gray-400 tabular-nums">{usedAllOfOnePct}% of those who used ≥1</p>
           </div>
           <span className="text-[16px] font-black text-[#101828] tabular-nums">{usedAll}</span>
         </div>
         <div className="px-3.5 py-2 flex items-center justify-between gap-3">
-          <span className="text-[12px] text-gray-500">Only 1–2 free credits</span>
+          <span className="text-[12px] text-gray-500">Only 1 free credit</span>
           <div className="text-right shrink-0">
             <span className="text-[13px] font-bold text-[#101828] tabular-nums">{usedOnlySome}</span>
             <p className="text-[10px] text-gray-400 tabular-nums">{usedOnlySomePct}% of engaged</p>

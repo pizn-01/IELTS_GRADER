@@ -83,7 +83,7 @@ async function fetchProfile(userId) {
     && new Date(data.subscription_period_end) <= new Date();
   const isSubscribed = data.subscription_status === 'active' && !periodEnded;
   const rawAllowance = data.credits_allowance ?? FREE_TRIAL_CREDITS;
-  // Free-trial profiles may still have the old 1-credit allowance in DB; floor at 3 for display.
+  // Free-trial profiles may still have a legacy allowance in DB; floor at FREE_TRIAL_CREDITS for display.
   const creditsAllowance = periodEnded || !isSubscribed
     ? Math.max(rawAllowance, FREE_TRIAL_CREDITS)
     : rawAllowance;
@@ -498,24 +498,9 @@ router.post('/google', async (req, res) => {
     const isNewUser = Date.now() - userCreatedAt < 60000;
 
     if (isNewUser) {
-      // Only force free-trial credits when the profile was just created (insert path).
-      // Do not reset credits on every Google login within the 60s window.
-      if (!profile.credits_remaining || profile.credits_remaining < FREE_TRIAL_CREDITS) {
-        await supabaseAdmin.from('profiles').update({
-          credits_remaining: FREE_TRIAL_CREDITS,
-          credits_allowance: FREE_TRIAL_CREDITS,
-          email_verified: true,
-        }).eq('id', user.id);
-        profile = {
-          ...profile,
-          credits_remaining: FREE_TRIAL_CREDITS,
-          credits_allowance: FREE_TRIAL_CREDITS,
-          email_verified: true,
-        };
-      } else {
-        await supabaseAdmin.from('profiles').update({ email_verified: true }).eq('id', user.id);
-        profile = { ...profile, email_verified: true };
-      }
+      // Credits are set only on the insert/upsert path above — never re-fill after spend.
+      await supabaseAdmin.from('profiles').update({ email_verified: true }).eq('id', user.id);
+      profile = { ...profile, email_verified: true };
 
       await saveUserAttribution(supabaseAdmin, user.id, { attribution, session_id, req }).catch(err =>
         console.error('[auth/google] Attribution save failed:', err.message)

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import TargetBandPrompt from './TargetBandPrompt';
 import ReportUpgradeCta from './ReportUpgradeCta';
-import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
+import { FREE_TRIAL_CREDITS, FREE_TRIAL_ALLOWANCE_MAX } from '../constants/subscriptionPlans';
 import {
   hasSeenFirstFreeReportDiscovery,
   markFirstFreeReportDiscoverySeen,
@@ -25,15 +25,24 @@ function getTabsForVariant(variant) {
   return [...base, 'Flow & Logic'];
 }
 
-/** First free evaluation just completed: 2 of 3 credits remain on a free-trial profile. */
+function resolveFreeTrialAllowance(user) {
+  const allowance = Number(user?.credits_allowance);
+  if (Number.isFinite(allowance) && allowance > 0 && allowance <= FREE_TRIAL_ALLOWANCE_MAX) {
+    return allowance;
+  }
+  return FREE_TRIAL_CREDITS;
+}
+
+/** First free evaluation just completed: allowance − 1 credits remain on a free-trial profile. */
 function isFirstFreeReportDiscoveryEligible(user) {
   if (!user) return false;
   if (user.is_admin) return false;
   if (user.is_subscribed || user.subscription_status === 'active') return false;
+  const rawAllowance = Number(user.credits_allowance);
+  if (Number.isFinite(rawAllowance) && rawAllowance > FREE_TRIAL_ALLOWANCE_MAX) return false;
   const remaining = Number(user.credits_remaining);
-  if (!Number.isFinite(remaining) || remaining !== FREE_TRIAL_CREDITS - 1) return false;
-  const allowance = Number(user.credits_allowance);
-  if (Number.isFinite(allowance) && allowance > FREE_TRIAL_CREDITS) return false;
+  const allowance = resolveFreeTrialAllowance(user);
+  if (!Number.isFinite(remaining) || remaining !== allowance - 1) return false;
   return true;
 }
 
@@ -312,7 +321,8 @@ const ReportView = ({
     // Wait if credits still look unused — AuthContext may not have refreshed yet
     // after the first free evaluation deducted a credit.
     const remaining = Number(user.credits_remaining);
-    if (Number.isFinite(remaining) && remaining === FREE_TRIAL_CREDITS) return;
+    const trialAllowance = resolveFreeTrialAllowance(user);
+    if (Number.isFinite(remaining) && remaining === trialAllowance) return;
 
     discoveryStarted.current = true;
     if (isFirstFreeReportDiscoveryEligible(user) && !hasSeenFirstFreeReportDiscovery()) {

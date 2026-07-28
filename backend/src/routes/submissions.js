@@ -4,7 +4,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { gradeEssayAsync } = require('../services/graderEngine');
 const { isPeriodEnded, expireSubscriptionAccess } = require('../services/subscriptionSync');
 const { trackProductEvent } = require('../utils/productEvents');
-const { FREE_TRIAL_CREDITS } = require('../services/subscriptionPlans');
+const { FREE_TRIAL_CREDITS, FREE_TRIAL_ALLOWANCE_MAX } = require('../services/subscriptionPlans');
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ function isFreeTrialProfile(profile) {
   if (!profile || profile.is_admin) return false;
   if (profile.subscription_status === 'active') return false;
   const allowance = Number(profile.credits_allowance);
-  if (Number.isFinite(allowance) && allowance > FREE_TRIAL_CREDITS) return false;
+  if (Number.isFinite(allowance) && allowance > FREE_TRIAL_ALLOWANCE_MAX) return false;
   return true;
 }
 
@@ -140,13 +140,13 @@ router.post('/', authenticateToken, async (req, res) => {
     },
   }).catch(() => {});
 
-  // Free-trial engagement: first credit vs all 3 exhausted
+  // Free-trial engagement: first credit vs all free credits exhausted
   if (isFreeTrialProfile(profile)) {
     const creditsBefore = profile.credits_remaining;
     const creditsAfter = creditsBefore - 1;
     const allowance = Number(profile.credits_allowance);
     const freeAllowance = Number.isFinite(allowance) && allowance > 0
-      ? Math.min(allowance, FREE_TRIAL_CREDITS)
+      ? Math.min(allowance, FREE_TRIAL_ALLOWANCE_MAX)
       : FREE_TRIAL_CREDITS;
     const engagementProps = {
       submission_id: submission.id,

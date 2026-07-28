@@ -1,7 +1,9 @@
 /**
  * Canonical subscription plan catalog — single source of truth for credits and labels.
  */
-const FREE_TRIAL_CREDITS = 3;
+const FREE_TRIAL_CREDITS = 2;
+/** Highest free-trial allowance ever granted (includes grandfathered 3-credit trials). */
+const FREE_TRIAL_ALLOWANCE_MAX = 3;
 
 const SUBSCRIPTION_PLANS = {
   weekly: {
@@ -76,6 +78,7 @@ function getAllPlans() {
 
 module.exports = {
   FREE_TRIAL_CREDITS,
+  FREE_TRIAL_ALLOWANCE_MAX,
   SUBSCRIPTION_PLANS,
   NEW_USER_PROMO,
   isNewUserPromoConfigured,

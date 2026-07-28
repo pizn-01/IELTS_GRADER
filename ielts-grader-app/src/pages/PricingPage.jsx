@@ -22,7 +22,7 @@ const PricingPage = () => {
       price: '$0',
       description: 'Get started with your first evaluation.',
       features: [
-        '3 free full evaluations',
+        '2 free full evaluations',
         'Band score breakdown',
         'Fix cards & feedback',
         'No card required',
@@ -84,7 +84,7 @@ const PricingPage = () => {
     <div className="min-h-screen bg-[#EFF6FF]">
       <SeoHead
         title="IELTS Writing Practice Plans & Pricing | IELTS AI Tutor"
-        description="New users get 50% off the first month. Start free with three full IELTS writing evaluations, then upgrade to Weekly Sprint or Monthly Mastery."
+        description="New users get 50% off the first month. Start free with two full IELTS writing evaluations, then upgrade to Weekly Sprint or Monthly Mastery."
         path="/pricing"
       />
       <Navbar />

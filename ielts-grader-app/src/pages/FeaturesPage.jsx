@@ -99,7 +99,7 @@ const FEATURE_GROUPS = [
 const FAQS = [
   {
     q: 'Are evaluations free?',
-    a: 'Yes. New accounts get three full evaluations with band scores and fix cards, no credit card required.',
+    a: 'Yes. New accounts get two full evaluations with band scores and fix cards, no credit card required.',
   },
   {
     q: 'Does this replace a human tutor?',

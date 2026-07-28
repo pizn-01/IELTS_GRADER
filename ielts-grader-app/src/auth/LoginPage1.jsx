@@ -138,7 +138,7 @@ const LoginPage1 = () => {
     : 'Welcome back';
   const subtitle = isSignup
     ? isGuestFlow
-      ? 'Sign up to get your report: 3 free evaluations, no card required.'
+      ? 'Sign up to get your report: 2 free evaluations, no card required.'
       : 'Join IELTSGRADER and start improving in minutes.'
     : isGuestFlow
       ? 'Log in to continue and get your report.'

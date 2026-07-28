@@ -1,19 +1,29 @@
-export const FREE_TRIAL_CREDITS = 3;
+export const FREE_TRIAL_CREDITS = 2;
+/** Highest free-trial allowance ever granted (includes grandfathered 3-credit trials). */
+export const FREE_TRIAL_ALLOWANCE_MAX = 3;
 
 /**
- * "3 free evaluations" marketing copy — only for free-trial users who still
- * have unused free credits. Hide for admins, subscribers, and anyone with a
- * larger allowance / balance (e.g. admin top-up).
+ * True for non-admin, non-subscribed users whose allowance is within free-trial range
+ * (current grant or grandfathered 3-credit trials). Admin top-ups / paid packs exceed the max.
+ */
+export function isFreeTrialUser(user) {
+  if (!user) return false;
+  if (user.is_admin) return false;
+  if (user.is_subscribed || user.subscription_status === 'active') return false;
+  const allowance = Number(user.credits_allowance);
+  if (Number.isFinite(allowance) && allowance > FREE_TRIAL_ALLOWANCE_MAX) return false;
+  return true;
+}
+
+/**
+ * "Free evaluations" marketing copy — logged-out visitors, or free-trial users who still
+ * have unused free credits. Hide for admins, subscribers, and paid/top-up allowances.
  */
 export function showFreeTrialEvalMessage(user) {
   if (!user) return true;
-  if (user.is_admin) return false;
-  if (user.is_subscribed || user.subscription_status === 'active') return false;
+  if (!isFreeTrialUser(user)) return false;
   const remaining = Number(user.credits_remaining) || 0;
-  if (remaining <= 0 || remaining > FREE_TRIAL_CREDITS) return false;
-  const allowance = Number(user.credits_allowance);
-  if (Number.isFinite(allowance) && allowance > FREE_TRIAL_CREDITS) return false;
-  return true;
+  return remaining > 0;
 }
 
 /** Must match backend NEW_USER_PROMO + Stripe coupon (50% repeating 1 month). */

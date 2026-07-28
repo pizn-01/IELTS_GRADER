@@ -86,7 +86,7 @@ const SubscriptionPage = () => {
   const cancelAtPeriodEnd = status?.cancel_at_period_end;
 
   const barPct = allowance > 0 ? Math.min(100, Math.round((remaining / allowance) * 100)) : 0;
-  const isLow = remaining > 0 && remaining <= Math.max(2, Math.floor(allowance * 0.15));
+  const isLow = remaining > 0 && remaining <= Math.max(1, Math.floor(allowance * 0.15));
   const isExhausted = remaining === 0;
 
   const barColor = isExhausted ? 'bg-[#F04438]' : isLow ? 'bg-[#F59E0B]' : 'bg-[#12B76A]';

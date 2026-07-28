@@ -12,7 +12,7 @@ const FAQ = () => {
     },
     {
       q: 'Do I really get a free report?',
-      a: 'Yes! Every new account gets three free evaluation credits, so you can get a full band score and feedback report before deciding to upgrade.'
+      a: 'Yes! Every new account gets two free evaluation credits, so you can get a full band score and feedback report before deciding to upgrade.'
     },
     {
       q: 'How accurate is the AI?',
@@ -36,7 +36,7 @@ const FAQ = () => {
     },
     {
       q: 'How do credits and pricing work?',
-      a: 'Every account starts with 3 free evaluation credits. After that, you can choose a plan on our Pricing page, from a fixed number of evaluations per week to a larger monthly allowance, depending on how intensively you want to practice.'
+      a: 'Every account starts with 2 free evaluation credits. After that, you can choose a plan on our Pricing page, from a fixed number of evaluations per week to a larger monthly allowance, depending on how intensively you want to practice.'
     },
     {
       q: 'Can I practice under real exam conditions?',

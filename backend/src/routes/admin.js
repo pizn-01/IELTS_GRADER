@@ -327,7 +327,7 @@ router.patch('/users/:id', async (req, res) => {
     const c = parseInt(credits_remaining);
     if (isNaN(c) || c < 0) return res.status(400).json({ error: 'credits_remaining must be a non-negative integer.' });
     updates.credits_remaining = c;
-    updates.credits_allowance = Math.max(c, FREE_TRIAL_CREDITS);
+    // Allowance is updated after fetch so we never shrink a grandfathered free-trial allowance.
   }
   if (target_band !== undefined) {
     const b = parseFloat(target_band);
@@ -354,9 +354,15 @@ router.patch('/users/:id', async (req, res) => {
     if (credits_remaining !== undefined) {
       const { data: current } = await supabaseAdmin
         .from('profiles')
-        .select('subscription_period_end, subscription_status')
+        .select('subscription_period_end, subscription_status, credits_allowance')
         .eq('id', id)
         .maybeSingle();
+      const c = parseInt(credits_remaining);
+      updates.credits_allowance = Math.max(
+        Number(current?.credits_allowance) || 0,
+        c,
+        FREE_TRIAL_CREDITS,
+      );
       const periodEnd = current?.subscription_period_end;
       const ended = periodEnd && new Date(periodEnd) <= new Date();
       if (ended || current?.subscription_status === 'canceled') {

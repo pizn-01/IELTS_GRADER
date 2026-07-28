@@ -227,7 +227,12 @@ function DashboardApp() {
           <div className="absolute inset-0 pointer-events-none dashboard-header-wash" />
           <div className="absolute inset-0 pointer-events-none hero-atmosphere opacity-80" />
           <div className="relative z-10 px-4 md:px-6 pt-4 md:pt-5 pb-0">
-            <NotificationBanner isOpen={showBanner} onClose={() => setShowBanner(false)} credits={creditsRemaining} />
+            <NotificationBanner
+              isOpen={showBanner}
+              onClose={() => setShowBanner(false)}
+              credits={creditsRemaining}
+              allowance={Number(user?.credits_allowance) || 0}
+            />
 
             {!user?.target_band_confirmed && bandForPrompt != null && (
               <div className="mb-4 bg-[#EFF8FF] border border-[#B2DDFF] rounded-[12px] px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

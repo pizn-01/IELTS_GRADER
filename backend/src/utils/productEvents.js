@@ -14,7 +14,7 @@ const FUNNEL_EVENTS = [
 
 /**
  * Free-trial engagement depth (not part of the linear payment funnel —
- * users may upgrade after 1 credit without exhausting all 3).
+ * users may upgrade after 1 credit without exhausting all free credits).
  */
 const FREE_TRIAL_ENGAGEMENT_EVENTS = [
   'free_credit_1_used',
