@@ -12,16 +12,20 @@ import {
   hasDismissedReportUpgradeModal,
   markReportUpgradeModalDismissed,
 } from '../utils/reportDiscoveryStorage';
+import { elevateModelBand } from '../utils/modelAnswerBand';
 
 const ReportPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, updateUser } = useAuth();
-  const reportData = location.state?.reportData;
+  const initialReport = location.state?.reportData || null;
+  const [reportData, setReportData] = useState(initialReport);
   const reportId =
     reportData?.id ||
     reportData?.submission_id ||
     reportData?.attempt_id ||
+    initialReport?.id ||
+    initialReport?.submission_id ||
     'session';
   const needsTargetBand = Boolean(user && user.target_band_confirmed !== true);
   const creditsRemaining = Number(user?.credits_remaining) || 0;
@@ -34,6 +38,43 @@ const ReportPage = () => {
   useEffect(() => {
     setUpgradeDismissed(hasDismissedReportUpgradeModal(reportId));
   }, [reportId]);
+
+  // Always re-fetch so model-answer band elevation and taskQuestion stay fresh
+  // (location.state can be a stale post-grade payload).
+  useEffect(() => {
+    const submissionId =
+      initialReport?.id ||
+      initialReport?.submission_id ||
+      initialReport?.attempt_id;
+    if (!submissionId || String(submissionId).startsWith('offline-')) {
+      if (initialReport) setReportData(initialReport);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const fresh = await api.getReport(submissionId);
+        if (cancelled || !fresh) return;
+        if (fresh.model_answer && typeof fresh.model_answer === 'object') {
+          fresh.model_answer = {
+            ...fresh.model_answer,
+            estimated_band: elevateModelBand(
+              fresh.model_answer.estimated_band,
+              fresh.overall_band,
+            ),
+          };
+        }
+        // #region agent log
+        fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'post-fix',hypothesisId:'MA1',location:'ReportPage.jsx:refetch',message:'Refetched report with elevated model band',data:{submissionId,overall:fresh.overall_band,modelBand:fresh.model_answer?.estimated_band??null},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        setReportData(fresh);
+        navigate('/report', { replace: true, state: { reportData: fresh } });
+      } catch {
+        if (!cancelled && initialReport) setReportData(initialReport);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [initialReport?.id, initialReport?.submission_id, initialReport?.attempt_id]);
 
   const {
     learningStatus,

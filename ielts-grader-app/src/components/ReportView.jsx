@@ -9,6 +9,7 @@ import {
   hasSeenFirstFreeReportDiscovery,
   markFirstFreeReportDiscoverySeen,
 } from '../utils/reportDiscoveryStorage';
+import { elevateModelBand } from '../utils/modelAnswerBand';
 
 function resolveTaskVariant(examType, taskType) {
   if (taskType === 'Task 1') {
@@ -1012,12 +1013,7 @@ const ReportView = ({
           const wordCount = ma.text ? ma.text.trim().split(/\s+/).length : 0;
           const candidateOverall = parseFloat(data?.overall_band ?? data?.overallBand);
           const rawModelBand = ma.estimated_band != null ? parseFloat(ma.estimated_band) : null;
-          const minModelBand = Number.isFinite(candidateOverall)
-            ? Math.min(9, Math.round((candidateOverall + 0.5) * 2) / 2)
-            : 8;
-          const displayBand = Number.isFinite(rawModelBand)
-            ? Math.max(rawModelBand, minModelBand)
-            : minModelBand;
+          const displayBand = elevateModelBand(rawModelBand, candidateOverall);
           const improvedLabel = taskVariant === 'task1-letter'
             ? 'Improved Letter'
             : taskVariant === 'task2'
