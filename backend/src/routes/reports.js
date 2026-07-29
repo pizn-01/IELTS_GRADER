@@ -11,13 +11,30 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
   const { submissionId } = req.params;
   const userId = req.user.userId;
 
-  // Verify ownership first
-  const { data: submission, error: subError } = await supabaseAdmin
-    .from('submissions')
-    .select('id, exam_type, task_type, essay_content, word_count, created_at, status, exam_task_id')
-    .eq('id', submissionId)
-    .eq('user_id', userId)
-    .single();
+  // Verify ownership first (question_text column may be missing until migration)
+  let submission;
+  let subError;
+  {
+    const withQ = await supabaseAdmin
+      .from('submissions')
+      .select('id, exam_type, task_type, essay_content, word_count, created_at, status, exam_task_id, question_text')
+      .eq('id', submissionId)
+      .eq('user_id', userId)
+      .single();
+    if (withQ.error && /question_text/i.test(withQ.error.message || '')) {
+      const withoutQ = await supabaseAdmin
+        .from('submissions')
+        .select('id, exam_type, task_type, essay_content, word_count, created_at, status, exam_task_id')
+        .eq('id', submissionId)
+        .eq('user_id', userId)
+        .single();
+      submission = withoutQ.data;
+      subError = withoutQ.error;
+    } else {
+      submission = withQ.data;
+      subError = withQ.error;
+    }
+  }
 
   if (subError || !submission) {
     return res.status(404).json({ error: 'Submission not found.' });
@@ -75,6 +92,7 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
   const subCategoryScores = primary.sub_category_scores || {};
 
   let taskQuestion = null;
+  let questionSource = 'none';
   if (submission.exam_task_id) {
     const { data: taskRow } = await supabaseAdmin
       .from('exam_tasks')
@@ -82,36 +100,40 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
       .eq('id', submission.exam_task_id)
       .maybeSingle();
     taskQuestion = taskRow?.question_text || null;
+    if (taskQuestion) questionSource = 'exam_tasks';
+  }
+  if (!taskQuestion && submission.question_text) {
+    taskQuestion = submission.question_text;
+    questionSource = 'submission';
+  }
+  if (!taskQuestion) {
+    const rawQuestion =
+      report.raw_grader_output?.question_text
+      || report.raw_grader_output?.uploaded_question_text
+      || null;
+    if (rawQuestion) {
+      taskQuestion = rawQuestion;
+      questionSource = 'raw_grader_output';
+    }
   }
 
   // #region agent log
   try {
     const fs = require('fs');
-    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-247e96.log', JSON.stringify({
-      sessionId: '247e96',
+    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-551c9c.log', JSON.stringify({
+      sessionId: '551c9c',
       runId: 'post-fix',
-      hypothesisId: 'A,B',
+      hypothesisId: 'H1,H3',
       location: 'reports.js:GET',
-      message: 'Report API response shape',
+      message: 'Report question resolution',
       data: {
         submissionId,
-        exam_type: submission.exam_type,
-        task_type: submission.task_type,
-        task_variant,
         exam_task_id: submission.exam_task_id || null,
+        questionSource,
         includesTaskQuestion: Boolean(taskQuestion),
-        taskQuestionPreview: String(taskQuestion || '').slice(0, 140),
-        usingPrisonFallback: false,
-        strengthsCount: Array.isArray(report.strengths) ? report.strengths.length : 0,
-        firstStrength: String((report.strengths || [])[0] || '').slice(0, 140),
-        essayPreview: String(submission.essay_content || '').slice(0, 160),
-        bands: {
-          overall: report.overall_band,
-          tr: report.response_band,
-          cc: report.coherence_band,
-          lr: report.vocabulary_band,
-          gra: report.grammar_band,
-        },
+        taskQuestionPreview: String(taskQuestion || '').slice(0, 80),
+        hasSubmissionQuestion: Boolean(submission.question_text),
+        submissionQuestionPreview: String(submission.question_text || '').slice(0, 80),
       },
       timestamp: Date.now(),
     }) + '\n');

@@ -1,7 +1,8 @@
 const TAB_CHIPS_KEY = 'ig_first_report_tab_chips_seen';
 const FIRST_FREE_DISCOVERY_KEY = 'ig_first_free_report_discovery_seen';
-const REPORT_TABS_GUIDE_KEY = 'ig_report_tabs_guide_seen';
-const DASHBOARD_TABS_GUIDE_KEY = 'ig_dashboard_tabs_guide_seen';
+/** v2 — do not migrate from old discovery keys (those were often marked seen while invisible). */
+const REPORT_TABS_GUIDE_KEY = 'ig_report_tabs_guide_v2_seen';
+const DASHBOARD_TABS_GUIDE_KEY = 'ig_dashboard_tabs_guide_v2_seen';
 const UPGRADE_MODAL_PREFIX = 'ig_report_upgrade_modal_';
 
 /** Legacy chip flag — treat as already-seen for migration. */
@@ -35,19 +36,15 @@ export function markFirstFreeReportDiscoverySeen() {
   try {
     localStorage.setItem(FIRST_FREE_DISCOVERY_KEY, '1');
     localStorage.setItem(TAB_CHIPS_KEY, '1');
-    localStorage.setItem(REPORT_TABS_GUIDE_KEY, '1');
   } catch {
     /* ignore */
   }
 }
 
-/** First-visit report tab guide — migrates old discovery keys as already seen. */
+/** First-visit report tab guide — v2 key only (no legacy false-positives). */
 export function hasSeenReportTabsGuide() {
   try {
-    if (localStorage.getItem(REPORT_TABS_GUIDE_KEY) === '1') return true;
-    if (localStorage.getItem(FIRST_FREE_DISCOVERY_KEY) === '1') return true;
-    if (localStorage.getItem(TAB_CHIPS_KEY) === '1') return true;
-    return false;
+    return localStorage.getItem(REPORT_TABS_GUIDE_KEY) === '1';
   } catch {
     return false;
   }
@@ -56,8 +53,6 @@ export function hasSeenReportTabsGuide() {
 export function markReportTabsGuideSeen() {
   try {
     localStorage.setItem(REPORT_TABS_GUIDE_KEY, '1');
-    localStorage.setItem(FIRST_FREE_DISCOVERY_KEY, '1');
-    localStorage.setItem(TAB_CHIPS_KEY, '1');
   } catch {
     /* ignore */
   }

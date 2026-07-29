@@ -510,6 +510,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
           grammar_analysis: null,
           data_structure_analysis: null,
           raw_grader_output: {
+            question_text: questionText || null,
             task_variant: taskVariant,
             prompt_copy_detected: true,
             primary: {
@@ -683,6 +684,7 @@ async function gradeEssayAsync(submissionId, submissionData) {
         // "Dual Assessment" tab reads raw_grader_output.primary.sub_category_scores
         // and raw_grader_output.secondary_bands directly.
         raw_grader_output: {
+          question_text: questionText || null,
           task_variant: taskVariant,
           primary: {
             overall_band,

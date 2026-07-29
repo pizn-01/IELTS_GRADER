@@ -298,15 +298,33 @@ const ReportView = ({
 
   // First-visit tab guide — only after conversion popups clear; never mark seen on mount under a modal
   useEffect(() => {
+    // #region agent log
+    let seenKeys = {};
+    try {
+      seenKeys = {
+        reportGuideV2: localStorage.getItem('ig_report_tabs_guide_v2_seen'),
+        reportGuideV1: localStorage.getItem('ig_report_tabs_guide_seen'),
+        firstFree: localStorage.getItem('ig_first_free_report_discovery_seen'),
+        tabChips: localStorage.getItem('ig_first_report_tab_chips_seen'),
+      };
+    } catch (_) {}
+    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'post-fix',hypothesisId:'H4,H5,H6',location:'ReportView.jsx:guide-effect',message:'Tab guide gate evaluation',data:{guideStarted:guideStarted.current,showTabDiscovery,hasUser:Boolean(user),tabGuideAllowed,showTargetPrompt,hasSeen:hasSeenReportTabsGuide(),seenKeys,guideVisible},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (guideStarted.current) return;
     if (!showTabDiscovery || !user) return;
     if (!tabGuideAllowed || showTargetPrompt) return;
     if (hasSeenReportTabsGuide()) {
       guideStarted.current = true;
+      // #region agent log
+      fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'pre-fix',hypothesisId:'H4',location:'ReportView.jsx:guide-skip-seen',message:'Guide skipped — already seen',data:{seenKeys},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       return;
     }
     guideStarted.current = true;
     setGuideVisible(true);
+    // #region agent log
+    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'pre-fix',hypothesisId:'H5,H6',location:'ReportView.jsx:guide-show',message:'Guide set visible true',data:{tabGuideAllowed,showTargetPrompt},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   }, [showTabDiscovery, user, tabGuideAllowed, showTargetPrompt]);
 
   const finishTabGuide = useCallback(() => {

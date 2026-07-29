@@ -98,10 +98,36 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(409).json({ error: 'Credit balance changed concurrently. Please try again.' });
   }
 
-  // Create the submission record
-  const { data: submission, error: subError } = await supabaseAdmin
-    .from('submissions')
-    .insert({
+  // #region agent log
+  try {
+    const fs = require('fs');
+    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-551c9c.log', JSON.stringify({
+      sessionId: '551c9c',
+      runId: 'post-fix',
+      hypothesisId: 'H1,H2',
+      location: 'submissions.js:insert',
+      message: 'Grade submit payload before insert',
+      data: {
+        hasExamTaskId: Boolean(exam_task_id),
+        exam_task_id: exam_task_id || null,
+        questionTextLen: typeof question_text === 'string' ? question_text.trim().length : 0,
+        questionPreview: typeof question_text === 'string' ? question_text.trim().slice(0, 80) : null,
+        essayLen: typeof essay_content === 'string' ? essay_content.length : 0,
+        persistsQuestionOnInsert: true,
+      },
+      timestamp: Date.now(),
+    }) + '\n');
+  } catch (_) {}
+  // #endregion
+
+  const uploadedQuestion =
+    typeof question_text === 'string' ? question_text.trim() : '';
+
+  // Create the submission record (question_text may be missing until migration applied)
+  let submission;
+  let subError;
+  {
+    const baseRow = {
       user_id: userId,
       exam_task_id: exam_task_id || null,
       exam_type,
@@ -110,9 +136,18 @@ router.post('/', authenticateToken, async (req, res) => {
       word_count,
       time_spent_seconds,
       status: 'grading',
-    })
-    .select('id')
-    .single();
+    };
+    const withQuestion = { ...baseRow, question_text: uploadedQuestion || null };
+    const first = await supabaseAdmin.from('submissions').insert(withQuestion).select('id').single();
+    if (first.error && /question_text/i.test(first.error.message || '')) {
+      const second = await supabaseAdmin.from('submissions').insert(baseRow).select('id').single();
+      submission = second.data;
+      subError = second.error;
+    } else {
+      submission = first.data;
+      subError = first.error;
+    }
+  }
 
   if (subError) {
     // Refund the credit on insertion failure
@@ -179,7 +214,7 @@ router.post('/', authenticateToken, async (req, res) => {
     task_type,
     essay_content,
     exam_task_id: exam_task_id || null,
-    question_text: typeof question_text === 'string' ? question_text.trim() : '',
+    question_text: uploadedQuestion,
     bullet_points: Array.isArray(bullet_points) ? bullet_points : undefined,
     letter_type: typeof letter_type === 'string' ? letter_type : undefined,
     opening_line: typeof opening_line === 'string' ? opening_line : undefined,

@@ -286,6 +286,7 @@ async function gradeEssayOnce(submissionId, {
         grammar_analysis: null,
         data_structure_analysis: null,
         raw_grader_output: {
+          question_text: questionText || null,
           task_variant: taskVariant,
           prompt_copy_detected: true,
           primary: { ...canned, model: 'prompt-copy-guard' },
@@ -403,7 +404,13 @@ async function gradeEssayOnce(submissionId, {
       vocabulary_analysis:   deep.vocabulary_analysis || null,
       grammar_analysis:      deep.grammar_analysis || null,
       data_structure_analysis: deep.data_structure_analysis || null,
-      raw_grader_output:     { primary: { ...primary, model: 'gpt-4o-mini' }, deep: { ...deep, model_answer: modelAnswer }, secondary_bands: secondaryBands },
+      raw_grader_output:     {
+        question_text: questionText || null,
+        task_variant: taskVariant,
+        primary: { ...primary, model: 'gpt-4o-mini' },
+        deep: { ...deep, model_answer: modelAnswer },
+        secondary_bands: secondaryBands,
+      },
     })
     .select('id')
     .single();

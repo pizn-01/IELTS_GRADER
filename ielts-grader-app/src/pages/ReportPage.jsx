@@ -154,6 +154,12 @@ const ReportPage = () => {
     !showUpgradeModal &&
     !showPracticeModal;
 
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'pre-fix',hypothesisId:'H5',location:'ReportPage.jsx:tabGuideAllowed',message:'Report page popup/guide gates',data:{tabGuideAllowed,needsTargetBand,learningIsOpen,showUpgradeModal,showPracticeModal,hasTaskQuestion:Boolean(reportData?.taskQuestion||reportData?.question_text),exam_task_id:reportData?.exam_task_id||null,taskQuestionPreview:String(reportData?.taskQuestion||reportData?.question_text||'').slice(0,80)},timestamp:Date.now()})}).catch(()=>{});
+  }, [tabGuideAllowed, needsTargetBand, learningIsOpen, showUpgradeModal, showPracticeModal, reportData]);
+  // #endregion
+
   return (
     <div className="min-h-screen bg-white">
       <ReportView
