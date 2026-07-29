@@ -185,10 +185,27 @@ html.lenis body {
   animation: reportTabPulse 1.6s ease-in-out infinite;
 }
 
+.report-tab-attention {
+  animation: reportTabAttention 1.8s ease-in-out infinite;
+}
+
+@keyframes reportTabAttention {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(26, 150, 243, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(26, 150, 243, 0.12);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .report-tab-pulse {
     animation: none;
     opacity: 1;
+  }
+  .report-tab-attention {
+    animation: none;
   }
 }
 .animate-delay-50 {

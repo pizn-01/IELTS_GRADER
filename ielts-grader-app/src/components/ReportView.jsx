@@ -553,26 +553,22 @@ const ReportView = ({
             <div className="flex items-center gap-1 md:gap-1.5 overflow-x-auto no-scrollbar">
               {reportTabs.map((tab) => {
                 const isActive = activeTab === tab;
-                const showPulse = showTabAttention && !isActive;
+                const highlightOther = showTabAttention && !isActive;
                 return (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => selectTab(tab)}
-                    className={`relative px-3 md:px-3.5 py-3 whitespace-nowrap shrink-0 transition-colors ${
+                    className={`relative px-3 md:px-3.5 py-2.5 my-1 whitespace-nowrap shrink-0 transition-colors rounded-[8px] ${
                       isActive
                         ? 'text-[#101828]'
-                        : 'text-[#667085] hover:text-[#101828]'
+                        : highlightOther
+                          ? 'text-[#175CD3] bg-[#EFF8FF] ring-1 ring-[#B2DDFF] report-tab-attention'
+                          : 'text-[#667085] hover:text-[#101828]'
                     }`}
                   >
-                    <span className={`text-[12px] md:text-[13px] inline-flex items-center gap-1.5 ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                    <span className={`text-[12px] md:text-[13px] inline-flex items-center gap-1.5 ${isActive || highlightOther ? 'font-bold' : 'font-semibold'}`}>
                       {tab}
-                      {showPulse && (
-                        <span
-                          className="report-tab-pulse w-1.5 h-1.5 rounded-full bg-[#1A96F3] shrink-0"
-                          aria-hidden
-                        />
-                      )}
                     </span>
                     {isActive && (
                       <span className="absolute bottom-0 left-2 right-2 h-[2.5px] rounded-full bg-[#1A96F3]" />
@@ -584,7 +580,7 @@ const ReportView = ({
             <TabGuidePop
               visible={guideVisible && tabGuideAllowed && !showTargetPrompt}
               title="More tabs to explore"
-              body="Overview is just the start — open Error Analysis, Model Answer, and criterion tabs for deeper feedback."
+              body="Swipe or tap the highlighted tabs — Error Analysis, Model Answer, Vocabulary, Grammar, and more — for deeper feedback beyond Overview."
               onDismiss={finishTabGuide}
             />
           </motion.div>

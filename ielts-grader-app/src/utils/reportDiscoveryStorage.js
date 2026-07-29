@@ -3,7 +3,6 @@ const FIRST_FREE_DISCOVERY_KEY = 'ig_first_free_report_discovery_seen';
 const REPORT_TABS_GUIDE_KEY = 'ig_report_tabs_guide_seen';
 const DASHBOARD_TABS_GUIDE_KEY = 'ig_dashboard_tabs_guide_seen';
 const UPGRADE_MODAL_PREFIX = 'ig_report_upgrade_modal_';
-const NEXT_EXAM_MODAL_PREFIX = 'ig_report_next_exam_modal_';
 
 /** Legacy chip flag — treat as already-seen for migration. */
 export function hasSeenFirstReportTabChips() {
@@ -95,26 +94,6 @@ export function hasDismissedReportUpgradeModal(reportId) {
 export function markReportUpgradeModalDismissed(reportId) {
   try {
     sessionStorage.setItem(upgradeModalKey(reportId), '1');
-  } catch {
-    /* ignore */
-  }
-}
-
-function nextExamModalKey(reportId) {
-  return `${NEXT_EXAM_MODAL_PREFIX}${reportId || 'session'}`;
-}
-
-export function hasDismissedNextExamModal(reportId) {
-  try {
-    return sessionStorage.getItem(nextExamModalKey(reportId)) === '1';
-  } catch {
-    return false;
-  }
-}
-
-export function markNextExamModalDismissed(reportId) {
-  try {
-    sessionStorage.setItem(nextExamModalKey(reportId), '1');
   } catch {
     /* ignore */
   }

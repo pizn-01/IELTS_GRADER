@@ -2,12 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
-const AUTO_DISMISS_MS = 5000;
+const AUTO_DISMISS_MS = 10000;
 
 /**
  * Low-friction first-visit coachmark under a tab bar.
- * Auto-hides after ~5s, on scroll, or when parent calls onDismiss (e.g. tab click).
- * No backdrop — does not block interaction. In-flow so parent overflow-hidden cannot clip it.
+ * Auto-hides after 10s, or when parent dismisses (X / tab click).
+ * No backdrop and no scroll-dismiss — Lenis/layout scroll must not kill it.
  */
 export default function TabGuidePop({
   visible,
@@ -37,16 +37,8 @@ export default function TabGuidePop({
       onDismissRef.current?.();
     }, AUTO_DISMISS_MS);
 
-    const onScroll = () => {
-      if (dismissedRef.current) return;
-      dismissedRef.current = true;
-      onDismissRef.current?.();
-    };
-    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener('scroll', onScroll, { capture: true });
     };
   }, [visible]);
 
@@ -62,7 +54,7 @@ export default function TabGuidePop({
           role="status"
           aria-live="polite"
         >
-          <div className="relative bg-[#101828] text-white rounded-[12px] shadow-[0_8px_28px_rgba(16,24,40,0.22)] px-3.5 py-3 max-w-[360px]">
+          <div className="relative bg-[#101828] text-white rounded-[12px] shadow-[0_8px_28px_rgba(16,24,40,0.22)] px-3.5 py-3 max-w-[400px]">
             <div
               className="absolute -top-1.5 left-6 w-3 h-3 bg-[#101828] rotate-45 rounded-[2px]"
               aria-hidden

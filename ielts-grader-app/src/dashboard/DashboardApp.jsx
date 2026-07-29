@@ -345,24 +345,22 @@ function DashboardApp() {
               <div className="flex items-center gap-1 md:gap-2 overflow-x-auto no-scrollbar">
                 {PERFORMANCE_TABS.map((tab) => {
                   const isActive = activeTab === tab;
-                  const showPulse = showTabAttention && !isActive;
+                  const highlightOther = showTabAttention && !isActive;
                   return (
                     <button
                       key={tab}
                       type="button"
                       onClick={() => handleTabClick(tab)}
-                      className={`relative px-3.5 md:px-4 py-3.5 whitespace-nowrap shrink-0 transition-colors ${
-                        isActive ? 'text-[#101828]' : 'text-[#667085] hover:text-[#101828]'
+                      className={`relative px-3.5 md:px-4 py-3 my-1 whitespace-nowrap shrink-0 transition-colors rounded-[8px] ${
+                        isActive
+                          ? 'text-[#101828]'
+                          : highlightOther
+                            ? 'text-[#175CD3] bg-[#EFF8FF] ring-1 ring-[#B2DDFF] report-tab-attention'
+                            : 'text-[#667085] hover:text-[#101828]'
                       }`}
                     >
-                      <span className={`text-[13px] md:text-[14px] inline-flex items-center gap-1.5 ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                      <span className={`text-[13px] md:text-[14px] ${isActive || highlightOther ? 'font-bold' : 'font-semibold'}`}>
                         {tab}
-                        {showPulse && (
-                          <span
-                            className="report-tab-pulse w-1.5 h-1.5 rounded-full bg-[#1A96F3] shrink-0"
-                            aria-hidden
-                          />
-                        )}
                       </span>
                       {isActive && (
                         <motion.span
@@ -377,7 +375,7 @@ function DashboardApp() {
               <TabGuidePop
                 visible={guideVisible && tabGuideAllowed}
                 title="More tabs to explore"
-                body="Overview is just the start — check Fix Cards, Strategy, and your 14-Day sprint."
+                body="Tap the highlighted tabs — Fix Cards, Strategy, and 14-Day sprint — for insights beyond Overview."
                 onDismiss={finishTabGuide}
               />
             </div>
