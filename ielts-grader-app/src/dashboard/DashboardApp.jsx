@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Lenis from 'lenis';
 import Layout from '../components/Layout';
@@ -12,6 +12,7 @@ import PerformanceFixCards from '../components/PerformanceFixCards';
 import FourteenDaySprint from '../components/FourteenDaySprint';
 import StrategyRoadmap from '../components/StrategyRoadmap';
 import TargetBandPrompt from '../components/TargetBandPrompt';
+import TabGuidePop from '../components/TabGuidePop';
 import { motion } from 'framer-motion';
 import { Play, TrendingUp, TrendingDown } from 'lucide-react';
 import { api } from '../services/api';
@@ -22,6 +23,10 @@ import LearningEditionModal from '../components/LearningEditionModal';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 import { usePerformanceAnalytics } from '../hooks/usePerformanceAnalytics';
 import { trackEvent } from '../utils/trackEvent';
+import {
+  hasSeenDashboardTabsGuide,
+  markDashboardTabsGuideSeen,
+} from '../utils/reportDiscoveryStorage';
 
 const PERFORMANCE_TABS = ['Overview', 'Fix Cards', 'Strategy', '14-Day sprint'];
 
@@ -50,6 +55,8 @@ function DashboardApp() {
   const [showBanner, setShowBanner] = useState(true);
   const [profileImage, setProfileImage] = useState(user?.profile_image_url || null);
   const [showTargetPrompt, setShowTargetPrompt] = useState(false);
+  const [guideVisible, setGuideVisible] = useState(false);
+  const guideStarted = useRef(false);
 
   const [analyticsSeries, setAnalyticsSeries] = useState(null);
   const [recentSubmissions, setRecentSubmissions] = useState(null);
@@ -57,6 +64,11 @@ function DashboardApp() {
   const [isLoading, setIsLoading] = useState(true);
 
   const activeTab = normalizeTab(searchParams.get('tab'));
+
+  const finishTabGuide = useCallback(() => {
+    setGuideVisible(false);
+    markDashboardTabsGuideSeen();
+  }, []);
 
   const setActiveTab = useCallback((tab) => {
     setSearchParams((prev) => {
@@ -66,7 +78,15 @@ function DashboardApp() {
       next.delete('task');
       return next;
     }, { replace: true });
+    setGuideVisible((wasVisible) => {
+      if (wasVisible) markDashboardTabsGuideSeen();
+      return false;
+    });
   }, [setSearchParams]);
+
+  const handleTabClick = useCallback((tab) => {
+    setActiveTab(tab);
+  }, [setActiveTab]);
 
   const {
     learningStatus,
@@ -219,6 +239,26 @@ function DashboardApp() {
       ? `${learningStatus.progressToNextEdition.completed}/5 exams toward your next study guide`
       : null;
 
+  const tabGuideAllowed =
+    Boolean(user) &&
+    !showTargetPrompt &&
+    !showLearningModal &&
+    !showModal;
+
+  useEffect(() => {
+    if (guideStarted.current) return;
+    if (!user) return;
+    if (!tabGuideAllowed) return;
+    if (hasSeenDashboardTabsGuide()) {
+      guideStarted.current = true;
+      return;
+    }
+    guideStarted.current = true;
+    setGuideVisible(true);
+  }, [user, tabGuideAllowed]);
+
+  const showTabAttention = guideVisible && activeTab === 'Overview';
+
   return (
     <Layout currentView="dashboard" onNavigate={handleNavigate} profileImage={profileImage}>
       <div className="w-full max-w-[1440px] mx-auto">
@@ -305,17 +345,24 @@ function DashboardApp() {
               <div className="flex items-center gap-1 md:gap-2 overflow-x-auto no-scrollbar">
                 {PERFORMANCE_TABS.map((tab) => {
                   const isActive = activeTab === tab;
+                  const showPulse = showTabAttention && !isActive;
                   return (
                     <button
                       key={tab}
                       type="button"
-                      onClick={() => setActiveTab(tab)}
+                      onClick={() => handleTabClick(tab)}
                       className={`relative px-3.5 md:px-4 py-3.5 whitespace-nowrap shrink-0 transition-colors ${
                         isActive ? 'text-[#101828]' : 'text-[#667085] hover:text-[#101828]'
                       }`}
                     >
-                      <span className={`text-[13px] md:text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                      <span className={`text-[13px] md:text-[14px] inline-flex items-center gap-1.5 ${isActive ? 'font-bold' : 'font-semibold'}`}>
                         {tab}
+                        {showPulse && (
+                          <span
+                            className="report-tab-pulse w-1.5 h-1.5 rounded-full bg-[#1A96F3] shrink-0"
+                            aria-hidden
+                          />
+                        )}
                       </span>
                       {isActive && (
                         <motion.span
@@ -327,6 +374,12 @@ function DashboardApp() {
                   );
                 })}
               </div>
+              <TabGuidePop
+                visible={guideVisible && tabGuideAllowed}
+                title="More tabs to explore"
+                body="Overview is just the start — check Fix Cards, Strategy, and your 14-Day sprint."
+                onDismiss={finishTabGuide}
+              />
             </div>
           </div>
         </div>

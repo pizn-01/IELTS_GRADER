@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import TargetBandPrompt from './TargetBandPrompt';
 import ReportUpgradeCta from './ReportUpgradeCta';
-import { FREE_TRIAL_CREDITS, FREE_TRIAL_ALLOWANCE_MAX } from '../constants/subscriptionPlans';
+import TabGuidePop from './TabGuidePop';
+import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 import {
-  hasSeenFirstFreeReportDiscovery,
-  markFirstFreeReportDiscoverySeen,
+  hasSeenReportTabsGuide,
+  markReportTabsGuideSeen,
 } from '../utils/reportDiscoveryStorage';
 import { elevateModelBand } from '../utils/modelAnswerBand';
 
@@ -25,38 +26,6 @@ function getTabsForVariant(variant) {
   if (variant === 'task1-letter') return [...base, 'Structure', 'Flow & Logic'];
   return [...base, 'Flow & Logic'];
 }
-
-function resolveFreeTrialAllowance(user) {
-  const allowance = Number(user?.credits_allowance);
-  if (Number.isFinite(allowance) && allowance > 0 && allowance <= FREE_TRIAL_ALLOWANCE_MAX) {
-    return allowance;
-  }
-  return FREE_TRIAL_CREDITS;
-}
-
-/** First free evaluation just completed: allowance − 1 credits remain on a free-trial profile. */
-function isFirstFreeReportDiscoveryEligible(user) {
-  if (!user) return false;
-  if (user.is_admin) return false;
-  if (user.is_subscribed || user.subscription_status === 'active') return false;
-  const rawAllowance = Number(user.credits_allowance);
-  if (Number.isFinite(rawAllowance) && rawAllowance > FREE_TRIAL_ALLOWANCE_MAX) return false;
-  const remaining = Number(user.credits_remaining);
-  const allowance = resolveFreeTrialAllowance(user);
-  if (!Number.isFinite(remaining) || remaining !== allowance - 1) return false;
-  return true;
-}
-
-const TAB_DISCOVERY_BLURBS = {
-  'Error Analysis': 'See every correction with severity and fixes',
-  'Model Answer': 'Read a stronger band model for this task',
-  'Vocabulary': 'Upgrade word choice with targeted suggestions',
-  'Grammar': 'Fix patterns that cost you band points',
-  'Argumentation': 'Strengthen claims, evidence, and position',
-  'Data Structure': 'Improve how you organize chart data',
-  'Structure': 'Tighten letter layout and purpose sections',
-  'Flow & Logic': 'Smooth paragraph links and logical steps',
-};
 
 const StarRating = ({ count = 0 }) => (
   <span className="text-[#F59E0B] text-[14px] tracking-tight">
@@ -227,13 +196,14 @@ const ReportView = ({
   showHeader = false,
   showUpgradeCta = false,
   showTabDiscovery = false,
+  tabGuideAllowed = false,
   onPracticeAgain,
   practiceStarting = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Overview");
-  const [discoveryVisible, setDiscoveryVisible] = useState(false);
-  const discoveryStarted = useRef(false);
+  const [guideVisible, setGuideVisible] = useState(false);
+  const guideStarted = useRef(false);
   const [expandedSections, setExpandedSections] = useState({});
 
   const isExpanded = (key) => expandedSections[key] !== false;
@@ -326,42 +296,35 @@ const ReportView = ({
     }
   }, [reportTabs, activeTab]);
 
+  // First-visit tab guide — only after conversion popups clear; never mark seen on mount under a modal
   useEffect(() => {
-    if (discoveryStarted.current) return;
-    if (!showTabDiscovery) {
-      discoveryStarted.current = true;
+    if (guideStarted.current) return;
+    if (!showTabDiscovery || !user) return;
+    if (!tabGuideAllowed || showTargetPrompt) return;
+    if (hasSeenReportTabsGuide()) {
+      guideStarted.current = true;
       return;
     }
-    if (!user) return;
+    guideStarted.current = true;
+    setGuideVisible(true);
+  }, [showTabDiscovery, user, tabGuideAllowed, showTargetPrompt]);
 
-    // Wait if credits still look unused — AuthContext may not have refreshed yet
-    // after the first free evaluation deducted a credit.
-    const remaining = Number(user.credits_remaining);
-    const trialAllowance = resolveFreeTrialAllowance(user);
-    if (Number.isFinite(remaining) && remaining === trialAllowance) return;
-
-    discoveryStarted.current = true;
-    if (isFirstFreeReportDiscoveryEligible(user) && !hasSeenFirstFreeReportDiscovery()) {
-      setDiscoveryVisible(true);
-      markFirstFreeReportDiscoverySeen();
-    }
-  }, [showTabDiscovery, user]);
+  const finishTabGuide = useCallback(() => {
+    setGuideVisible(false);
+    markReportTabsGuideSeen();
+  }, []);
 
   const selectTab = useCallback((tab) => {
     setActiveTab(tab);
-    if (tab !== 'Overview') {
-      setDiscoveryVisible(false);
+    if (guideVisible) {
+      finishTabGuide();
     }
-  }, []);
-
-  const dismissDiscovery = useCallback(() => {
-    setDiscoveryVisible(false);
-  }, []);
+  }, [guideVisible, finishTabGuide]);
 
   const isSubscribed =
     user?.subscription_status === 'active' || user?.is_subscribed === true;
   const showInlineUpgrade = showUpgradeCta && user && !isSubscribed;
-  const showTabAttention = discoveryVisible && activeTab === 'Overview';
+  const showTabAttention = guideVisible && activeTab === 'Overview';
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
@@ -618,6 +581,12 @@ const ReportView = ({
                 );
               })}
             </div>
+            <TabGuidePop
+              visible={guideVisible && tabGuideAllowed && !showTargetPrompt}
+              title="More tabs to explore"
+              body="Overview is just the start — open Error Analysis, Model Answer, and criterion tabs for deeper feedback."
+              onDismiss={finishTabGuide}
+            />
           </motion.div>
         </div>
       </div>
@@ -674,48 +643,6 @@ const ReportView = ({
                     </div>
                   </div>
                 </div>
-
-                {discoveryVisible && (
-                  <div className="bg-white/95 rounded-[16px] border border-[#B2DDFF] shadow-[0_4px_24px_rgba(26,150,243,0.08)] overflow-hidden">
-                    <div className="px-4 md:px-5 py-3.5 flex items-start justify-between gap-3 border-b border-[#EFF8FF]">
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-bold text-[#1A96F3] uppercase tracking-widest mb-0.5">
-                          First free report
-                        </p>
-                        <h3 className="text-[15px] font-bold text-[#101828]">
-                          Your full report has more depth
-                        </h3>
-                        <p className="text-[12px] text-[#667085] mt-0.5">
-                          Overview is just the start — open these tabs to see corrections, models, and criterion detail.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={dismissDiscovery}
-                        className="shrink-0 text-[12px] font-semibold text-[#667085] hover:text-[#101828] px-2 py-1 rounded-lg hover:bg-[#F2F4F7] transition-colors"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                    <div className="p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {reportTabs.filter((t) => t !== 'Overview').map((tab) => (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => selectTab(tab)}
-                          className="text-left rounded-[12px] border border-[#E5E7EB] bg-[#F8FAFC] hover:border-[#1A96F3] hover:bg-[#EFF8FF] px-3 py-2.5 transition-all group"
-                        >
-                          <span className="text-[13px] font-bold text-[#101828] group-hover:text-[#1A96F3] block">
-                            {tab}
-                          </span>
-                          <span className="text-[11px] text-[#667085] leading-snug block mt-0.5">
-                            {TAB_DISCOVERY_BLURBS[tab] || `Open the ${tab} tab`}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="bg-white/95 rounded-[16px] border border-[#E5E7EB] shadow-[0_4px_24px_rgba(26,31,54,0.05)] overflow-hidden">

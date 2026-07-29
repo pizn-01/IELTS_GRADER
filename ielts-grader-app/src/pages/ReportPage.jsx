@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import ReportView from '../components/ReportView';
 import LearningEditionModal from '../components/LearningEditionModal';
 import ReportUpgradeModal from '../components/ReportUpgradeModal';
+import NextExamPopup from '../components/NextExamPopup';
 import PracticeModal from '../components/PracticeModal';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +12,8 @@ import { trackEvent } from '../utils/trackEvent';
 import {
   hasDismissedReportUpgradeModal,
   markReportUpgradeModalDismissed,
+  hasDismissedNextExamModal,
+  markNextExamModalDismissed,
 } from '../utils/reportDiscoveryStorage';
 import { elevateModelBand } from '../utils/modelAnswerBand';
 
@@ -32,11 +35,15 @@ const ReportPage = () => {
   const [upgradeDismissed, setUpgradeDismissed] = useState(() =>
     hasDismissedReportUpgradeModal(reportId)
   );
+  const [nextExamDismissed, setNextExamDismissed] = useState(() =>
+    hasDismissedNextExamModal(reportId)
+  );
   const [showPracticeModal, setShowPracticeModal] = useState(false);
   const [practiceStarting, setPracticeStarting] = useState(false);
 
   useEffect(() => {
     setUpgradeDismissed(hasDismissedReportUpgradeModal(reportId));
+    setNextExamDismissed(hasDismissedNextExamModal(reportId));
   }, [reportId]);
 
   // Always re-fetch so model-answer band elevation and taskQuestion stay fresh
@@ -142,10 +149,39 @@ const ReportPage = () => {
     !learningIsOpen &&
     !showPracticeModal;
 
+  // Next exam after TargetBand / Learning / Upgrade — never stacks; only if credits remain
+  const showNextExamPopup =
+    !nextExamDismissed &&
+    Boolean(user) &&
+    creditsRemaining > 0 &&
+    !needsTargetBand &&
+    !learningIsOpen &&
+    !showUpgradeModal &&
+    !showPracticeModal;
+
   const dismissUpgradeModal = () => {
     markReportUpgradeModalDismissed(reportId);
     setUpgradeDismissed(true);
   };
+
+  const dismissNextExamPopup = () => {
+    markNextExamModalDismissed(reportId);
+    setNextExamDismissed(true);
+  };
+
+  const handleTryAnotherExam = async () => {
+    markNextExamModalDismissed(reportId);
+    setNextExamDismissed(true);
+    await handlePracticeAgain();
+  };
+
+  const tabGuideAllowed =
+    Boolean(user) &&
+    !needsTargetBand &&
+    !learningIsOpen &&
+    !showUpgradeModal &&
+    !showNextExamPopup &&
+    !showPracticeModal;
 
   return (
     <div className="min-h-screen bg-white">
@@ -155,6 +191,7 @@ const ReportPage = () => {
         onBack={handleLeaveReport}
         showUpgradeCta={!isSubscribed}
         showTabDiscovery
+        tabGuideAllowed={tabGuideAllowed}
         onPracticeAgain={handlePracticeAgain}
         practiceStarting={practiceStarting}
       />
@@ -167,12 +204,19 @@ const ReportPage = () => {
         onDismiss={dismissModal}
         onView={goToLearning}
       />
-      {/* Upgrade last in queue — never stacks on TargetBand / Learning */}
+      {/* Upgrade after TargetBand / Learning */}
       <ReportUpgradeModal
         isOpen={showUpgradeModal}
         creditsRemaining={user?.credits_remaining}
         onDismiss={dismissUpgradeModal}
         onPracticeAgain={handlePracticeAgain}
+      />
+      {/* Next exam after existing conversion popups */}
+      <NextExamPopup
+        isOpen={showNextExamPopup}
+        onDismiss={dismissNextExamPopup}
+        onTryAnother={handleTryAnotherExam}
+        starting={practiceStarting}
       />
       <PracticeModal
         isOpen={showPracticeModal}
