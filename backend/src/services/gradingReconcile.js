@@ -107,11 +107,27 @@ async function failStuckSubmission(submissionId, userId, reason) {
 }
 
 async function loadSubmissionForRegrade(submissionId) {
-  const { data, error } = await supabaseAdmin
-    .from('submissions')
-    .select('id, user_id, exam_type, task_type, essay_content, exam_task_id, status')
-    .eq('id', submissionId)
-    .maybeSingle();
+  let data;
+  let error;
+  {
+    const withQ = await supabaseAdmin
+      .from('submissions')
+      .select('id, user_id, exam_type, task_type, essay_content, exam_task_id, question_text, status')
+      .eq('id', submissionId)
+      .maybeSingle();
+    if (withQ.error && /question_text/i.test(withQ.error.message || '')) {
+      const withoutQ = await supabaseAdmin
+        .from('submissions')
+        .select('id, user_id, exam_type, task_type, essay_content, exam_task_id, status')
+        .eq('id', submissionId)
+        .maybeSingle();
+      data = withoutQ.data;
+      error = withoutQ.error;
+    } else {
+      data = withQ.data;
+      error = withQ.error;
+    }
+  }
   if (error) {
     console.error(`[gradingReconcile] load failed id=${submissionId}:`, error.message);
     return null;
@@ -185,6 +201,7 @@ async function requeueGrading(submissionId, reason = 'requeue') {
     task_type: row.task_type,
     essay_content: row.essay_content,
     exam_task_id: row.exam_task_id || null,
+    question_text: row.question_text || '',
     userId: row.user_id,
   }).catch((err) => {
     console.error(`[gradingReconcile] requeue grade failed id=${submissionId}:`, err.message);

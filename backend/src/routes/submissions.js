@@ -100,8 +100,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
   // #region agent log
   try {
-    const fs = require('fs');
-    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-551c9c.log', JSON.stringify({
+    const payload = {
       sessionId: '551c9c',
       runId: 'post-fix',
       hypothesisId: 'H1,H2',
@@ -109,14 +108,16 @@ router.post('/', authenticateToken, async (req, res) => {
       message: 'Grade submit payload before insert',
       data: {
         hasExamTaskId: Boolean(exam_task_id),
-        exam_task_id: exam_task_id || null,
         questionTextLen: typeof question_text === 'string' ? question_text.trim().length : 0,
         questionPreview: typeof question_text === 'string' ? question_text.trim().slice(0, 80) : null,
         essayLen: typeof essay_content === 'string' ? essay_content.length : 0,
         persistsQuestionOnInsert: true,
       },
       timestamp: Date.now(),
-    }) + '\n');
+    };
+    console.log('[debug-551c9c]', JSON.stringify(payload));
+    const fs = require('fs');
+    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-551c9c.log', JSON.stringify(payload) + '\n');
   } catch (_) {}
   // #endregion
 

@@ -277,11 +277,10 @@ const ReportView = ({
   // #region agent log
   useEffect(() => {
     if (!data) return;
-    const prisonFallback = 'best way to reduce crime is to give longer prison sentences';
-    const strengths = Array.isArray(data.strengths) ? data.strengths : [];
-    const essay = String(data.essay || '');
-    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'post-fix',hypothesisId:'A,B,C,D',location:'ReportView.jsx:report-render',message:'ReportView resolved exam prompt and strengths',data:{exam_type:data.exam_type||data.examType||null,task_type:data.task_type||data.taskType||null,task_variant:data.task_variant||null,hasTaskQuestion:Boolean(data.taskQuestion||data.question_text),taskQuestionSource:(data.taskQuestion||data.question_text)?'api':'missing',taskQuestionPreview:String(taskQuestion).slice(0,120),usingPrisonFallback:String(taskQuestion).includes(prisonFallback),hasExamTaskId:Boolean(data.exam_task_id||data.examTaskId),strengthsCount:strengths.length,strengthsFromApi:strengths.length>0,firstStrengthPreview:String(strengths[0]||'').slice(0,140),essayPreview:essay.slice(0,160),essayLooksLikeQuestion:/graph below|Write at least|Summarise the information|prison sentences/i.test(essay),bands:{overall:data.overall_band,tr:data.response_band,cc:data.coherence_band,lr:data.vocabulary_band,gra:data.grammar_band},reportKeys:Object.keys(data||{})},timestamp:Date.now()})}).catch(()=>{});
-  }, [data, taskQuestion]);
+    const rawQ = data?.raw_grader_output?.question_text || data?.raw_grader_output?.uploaded_question_text || null;
+    const hasApiQ = Boolean(data.taskQuestion || data.question_text);
+    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'post-fix',hypothesisId:'H1,H3',location:'ReportView.jsx:report-render',message:'ReportView resolved exam prompt',data:{submissionId:data.id||null,hasTaskQuestion:hasApiQ,taskQuestionSource:hasApiQ?'api':'missing',taskQuestionPreview:String(taskQuestion).slice(0,120),hasExamTaskId:Boolean(data.exam_task_id||data.examTaskId),hasRawQuestion:Boolean(rawQ),rawQuestionPreview:String(rawQ||'').slice(0,80),essayPreview:String(data.essay||'').slice(0,80),guideVisible},timestamp:Date.now()})}).catch(()=>{});
+  }, [data, taskQuestion, guideVisible]);
   // #endregion
 
   const taskVariant = useMemo(

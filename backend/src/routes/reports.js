@@ -119,8 +119,7 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
 
   // #region agent log
   try {
-    const fs = require('fs');
-    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-551c9c.log', JSON.stringify({
+    const payload = {
       sessionId: '551c9c',
       runId: 'post-fix',
       hypothesisId: 'H1,H3',
@@ -133,10 +132,16 @@ router.get('/:submissionId', authenticateToken, async (req, res) => {
         includesTaskQuestion: Boolean(taskQuestion),
         taskQuestionPreview: String(taskQuestion || '').slice(0, 80),
         hasSubmissionQuestion: Boolean(submission.question_text),
-        submissionQuestionPreview: String(submission.question_text || '').slice(0, 80),
+        hasRawQuestion: Boolean(
+          report.raw_grader_output?.question_text
+          || report.raw_grader_output?.uploaded_question_text
+        ),
       },
       timestamp: Date.now(),
-    }) + '\n');
+    };
+    console.log('[debug-551c9c]', JSON.stringify(payload));
+    const fs = require('fs');
+    fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-551c9c.log', JSON.stringify(payload) + '\n');
   } catch (_) {}
   // #endregion
 
