@@ -120,11 +120,45 @@ const AnalysisReadyPage = () => {
             });
           } catch {}
           const report = await api.getReport(currentSubId);
+          const sessionQ = String(essayData?.questionContent || '').trim();
+          const mergedReport = {
+            ...report,
+            taskQuestion: report?.taskQuestion || report?.question_text || sessionQ || null,
+            question_text: report?.question_text || report?.taskQuestion || sessionQ || null,
+          };
           // #region agent log
-          fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'pre-fix',hypothesisId:'B,C,D',location:'AnalysisReadyPage.jsx:getReport',message:'Fetched report payload after grading',data:{submissionId:currentSubId,exam_type:report?.exam_type,task_type:report?.task_type,task_variant:report?.task_variant,hasTaskQuestion:Boolean(report?.taskQuestion),hasQuestionText:Boolean(report?.question_text),hasExamTaskId:Boolean(report?.exam_task_id),strengthsCount:Array.isArray(report?.strengths)?report.strengths.length:0,firstStrength:String(report?.strengths?.[0]||'').slice(0,140),essayPreview:String(report?.essay||'').slice(0,160),bands:{overall:report?.overall_band,tr:report?.response_band,cc:report?.coherence_band,lr:report?.vocabulary_band,gra:report?.grammar_band},keys:Object.keys(report||{})},timestamp:Date.now()})}).catch(()=>{});
+          const body = {
+            sessionId: '551c9c',
+            runId: 'post-fix',
+            hypothesisId: 'H1,H2',
+            location: 'AnalysisReadyPage.jsx:getReport',
+            message: 'Fetched report payload after grading',
+            data: {
+              submissionId: currentSubId,
+              exam_type: report?.exam_type,
+              task_type: report?.task_type,
+              hasApiTaskQuestion: Boolean(report?.taskQuestion || report?.question_text),
+              hasSessionQuestion: Boolean(sessionQ),
+              mergedHasQuestion: Boolean(mergedReport.taskQuestion),
+              questionPreview: String(mergedReport.taskQuestion || '').slice(0, 120),
+              hasExamTaskId: Boolean(report?.exam_task_id),
+              essayPreview: String(report?.essay || '').slice(0, 80),
+            },
+            timestamp: Date.now(),
+          };
+          fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '551c9c' },
+            body: JSON.stringify(body),
+          }).catch(() => {});
+          fetch('/api/debug/agent-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          }).catch(() => {});
           // #endregion
           setGradingStatus('completed');
-          navigate('/report', { state: { reportData: report } });
+          navigate('/report', { state: { reportData: mergedReport } });
         } else if (attempts >= maxAttempts) {
           // Still grading in background — don't treat as hard failure; user can open Reports later
           clearInterval(pollRef.current);

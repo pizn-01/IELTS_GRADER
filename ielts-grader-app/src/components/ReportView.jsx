@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { ChevronDown, ChevronRight, FileText, Download, Eye, ArrowLeft, CheckCircle, XCircle, AlertTriangle, TrendingDown, TrendingUp, X, Bell, User, Shield, CircleDollarSign, HelpCircle, LogOut, BookOpen, SpellCheck, Lightbulb, ListChecks } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useGrade } from '../context/GradeContext';
 import TargetBandPrompt from './TargetBandPrompt';
 import ReportUpgradeCta from './ReportUpgradeCta';
 import TabGuidePop from './TabGuidePop';
@@ -11,6 +12,24 @@ import {
   markReportTabsGuideSeen,
 } from '../utils/reportDiscoveryStorage';
 import { elevateModelBand } from '../utils/modelAnswerBand';
+
+function debugAgentLog(payload) {
+  const body = {
+    sessionId: '551c9c',
+    timestamp: Date.now(),
+    ...payload,
+  };
+  fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '551c9c' },
+    body: JSON.stringify(body),
+  }).catch(() => {});
+  fetch('/api/debug/agent-log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => {});
+}
 
 function resolveTaskVariant(examType, taskType) {
   if (taskType === 'Task 1') {
@@ -227,6 +246,8 @@ const ReportView = ({
   const profileRef = useRef(null);
 
   const { user } = useAuth();
+  const { essayData } = useGrade();
+  const sessionQuestion = String(essayData?.questionContent || '').trim();
   const [showTargetPrompt, setShowTargetPrompt] = useState(false);
   const userInitials = user?.full_name
     ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -264,7 +285,7 @@ const ReportView = ({
     setShowTargetPrompt(true);
   }, [user, data?.overall_band, data?.overallBand]);
 
-  // Use API payload only — never invent a Task 2 demo prompt for Task 1 reports.
+  // Prefer API prompt, then same-session Grade My Essay upload, then unavailable.
   const essayContent = data?.essay || '';
   const taskTitle = data
     ? `${data.exam_type || data.examType || ''} ${data.task_type || data.taskType || ''}`.trim()
@@ -272,15 +293,38 @@ const ReportView = ({
   const taskQuestion =
     data?.taskQuestion
     || data?.question_text
+    || sessionQuestion
     || (data ? 'Question unavailable for this report.' : '');
+  const taskQuestionSource = data?.taskQuestion || data?.question_text
+    ? 'api'
+    : sessionQuestion
+      ? 'session'
+      : data
+        ? 'missing'
+        : 'none';
 
   // #region agent log
   useEffect(() => {
     if (!data) return;
     const rawQ = data?.raw_grader_output?.question_text || data?.raw_grader_output?.uploaded_question_text || null;
-    const hasApiQ = Boolean(data.taskQuestion || data.question_text);
-    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'post-fix',hypothesisId:'H1,H3',location:'ReportView.jsx:report-render',message:'ReportView resolved exam prompt',data:{submissionId:data.id||null,hasTaskQuestion:hasApiQ,taskQuestionSource:hasApiQ?'api':'missing',taskQuestionPreview:String(taskQuestion).slice(0,120),hasExamTaskId:Boolean(data.exam_task_id||data.examTaskId),hasRawQuestion:Boolean(rawQ),rawQuestionPreview:String(rawQ||'').slice(0,80),essayPreview:String(data.essay||'').slice(0,80),guideVisible},timestamp:Date.now()})}).catch(()=>{});
-  }, [data, taskQuestion, guideVisible]);
+    debugAgentLog({
+      runId: 'post-fix',
+      hypothesisId: 'H1,H2,H3',
+      location: 'ReportView.jsx:report-render',
+      message: 'ReportView resolved exam prompt',
+      data: {
+        submissionId: data.id || null,
+        taskQuestionSource,
+        taskQuestionPreview: String(taskQuestion).slice(0, 120),
+        hasExamTaskId: Boolean(data.exam_task_id || data.examTaskId),
+        hasRawQuestion: Boolean(rawQ),
+        rawQuestionPreview: String(rawQ || '').slice(0, 80),
+        hasSessionQuestion: Boolean(sessionQuestion),
+        essayPreview: String(data.essay || '').slice(0, 80),
+        guideVisible,
+      },
+    });
+  }, [data, taskQuestion, taskQuestionSource, sessionQuestion, guideVisible]);
   // #endregion
 
   const taskVariant = useMemo(
@@ -307,7 +351,22 @@ const ReportView = ({
         tabChips: localStorage.getItem('ig_first_report_tab_chips_seen'),
       };
     } catch (_) {}
-    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'post-fix',hypothesisId:'H4,H5,H6',location:'ReportView.jsx:guide-effect',message:'Tab guide gate evaluation',data:{guideStarted:guideStarted.current,showTabDiscovery,hasUser:Boolean(user),tabGuideAllowed,showTargetPrompt,hasSeen:hasSeenReportTabsGuide(),seenKeys,guideVisible},timestamp:Date.now()})}).catch(()=>{});
+    debugAgentLog({
+      runId: 'post-fix',
+      hypothesisId: 'H4,H5,H6',
+      location: 'ReportView.jsx:guide-effect',
+      message: 'Tab guide gate evaluation',
+      data: {
+        guideStarted: guideStarted.current,
+        showTabDiscovery,
+        hasUser: Boolean(user),
+        tabGuideAllowed,
+        showTargetPrompt,
+        hasSeen: hasSeenReportTabsGuide(),
+        seenKeys,
+        guideVisible,
+      },
+    });
     // #endregion
     if (guideStarted.current) return;
     if (!showTabDiscovery || !user) return;
@@ -315,14 +374,26 @@ const ReportView = ({
     if (hasSeenReportTabsGuide()) {
       guideStarted.current = true;
       // #region agent log
-      fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'pre-fix',hypothesisId:'H4',location:'ReportView.jsx:guide-skip-seen',message:'Guide skipped — already seen',data:{seenKeys},timestamp:Date.now()})}).catch(()=>{});
+      debugAgentLog({
+        runId: 'post-fix',
+        hypothesisId: 'H4',
+        location: 'ReportView.jsx:guide-skip-seen',
+        message: 'Guide skipped — already seen',
+        data: { seenKeys },
+      });
       // #endregion
       return;
     }
     guideStarted.current = true;
     setGuideVisible(true);
     // #region agent log
-    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'pre-fix',hypothesisId:'H5,H6',location:'ReportView.jsx:guide-show',message:'Guide set visible true',data:{tabGuideAllowed,showTargetPrompt},timestamp:Date.now()})}).catch(()=>{});
+    debugAgentLog({
+      runId: 'post-fix',
+      hypothesisId: 'H5,H6',
+      location: 'ReportView.jsx:guide-show',
+      message: 'Guide set visible true',
+      data: { tabGuideAllowed, showTargetPrompt },
+    });
     // #endregion
   }, [showTabDiscovery, user, tabGuideAllowed, showTargetPrompt]);
 

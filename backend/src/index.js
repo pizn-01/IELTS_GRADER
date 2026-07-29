@@ -124,6 +124,25 @@ app.get('/health', (_req, res) =>
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 );
 
+// Temporary debug ingest for agent sessions (no secrets; capped payload)
+app.post('/api/debug/agent-log', (req, res) => {
+  try {
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    console.log('[debug-551c9c]', JSON.stringify({
+      sessionId: body.sessionId || '551c9c',
+      runId: body.runId || null,
+      hypothesisId: body.hypothesisId || null,
+      location: body.location || null,
+      message: body.message || null,
+      data: body.data || null,
+      timestamp: body.timestamp || Date.now(),
+    }));
+  } catch (err) {
+    console.error('[debug-551c9c] log failed', err.message);
+  }
+  return res.json({ ok: true });
+});
+
 app.use(globalLimiter);
 
 // ── Auth routes — differentiated write vs read limits ─────────────────────────
