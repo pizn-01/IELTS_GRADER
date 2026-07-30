@@ -27,6 +27,7 @@ const AnalysisReadyPage = () => {
   const pollRef = useRef(null);
   const hydratedRef = useRef(false);
   const submitInFlightRef = useRef(false);
+  const pollStartedRef = useRef(false);
 
   // Restore essay payload saved before login/signup (incl. Google OAuth)
   useEffect(() => {
@@ -49,22 +50,31 @@ const AnalysisReadyPage = () => {
   }, []);
 
   const onGradingComplete = async () => {
+    // Modal fires this as soon as it opens — only start one poll/submit loop.
+    if (pollStartedRef.current || pollRef.current) return;
+    pollStartedRef.current = true;
+
     let currentSubId = submissionId;
 
     // submissionId is pre-set by Hero before navigation in the normal flow.
     // Fallback: if somehow not set, submit now (e.g. after login with pending essay).
     if (!currentSubId) {
       if ((user?.credits_remaining ?? 0) <= 0) {
+        pollStartedRef.current = false;
         setGradingStatus('completed');
         navigate('/analysis-ready', { state: { outOfCredits: true } });
         return;
       }
       if (user?.id && await redirectIfNeedsDashboardBridge({ userId: user.id, navigate })) {
+        pollStartedRef.current = false;
         setGradingStatus('idle');
         return;
       }
       if (essayData?.essayContent) {
-        if (submitInFlightRef.current) return;
+        if (submitInFlightRef.current) {
+          pollStartedRef.current = false;
+          return;
+        }
         submitInFlightRef.current = true;
         try {
           const res = await api.submitAttempt({
@@ -88,6 +98,7 @@ const AnalysisReadyPage = () => {
           consumePendingGradePayload();
         } catch (err) {
           console.error('Failed to submit attempt:', err.message);
+          pollStartedRef.current = false;
           setGradingStatus('completed');
           if (err.message && err.message.toLowerCase().includes('credit')) {
             navigate('/analysis-ready', { state: { outOfCredits: true } });
@@ -99,6 +110,7 @@ const AnalysisReadyPage = () => {
           submitInFlightRef.current = false;
         }
       } else {
+        pollStartedRef.current = false;
         setGradingStatus('completed');
         navigate('/dashboard');
         return;
@@ -108,15 +120,17 @@ const AnalysisReadyPage = () => {
     // Keep modal open (gradingStatus stays 'processing') while we poll the backend.
     // The modal will disappear naturally when we navigate away on completion.
     let attempts = 0;
-    const maxAttempts = 300; // ~15 min at 3s — retries after OOM/restart can take longer
+    const maxAttempts = 900; // ~15 min at 1s — retries after OOM/restart can take longer
+    let settled = false;
 
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
+    const tick = async () => {
+      if (settled) return;
       attempts++;
       try {
         const { status } = await api.checkStatus(currentSubId);
         if (status === 'graded') {
-          clearInterval(pollRef.current);
+          settled = true;
+          if (pollRef.current) clearInterval(pollRef.current);
           let fresh = null;
           try {
             fresh = await api.getMe();
@@ -166,18 +180,24 @@ const AnalysisReadyPage = () => {
           navigate('/report', { state: { reportData: mergedReport } });
         } else if (attempts >= maxAttempts) {
           // Still grading in background — don't treat as hard failure; user can open Reports later
-          clearInterval(pollRef.current);
+          settled = true;
+          if (pollRef.current) clearInterval(pollRef.current);
           setGradingStatus('completed');
           navigate('/dashboard');
         }
       } catch {
         if (attempts >= maxAttempts) {
-          clearInterval(pollRef.current);
+          settled = true;
+          if (pollRef.current) clearInterval(pollRef.current);
           setGradingStatus('completed');
           navigate('/dashboard');
         }
       }
-    }, 3000);
+    };
+
+    if (pollRef.current) clearInterval(pollRef.current);
+    tick(); // check immediately — don't wait for first interval
+    pollRef.current = setInterval(tick, 1000);
   };
 
   // Cleanup poll on unmount

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Check, EyeOff, Eye } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
@@ -16,8 +16,10 @@ const SelectionPage = () => {
   const location = useLocation();
   const flow = location.state?.flow || null; // 'essay' | 'mock' | null
 
-  const { gradingStatus, setGradingStatus, setSubmissionId, essayData, updateEssayData } = useGrade();
+  const { gradingStatus, setGradingStatus, submissionId, setSubmissionId, essayData, updateEssayData } = useGrade();
   const { user, register, signInWithGoogle } = useAuth();
+  const pollRef = useRef(null);
+  const pollStartedRef = useRef(false);
 
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -177,10 +179,65 @@ const SelectionPage = () => {
     }
   };
 
-  const onGradingComplete = () => {
-    setGradingStatus('completed');
-    navigate('/report');
+  const startPolling = (subId) => {
+    if (!subId || pollStartedRef.current) return;
+    pollStartedRef.current = true;
+
+    let attempts = 0;
+    const maxAttempts = 900;
+    let settled = false;
+
+    const tick = async () => {
+      if (settled) return;
+      attempts++;
+      try {
+        const { status } = await api.checkStatus(subId);
+        if (status === 'graded') {
+          settled = true;
+          if (pollRef.current) clearInterval(pollRef.current);
+          try {
+            const report = await api.getReport(subId);
+            setGradingStatus('completed');
+            navigate('/report', { state: { reportData: report } });
+          } catch {
+            setGradingStatus('completed');
+            navigate('/report');
+          }
+        } else if (attempts >= maxAttempts) {
+          settled = true;
+          if (pollRef.current) clearInterval(pollRef.current);
+          setGradingStatus('completed');
+          navigate('/dashboard');
+        }
+      } catch {
+        if (attempts >= maxAttempts) {
+          settled = true;
+          if (pollRef.current) clearInterval(pollRef.current);
+          setGradingStatus('completed');
+          navigate('/dashboard');
+        }
+      }
+    };
+
+    if (pollRef.current) clearInterval(pollRef.current);
+    tick();
+    pollRef.current = setInterval(tick, 1000);
   };
+
+  // Start as soon as we have a submission — don't wait on the modal's cosmetic progress.
+  useEffect(() => {
+    if (gradingStatus === 'processing' && submissionId) {
+      startPolling(submissionId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gradingStatus, submissionId]);
+
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+  }, []);
+
+  // Modal onComplete / close — polling is driven by submissionId above.
+  const onGradingComplete = () => {};
 
   return (
     <div className="min-h-screen bg-white font-['Inter',_sans-serif]">

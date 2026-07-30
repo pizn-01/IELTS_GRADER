@@ -338,9 +338,6 @@ const MockExam = ({ examType, taskType, onExit }) => {
     let cancelled = false;
 
     const poll = async () => {
-      // Wait a bit before first poll (grading starts async on backend)
-      await new Promise(r => setTimeout(r, 4000));
-
       while (!cancelled) {
         try {
           const { status } = await api.checkStatus(submissionId);
@@ -349,12 +346,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
             if (!cancelled) {
               progressRef.current = 100;
               setGradingProgress(100);
-              // Small delay so the 100% completion animation is visible
-              setTimeout(() => {
-                if (!cancelled) {
-                  onExit('report', { submissionId, essay, examType, taskType });
-                }
-              }, 800);
+              onExit('report', { submissionId, essay, examType, taskType });
             }
             return;
           }
@@ -367,7 +359,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
           // Network blip — keep polling
         }
 
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(r => setTimeout(r, 1000));
       }
     };
 

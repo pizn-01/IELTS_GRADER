@@ -217,28 +217,29 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
 
     // Poll until graded (backend retries until a report exists)
     let attempts = 0;
-    const maxAttempts = 300; // ~15 min at 3s intervals
+    const maxAttempts = 900; // ~15 min at 1s intervals
+    let settled = false;
 
-    pollRef.current = setInterval(async () => {
+    const tick = async () => {
+      if (settled) return;
       attempts++;
       try {
         const { status } = await api.checkStatus(submissionId);
 
         if (status === 'graded') {
+          settled = true;
           clearInterval(pollRef.current);
           stopProgressAnimation();
           setGradingProgress(100);
           setCompletedItems([0, 1, 2, 3]);
-
-          setTimeout(async () => {
-            try {
-              const report = await api.getReport(submissionId);
-              onAnalysisComplete(submissionId, report);
-            } catch {
-              onAnalysisComplete(submissionId, null);
-            }
-          }, 800);
+          try {
+            const report = await api.getReport(submissionId);
+            onAnalysisComplete(submissionId, report);
+          } catch {
+            onAnalysisComplete(submissionId, null);
+          }
         } else if (attempts >= maxAttempts) {
+          settled = true;
           clearInterval(pollRef.current);
           stopProgressAnimation();
           setGradingError('Grading is taking longer than expected. Please check Reports in a few minutes — we keep retrying until your results are ready.');
@@ -246,12 +247,16 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
         // status === 'failed' / 'grading': keep polling — backend requeues automatically
       } catch {
         if (attempts >= maxAttempts) {
+          settled = true;
           clearInterval(pollRef.current);
           stopProgressAnimation();
           setGradingError('Connection lost. Please refresh and check Reports — grading continues in the background.');
         }
       }
-    }, 3000);
+    };
+
+    tick(); // check immediately — don't wait for first interval
+    pollRef.current = setInterval(tick, 1000);
   };
 
   const resetAndClose = () => {

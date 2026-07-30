@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Check, X, Brain } from 'lucide-react';
 
 const AIProcessingModal = ({ isOpen, onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [completedSteps, setCompletedSteps] = useState([]);
+  const startedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const steps = [
     "Task Response",
@@ -12,23 +15,24 @@ const AIProcessingModal = ({ isOpen, onComplete }) => {
     "Grammatical"
   ];
 
+  // Kick off parent work (submit/poll) as soon as the modal opens.
+  // Visual progress is cosmetic only and must not delay grading.
   useEffect(() => {
     if (!isOpen) {
+      startedRef.current = false;
       setProgress(0);
       setCompletedSteps([]);
       return;
     }
 
+    if (!startedRef.current) {
+      startedRef.current = true;
+      onCompleteRef.current?.();
+    }
+
     const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 89) {
-          clearInterval(interval);
-          setTimeout(onComplete, 1200);
-          return 89;
-        }
-        return prev + 1.2;
-      });
-    }, 400); 
+      setProgress(prev => (prev >= 89 ? 89 : prev + 1.2));
+    }, 400);
 
     return () => clearInterval(interval);
   }, [isOpen]);
@@ -38,7 +42,7 @@ const AIProcessingModal = ({ isOpen, onComplete }) => {
     if (progress > 45 && !completedSteps.includes(1)) setCompletedSteps(prev => [...prev, 1]);
     if (progress > 70 && !completedSteps.includes(2)) setCompletedSteps(prev => [...prev, 2]);
     if (progress > 85 && !completedSteps.includes(3)) setCompletedSteps(prev => [...prev, 3]);
-  }, [progress]);
+  }, [progress]); // eslint-disable-line react-hooks/exhaustive-deps -- step unlocks are progress-driven only
 
   if (!isOpen) return null;
 
@@ -50,7 +54,10 @@ const AIProcessingModal = ({ isOpen, onComplete }) => {
       {/* Modal Container */}
       <div className="bg-white rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] p-8 w-full max-w-[380px] relative z-10 animate-in zoom-in-95 duration-300">
         {/* Close Button */}
-        <button onClick={onComplete} className="absolute top-5 right-5 p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
+        <button
+          onClick={() => onCompleteRef.current?.()}
+          className="absolute top-5 right-5 p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-400"
+        >
           <X className="w-5 h-5" />
         </button>
 
