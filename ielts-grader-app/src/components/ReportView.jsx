@@ -350,8 +350,8 @@ const ReportView = ({
     let seenKeys = {};
     try {
       seenKeys = {
-        reportGuideV2: localStorage.getItem('ig_report_tabs_guide_v2_seen'),
-        reportGuideV1: localStorage.getItem('ig_report_tabs_guide_seen'),
+        reportGuideV2: localStorage.getItem('ig_report_tabs_guide_v3_seen'),
+        reportGuideV1: localStorage.getItem('ig_report_tabs_guide_v2_seen'),
         firstFree: localStorage.getItem('ig_first_free_report_discovery_seen'),
         tabChips: localStorage.getItem('ig_first_report_tab_chips_seen'),
       };

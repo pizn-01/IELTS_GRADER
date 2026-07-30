@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
-const AUTO_DISMISS_MS = 10000;
+const AUTO_DISMISS_MS = 20000;
 
 /**
  * Low-friction first-visit coachmark under a tab bar.
@@ -54,15 +54,15 @@ export default function TabGuidePop({
           role="status"
           aria-live="polite"
         >
-          <div className="relative bg-[#101828] text-white rounded-[12px] shadow-[0_8px_28px_rgba(16,24,40,0.22)] px-3.5 py-3 max-w-[400px]">
+          <div className="relative bg-[#175CD3] text-white rounded-[12px] shadow-[0_8px_28px_rgba(23,92,211,0.35)] px-3.5 py-3.5 max-w-[440px] ring-2 ring-white/40">
             <div
-              className="absolute -top-1.5 left-6 w-3 h-3 bg-[#101828] rotate-45 rounded-[2px]"
+              className="absolute -top-1.5 left-6 w-3 h-3 bg-[#175CD3] rotate-45 rounded-[2px]"
               aria-hidden
             />
             <div className="flex items-start gap-2 relative">
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-bold leading-snug">{title}</p>
-                <p className="text-[12px] text-white/75 mt-0.5 leading-snug">{body}</p>
+                <p className="text-[14px] font-bold leading-snug">{title}</p>
+                <p className="text-[13px] text-white/90 mt-1 leading-snug">{body}</p>
               </div>
               <button
                 type="button"

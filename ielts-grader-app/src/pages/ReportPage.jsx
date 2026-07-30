@@ -4,6 +4,7 @@ import ReportView from '../components/ReportView';
 import LearningEditionModal from '../components/LearningEditionModal';
 import ReportUpgradeModal from '../components/ReportUpgradeModal';
 import PracticeModal from '../components/PracticeModal';
+import DashboardBridgeBanner from '../components/DashboardBridgeBanner';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -143,8 +144,8 @@ const ReportPage = () => {
     let flags = {};
     try {
       flags = {
-        reportGuideV2: localStorage.getItem('ig_report_tabs_guide_v2_seen'),
-        dashGuideV2: localStorage.getItem('ig_dashboard_tabs_guide_v2_seen'),
+        reportGuideV2: localStorage.getItem('ig_report_tabs_guide_v3_seen'),
+        dashGuideV2: localStorage.getItem('ig_dashboard_tabs_guide_v3_seen'),
         firstDash: user?.id
           ? localStorage.getItem(`ig_first_dashboard_seen_v2_${user.id}`)
           : null,
@@ -242,6 +243,11 @@ const ReportPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      {needsBridge && !needsTargetBand && (
+        <div className="pt-4">
+          <DashboardBridgeBanner onContinue={goToDashboardBridge} />
+        </div>
+      )}
       <ReportView
         data={reportData}
         showHeader={false}
