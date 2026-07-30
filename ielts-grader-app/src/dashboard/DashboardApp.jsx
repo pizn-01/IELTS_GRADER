@@ -263,13 +263,15 @@ function DashboardApp() {
     if (guideStarted.current) return;
     if (!user) return;
     if (!tabGuideAllowed) return;
+    // Only after first graded exam — empty post-login dashboard must not burn this tour.
+    if (examsCount == null || examsCount < 1) return;
     if (hasSeenDashboardTabsGuide()) {
       guideStarted.current = true;
       return;
     }
     guideStarted.current = true;
     setGuideVisible(true);
-  }, [user, tabGuideAllowed]);
+  }, [user, tabGuideAllowed, examsCount]);
 
   const showTabAttention = guideVisible && activeTab === 'Overview';
 

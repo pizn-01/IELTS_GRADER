@@ -15,13 +15,13 @@ import { elevateModelBand } from '../utils/modelAnswerBand';
 
 function debugAgentLog(payload) {
   const body = {
-    sessionId: '551c9c',
+    sessionId: '5c9f04',
     timestamp: Date.now(),
     ...payload,
   };
   fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '551c9c' },
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '5c9f04' },
     body: JSON.stringify(body),
   }).catch(() => {});
   fetch('/api/debug/agent-log', {
@@ -29,6 +29,9 @@ function debugAgentLog(payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }).catch(() => {});
+  try {
+    console.info('[ig-debug]', payload.location, payload.message, payload.data);
+  } catch (_) {}
 }
 
 function resolveTaskVariant(examType, taskType) {

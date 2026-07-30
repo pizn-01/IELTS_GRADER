@@ -83,13 +83,7 @@ export function markDashboardTabsGuideSeen() {
 export function hasSeenFirstDashboard(userId) {
   if (!userId) return false;
   try {
-    if (localStorage.getItem(firstDashboardKey(userId)) === '1') return true;
-    // Migration: users who already finished the dashboard tab guide have been there.
-    if (hasSeenDashboardTabsGuide()) {
-      markFirstDashboardSeen(userId);
-      return true;
-    }
-    return false;
+    return localStorage.getItem(firstDashboardKey(userId)) === '1';
   } catch {
     return false;
   }

@@ -1,28 +1,24 @@
 import { api } from '../services/api';
 import {
-  hasSeenDashboardTabsGuide,
   hasSeenFirstDashboard,
   markFirstDashboardSeen,
 } from './reportDiscoveryStorage';
 
 /**
- * True when the user has ≥1 graded exam but has not yet visited the dashboard
- * (first-exam → dashboard bridge before free exam 2).
+ * True when the user has exactly one graded exam and has not yet visited the
+ * dashboard after that exam (bridge before free exam 2).
+ *
+ * Do NOT treat the empty post-login dashboard tab guide as bridge completion —
+ * that guide can fire with 0 exams and would permanently skip the bridge.
  */
 export function needsDashboardBridge({ userId, examsCount }) {
   if (!userId) return false;
   if (examsCount == null || examsCount < 1) return false;
   if (examsCount >= 2) {
-    // Migration: multi-exam users skip the bridge permanently.
     markFirstDashboardSeen(userId);
     return false;
   }
   if (hasSeenFirstDashboard(userId)) return false;
-  // Migration: anyone who already completed the dashboard tab guide has been there.
-  if (hasSeenDashboardTabsGuide()) {
-    markFirstDashboardSeen(userId);
-    return false;
-  }
   return true;
 }
 

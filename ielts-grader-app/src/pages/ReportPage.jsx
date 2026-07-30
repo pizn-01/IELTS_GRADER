@@ -83,9 +83,6 @@ const ReportPage = () => {
             ),
           };
         }
-        // #region agent log
-        fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'247e96'},body:JSON.stringify({sessionId:'247e96',runId:'post-fix',hypothesisId:'MA1',location:'ReportPage.jsx:refetch',message:'Refetched report with elevated model band',data:{submissionId,overall:fresh.overall_band,modelBand:fresh.model_answer?.estimated_band??null},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         setReportData(fresh);
         navigate('/report', { replace: true, state: { reportData: fresh } });
       } catch {
@@ -139,12 +136,6 @@ const ReportPage = () => {
 
   const practiceAgainLabel =
     needsBridge && !needsTargetBand ? 'Continue to Dashboard' : 'Practice again';
-
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7565/ingest/ccf50587-967c-4a8a-a2fe-8c502b556896',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'551c9c'},body:JSON.stringify({sessionId:'551c9c',runId:'pre-fix',hypothesisId:'H5',location:'ReportPage.jsx:tabGuideAllowed',message:'Report page popup/guide gates',data:{tabGuideAllowed,needsTargetBand,learningIsOpen,showUpgradeModal,showPracticeModal,hasTaskQuestion:Boolean(reportData?.taskQuestion||reportData?.question_text),exam_task_id:reportData?.exam_task_id||null,taskQuestionPreview:String(reportData?.taskQuestion||reportData?.question_text||'').slice(0,80)},timestamp:Date.now()})}).catch(()=>{});
-  }, [tabGuideAllowed, needsTargetBand, learningIsOpen, showUpgradeModal, showPracticeModal, reportData]);
-  // #endregion
 
   if (!reportData) {
     return <Navigate to="/dashboard" replace />;

@@ -66,6 +66,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientIpKey,
+  validate: { keyGeneratorIpFallback: false },
   message: { error: 'Too many requests. Please try again later.' },
 });
 
@@ -76,6 +77,7 @@ const authWriteLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientIpKey,
+  validate: { keyGeneratorIpFallback: false },
   message: { error: 'Too many authentication attempts. Please wait 15 minutes.' },
 });
 
@@ -86,6 +88,7 @@ const authReadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientIpKey,
+  validate: { keyGeneratorIpFallback: false },
   message: { error: 'Too many requests. Please slow down.' },
 });
 
@@ -96,6 +99,7 @@ const submissionsWriteLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientIpKey,
+  validate: { keyGeneratorIpFallback: false },
   message: { error: 'Submission rate limit exceeded. Please wait before submitting again.' },
 });
 
@@ -107,6 +111,7 @@ const submissionsReadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientIpKey,
+  validate: { keyGeneratorIpFallback: false },
   message: { error: 'Too many requests. Please try again in a moment.' },
 });
 
@@ -117,6 +122,7 @@ const trackingLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientIpKey,
+  validate: { keyGeneratorIpFallback: false },
   message: { error: 'Too many tracking requests. Please slow down.' },
 });
 
@@ -128,8 +134,8 @@ app.get('/health', (_req, res) =>
 app.post('/api/debug/agent-log', (req, res) => {
   try {
     const body = req.body && typeof req.body === 'object' ? req.body : {};
-    console.log('[debug-551c9c]', JSON.stringify({
-      sessionId: body.sessionId || '551c9c',
+    console.log('[debug-agent]', JSON.stringify({
+      sessionId: body.sessionId || null,
       runId: body.runId || null,
       hypothesisId: body.hypothesisId || null,
       location: body.location || null,
@@ -138,7 +144,7 @@ app.post('/api/debug/agent-log', (req, res) => {
       timestamp: body.timestamp || Date.now(),
     }));
   } catch (err) {
-    console.error('[debug-551c9c] log failed', err.message);
+    console.error('[debug-agent] log failed', err.message);
   }
   return res.json({ ok: true });
 });
