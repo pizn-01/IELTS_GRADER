@@ -41,6 +41,11 @@ export default function ReportUpgradeModal({
     navigate('/dashboard');
   };
 
+  const goDashboard = () => {
+    onDismiss?.();
+    navigate('/dashboard');
+  };
+
   return (
     <div className="fixed inset-0 z-[180] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
       <div className="bg-white rounded-[20px] shadow-xl border border-gray-100 w-full max-w-[500px] overflow-hidden">
@@ -95,6 +100,13 @@ export default function ReportUpgradeModal({
                 className="flex-1 h-[46px] rounded-[10px] border border-gray-200 text-[14px] font-medium text-[#344054] hover:bg-gray-50"
               >
                 Keep reading
+              </button>
+              <button
+                type="button"
+                onClick={goDashboard}
+                className="flex-1 h-[46px] rounded-[10px] border border-gray-200 text-[14px] font-medium text-[#344054] hover:bg-gray-50"
+              >
+                Dashboard
               </button>
               <button
                 type="button"
