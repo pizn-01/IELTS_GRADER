@@ -133,16 +133,26 @@ app.get('/health', (_req, res) =>
 // Temporary debug ingest for agent sessions (no secrets; capped payload)
 app.post('/api/debug/agent-log', (req, res) => {
   try {
+    const fs = require('fs');
+    const path = require('path');
     const body = req.body && typeof req.body === 'object' ? req.body : {};
-    console.log('[debug-agent]', JSON.stringify({
-      sessionId: body.sessionId || null,
+    const entry = {
+      sessionId: body.sessionId || '5c9f04',
       runId: body.runId || null,
       hypothesisId: body.hypothesisId || null,
       location: body.location || null,
       message: body.message || null,
       data: body.data || null,
       timestamp: body.timestamp || Date.now(),
-    }));
+    };
+    console.log('[debug-agent]', JSON.stringify(entry));
+    const logPath = path.join(__dirname, '../../.cursor/debug-5c9f04.log');
+    try {
+      fs.mkdirSync(path.dirname(logPath), { recursive: true });
+      fs.appendFileSync(logPath, `${JSON.stringify(entry)}\n`, 'utf8');
+    } catch (writeErr) {
+      console.error('[debug-agent] file write failed', writeErr.message);
+    }
   } catch (err) {
     console.error('[debug-agent] log failed', err.message);
   }

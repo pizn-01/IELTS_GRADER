@@ -18,6 +18,7 @@ import {
   needsDashboardBridge,
 } from '../utils/dashboardBridge';
 import { elevateModelBand } from '../utils/modelAnswerBand';
+import { igDebugLog } from '../utils/igDebugLog';
 
 const ReportPage = () => {
   const navigate = useNavigate();
@@ -136,6 +137,48 @@ const ReportPage = () => {
 
   const practiceAgainLabel =
     needsBridge && !needsTargetBand ? 'Continue to Dashboard' : 'Practice again';
+
+  // #region agent log
+  useEffect(() => {
+    let flags = {};
+    try {
+      flags = {
+        reportGuideV2: localStorage.getItem('ig_report_tabs_guide_v2_seen'),
+        dashGuideV2: localStorage.getItem('ig_dashboard_tabs_guide_v2_seen'),
+        firstDash: user?.id
+          ? localStorage.getItem(`ig_first_dashboard_seen_v2_${user.id}`)
+          : null,
+      };
+    } catch (_) {}
+    const snapshot = {
+      userId: user?.id || null,
+      examsCount,
+      needsBridge,
+      needsTargetBand,
+      practiceAgainLabel,
+      creditsRemaining,
+      flags,
+      href: typeof window !== 'undefined' ? window.location.href : null,
+    };
+    try {
+      window.__IG_BRIDGE = snapshot;
+    } catch (_) {}
+    igDebugLog({
+      hypothesisId: 'H3-examsGte2',
+      location: 'ReportPage.jsx:bridge-state',
+      message: 'Report bridge state',
+      data: snapshot,
+      runId: 'post-fix',
+    });
+  }, [
+    user?.id,
+    examsCount,
+    needsBridge,
+    needsTargetBand,
+    practiceAgainLabel,
+    creditsRemaining,
+  ]);
+  // #endregion
 
   if (!reportData) {
     return <Navigate to="/dashboard" replace />;

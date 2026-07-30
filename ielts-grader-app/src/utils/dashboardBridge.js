@@ -3,23 +3,39 @@ import {
   hasSeenFirstDashboard,
   markFirstDashboardSeen,
 } from './reportDiscoveryStorage';
+import { igDebugLog } from './igDebugLog';
 
 /**
- * True when the user has exactly one graded exam and has not yet visited the
- * dashboard after that exam (bridge before free exam 2).
+ * True when the user has ≥1 graded exam and has not yet visited the dashboard
+ * after having exam data (bridge before continuing practice).
  *
- * Do NOT treat the empty post-login dashboard tab guide as bridge completion —
- * that guide can fire with 0 exams and would permanently skip the bridge.
+ * Do NOT auto-complete the bridge when examsCount ≥ 2 — that permanently skipped
+ * the CTA for anyone who graded twice while testing. Only an actual dashboard
+ * visit (or explicit first-dashboard flag) completes the bridge.
  */
 export function needsDashboardBridge({ userId, examsCount }) {
-  if (!userId) return false;
-  if (examsCount == null || examsCount < 1) return false;
-  if (examsCount >= 2) {
-    markFirstDashboardSeen(userId);
-    return false;
+  let reason = 'ok';
+  let result = true;
+  if (!userId) {
+    reason = 'no_userId';
+    result = false;
+  } else if (examsCount == null || examsCount < 1) {
+    reason = 'examsCount_lt_1';
+    result = false;
+  } else if (hasSeenFirstDashboard(userId)) {
+    reason = 'first_dashboard_seen';
+    result = false;
   }
-  if (hasSeenFirstDashboard(userId)) return false;
-  return true;
+  // #region agent log
+  igDebugLog({
+    hypothesisId: 'H3-examsGte2',
+    location: 'dashboardBridge.js:needsDashboardBridge',
+    message: 'needsDashboardBridge evaluated',
+    data: { userId: userId || null, examsCount, result, reason },
+    runId: 'post-fix',
+  });
+  // #endregion
+  return result;
 }
 
 /** Count graded submissions (light fetch for entry gates). */
@@ -29,7 +45,6 @@ export async function fetchGradedExamCount() {
     const rows = res?.data || [];
     const graded = rows.filter((s) => s.status === 'graded').length;
     if (graded > 0) return graded;
-    // Empty/rate-limited responses can look like 0 exams — fall back to credits used.
     if (res?.rateLimited || rows.length === 0) {
       try {
         const me = await api.getMe();
@@ -74,3 +89,6 @@ export async function redirectIfNeedsDashboardBridge({
   });
   return true;
 }
+
+// re-export for callers that mark completion
+export { markFirstDashboardSeen };
