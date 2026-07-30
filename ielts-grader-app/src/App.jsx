@@ -303,7 +303,7 @@ function App() {
         <Route path="/report" element={
           <ProtectedRoute>
             <Layout 
-              currentView="dashboard" 
+              currentView="" 
               onNavigate={handleProtectedNavigate} 
               profileImage={profileImage}
             >

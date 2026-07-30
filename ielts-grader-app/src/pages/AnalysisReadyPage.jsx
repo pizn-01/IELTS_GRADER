@@ -13,6 +13,7 @@ import {
   consumePendingGradePayload,
 } from '../utils/authStorage';
 import { trackEvent } from '../utils/trackEvent';
+import { redirectIfNeedsDashboardBridge } from '../utils/dashboardBridge';
 
 const AnalysisReadyPage = () => {
   const navigate = useNavigate();
@@ -56,6 +57,10 @@ const AnalysisReadyPage = () => {
       if ((user?.credits_remaining ?? 0) <= 0) {
         setGradingStatus('completed');
         navigate('/analysis-ready', { state: { outOfCredits: true } });
+        return;
+      }
+      if (user?.id && await redirectIfNeedsDashboardBridge({ userId: user.id, navigate })) {
+        setGradingStatus('idle');
         return;
       }
       if (essayData?.essayContent) {

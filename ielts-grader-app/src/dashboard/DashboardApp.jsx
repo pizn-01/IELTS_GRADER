@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import Lenis from 'lenis';
 import Layout from '../components/Layout';
 import SkillGrowth from '../components/SkillGrowth';
@@ -26,6 +26,7 @@ import { trackEvent } from '../utils/trackEvent';
 import {
   hasSeenDashboardTabsGuide,
   markDashboardTabsGuideSeen,
+  markFirstDashboardSeen,
 } from '../utils/reportDiscoveryStorage';
 
 const PERFORMANCE_TABS = ['Overview', 'Fix Cards', 'Strategy', '14-Day sprint'];
@@ -49,6 +50,7 @@ function normalizeTab(raw) {
 function DashboardApp() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [showModal, setShowModal] = useState(false);
@@ -180,6 +182,18 @@ function DashboardApp() {
     const fromChart = analyticsSeries?.chartData?.length ?? 0;
     return Math.max(recentSubmissions.length, fromChart);
   }, [recentSubmissions, analyticsSeries]);
+
+  // First-exam dashboard bridge: mark seen once user lands here with ≥1 graded exam.
+  useEffect(() => {
+    if (!user?.id || examsCount == null || examsCount < 1) return;
+    markFirstDashboardSeen(user.id);
+  }, [user?.id, examsCount]);
+
+  // Arriving from report bridge / practice gate — clear state; never auto-open PracticeModal.
+  useEffect(() => {
+    if (!location.state?.fromReportBridge && !location.state?.fromPracticeGate) return;
+    navigate('/dashboard', { replace: true, state: {} });
+  }, [location.state, navigate]);
 
   const dashboardSubtitle = useMemo(
     () => dashboardGoalSubtitle({ latestBand, targetBand, creditsRemaining }),

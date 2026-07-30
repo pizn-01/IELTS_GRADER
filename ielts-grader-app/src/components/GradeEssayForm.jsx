@@ -8,6 +8,7 @@ import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
 import { setPendingGradePayload } from '../utils/authStorage';
 import { FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
+import { redirectIfNeedsDashboardBridge } from '../utils/dashboardBridge';
 
 const readAsDataURL = (file) =>
   new Promise((resolve, reject) => {
@@ -104,6 +105,10 @@ export default function GradeEssayForm({
         navigate('/login', {
           state: { from: { pathname: '/analysis-ready' } },
         });
+        return;
+      }
+      if (await redirectIfNeedsDashboardBridge({ userId: user.id, navigate })) {
+        setIsSubmitting(false);
         return;
       }
       if (user.credits_remaining > 0) {

@@ -218,6 +218,8 @@ const ReportView = ({
   tabGuideAllowed = false,
   onPracticeAgain,
   practiceStarting = false,
+  practiceAgainLabel = 'Practice again',
+  bridgePracticeLabel = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Overview");
@@ -614,7 +616,7 @@ const ReportView = ({
                   disabled={practiceStarting}
                   className="bg-[#2C3E50] text-white rounded-[10px] px-2.5 md:px-3.5 py-1.5 md:py-2 text-[12px] md:text-[13px] font-semibold hover:bg-[#1D2939] transition-all border-none whitespace-nowrap shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {practiceStarting ? 'Checking…' : 'Practice again'}
+                  {practiceStarting ? 'Checking…' : practiceAgainLabel}
                 </button>
               )}
             </div>
@@ -749,6 +751,7 @@ const ReportView = ({
                   <ReportUpgradeCta
                     creditsRemaining={creditsRem}
                     onPracticeAgain={onPracticeAgain}
+                    practiceLabel={bridgePracticeLabel ? 'Continue to Dashboard' : undefined}
                   />
                 )}
 

@@ -5,12 +5,13 @@ import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import SeoHead from '../seo/SeoHead';
+import { redirectIfNeedsDashboardBridge } from '../utils/dashboardBridge';
 
 const MockExamPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { essayData } = useGrade();
-  const { updateUser, isAuthenticated, isLoading } = useAuth();
+  const { user, updateUser, isAuthenticated, isLoading } = useAuth();
   const [creditCheckDone, setCreditCheckDone] = useState(!isAuthenticated);
   const [allowed, setAllowed] = useState(!isAuthenticated);
 
@@ -46,6 +47,12 @@ const MockExamPage = () => {
           navigate('/analysis-ready', { state: { outOfCredits: true }, replace: true });
           return;
         }
+        const blocked = await redirectIfNeedsDashboardBridge({
+          userId: fresh.id || user?.id,
+          navigate,
+          replace: true,
+        });
+        if (cancelled || blocked) return;
         setAllowed(true);
       } catch {
         if (cancelled) return;

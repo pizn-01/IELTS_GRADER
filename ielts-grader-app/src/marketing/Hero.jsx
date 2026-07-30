@@ -4,6 +4,7 @@ import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import GradeEssayForm from '../components/GradeEssayForm';
+import { redirectIfNeedsDashboardBridge } from '../utils/dashboardBridge';
 
 const MOCK_OPTIONS = [
   { examType: 'Academic', taskType: 'Task 1', label: 'Task 1', sublabel: 'Report' },
@@ -151,9 +152,12 @@ const Hero = () => {
     </div>
   );
 
-  const handleStartMock = (examType, taskType) => {
+  const handleStartMock = async (examType, taskType) => {
     if (user && (user.credits_remaining ?? 0) <= 0) {
       navigate('/analysis-ready', { state: { outOfCredits: true } });
+      return;
+    }
+    if (user?.id && await redirectIfNeedsDashboardBridge({ userId: user.id, navigate })) {
       return;
     }
     updateEssayData({ examType, taskType });

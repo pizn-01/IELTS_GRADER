@@ -3,7 +3,12 @@ const FIRST_FREE_DISCOVERY_KEY = 'ig_first_free_report_discovery_seen';
 /** v2 — do not migrate from old discovery keys (those were often marked seen while invisible). */
 const REPORT_TABS_GUIDE_KEY = 'ig_report_tabs_guide_v2_seen';
 const DASHBOARD_TABS_GUIDE_KEY = 'ig_dashboard_tabs_guide_v2_seen';
+const FIRST_DASHBOARD_PREFIX = 'ig_first_dashboard_seen_';
 const UPGRADE_MODAL_PREFIX = 'ig_report_upgrade_modal_';
+
+function firstDashboardKey(userId) {
+  return `${FIRST_DASHBOARD_PREFIX}${userId || 'anon'}`;
+}
 
 /** Legacy chip flag — treat as already-seen for migration. */
 export function hasSeenFirstReportTabChips() {
@@ -69,6 +74,31 @@ export function hasSeenDashboardTabsGuide() {
 export function markDashboardTabsGuideSeen() {
   try {
     localStorage.setItem(DASHBOARD_TABS_GUIDE_KEY, '1');
+  } catch {
+    /* ignore */
+  }
+}
+
+/** First post-exam dashboard visit — user-scoped. */
+export function hasSeenFirstDashboard(userId) {
+  if (!userId) return false;
+  try {
+    if (localStorage.getItem(firstDashboardKey(userId)) === '1') return true;
+    // Migration: users who already finished the dashboard tab guide have been there.
+    if (hasSeenDashboardTabsGuide()) {
+      markFirstDashboardSeen(userId);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export function markFirstDashboardSeen(userId) {
+  if (!userId) return;
+  try {
+    localStorage.setItem(firstDashboardKey(userId), '1');
   } catch {
     /* ignore */
   }

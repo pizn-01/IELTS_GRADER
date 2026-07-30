@@ -8,6 +8,7 @@ import { trackEvent } from '../utils/trackEvent';
 export default function ReportUpgradeCta({
   creditsRemaining = 0,
   onPracticeAgain,
+  practiceLabel,
 }) {
   const navigate = useNavigate();
   const hasCredits = (Number(creditsRemaining) || 0) > 0;
@@ -50,7 +51,7 @@ export default function ReportUpgradeCta({
               onClick={goPractice}
               className="h-[44px] px-5 rounded-[10px] bg-[#2C3E50] text-white text-[14px] font-semibold hover:bg-[#1D2939]"
             >
-              Practice another essay
+              {practiceLabel || 'Practice another essay'}
             </button>
             <button
               type="button"
