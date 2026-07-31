@@ -1,23 +1,33 @@
 # Reddit Playbook — IELTS AI Tutor
 
-**Goal:** Help real students, build trust, drive branded search — not spam.
+**Goal:** Stay in the community, help hard, bridge (via profile only) to branded Quora/YouTube — not spam links in comments.
+
+## How people learn the brand name (important)
+
+A **neutral Reddit username does not teach anyone** the word `ieltsgrader`. If comments never say the brand and the handle is not the brand, people have nothing to Google from Reddit alone. That is expected under r/IELTS rules.
+
+**Brand name memory comes from:** Quora (with disclosure), YouTube / IG / TikTok brand channels, LinkedIn Website/Featured, ads, blog SEO — not from `u/some_neutral_name`.
+
+**What Reddit is for:** (1) stay unbanned in r/IELTS, (2) high-quality Writing help, (3) optional profile bridge to branded Quora/YouTube (not `ieltsgrader.com` / “AI grader” in bio if that risks Rule 1/14), (4) topic ideas for branded channels, (5) careful DMs only if asked.
+
+**One-liner:** Reddit does not say the brand; Quora/YouTube/bios do.
 
 ## Rules (read first)
 
 1. **Value first** — teach something useful in every post/comment
-2. **No link dumping** — only link when someone asks or it's genuinely relevant
-3. **Disclose** — you're affiliated with IELTSGRADER if you mention the product
-4. **Read sub rules** — each sub has different self-promo policies
-5. **Karma before promo** — comment helpfully for 1–2 weeks before any product mention
+2. **No links or product in comments** — zero `ieltsgrader.com`, disclosure, or AI-tool recommendations (including when they ask for a checker)
+3. **Neutral identity** — new handle without IELTS + grader/tutor/AI; no brand logo avatar; do not use `u/Ieltsgrader`
+4. **Read sub rules** — r/IELTS Rule 1 (no AI tools) + Rule 14 (no commercial/authority usernames)
+5. **Promote elsewhere** — name the product and link on Quora / YouTube / bios
 
 ## Target subreddits
 
 | Subreddit | Focus | Promo tolerance |
 |-----------|-------|-----------------|
-| r/IELTS | Main audience | Low — help in comments |
-| r/EnglishLearning | Broader | Very low |
-| r/studyAbroad | Motivation | Low |
-| r/ImmigrationCanada / r/AusVisa | GT audience | Context-dependent |
+| r/IELTS | Main audience | None for AI tools — help only |
+| r/EnglishLearning | Broader | None — help only |
+| r/studyAbroad | Motivation | Help only; read rules |
+| r/ImmigrationCanada / r/AusVisa | GT audience | Context-dependent; default help only |
 
 ## 10 post ideas (value-first)
 
@@ -47,7 +57,7 @@
 
 ### 7. AI tools (careful)
 **Title:** I tested AI feedback tools for IELTS writing — here's what to look for
-**Body:** Honest criteria: criterion breakdown, not just a score, official descriptors. Mention IELTS AI Tutor only if asked in comments.
+**Body:** Honest criteria: criterion breakdown, not just a score, official descriptors. Do **not** name or link IELTSGRADER in r/IELTS comments. Save product mentions for Quora/YouTube.
 
 ### 8. Vocabulary myth
 **Title:** Big words won't save your IELTS score (lexical resource explained)
@@ -55,36 +65,37 @@
 
 ### 9. Handwriting/OCR
 **Title:** Can you practice IELTS writing on paper and still get useful feedback?
-**Body:** Tips for photo upload quality. Relevant to your OCR feature — disclose affiliation if linking.
+**Body:** Tips for photo upload quality. Do not link the product in r/IELTS; teach photo clarity only.
 
 ### 10. AMA style
 **Title:** Band 7+ writing — ask me anything about Task 2 structure
-**Body:** Pure Q&A in comments for 48 hours.
+**Body:** Pure Q&A in comments for 48 hours. No product.
 
-## Comment templates (when someone asks for feedback)
+## Comment templates (r/IELTS — never product)
 
-**Without product:**
+**Feedback ask:**
 > Your Task Response is clear, but paragraph 2 doesn't fully develop the idea — try adding a specific example. For CC, your transition "However" works but the next sentence should contrast the *previous* point, not introduce a new topic.
 
-**With product (only when appropriate):**
-> I built IELTS AI Tutor (ieltsgrader.com) — it gives criterion-by-criterion feedback in about a minute. Full disclosure: I'm affiliated. Happy to explain how we align with band descriptors if useful.
+**Tool / checker ask:**
+> This sub doesn't allow AI checker promos. Use the official band descriptors and a human check if you can. On your essay: [one concrete tip].
 
 ## Weekly routine
 
 | Day | Action |
 |-----|--------|
-| Mon | Answer 3 questions in r/IELTS (no links) |
+| Mon | Answer 3 questions in r/IELTS (no links, no brand) |
 | Wed | One value post (ideas above) |
 | Fri | Follow up on your posts' comments |
-| Sun | Note which topics got traction → blog ideas |
+| Sun | Note which topics got traction → Quora/YouTube/blog (where you *can* name the product) |
 
 ## What NOT to do
 
-- Post the same link in multiple subs same day
-- "Check out my tool" with no teaching content
-- Argue with people about AI accuracy
+- Paste ieltsgrader.com, disclosure, or soft CTAs in comments
+- Recommend your AI tool even when they ask for "best checker"
+- Use `u/Ieltsgrader` or any IELTS+grader/tutor/AI handle
+- Expect people to Google "ieltsgrader" from a neutral username alone
 - Guarantee band scores
 
 ## Tracker
 
-Mark **G1** done after first value post (no link). Mark outreach progress in TRACKER notes.
+Mark progress in TRACKER notes. Measure site traffic from Quora/YouTube UTMs — not Reddit comment CTR.

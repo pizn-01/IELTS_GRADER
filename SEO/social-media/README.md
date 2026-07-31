@@ -3,7 +3,8 @@
 This folder prepares your week of **replies and posts**.  
 **You** paste and publish. The agent **never posts for you**.
 
-Full voice rules: [EMPLOYEE_PLAYBOOK.pdf](EMPLOYEE_PLAYBOOK.pdf)
+Full voice rules: [EMPLOYEE_PLAYBOOK.pdf](EMPLOYEE_PLAYBOOK.pdf)  
+**Ban-safe per-platform identity + effort priority:** [PLATFORM_GUIDELINES.pdf](PLATFORM_GUIDELINES.pdf) · [STRATEGY.md](STRATEGY.md) · [LINKEDIN.md](../guides/LINKEDIN.md) · [REDDIT.md](../guides/REDDIT.md)
 
 ---
 
@@ -49,35 +50,27 @@ Admin shows: **Discovered → After filter → Engage (~173) + Create → Today�
 | Everything | Including done/skipped |
 
 ### What good looks like each week
-- **173** helpful replies · **12** posts/Shorts · **10** high-intent  
-- **~22%** of engage drafts with soft CTA + disclosure + UTM (`ieltsgrader.com`)  
-- Most **create** actions include a platform-appropriate CTA (URL / link in bio)  
+- Helpful replies · posts/Shorts · high-intent threads  
+- Soft CTAs only on **Quora / X / YouTube** (~22% of those engages) + UTM  
+- **Reddit & LinkedIn comments: value-only** (no links, no disclosure)  
+- Once a URL is filtered or queued, it is **not** re-suggested next Monday  
 - Value-first on the rest — not every reply is a promo  
-
-### Every work day
-1. **Show today’s work** → Copy next → open URL → paste → publish  
-2. Mark **Done**, or **Wait for reply** if you want to check later  
-3. Later: open thread → **Got reply** (drafts a follow-up) / **Still waiting** / **Dead**
-
-### Monday
-**Start / refresh week** first (discover → filter → drafts), then work the list.
-
-### Sunday
-**Sunday scorecard** — includes CTA reply/post counts and follow-ups.
 
 ### Rules (always)
 1. Value first — teach something useful  
-2. Disclose when you mention the product  
+2. Disclose when you mention the product **on allowed platforms**  
 3. No band guarantees / no “100% accurate”  
-4. No link spam — especially on Reddit  
-5. Warm up Reddit with helpful comments before any promo  
+4. No link spam — Reddit and LinkedIn comments never carry product links  
+5. Neutral Reddit handle; LinkedIn person profile for comments  
+6. Soft CTAs: Quora / X / YouTube (and bios for IG/TikTok) 
 
 ---
 
 ## Memory files (anti-duplicate)
 - `output/engaged_urls.csv` — threads you marked done / skipped / waiting  
-- `output/seen_urls.csv` — URLs that entered a queue (90-day TTL)  
-Weekly triage skips both so the same thread is not drafted every week.
+- `output/seen_urls.csv` — URLs that entered filter/queue (90-day TTL)  
+- `output/parent_url_ids.csv` + STATUS — every queued parent URL (including still-pending)  
+Weekly filter/triage skips all of the above (canonical keys: Reddit post id, host variants). Once filtered or pending, a thread is never re-drafted as a new action.
 
 ---
 

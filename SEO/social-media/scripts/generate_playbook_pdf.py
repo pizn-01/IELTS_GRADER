@@ -363,19 +363,18 @@ def build() -> Path:
         (
             "6.3 Reddit",
             [
-                "Best for: highest-intent questions (\"grade my essay\", \"stuck at 6.5\").",
-                "Subs: r/IELTS (primary), r/EnglishLearning, study-abroad / visa subs (careful).",
-                "Formats: long value posts; detailed comments. Link dumps get removed or downvoted.",
-                "Cadence: 1 value post/week + daily helpful comments. Karma before promo.",
-                "Conversion: teach first. Mention product only when asked or highly relevant + disclose. Prefer bio/profile.",
-                "Gain most: answer under high-upvote threads from the weekly CSV; offer to review one paragraph.",
-                "See also: SEO/guides/REDDIT.md for ideas and templates.",
+                "Best for: presence in high-intent Writing threads - NOT for naming the brand.",
+                "Subs: r/IELTS (primary), r/EnglishLearning - zero AI-tool promo (Rule 1 + 14).",
+                "Identity: neutral username (not u/Ieltsgrader); no brand logo avatar.",
+                "Formats: value comments and posts only. ZERO URLs, brand names, or disclosure in comments.",
+                "Conversion: profile may point to Quora/YouTube (branded). Site links live on those channels.",
+                "See PLATFORM_GUIDELINES.pdf and SEO/guides/REDDIT.md.",
             ],
         ),
         (
             "6.4 Quora",
             [
-                "Best for: evergreen SEO - answers rank for years.",
+                "Best for: evergreen SEO - answers rank for years. Primary promo + SEO surface.",
                 "Formats: 300-800 word answers with structure (criteria headings, examples).",
                 "Cadence: 3-5 quality answers/week; update old popular answers.",
                 "Conversion: answer fully; add a short disclosure + link at the end if tool-relevant.",
@@ -388,18 +387,18 @@ def build() -> Path:
                 "Best for: fast tips, threads, joining conversations with tutors and candidates.",
                 "Formats: 1 tip + example; threads for Band 6 vs 7; quote-repost with added value.",
                 "Cadence: 4-7 posts/week + daily replies.",
-                "Conversion: link sparingly; pin a free-eval tweet; use bio link as default.",
+                "Conversion: link sparingly on tool asks; pin a free-eval tweet; use bio link as default.",
                 "Gain most: reply within hours to viral IELTS threads; be the clearest explainer, not the loudest.",
             ],
         ),
         (
             "6.6 LinkedIn",
             [
-                "Best for: parents, teachers, education partners, professional credibility.",
-                "Formats: 120-250 word posts with line breaks; story + lesson; soft CTA.",
-                "Cadence: 2-3 posts/week; comment on IELTS / immigration / edtech posts.",
-                "Conversion: link with disclosure in post or first comment; invite free evaluation.",
-                "Gain most: thought leadership (\"What AI feedback should and should not claim\") builds trust faster than tips alone.",
+                "Best for: parents, teachers, education partners - owned posts + person comments.",
+                "Comments: insight ONLY - no URLs, disclosure, or soft CTAs (LinkedIn blocks that pattern).",
+                "Never reply-promo under competitor AI-tool posts.",
+                "Owned posts: education post with no URL; soft CTA post points to profile Website/Featured.",
+                "See SEO/guides/LINKEDIN.md and PLATFORM_GUIDELINES.pdf.",
             ],
         ),
         (
@@ -469,8 +468,9 @@ def build() -> Path:
     pdf.ln(6)
     pdf.h2("Remember")
     pdf.body(
-        "Value first. Disclose when you promote. No guarantees. Teach so well that "
-        "students ask for the tool - then convert with one clear link to ieltsgrader.com."
+        "Value first. Reddit and LinkedIn comments never carry product links - "
+        "convert via Quora/YouTube/bios and profile Website. Disclose when you "
+        "promote on allowed platforms. No guarantees. See PLATFORM_GUIDELINES.pdf."
     )
 
     pdf.output(str(OUT))

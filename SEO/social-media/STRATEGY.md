@@ -7,15 +7,36 @@
 
 Brand accounts exist on: Facebook, Instagram, Reddit, Quora, Twitter/X, LinkedIn, TikTok, YouTube.
 
+**Platform how-to (identity + ban-safe rules):** [PLATFORM_GUIDELINES.pdf](PLATFORM_GUIDELINES.pdf) · [REDDIT.md](../guides/REDDIT.md) · [LINKEDIN.md](../guides/LINKEDIN.md)
+
 ---
 
 ## North star
 
-Trust first → free evaluation → branded search / direct visits to `ieltsgrader.com`.  
-Never optimize for link dumps. Optimize for helpful answers that earn the right to mention the product.
+Trust first → free evaluation → visits to `ieltsgrader.com`.  
+Brand **name** memory comes from Quora / YouTube / IG / TikTok / LinkedIn profile — **not** from a neutral Reddit username.  
+Never optimize for link dumps in Reddit or LinkedIn comments.
 
 **Primary CTA:** Get your free band score  
 **Secondary CTAs:** Try the AI tutor free · Start mock writing test
+
+### Dual identity
+
+| Identity | Platforms | Rules |
+|----------|-----------|--------|
+| Community | Reddit + LinkedIn **person** comments | Neutral / real name; no IELTS+grader/AI in Reddit handle; value-only comments |
+| Brand | YouTube, IG, TikTok, LinkedIn Company Page, site | Name IELTSGRADER; links OK where platform allows |
+
+### Effort priority (promotion / referral / SEO)
+
+| Tier | Platforms | Role |
+|------|-----------|------|
+| **P0** (~45%) | Quora, YouTube, owned blog | Promotion + SEO + referral |
+| **P1** (~25%) | IG/TikTok, X, LinkedIn owned posts | Promotion; lighter SEO |
+| **P2** (~20%) | Reddit + LinkedIn comments | Presence only — no promo |
+| **+10%** | Themes → blog / create pack | SEO fuel |
+
+**CTA engage platforms only:** Quora, Twitter/X, YouTube (~22% of those engages). Reddit + LinkedIn comments always `cta=0`.
 
 ---
 
@@ -35,22 +56,22 @@ Never optimize for link dumps. Optimize for helpful answers that earn the right 
 ### Tier 1 — Daily
 | Platform | Why | Focus |
 |----------|-----|--------|
-| Reddit | High-intent questions; students ask for feedback | Value comments first; rare links |
-| Quora | Long-lived SEO + intent | Detailed answers; soft CTA |
-| Twitter/X | Fast IELTS discourse | Threads, reply to tutors/students |
+| Quora | Long-lived SEO + intent | Detailed answers; soft CTA + disclosure when tool/feedback ask |
+| YouTube | Authority + Shorts | Description + pinned link |
+| Twitter/X | Fast discourse | Bio link; in-reply URL only on tool asks |
+| Reddit | High-intent questions | **Value comments only** — zero links/brand (Rule 1 + 14) |
 
 ### Tier 2 — 3–5× / week
 | Platform | Why | Focus |
 |----------|-----|--------|
-| YouTube | Authority + Shorts discovery | 45–60s writing fixes; link in description |
 | Instagram | Same Short assets as Reels | Captions + Stories + link in bio |
-| TikTok | Same short-form edit | Native caption style; link in bio |
+| TikTok | Same short-form edit | Native caption; link in bio |
 
 ### Tier 3 — 2–3× / week
 | Platform | Why | Focus |
 |----------|-----|--------|
-| LinkedIn | Parents, teachers, education buyers | Longer trust posts |
-| Facebook | Groups + page for GT / study-abroad parents | Group-safe help; page posts |
+| LinkedIn | Parents, teachers | Owned posts; comments = insight only; CTA via profile Website |
+| Facebook | Groups + page | Group-safe help; page posts |
 
 **Repurposing rule:** One short (YouTube Short → TikTok → Instagram Reel) with platform-specific captions. Do not reinvent creative three times.
 
@@ -60,37 +81,46 @@ Never optimize for link dumps. Optimize for helpful answers that earn the right 
 
 | Day | Focus |
 |-----|--------|
-| **Mon** | Run `search_weekly.py`. Triage high-engagement threads. Plan 3–5 replies + 2–3 posts for the week. |
-| **Tue–Thu** | Create scheduled posts/Shorts. Reply in Tier 1 platforms daily (target ≥10 helpful replies/day total across Reddit/Quora/X). |
-| **Fri** | Deep replies on threads with huge engagement from Mon list + historical CSV. |
-| **Sun** | Report: posts published, replies sent, profile visits / bio clicks (if available), free eval mentions, content backlog. |
+| **Mon** | Run weekly agent. Triage high-engagement threads. Plan replies + posts for the week. |
+| **Tue–Thu** | Create scheduled posts/Shorts. Reply across Tier 1 daily. |
+| **Fri** | Deep replies on high-engagement threads. |
+| **Sun** | Scorecard: UTMs, bio clicks, GSC branded queries, backlog. |
 
 ---
 
 ## Guardrails
 
 1. **Value first** — teach something useful in every post and reply.
-2. **Disclose** when mentioning IELTSGRADER / IELTS AI Tutor (“I’m affiliated with…”.
+2. **Disclose** when mentioning IELTSGRADER on **allowed** platforms (Quora/X/YouTube).
 3. **No band guarantees** — never promise Band 7 / 100% accuracy.
 4. **Soft claims** — avoid unverified “10k students / 4.9 rating” until approved (see `SEO/BRANDING.md`).
-5. **Platform rules** — Reddit/Quora self-promo is especially strict; earn trust before links.
-6. **Link placement** — prefer bio / description / allowed CTA fields; put URLs in comments only when invited or clearly relevant.
-7. **Scripts never auto-post** — discovery CSVs are listening tools only.
+5. **Reddit** — never AI-tool promo or branded handle; see [REDDIT.md](../guides/REDDIT.md).
+6. **LinkedIn comments** — never URL/disclosure; see [LINKEDIN.md](../guides/LINKEDIN.md).
+7. **Link placement** — Quora/X/YouTube may use one URL + disclosure; IG/TikTok bio; LinkedIn profile Featured.
+8. **Scripts never auto-post** — discovery is listening only.
+9. **Dedupe** — once filtered/queued/pending, a thread is not re-suggested on later Mondays.
 
 ---
 
-## Conversion reply ladder (all platforms)
+## Conversion reply ladder
 
-1. Answer the writing/exam question with a concrete tip (criteria, example, fix).
-2. Offer a next step without a hard sell (e.g. “Happy to look at one paragraph if you paste it”).
-3. Soft product mention **only if** asked for tools / checkers / tutors, or clearly appropriate.
-4. Link via bio or one clear URL + disclosure.
-5. Follow up on their reply — conversation > dump-and-leave.
+**Quora / X / YouTube (CTA allowed when intent fits):**
 
-**Disclosure line (use when promo):**
+1. Answer with a concrete tip.
+2. Soft product mention if they asked for tools/checkers/tutors.
+3. One clear URL + disclosure.
+4. Follow up — conversation > dump-and-leave.
+
+**Reddit / LinkedIn comments:**
+
+1. Answer with a concrete tip only.
+2. Never product, brand, disclosure, or URL.
+3. Optional: profile points to Quora/YouTube (branded channels).
+
+**Disclosure line (allowed platforms only):**
 > Full disclosure: I’m affiliated with IELTS AI Tutor by IELTSGRADER (ieltsgrader.com).
 
-**Safe soft CTA:**
+**Safe soft CTA (allowed platforms only):**
 > If you want criterion-by-criterion feedback in about a minute, we built a free evaluation at ieltsgrader.com — no pressure either way.
 
 ---
@@ -105,7 +135,7 @@ Never optimize for link dumps. Optimize for helpful answers that earn the right 
 | YouTube | 3–5 Shorts / week (+ 1 long optional) | Reply to comments daily |
 | Instagram | 3–5 Reels / week + 3–5 Stories | Reply to DMs / comments |
 | TikTok | 3–5 videos / week | Reply to comments |
-| LinkedIn | 2–3 posts / week | Comment on IELTS/edtech posts |
+| LinkedIn | 2–3 posts / week | Comment insight-only (no links) |
 | Facebook | 2–3 page posts / week | Helpful group comments where allowed |
 
 ---
@@ -117,9 +147,10 @@ Never optimize for link dumps. Optimize for helpful answers that earn the right 
 | Helpful replies (all platforms) | ≥50 / week |
 | Original posts / Shorts published | ≥12 / week (with repurposing) |
 | High-intent threads engaged (from weekly CSV) | ≥10 / week |
+| Soft-CTA engages | ~22% of Quora/X/YouTube engages only; Reddit/LI = 0 |
 | Profile / bio link clicks | Track if Insights available |
-| Free evaluation starts attributed to social | Track UTM if used (`?utm_source=…`) |
-| Branded search (GSC) | Monitor “ieltsgrader” / “IELTS AI Tutor” |
+| Free evaluation starts attributed to social | Track UTM (`?utm_source=…`) |
+| Branded search (GSC) | Monitor “ieltsgrader” / “IELTS AI Tutor” from branded channels |
 
 ---
 
@@ -138,34 +169,26 @@ python3 run_cold_start_agent.py # once / occasional (historical)
 python3 run_weekly_agent.py     # Monday
 python3 run_daily_brief.py      # Tue–Fri (+ fresh listen)
 python3 run_sunday_wrap.py      # Sunday scorecard
-
-# Low-level listening only:
-python3 search_historical.py
-python3 search_weekly.py
 ```
 
-Outputs land in `SEO/social-media/output/` (`THIS_WEEK/`, CSVs). Scripts never auto-post.
-
-**Limits:** Reddit + YouTube use native APIs/stats. Facebook, Instagram, Quora, X, LinkedIn, TikTok are found via Serper web search of indexed public pages — engagement often unknown. Scripts do not replace native platform Insights.
+Outputs land in `SEO/social-media/output/`. Scripts never auto-post.
 
 ---
 
 ## Employee handoff
 
-Give the hire: **[README.md](README.md)** + **`Start.command`** + **`EMPLOYEE_PLAYBOOK.pdf`** + brand account access. Manager configures `scripts/.env` once.
-
-Fill brand handle list below when ready for footer / bio consistency:
+Give the hire: **[README.md](README.md)** + **`Start.command`** + **[PLATFORM_GUIDELINES.pdf](PLATFORM_GUIDELINES.pdf)** + **`EMPLOYEE_PLAYBOOK.pdf`** + brand account access. Manager configures `scripts/.env` once.
 
 | Platform | Handle / URL |
 |----------|----------------|
-| Facebook | |
-| Instagram | |
-| Reddit | |
-| Quora | |
-| Twitter/X | |
-| LinkedIn | |
-| TikTok | |
-| YouTube | |
+| Facebook | Brand Page |
+| Instagram | Brand |
+| Reddit | **Neutral community handle** (not u/Ieltsgrader) |
+| Quora | Tutor / light brand OK |
+| Twitter/X | Brand or person |
+| LinkedIn | Person for comments; Company Page for posts |
+| TikTok | Brand |
+| YouTube | Brand |
 
 ---
 
@@ -173,5 +196,6 @@ Fill brand handle list below when ready for footer / bio consistency:
 
 - Brand voice: [`../BRANDING.md`](../BRANDING.md)
 - Reddit detail: [`../guides/REDDIT.md`](../guides/REDDIT.md)
+- LinkedIn detail: [`../guides/LINKEDIN.md`](../guides/LINKEDIN.md)
 - YouTube Shorts: [`../guides/YOUTUBE_SHORTS.md`](../guides/YOUTUBE_SHORTS.md)
 - Communities / outreach: [`../guides/COMMUNITIES.md`](../guides/COMMUNITIES.md)

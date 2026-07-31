@@ -15,6 +15,7 @@ from agent_io import (  # noqa: E402
     THIS_WEEK,
     archive_this_week_if_needed,
     ensure_output_dirs,
+    heal_seen_from_status,
     open_actions,
     open_status_url_keys,
     read_status,
@@ -97,6 +98,10 @@ def run(*, dry_run: bool = False, skip_search: bool = False, csv_path: Path | No
     today = date.today()
     week_id = today.isoformat()
     archive_this_week_if_needed(week_id)
+
+    # Heal: pending/STATUS URLs into seen so rediscovery cannot re-suggest them
+    healed = heal_seen_from_status(onboarding=False)
+    print(f"Seen-memory heal from STATUS/registry: {healed} urls", flush=True)
 
     # Keep open STATUS + action files. Only ensure dirs exist.
     (THIS_WEEK / "actions").mkdir(parents=True, exist_ok=True)

@@ -135,7 +135,12 @@ def write_scorecard(*, notes: str = "") -> Path:
     c = kpi_counts()
     path = THIS_WEEK / "_meta" / "scorecard.md"
     default_notes = (
-        "- Bio/profile clicks this week:\n- Free evaluations attributed:\n"
+        "- Quora / YouTube / X UTM clicks:\n"
+        "- Bio / profile link clicks (IG/TikTok/LI Website):\n"
+        "- GSC branded queries (ieltsgrader / IELTS AI Tutor) — from branded channels:\n"
+        "- Free evaluations attributed:\n"
+        "- LinkedIn comment blocks this week (if any):\n"
+        "- Expected Reddit+LinkedIn CTA engage drafts: 0\n"
     )
     notes_block = notes or default_notes
     strip = kpi_strip(c)

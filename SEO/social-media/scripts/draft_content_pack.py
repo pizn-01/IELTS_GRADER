@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -31,6 +32,7 @@ from agent_rules import (
     BRAND_NAVY,
     SOFT_CTA,
     agent_tz,
+    strip_brand_from_text,
     system_prompt_create,
     utm_url,
     validate_draft,
@@ -308,14 +310,41 @@ def draft_content_pack(
         day = ["Tue", "Thu"][i % 2]
         laid = format_action_id(n)
         n += 1
-        li = llm_complete(
-            system_prompt_create("linkedin", "post"),
-            "120-250 word LinkedIn post: what AI IELTS feedback should and should not claim. "
-            "Soft CTA + disclosure.",
-            dry_run=dry_run,
-        )
-        if "affiliated" not in li.lower():
-            li = f"{li.rstrip()}\n\n{DISCLOSURE}\n{utm_url(SITE, 'linkedin')}"
+        if i == 0:
+            li = llm_complete(
+                system_prompt_create("linkedin", "education_post"),
+                "120-250 word LinkedIn post: one concrete IELTS Writing teaching "
+                "point (criteria or structure). Pure education — no URL, no "
+                "disclosure, no product name.",
+                dry_run=dry_run,
+            )
+            # Strip any accidental promo
+            li = strip_brand_from_text(li)
+            disclosure_needed = False
+            product_mentioned = False
+            placement = "none — education only"
+        else:
+            li = llm_complete(
+                system_prompt_create("linkedin", "profile_cta_post"),
+                "120-250 word LinkedIn post: what good IELTS writing feedback "
+                "should include. Soft CTA that says to visit the Website/Featured "
+                "link on your profile — do NOT paste ieltsgrader.com or any raw URL.",
+                dry_run=dry_run,
+            )
+            # Ensure no raw site URL in body
+            li = re.sub(r"(?i)https?://\S*ieltsgrader\.com\S*", "", li)
+            li = re.sub(r"(?i)\bieltsgrader\.com\b", "the link in my profile", li)
+            if "profile" not in li.lower() and "featured" not in li.lower():
+                li = (
+                    f"{li.rstrip()}\n\n"
+                    "If useful, the free writing check is linked on my profile "
+                    "(Website / Featured) — no pressure."
+                )
+            disclosure_needed = False
+            product_mentioned = "ielts" in li.lower() and (
+                "profile" in li.lower() or "tutor" in li.lower()
+            )
+            placement = "profile Website/Featured only — no raw URL in post"
         lpath = write_action_markdown(
             aid=laid,
             platform="linkedin",
@@ -325,13 +354,21 @@ def draft_content_pack(
             title=f"LinkedIn post {i+1}",
             paste=li,
             followup="",
-            placement="in post or first comment + disclosure",
-            disclosure_needed=True,
-            issues=validate_draft(li, product_mentioned=True),
+            placement=placement,
+            disclosure_needed=disclosure_needed,
+            issues=validate_draft(li, product_mentioned=False),
             intent="create",
         )
         status_rows.append(
-            status_row(laid, day, "linkedin", "post", f"LinkedIn {i+1}", lpath)
+            status_row(
+                laid,
+                day,
+                "linkedin",
+                "post",
+                f"LinkedIn {i+1}",
+                lpath,
+                cta=i == 1,
+            )
         )
         schedule_rows.append(
             _sched(

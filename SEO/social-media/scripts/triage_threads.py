@@ -14,14 +14,17 @@ from agent_rules import (
     ENGAGE_MAX,
     ENGAGE_TARGET,
     KPI_HIGH_INTENT,
+    NO_PRODUCT_ENGAGE_PLATFORMS,
     ONBOARDING_ENGAGE_TARGET,
     WEEKDAYS,
     classify_intent,
     is_high_intent,
+    is_linkedin_competitor_promo,
+    parse_subreddit,
     platform_tier,
     ranking_score,
 )
-from agent_io import blocked_urls, remember_urls
+from agent_io import blocked_urls, remember_urls, normalize_status_url
 from common import normalize_url
 from filter_candidates import load_cta_map
 
@@ -42,6 +45,7 @@ class TriageItem:
     source_query: str = ""
     fresh: bool = False
     cta_ok: bool = False
+    subreddit: str = ""
 
 
 def _read_csv_rows(path: Path) -> list[dict[str, str]]:
@@ -62,14 +66,16 @@ def triage_csv(
 ) -> list[TriageItem]:
     blocked = blocked_urls()
     if skip_urls:
-        blocked = blocked | {u.lower().rstrip("/") for u in skip_urls}
+        blocked = blocked | {
+            normalize_status_url(u) or u.lower().rstrip("/") for u in skip_urls
+        }
     cta_map = cta_map if cta_map is not None else load_cta_map()
     raw = _read_csv_rows(csv_path)
     items: list[TriageItem] = []
 
     for row in raw:
         url = normalize_url(row.get("url") or "")
-        key = url.lower().rstrip("/")
+        key = normalize_status_url(url) or url.lower().rstrip("/")
         if not url or key in blocked:
             continue
         platform = (row.get("platform") or "unknown").lower()
@@ -77,9 +83,13 @@ def triage_csv(
         snippet = row.get("snippet") or ""
         intent = classify_intent(title, snippet)
         notes = row.get("notes") or ""
-        cta_ok = bool(cta_map.get(key))
+        subreddit = parse_subreddit(url, notes)
+        cta_ok = bool(cta_map.get(key)) or bool(cta_map.get(url.lower().rstrip("/")))
         if "cta_ok=1" in notes:
             cta_ok = True
+        # Reddit + LinkedIn engages: never soft CTA
+        if platform in NO_PRODUCT_ENGAGE_PLATFORMS:
+            cta_ok = False
         score = ranking_score(
             platform=platform,
             engagement_score=row.get("engagement_score") or "",
@@ -87,7 +97,11 @@ def triage_csv(
             title=title,
             snippet=snippet,
         )
-        if intent == "tool_ask" or cta_ok:
+        if platform == "linkedin" and is_linkedin_competitor_promo(title, snippet):
+            action = "observe_only"
+        elif platform in NO_PRODUCT_ENGAGE_PLATFORMS:
+            action = "value_reply"
+        elif intent == "tool_ask" or cta_ok:
             action = "soft_cta_ok"
         elif mode == "cold_start":
             action = "observe_only"
@@ -109,7 +123,9 @@ def triage_csv(
                 action=action,
                 source_query=row.get("query") or "",
                 fresh=fresh,
-                cta_ok=cta_ok or intent == "tool_ask",
+                cta_ok=(cta_ok or intent == "tool_ask")
+                and platform not in NO_PRODUCT_ENGAGE_PLATFORMS,
+                subreddit=subreddit,
             )
         )
 
@@ -242,6 +258,7 @@ def load_triage_json(path: Path) -> list[TriageItem]:
                 source_query=row.get("source_query") or "",
                 fresh=bool(row.get("fresh")),
                 cta_ok=bool(row.get("cta_ok")),
+                subreddit=row.get("subreddit") or "",
             )
         )
     return items

@@ -499,12 +499,18 @@ export default function SocialOpsTab() {
         )}
         <p className="text-[11px] text-gray-500">
           Pending is durable across Mondays — tasks stay open until Done or Dead. Weekly refresh
-          only adds new work.
-        </p>        {(kpi?.cta_replies_total > 0 || kpi?.cta_posts_total > 0) && (
+          only adds new work. Once a thread is filtered or queued, it will not be suggested again.
+        </p>
+        <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-100 rounded-[8px] px-3 py-2 mt-2">
+          <strong>Ban-safe:</strong> Reddit &amp; LinkedIn drafts are value-only (no links, no
+          disclosure). Soft CTAs only on Quora / X / YouTube. LinkedIn CTA = profile Website /
+          Featured, not comments. See PLATFORM_GUIDELINES.pdf.
+        </p>
+        {(kpi?.cta_replies_total > 0 || kpi?.cta_posts_total > 0) && (
           <p className="text-[12px] text-gray-600">
             Soft-CTA target ~{Math.round((kpi?.targets?.cta_engage_share || 0.22) * 100)}% of
-            engages · planned CTA replies {kpi?.cta_replies_total || 0} · CTA creates{' '}
-            {kpi?.cta_posts_total || 0}
+            Quora/X/YouTube engages · planned CTA replies {kpi?.cta_replies_total || 0} · CTA
+            creates {kpi?.cta_posts_total || 0}
           </p>
         )}
         {historical ? (

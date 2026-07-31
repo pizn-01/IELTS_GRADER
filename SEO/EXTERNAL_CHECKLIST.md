@@ -18,8 +18,9 @@ Agent Phase 2 work is done (design, legal, blog depth, tool pages, navbar Blog, 
 - [ ] **Social URLs** — real X / Instagram / YouTube / LinkedIn for footer
 
 ## Remaining — ongoing growth
+- [ ] Follow **site-only** cadence: [WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md) / [WEBSITE_SEO_CADENCE.pdf](WEBSITE_SEO_CADENCE.pdf)
 - [ ] Weekly GSC scorecard ([MEASUREMENT.md](MEASUREMENT.md))
-- [ ] Social media hire: follow [social-media/STRATEGY.md](social-media/STRATEGY.md) + [social-media/EMPLOYEE_PLAYBOOK.pdf](social-media/EMPLOYEE_PLAYBOOK.pdf)
+- [ ] Social media hire: follow [social-media/STRATEGY.md](social-media/STRATEGY.md) + [social-media/EMPLOYEE_PLAYBOOK.pdf](social-media/EMPLOYEE_PLAYBOOK.pdf) + [social-media/PLATFORM_GUIDELINES.pdf](social-media/PLATFORM_GUIDELINES.pdf)
 - [ ] Add `SERPER_API_KEY` + `YOUTUBE_API_KEY` and run weekly: `python3 SEO/social-media/scripts/search_weekly.py`
 - [ ] Reddit value-first ([guides/REDDIT.md](guides/REDDIT.md) + social playbook)
 - [ ] Product Hunt + AlternativeTo ([guides/BACKLINKS.md](guides/BACKLINKS.md))

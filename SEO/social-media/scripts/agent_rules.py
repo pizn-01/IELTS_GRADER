@@ -159,14 +159,32 @@ HASHTAG_DEFAULT = [
 ]
 
 PLAYBOOK_REMEMBER = (
-    "Value first. Disclose when you promote. No guarantees. Teach so well that "
-    "students ask for the tool — then convert with one clear link to ieltsgrader.com."
+    "Value first. Reddit and LinkedIn comments never carry product links — "
+    "convert via Quora/YouTube/bios and profile Website. Disclose when you "
+    "promote on allowed platforms. No guarantees. Teach so well students "
+    "find IELTSGRADER on branded channels."
 )
 
 WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 ENGAGE_SLOT_DAYS = ("Tue", "Wed", "Thu")
 DEEP_DAY = "Fri"
 CREATE_SHORT_DAYS = ("Tue", "Wed", "Thu", "Fri")
+
+# Soft CTAs only on these engage platforms (~CTA_ENGAGE_SHARE of eligible)
+CTA_PLATFORMS = frozenset({"quora", "twitter", "youtube"})
+NO_PRODUCT_ENGAGE_PLATFORMS = frozenset({"reddit", "linkedin"})
+REDDIT_STRICT_SUBS = frozenset({"ielts", "englishlearning"})
+
+BRAND_TOKENS_WHEN_NO_PRODUCT = [
+    "ieltsgrader",
+    "ielts grader",
+    "ielts ai tutor",
+    "free evaluation",
+    "full disclosure",
+    "i'm affiliated",
+    "i am affiliated",
+    "im affiliated",
+]
 
 
 def pick_soft_cta() -> str:
@@ -297,21 +315,59 @@ def ranking_score(
     return eng + tier_boost + intent_boost + phrase_boost
 
 
+def parse_subreddit(url: str = "", notes: str = "") -> str:
+    """Return lowercase subreddit name without r/ prefix, or empty."""
+    blob = f"{url} {notes}"
+    m = re.search(r"(?:reddit\.com/r/|subreddit=r/)([a-zA-Z0-9_]+)", blob, re.I)
+    if m:
+        return m.group(1).lower()
+    m2 = re.search(r"\br/([a-zA-Z0-9_]+)\b", blob)
+    if m2:
+        return m2.group(1).lower()
+    return ""
+
+
+def is_linkedin_competitor_promo(title: str, snippet: str) -> bool:
+    """True when the post looks like rival AI-tool marketing (skip engage)."""
+    text = f"{title} {snippet}".lower()
+    marketing = (
+        "ai-powered",
+        "ai powered",
+        "essay checker",
+        "band score estimation",
+        "instant feedback",
+        "try our",
+        "check out our",
+        "sign up",
+        "free trial",
+        "lnkd.in/",
+    )
+    ieltsish = any(k in text for k in ("ielts", "writing task", "task 1", "task 2"))
+    hits = sum(1 for k in marketing if k in text)
+    return ieltsish and hits >= 2
+
+
 def link_placement(platform: str, intent: str, *, is_own_post: bool = False) -> str:
-    """Return link placement instruction per playbook §2."""
+    """Return link placement instruction per ban-safe playbook."""
     p = platform.lower()
+    if not is_own_post and p in NO_PRODUCT_ENGAGE_PLATFORMS:
+        return "none — teach only; never link, brand, or disclosure"
     warmup = warmup_enabled()
-    if warmup and p in ("reddit", "facebook"):
+    if warmup and p == "facebook" and not is_own_post:
         return "none (warmup — value only, no product link)"
     if is_own_post:
         if p in ("instagram", "tiktok"):
             return "bio + pinned comment"
         if p == "youtube":
             return "description + pinned comment"
+        if p == "linkedin":
+            return "profile Website/Featured only — no raw URL in post body"
         return "bio + description / pinned comment"
+    if p not in CTA_PLATFORMS:
+        if p in ("instagram", "tiktok"):
+            return "link in bio only — say 'link in bio'"
+        return "none — teach; offer more help"
     if intent == "tool_ask":
-        if p == "reddit":
-            return "bio/profile preferred; one URL + disclosure only if sub allows"
         return "one URL + disclosure"
     if p in ("instagram", "tiktok"):
         return "link in bio only — say 'link in bio'"
@@ -319,7 +375,12 @@ def link_placement(platform: str, intent: str, *, is_own_post: bool = False) -> 
 
 
 def allow_product_mention(platform: str, intent: str) -> bool:
-    if warmup_enabled() and platform.lower() in ("reddit", "facebook"):
+    p = (platform or "").lower()
+    if p in NO_PRODUCT_ENGAGE_PLATFORMS:
+        return False
+    if warmup_enabled() and p == "facebook":
+        return False
+    if p not in CTA_PLATFORMS:
         return False
     return intent == "tool_ask"
 
@@ -331,8 +392,13 @@ def allow_cta_for_item(
     cta_ok: bool = False,
     force_cta: bool = False,
 ) -> bool:
-    """CTA eligibility for quota fill: tool_ask, or approved feedback_ask."""
-    if warmup_enabled() and platform.lower() in ("reddit", "facebook"):
+    """CTA eligibility: Quora/X/YouTube only; never Reddit/LinkedIn engages."""
+    p = (platform or "").lower()
+    if p in NO_PRODUCT_ENGAGE_PLATFORMS:
+        return False
+    if warmup_enabled() and p == "facebook":
+        return False
+    if p not in CTA_PLATFORMS:
         return False
     if force_cta and intent in ("tool_ask", "feedback_ask"):
         return True
@@ -341,6 +407,22 @@ def allow_cta_for_item(
     if intent == "feedback_ask" and cta_ok:
         return True
     return False
+
+
+def strip_brand_from_text(text: str) -> str:
+    """Remove product/disclosure/URLs from a no-CTA draft."""
+    out = text or ""
+    out = re.sub(
+        r"(?i)full disclosure:.*?ieltsgrader\.com\)?\s*",
+        "",
+        out,
+    )
+    out = re.sub(r"(?i)https?://\S*ieltsgrader\.com\S*", "", out)
+    out = re.sub(r"(?i)\bieltsgrader\.com\b", "", out)
+    out = re.sub(r"(?i)\bielts\s*ai\s*tutor\b", "", out)
+    out = re.sub(r"(?i)\bieltsgrader\b", "", out)
+    out = re.sub(r"\n{3,}", "\n\n", out).strip()
+    return out
 
 
 def validate_draft(
@@ -368,7 +450,6 @@ def validate_draft(
         r"quick tip for (?:ielts )?(?:academic )?task\s*2",
         lower,
     ) and "lawbreak" not in lower and "prison" not in lower:
-        # Generic opener with no thread-specific cue — soft flag
         if not any(
             k in lower
             for k in ("your", "you wrote", "your essay", "your intro", "your prompt")
@@ -383,27 +464,69 @@ def validate_draft(
     if product_mentioned:
         if "disclosure" not in lower and "affiliated" not in lower:
             issues.append("product mentioned but disclosure missing")
-    # Any non-allowlisted http links
-    for match in re.findall(r"https?://[^\s\)\]]+", text):
-        clean = match.rstrip(".,;")
-        base = clean.split("?")[0].rstrip("/")
-        approved_bases = {u.rstrip("/") for u in APPROVED_URLS}
-        if base not in approved_bases and "ieltsgrader.com" not in base:
-            issues.append(f"non-allowlisted URL: {clean}")
+    else:
+        for token in BRAND_TOKENS_WHEN_NO_PRODUCT:
+            if token in lower:
+                issues.append(f"brand/promo token while product not allowed: {token}")
+        if re.search(r"https?://", text):
+            issues.append("URL present while product not allowed")
+        if "ieltsgrader.com" in lower:
+            issues.append("ieltsgrader.com while product not allowed")
+    # Any non-allowlisted http links (when product allowed)
+    if product_mentioned:
+        for match in re.findall(r"https?://[^\s\)\]]+", text):
+            clean = match.rstrip(".,;")
+            base = clean.split("?")[0].rstrip("/")
+            approved_bases = {u.rstrip("/") for u in APPROVED_URLS}
+            if base not in approved_bases and "ieltsgrader.com" not in base:
+                issues.append(f"non-allowlisted URL: {clean}")
     return issues
 
 
 def system_prompt_engage(platform: str, intent: str) -> str:
     product_ok = allow_product_mention(platform, intent)
     placement = link_placement(platform, intent)
-    return f"""You write casual social replies for IELTSGRADER. Sound like a helpful human tutor on Reddit/Quora/X — not a chatbot.
+    p = (platform or "").lower()
+    persona = (
+        "You write casual social replies as an experienced human IELTS writing tutor. "
+        "You are NOT representing a product unless Product mention allowed = true."
+        if not product_ok
+        else "You write casual social replies for IELTSGRADER. Sound like a helpful human tutor — not a chatbot."
+    )
+    reddit_extra = ""
+    if p == "reddit":
+        reddit_extra = """
+Reddit hard rules:
+- ZERO URLs, ZERO brand names (no ieltsgrader, no IELTS AI Tutor), ZERO disclosure.
+- If they ask for a tool/checker/AI: refuse to recommend AI checkers (sub rules). Give one human TR/CC tip or point to official band descriptors only.
+"""
+    linkedin_extra = ""
+    if p == "linkedin":
+        linkedin_extra = """
+LinkedIn hard rules:
+- ZERO URLs, ZERO brand names, ZERO disclosure, ZERO soft CTAs in comments.
+- Short professional insight only. Do not pitch against other AI tools' posts.
+"""
+    product_block = (
+        f"""Product rules:
+- Soft product mention ONLY if Product mention allowed is true.
+- At most one allowlisted link where placement allows. Disclose when promoting.
+- Disclosure when promoting: {DISCLOSURE}
+- Example soft CTA style (paraphrase, don't copy verbatim): {SOFT_CTA}
+"""
+        if product_ok
+        else """Product rules:
+- Product NOT allowed. Teach only — zero URLs, zero brand names, zero disclosure, zero soft CTAs.
+"""
+    )
+    return f"""{persona}
 
 Thread-specificity rules (strict — most important):
 - Your reply MUST be about THIS thread only. Use the Title, Snippet, and Extra context.
 - Name something concrete from their post (prompt topic, a claim they made, a wording issue, a structure problem).
 - If Extra context includes their essay/prompt: comment on THAT text. Never invent a generic "quick tip for Task 2".
 - If they already posted an essay or asked "grade/check my essay": do NOT ask them to paste a paragraph.
-- If Extra context is missing/thin: do NOT fake specific feedback. Acknowledge their ask from the title and help with what you actually have (or a soft free-evaluation CTA if product is allowed). Never invent essay details.
+- If Extra context is missing/thin: do NOT fake specific feedback. Acknowledge their ask from the title and help with what you actually have. Never invent essay details.
 - Never invent the OP's band score, exam result, or biography. Only mention scores if Extra context explicitly says they claimed them.
 
 Voice rules (strict):
@@ -413,15 +536,8 @@ Voice rules (strict):
 - Don't mirror a Hook→Problem→Fix template. Don't end every reply the same way.
 - Vary length: sometimes 2 sentences, sometimes a short paragraph. Never essay-length.
 - Never guarantee bands. Never argue with examiners or competitors.
-
-Product rules:
-- Soft product mention ONLY if they asked for tools/tutors/checkers (intent allows).
-- At most one allowlisted link where placement allows. Disclose when promoting.
-- If product not allowed: teach only — zero URLs, zero brand names.
-
-Disclosure when promoting: {DISCLOSURE}
-Example soft CTA style (paraphrase, don't copy verbatim): {SOFT_CTA}
-
+{reddit_extra}{linkedin_extra}
+{product_block}
 Platform: {platform}
 Intent: {intent}
 Product mention allowed: {product_ok}
@@ -435,6 +551,14 @@ Output ONLY the reply text to paste. No markdown headings. No "Step 1". No meta 
 
 
 def system_prompt_create(platform: str, content_type: str) -> str:
+    p = (platform or "").lower()
+    li_extra = ""
+    if p == "linkedin":
+        li_extra = (
+            "LinkedIn: education-first. If content type includes CTA, say "
+            "'link in my profile / Featured' — do NOT paste raw ieltsgrader.com "
+            "or lnkd.in spam patterns in the post body.\n"
+        )
     return f"""You write social posts for IELTSGRADER that sound human — like a sharp tutor, not an ad agency or ChatGPT.
 
 Voice:
@@ -452,7 +576,7 @@ Platform: {platform}
 Content type: {content_type}
 Instagram/TikTok: "link in bio", no raw URLs in caption.
 YouTube: spoken CTA OK; description may include ieltsgrader.com.
-Disclose if product is mentioned: {DISCLOSURE}
+{li_extra}Disclose if product is mentioned (except LinkedIn profile-CTA posts that must not paste raw URLs): {DISCLOSURE}
 
 Output paste-ready copy only (or a short script with on-screen cues). No meta commentary.
 """

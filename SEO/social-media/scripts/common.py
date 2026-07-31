@@ -97,7 +97,7 @@ QUERY_BANK_HISTORICAL_EXTRA = [
 
 USER_AGENT = os.getenv(
     "REDDIT_USER_AGENT",
-    "IELTSGRADER-social-discovery/1.0 (listening script; contact ieltsgrader.com)",
+    "ielts-writing-social-listen/1.0 (discovery only; contact via site about page)",
 )
 
 
@@ -151,10 +151,88 @@ def normalize_url(url: str) -> str:
     return (url or "").strip().split("#")[0].rstrip("/")
 
 
+def canonical_thread_key(url: str) -> str:
+    """
+    Stable identity for a social thread across host/slug/tracking variants.
+    Used for seen/engaged/STATUS dedupe so weekly runs never re-queue the same post.
+    """
+    from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+
+    raw = (url or "").strip()
+    if not raw:
+        return ""
+    if "://" not in raw:
+        raw = "https://" + raw
+    try:
+        parts = urlparse(raw)
+    except Exception:
+        return normalize_url(url).lower()
+
+    host = (parts.netloc or "").lower()
+    if host.startswith("www."):
+        host_bare = host[4:]
+    else:
+        host_bare = host
+
+    # Reddit: collapse hosts + use post id only
+    if host_bare in ("reddit.com", "old.reddit.com", "m.reddit.com", "np.reddit.com"):
+        m = re.search(r"/comments/([a-z0-9]+)", parts.path or "", re.I)
+        if m:
+            return f"https://www.reddit.com/comments/{m.group(1).lower()}"
+        host = "www.reddit.com"
+    elif host_bare in ("youtu.be",):
+        vid = (parts.path or "").strip("/").split("/")[0]
+        if vid:
+            return f"https://www.youtube.com/watch?v={vid.lower()}"
+        host = "www.youtube.com"
+    elif host_bare in ("youtube.com", "m.youtube.com", "www.youtube.com"):
+        host = "www.youtube.com"
+    elif host_bare in ("linkedin.com", "www.linkedin.com", "lnkd.in"):
+        host = "www.linkedin.com"
+    elif host_bare in ("x.com", "twitter.com", "mobile.twitter.com", "www.twitter.com"):
+        host = "x.com"
+    elif host_bare in ("quora.com", "www.quora.com", "m.quora.com"):
+        host = "www.quora.com"
+    else:
+        host = host if host.startswith("www.") or not host else host
+
+    path = (parts.path or "").rstrip("/")
+    # Drop tracking query params; keep meaningful ones (e.g. YouTube v=)
+    drop = {
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_term",
+        "utm_content",
+        "share",
+        "si",
+        "feature",
+        "ref",
+        "ref_src",
+        "s",
+        "t",
+        "fbclid",
+        "gclid",
+    }
+    qmap = {k.lower(): v for k, v in parse_qsl(parts.query, keep_blank_values=False)}
+    if host == "www.youtube.com":
+        vid = qmap.get("v") or ""
+        if not vid and path.startswith("/shorts/"):
+            vid = path.split("/shorts/", 1)[-1].split("/")[0]
+        if vid:
+            return f"https://www.youtube.com/watch?v={vid.lower()}"
+    kept = [(k, v) for k, v in qmap.items() if k not in drop]
+    # Prefer path-only keys for most social URLs
+    if host in ("www.linkedin.com", "x.com", "www.quora.com", "www.reddit.com"):
+        return urlunparse(("https", host, path, "", "", "")).lower().rstrip("/")
+    query = urlencode(kept)
+    return urlunparse(("https", host, path, "", query, "")).lower().rstrip("/")
+
+
 def dedupe_rows(rows: Iterable[ResultRow]) -> list[ResultRow]:
     seen: dict[str, ResultRow] = {}
     for row in rows:
-        key = normalize_url(row.url).lower()
+        key = canonical_thread_key(row.url) or normalize_url(row.url).lower()
         if not key:
             continue
         existing = seen.get(key)

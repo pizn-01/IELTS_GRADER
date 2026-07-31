@@ -14,7 +14,12 @@ from agent_io import (
     work_root,
     write_status,
 )
-from agent_rules import system_prompt_engage, validate_draft
+from agent_rules import (
+    NO_PRODUCT_ENGAGE_PLATFORMS,
+    strip_brand_from_text,
+    system_prompt_engage,
+    validate_draft,
+)
 from draft_replies import write_action_markdown
 from llm_client import llm_complete
 
@@ -59,12 +64,21 @@ def draft_followups(
             if ap.exists():
                 paste = extract_followup_from_file(ap)
         if not paste:
+            plat = (r.get("platform") or "reddit").lower()
             paste = llm_complete(
                 system_prompt_engage(r.get("platform") or "reddit", "general_tip"),
                 f"Follow-up on thread: {r.get('title')}. They may have replied. "
-                "Be helpful; no product unless they ask for a tool.",
+                "Be helpful; no product unless they ask for a tool."
+                + (
+                    " ZERO URLs, brand names, or disclosure."
+                    if plat in NO_PRODUCT_ENGAGE_PLATFORMS
+                    else ""
+                ),
                 dry_run=dry_run,
             )
+        plat = (r.get("platform") or "").lower()
+        if plat in NO_PRODUCT_ENGAGE_PLATFORMS:
+            paste = strip_brand_from_text(paste)
         aid = format_action_id(n)
         n += 1
         path = write_action_markdown(
@@ -78,7 +92,7 @@ def draft_followups(
             followup="",
             placement="same as original thread rules",
             disclosure_needed=False,
-            issues=validate_draft(paste, product_mentioned="ieltsgrader" in paste.lower()),
+            issues=validate_draft(paste, product_mentioned=False),
             intent="followup",
             onboarding=onboarding,
         )

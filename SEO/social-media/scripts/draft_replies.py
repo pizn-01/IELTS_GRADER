@@ -21,12 +21,15 @@ from agent_io import (
 )
 from agent_rules import (
     CTA_ENGAGE_SHARE,
+    CTA_PLATFORMS,
     DISCLOSURE,
+    NO_PRODUCT_ENGAGE_PLATFORMS,
     allow_cta_for_item,
     allow_product_mention,
     link_placement,
     pick_soft_cta,
     platform_tier,
+    strip_brand_from_text,
     system_prompt_engage,
     utm_url,
     validate_draft,
@@ -244,11 +247,12 @@ Disclosure: {disc}
 
 
 def _assign_cta_flags(items: list[TriageItem]) -> dict[str, bool]:
-    """Pick ~CTA_ENGAGE_SHARE of items for soft CTA (tool_ask first, then cta_ok feedback)."""
+    """Pick ~CTA_ENGAGE_SHARE of items for soft CTA (Quora/X/YouTube only)."""
     eligible = [
         it
         for it in items
         if it.action != "observe_only"
+        and (it.platform or "").lower() in CTA_PLATFORMS
         and allow_cta_for_item(it.platform, it.intent, cta_ok=it.cta_ok)
     ]
     # Prefer tool_ask, then feedback_ask with cta_ok, by score
@@ -258,7 +262,12 @@ def _assign_cta_flags(items: list[TriageItem]) -> dict[str, bool]:
             -it.score,
         )
     )
-    draftable = [it for it in items if it.action != "observe_only"]
+    draftable = [
+        it
+        for it in items
+        if it.action != "observe_only"
+        and (it.platform or "").lower() in CTA_PLATFORMS
+    ]
     target = max(
         1 if draftable else 0,
         min(len(eligible), math.ceil(len(draftable) * CTA_ENGAGE_SHARE)),
@@ -268,11 +277,15 @@ def _assign_cta_flags(items: list[TriageItem]) -> dict[str, bool]:
     for it in draftable:
         if it.intent == "tool_ask" and allow_product_mention(it.platform, it.intent):
             chosen.add(normalize_key(it.url))
-    return {normalize_key(it.url): normalize_key(it.url) in chosen for it in draftable}
+    # All draftable items need a flag entry (False for non-CTA platforms)
+    all_draftable = [it for it in items if it.action != "observe_only"]
+    return {normalize_key(it.url): normalize_key(it.url) in chosen for it in all_draftable}
 
 
 def normalize_key(url: str) -> str:
-    return (url or "").strip().lower().rstrip("/")
+    from agent_io import normalize_status_url
+
+    return normalize_status_url(url) or (url or "").strip().lower().rstrip("/")
 
 
 def _write_draft_progress(
@@ -345,6 +358,17 @@ def _draft_one_item(
             "Reply to THEIR prompt/essay text above. "
             "Do NOT ask them to paste a paragraph.\n"
         )
+    plat = (item.platform or "").lower()
+    if plat in NO_PRODUCT_ENGAGE_PLATFORMS:
+        user += (
+            "\nHARD BAN: zero URLs, zero brand names, zero disclosure, "
+            "zero soft CTAs. Teach only.\n"
+        )
+        if plat == "reddit" and item.intent in ("tool_ask", "feedback_ask"):
+            user += (
+                "They may want a tool/check — refuse AI checkers per sub rules; "
+                "one human tip or official band descriptors only.\n"
+            )
     if product_ok:
         user += (
             "\nInclude a soft CTA to the free evaluation at ieltsgrader.com "
@@ -359,14 +383,8 @@ def _draft_one_item(
     if product_ok and "ieltsgrader" not in paste.lower():
         link = utm_url(SITE, item.platform)
         paste = f"{paste.rstrip()}\n\n{DISCLOSURE}\n{pick_soft_cta()}\n{link}"
-    if not product_ok and "ieltsgrader" in paste.lower():
-        paste = re.sub(
-            r"(?i)full disclosure:.*?ieltsgrader\.com\)?\s*",
-            "",
-            paste,
-        )
-        paste = re.sub(r"(?i)https?://\S*ieltsgrader\.com\S*", "", paste)
-        paste = re.sub(r"\n{3,}", "\n\n", paste).strip()
+    if not product_ok:
+        paste = strip_brand_from_text(paste)
 
     issues = validate_draft(
         paste,
@@ -374,17 +392,20 @@ def _draft_one_item(
         already_posted_essay=essay_posted,
     )
 
-    # One retry if validator caught generic/paste-ask failure and we have context
+    # One retry if validator caught generic/paste-ask/brand failure and we have context
     if issues and context and not dry_run:
         retry_user = user + (
-            "\nPrevious draft was too generic or asked them to paste. "
-            "Rewrite: cite a concrete detail from Extra context "
-            "(prompt topic or a line from their essay).\n"
+            "\nPrevious draft failed validation "
+            f"({'; '.join(issues[:3])}). "
+            "Rewrite: cite a concrete detail from Extra context; "
+            "obey product rules strictly.\n"
         )
         paste2 = llm_complete(system, retry_user, dry_run=dry_run, temperature=0.85)
         if product_ok and "ieltsgrader" not in paste2.lower():
             link = utm_url(SITE, item.platform)
             paste2 = f"{paste2.rstrip()}\n\n{DISCLOSURE}\n{pick_soft_cta()}\n{link}"
+        if not product_ok:
+            paste2 = strip_brand_from_text(paste2)
         issues2 = validate_draft(
             paste2,
             product_mentioned=product_ok,
@@ -397,10 +418,17 @@ def _draft_one_item(
         system_prompt_engage(item.platform, "general_tip"),
         "Write a short follow-up if they reply thanking you or asking a follow-up. "
         "Sound human. No product unless they ask for a tool. "
-        "Do not ask them to paste an essay if they already posted one.",
+        "Do not ask them to paste an essay if they already posted one."
+        + (
+            " ZERO URLs/brand/disclosure."
+            if plat in NO_PRODUCT_ENGAGE_PLATFORMS
+            else ""
+        ),
         dry_run=dry_run,
         temperature=0.9,
     )
+    if plat in NO_PRODUCT_ENGAGE_PLATFORMS:
+        followup = strip_brand_from_text(followup)
 
     path = write_action_markdown(
         aid=aid,

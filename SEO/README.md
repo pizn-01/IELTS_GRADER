@@ -7,7 +7,8 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 1. Open **[TRACKER.md](TRACKER.md)** — master checklist with every task, owner, and status.
 2. Run progress: `python3 SEO/scripts/tracker_status.py`
 3. Read **[BRANDING.md](BRANDING.md)** before writing any copy.
-4. Follow phases in order: A → B → C → D → E → F → G.
+4. For **ongoing site SEO ops** (daily/weekly/monthly on ieltsgrader.com): **[WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md)** / [PDF](WEBSITE_SEO_CADENCE.pdf).
+5. Follow phases in order: A → B → C → D → E → F → G.
 
 ## Folder map
 
@@ -20,6 +21,7 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 | [CONTENT_CALENDAR.md](CONTENT_CALENDAR.md) | 8-week publish schedule |
 | [INTERNAL_LINKING.md](INTERNAL_LINKING.md) | Link rules between pages |
 | [MEASUREMENT.md](MEASUREMENT.md) | Weekly KPI scorecard |
+| [WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md) | **Site-only** daily / weekly / monthly SEO ops (+ [PDF](WEBSITE_SEO_CADENCE.pdf)) |
 | [EXTERNAL_CHECKLIST.md](EXTERNAL_CHECKLIST.md) | Your action items (Reddit, GSC, directories) |
 | [social-media/](social-media/) | Social strategy, employee PDF, weekly/historical discovery scripts |
 | [guides/](guides/) | External playbooks (GSC, Reddit, backlinks, etc.) |

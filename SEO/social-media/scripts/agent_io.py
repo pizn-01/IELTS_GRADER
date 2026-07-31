@@ -76,7 +76,12 @@ def is_parent_thread_type(typ: str) -> bool:
 
 
 def normalize_status_url(url: str) -> str:
-    """Canonical parent-URL key: no fragment, lowercased, no trailing slash."""
+    """Canonical parent-URL key for STATUS / registry / dedupe."""
+    from common import canonical_thread_key, normalize_url
+
+    key = canonical_thread_key(url)
+    if key:
+        return key
     raw = (url or "").strip().split("#")[0].rstrip("/")
     return raw.lower()
 
@@ -316,6 +321,11 @@ def upsert_status_rows(
                         )
                         row["id"] = rid
                     parent_url_to_id[url_key] = rid
+                    append_seen(
+                        url_key,
+                        row.get("platform") or "",
+                        reason="status_queued",
+                    )
                 row["parent_id"] = ""
             elif typ == "followup" and url_key:
                 parent = parent_url_to_id.get(url_key) or lookup_parent_id(
@@ -435,7 +445,7 @@ def load_engaged_urls() -> set[str]:
     with ENGAGED_PATH.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            u = (row.get("url") or "").strip().lower().rstrip("/")
+            u = normalize_status_url(row.get("url") or "")
             if u:
                 urls.add(u)
     return urls
@@ -444,19 +454,20 @@ def load_engaged_urls() -> set[str]:
 def append_engaged(url: str, platform: str, status: str = "done") -> None:
     ensure_output_dirs()
     new_file = not ENGAGED_PATH.exists()
+    canon = normalize_status_url(url)
     with ENGAGED_PATH.open("a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["url", "platform", "status", "marked_at"])
         if new_file:
             writer.writeheader()
         writer.writerow(
             {
-                "url": url,
+                "url": canon or url,
                 "platform": platform,
                 "status": status,
                 "marked_at": datetime.utcnow().isoformat() + "Z",
             }
         )
-    append_seen(url, platform, reason=f"engaged:{status}")
+    append_seen(canon or url, platform, reason=f"engaged:{status}")
 
 
 def _parse_seen_at(value: str) -> Optional[datetime]:
@@ -478,7 +489,7 @@ def load_seen_urls(*, ttl_days: int = SEEN_TTL_DAYS) -> set[str]:
     with SEEN_PATH.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            u = (row.get("url") or "").strip().lower().rstrip("/")
+            u = normalize_status_url(row.get("url") or "")
             if not u:
                 continue
             seen_at = _parse_seen_at(row.get("seen_at") or "")
@@ -489,7 +500,7 @@ def load_seen_urls(*, ttl_days: int = SEEN_TTL_DAYS) -> set[str]:
 
 def append_seen(url: str, platform: str = "", reason: str = "queued") -> None:
     ensure_output_dirs()
-    key = (url or "").strip().lower().rstrip("/")
+    key = normalize_status_url(url)
     if not key:
         return
     new_file = not SEEN_PATH.exists()
@@ -501,7 +512,7 @@ def append_seen(url: str, platform: str = "", reason: str = "queued") -> None:
             writer.writeheader()
         writer.writerow(
             {
-                "url": url,
+                "url": key,
                 "platform": platform,
                 "reason": reason,
                 "seen_at": datetime.now(timezone.utc).isoformat(),
@@ -530,8 +541,38 @@ def remember_urls(
 
 
 def blocked_urls() -> set[str]:
-    """Union of engaged + recently seen — do not re-queue these."""
-    return load_engaged_urls() | load_seen_urls()
+    """
+    Union of engaged + recently seen + every STATUS/registry parent URL.
+    Pending (and closed) threads must never re-enter the weekly engage queue.
+    """
+    keys = load_engaged_urls() | load_seen_urls()
+    keys |= set(read_parent_url_registry(onboarding=False).keys())
+    try:
+        keys |= set(read_parent_url_registry(onboarding=True).keys())
+    except Exception:
+        pass
+    for onboarding in (False, True):
+        try:
+            for r in read_status(onboarding=onboarding):
+                if not is_parent_thread_type(r.get("type") or ""):
+                    continue
+                key = normalize_status_url(r.get("url") or "")
+                if key:
+                    keys.add(key)
+        except Exception:
+            continue
+    return keys
+
+
+def heal_seen_from_status(*, onboarding: bool = False) -> int:
+    """Sync STATUS + registry URLs into seen_urls (weekly start heal)."""
+    rows: list[dict[str, Any]] = []
+    for r in read_status(onboarding=onboarding):
+        if is_parent_thread_type(r.get("type") or "") and r.get("url"):
+            rows.append({"url": r["url"], "platform": r.get("platform") or ""})
+    for url_key, _aid in read_parent_url_registry(onboarding=onboarding).items():
+        rows.append({"url": url_key, "platform": ""})
+    return remember_urls(rows, reason="heal_status")
 
 
 def format_action_id(n: int) -> str:
