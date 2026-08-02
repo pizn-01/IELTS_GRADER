@@ -57,6 +57,7 @@ function mergeCreditsFields(reconciled, profile) {
     : !!profile.is_subscribed;
   return {
     credits_remaining: remaining,
+    pack_credits: reconciled?.pack_credits ?? profile.pack_credits ?? 0,
     credits_allowance: subscribed ? rawAllowance : Math.max(rawAllowance, FREE_TRIAL_CREDITS),
   };
 }
@@ -66,7 +67,7 @@ async function fetchProfile(userId) {
     supabaseAdmin
       .from('profiles')
       .select(`
-        full_name, target_band, target_band_confirmed, credits_remaining, credits_allowance,
+        full_name, target_band, target_band_confirmed, credits_remaining, pack_credits, credits_allowance,
         profile_image_url, is_admin, email_verified,
         subscription_plan, subscription_status, subscription_period_end
       `)
@@ -87,9 +88,15 @@ async function fetchProfile(userId) {
   const creditsAllowance = periodEnded || !isSubscribed
     ? Math.max(rawAllowance, FREE_TRIAL_CREDITS)
     : rawAllowance;
+  const packCredits = Math.max(0, Number(data.pack_credits) || 0);
+  // Period ended: hide period credits but keep never-expiring pack balance visible.
+  const creditsRemaining = periodEnded
+    ? packCredits
+    : data.credits_remaining;
   return {
     ...data,
-    credits_remaining: periodEnded ? 0 : data.credits_remaining,
+    credits_remaining: creditsRemaining,
+    pack_credits: packCredits,
     credits_allowance: creditsAllowance,
     has_paid: isSubscribed || (paymentCount ?? 0) > 0,
     is_subscribed: isSubscribed,

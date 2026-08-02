@@ -61,19 +61,33 @@ async function refundOneCredit(userId) {
   if (!userId) return false;
   const { data: profile, error } = await supabaseAdmin
     .from('profiles')
-    .select('credits_remaining')
+    .select('credits_remaining, pack_credits')
     .eq('id', userId)
     .single();
   if (error || !profile) {
     console.error('[gradingReconcile] refund profile read failed:', error?.message);
     return false;
   }
-  const next = (profile.credits_remaining ?? 0) + 1;
-  const { error: upErr } = await supabaseAdmin
+  const remaining = profile.credits_remaining ?? 0;
+  const packCredits = Math.max(0, Number(profile.pack_credits) || 0);
+  // If all remaining credits are pack credits, restore into the pack wallet too.
+  const restorePack = remaining === packCredits;
+  const updates = {
+    credits_remaining: remaining + 1,
+    updated_at: new Date().toISOString(),
+  };
+  if (restorePack) {
+    updates.pack_credits = packCredits + 1;
+  }
+  let query = supabaseAdmin
     .from('profiles')
-    .update({ credits_remaining: next })
+    .update(updates)
     .eq('id', userId)
-    .eq('credits_remaining', profile.credits_remaining);
+    .eq('credits_remaining', remaining);
+  if (restorePack) {
+    query = query.eq('pack_credits', packCredits);
+  }
+  const { error: upErr } = await query;
   if (upErr) {
     console.error('[gradingReconcile] refund update failed:', upErr.message);
     return false;

@@ -40,6 +40,7 @@ const CheckoutSuccessPage = () => {
             const fresh = await api.getMe();
             updateUser({
               credits_remaining: fresh.credits_remaining,
+              pack_credits: fresh.pack_credits,
               credits_allowance: fresh.credits_allowance,
               subscription_plan: fresh.subscription_plan,
               subscription_status: fresh.subscription_status,
@@ -92,6 +93,11 @@ const CheckoutSuccessPage = () => {
             <p className="text-[15px] text-[#4B5563] mb-1">
               <span className="font-bold text-[#1a1f36]">{creditsGranted} credits</span> on <span className="font-semibold">{packName}</span> are now active.
             </p>
+            {/pack/i.test(packName) && (
+              <p className="text-[13px] text-[#667085] mt-2">
+                Pack credits never expire — they stay after renewals and cancelations.
+              </p>
+            )}
             <p className="text-[13px] text-[#9CA3AF] mt-4">Redirecting you to the dashboard…</p>
           </>
         )}

@@ -43,17 +43,24 @@ function isCancelScheduled(subscription) {
 
 /**
  * End paid access after the subscription period.
- * Clears period_end so the user returns to free-trial rules:
- * credits_remaining=0 (must upgrade or receive admin credits),
- * credits_allowance=FREE_TRIAL_CREDITS (display baseline), and exam eligibility
- * follows credits_remaining only.
+ * Clears period credits but preserves never-expiring pack_credits:
+ * credits_remaining = pack_credits, credits_allowance = FREE_TRIAL_CREDITS.
  */
 async function expireSubscriptionAccess(userId) {
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('pack_credits')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const packCredits = Math.max(0, Number(profile?.pack_credits) || 0);
+
   await supabaseAdmin
     .from('profiles')
     .update({
       subscription_status: 'canceled',
-      credits_remaining: 0,
+      credits_remaining: packCredits,
+      pack_credits: packCredits,
       credits_allowance: FREE_TRIAL_CREDITS,
       subscription_plan: null,
       subscription_period_end: null,
@@ -104,7 +111,7 @@ async function syncSubscriptionRecord(userId, subscription) {
   // Access rules:
   // - active/trialing (incl. cancel_at_period_end / cancel_at): keep credits until period ends
   // - past_due: keep remaining credits, surface past_due status
-  // - canceled or period ended: credits → 0 (back to free-trial baseline)
+  // - canceled or period ended: period credits cleared; pack_credits preserved
   let effectiveStatus = mappedStatus;
   if (periodEnded) {
     effectiveStatus = 'canceled';
@@ -129,8 +136,15 @@ async function syncSubscriptionRecord(userId, subscription) {
     if (plan) updates.credits_allowance = plan.credits;
     // Do NOT zero credits on past_due — user keeps remaining period credits.
   } else {
-    // Period ended / fully canceled: back to free-trial baseline (0 credits).
-    updates.credits_remaining = 0;
+    // Period ended / fully canceled: keep never-expiring pack wallet only.
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('pack_credits')
+      .eq('id', userId)
+      .maybeSingle();
+    const packCredits = Math.max(0, Number(profile?.pack_credits) || 0);
+    updates.credits_remaining = packCredits;
+    updates.pack_credits = packCredits;
     updates.credits_allowance = FREE_TRIAL_CREDITS;
     updates.subscription_plan = null;
     updates.subscription_period_end = null;
@@ -157,10 +171,19 @@ async function grantSubscriptionPeriodCredits(userId, planKey, { invoiceId, sess
     }
   }
 
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('pack_credits')
+    .eq('id', userId)
+    .maybeSingle();
+  const packCredits = Math.max(0, Number(profile?.pack_credits) || 0);
+
   await supabaseAdmin
     .from('profiles')
     .update({
-      credits_remaining: plan.credits,
+      // Renew sets period allotment and preserves never-expiring pack wallet.
+      credits_remaining: plan.credits + packCredits,
+      pack_credits: packCredits,
       credits_allowance: plan.credits,
       subscription_plan: planKey,
       subscription_status: 'active',
@@ -213,11 +236,15 @@ async function grantCreditsFromSubscription(subscription, userId, { sessionId } 
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('credits_remaining')
+    .select('credits_remaining, pack_credits')
     .eq('id', userId)
     .maybeSingle();
 
-  if ((profile?.credits_remaining ?? 0) >= plan.credits) {
+  // Compare period portion only — pack balance must not block renew grants.
+  const packCredits = Math.max(0, Number(profile?.pack_credits) || 0);
+  const remaining = Number(profile?.credits_remaining) || 0;
+  const periodCredits = Math.max(0, remaining - Math.min(packCredits, remaining));
+  if (periodCredits >= plan.credits) {
     return false;
   }
 
@@ -241,6 +268,7 @@ async function reconcileUserSubscription(userId, { liveStripe = true } = {}) {
       stripe_subscription_id,
       stripe_customer_id,
       credits_remaining,
+      pack_credits,
       credits_allowance,
       subscription_status,
       subscription_plan,
@@ -266,6 +294,7 @@ async function reconcileUserSubscription(userId, { liveStripe = true } = {}) {
       .from('profiles')
       .select(`
         credits_remaining,
+        pack_credits,
         credits_allowance,
         subscription_plan,
         subscription_status,
@@ -309,6 +338,7 @@ async function reconcileUserSubscription(userId, { liveStripe = true } = {}) {
     .from('profiles')
     .select(`
       credits_remaining,
+      pack_credits,
       credits_allowance,
       subscription_plan,
       subscription_status,
@@ -330,6 +360,11 @@ function buildSubscriptionStatusPayload(profile) {
   const creditsAllowance = periodEnded || !isActive
     ? Math.max(allowance, FREE_TRIAL_CREDITS)
     : allowance;
+  const packCredits = Math.max(0, Number(profile.pack_credits) || 0);
+  // After period end (before reconcile expire writes), surface pack wallet only.
+  const creditsRemaining = periodEnded
+    ? packCredits
+    : (profile.credits_remaining ?? 0);
 
   return {
     subscription_plan: profile.subscription_plan || null,
@@ -338,7 +373,8 @@ function buildSubscriptionStatusPayload(profile) {
     cancel_at_period_end: cancelAtPeriodEnd,
     plan_name: plan?.name || (isActive ? 'Subscription' : 'Free Trial'),
     billing_label: plan?.label || null,
-    credits_remaining: periodEnded ? 0 : (profile.credits_remaining ?? 0),
+    credits_remaining: creditsRemaining,
+    pack_credits: packCredits,
     credits_allowance: periodEnded ? FREE_TRIAL_CREDITS : creditsAllowance,
     is_subscribed: isActive,
     has_paid: isActive || (profile.has_paid ?? false),

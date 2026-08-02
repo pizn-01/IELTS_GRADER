@@ -14,16 +14,14 @@ const {
   grantSubscriptionPeriodCredits,
   grantCreditsFromSubscription,
 } = require('../services/subscriptionSync');
+const {
+  getPackByKey,
+  getPackKeyFromPriceId,
+  grantPackCredits,
+} = require('../services/creditPacks');
 const { trackProductEvent } = require('../utils/productEvents');
 
 const router = express.Router();
-
-// Legacy one-time credit packs — no longer exposed in user-facing UI
-const CREDIT_PACKS = {
-  'price_1TcqK9FDM9NsOfLRmmYyoSTh': { name: 'Starter Top Up',   credits: 10, amount_cents: 1200 },
-  'price_1TcqPbFDM9NsOfLRquDNOJpA': { name: 'Smart Top Up',     credits: 24, amount_cents: 2400 },
-  'price_1TcqRfFDM9NsOfLRbZgZMEKc': { name: 'Intensive Top Up', credits: 50, amount_cents: 4400 },
-};
 
 // Lazy-init so the server boots even before STRIPE_SECRET_KEY is set
 let _stripe = null;
@@ -217,11 +215,74 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
   }
 });
 
+// ─── POST /api/stripe/create-pack-checkout ───────────────────────────────────
+// Authenticated one-time credit pack checkout (starter 10/$5, boost 25/$12)
+router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
+  const { pack: packKey } = req.body;
+  const userId = req.user.userId;
+  const email = req.user.email;
+
+  const pack = getPackByKey(packKey);
+  if (!pack) return res.status(400).json({ error: 'Invalid credit pack.' });
+
+  const priceId = pack.priceId;
+  if (!priceId) {
+    console.error(`[stripe/create-pack-checkout] Missing env price for pack: ${packKey}`);
+    return res.status(500).json({ error: 'Credit pack not configured. Contact support.' });
+  }
+
+  if (!email) {
+    return res.status(400).json({ error: 'Account email is required for checkout.' });
+  }
+
+  try {
+    const stripe = getStripe();
+    const customerId = await resolveStripeCustomerId(stripe, userId, email);
+
+    await supabaseAdmin
+      .from('profiles')
+      .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+      .eq('id', userId);
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      client_reference_id: userId,
+      metadata: {
+        user_id: userId,
+        pack_key: pack.key,
+        pack_name: pack.name,
+        credits_granted: String(pack.credits),
+        type: 'credit_pack',
+      },
+      success_url: `${FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${FRONTEND_URL}/upgrade`,
+    });
+
+    trackProductEvent({
+      eventName: 'checkout_started',
+      userId,
+      properties: {
+        pack_key: pack.key,
+        stripe_session_id: session.id,
+        type: 'credit_pack',
+      },
+    }).catch(() => {});
+
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error('[stripe/create-pack-checkout]', err.message);
+    return res.status(500).json({ error: 'Failed to create checkout session. ' + err.message });
+  }
+});
+
 // ─── POST /api/stripe/create-checkout-session ──────────────────────────────
-// Deprecated — subscriptions only.
+// Deprecated legacy packs endpoint — use create-pack-checkout.
 router.post('/create-checkout-session', authenticateToken, async (_req, res) => {
   return res.status(410).json({
-    error: 'Credit packs are no longer available. Please subscribe to Weekly Sprint or Monthly Mastery.',
+    error: 'This checkout endpoint is deprecated. Use /create-pack-checkout or subscribe at /upgrade.',
   });
 });
 
@@ -337,7 +398,44 @@ router.post('/webhook', async (req, res) => {
         return res.json({ received: true });
       }
 
-      // Legacy one-time credit packs (deprecated)
+      // One-time credit packs (starter / boost)
+      if (session.metadata?.type === 'credit_pack') {
+        const userId = session.metadata?.user_id || session.client_reference_id;
+        const packKey = session.metadata?.pack_key
+          || getPackKeyFromPriceId(session.line_items?.data?.[0]?.price?.id)
+          || null;
+
+        if (!userId || !packKey) {
+          console.error('[stripe/webhook] credit_pack missing user_id or pack_key:', session.id);
+          return res.json({ received: true });
+        }
+
+        try {
+          await grantPackCredits(userId, packKey, {
+            sessionId: session.id,
+            paymentIntent: typeof session.payment_intent === 'string'
+              ? session.payment_intent
+              : session.payment_intent?.id,
+            amountCents: session.amount_total || undefined,
+          });
+          if (session.customer) {
+            await supabaseAdmin
+              .from('profiles')
+              .update({
+                stripe_customer_id: session.customer,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', userId);
+          }
+        } catch (err) {
+          console.error('[stripe/webhook] credit_pack processing failed:', err.message);
+          return res.status(500).json({ error: 'Failed to process credit pack payment.' });
+        }
+
+        return res.json({ received: true });
+      }
+
+      // Legacy one-time credit packs (deprecated price IDs / old metadata)
       const userId = session.metadata?.user_id || session.client_reference_id;
       const creditsGranted = parseInt(session.metadata?.credits_granted || '0', 10);
       const packName = session.metadata?.pack_name || 'Credit Pack';
@@ -364,6 +462,19 @@ router.post('/webhook', async (req, res) => {
       }
 
       try {
+        // Prefer pack_key when present; otherwise grant into both wallets as legacy pack.
+        const packKey = session.metadata?.pack_key;
+        if (packKey && getPackByKey(packKey)) {
+          await grantPackCredits(resolvedUserId, packKey, {
+            sessionId: session.id,
+            paymentIntent: typeof session.payment_intent === 'string'
+              ? session.payment_intent
+              : session.payment_intent?.id,
+            amountCents,
+          });
+          return res.json({ received: true });
+        }
+
         // Idempotency guard — avoid double-crediting on duplicate webhook delivery
         const { data: existing } = await supabaseAdmin
           .from('payments')
@@ -379,7 +490,7 @@ router.post('/webhook', async (req, res) => {
 
         const { data: profile, error: profileError } = await supabaseAdmin
           .from('profiles')
-          .select('credits_remaining')
+          .select('credits_remaining, pack_credits')
           .eq('id', resolvedUserId)
           .single();
 
@@ -388,12 +499,17 @@ router.post('/webhook', async (req, res) => {
           return res.json({ received: true });
         }
 
-        const newBalance = profile.credits_remaining + creditsGranted;
+        const packCredits = (Number(profile.pack_credits) || 0) + creditsGranted;
+        const newBalance = (Number(profile.credits_remaining) || 0) + creditsGranted;
 
         await Promise.all([
           supabaseAdmin
             .from('profiles')
-            .update({ credits_remaining: newBalance, updated_at: new Date().toISOString() })
+            .update({
+              credits_remaining: newBalance,
+              pack_credits: packCredits,
+              updated_at: new Date().toISOString(),
+            })
             .eq('id', resolvedUserId),
           supabaseAdmin
             .from('payments')

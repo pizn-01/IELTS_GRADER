@@ -21,6 +21,7 @@ router.get('/status', authenticateToken, async (req, res) => {
         .from('profiles')
         .select(`
           credits_remaining,
+          pack_credits,
           credits_allowance,
           subscription_plan,
           subscription_status,

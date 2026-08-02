@@ -56,6 +56,7 @@ const SubscriptionPage = () => {
         setStatus(data);
         updateUser({
           credits_remaining: data.credits_remaining,
+          pack_credits: data.pack_credits,
           credits_allowance: data.credits_allowance,
           subscription_plan: data.subscription_plan,
           subscription_status: data.subscription_status,
@@ -80,6 +81,7 @@ const SubscriptionPage = () => {
   };
 
   const remaining = status?.credits_remaining ?? user?.credits_remaining ?? 0;
+  const packCredits = status?.pack_credits ?? user?.pack_credits ?? 0;
   const rawAllowance = status?.credits_allowance ?? user?.credits_allowance ?? FREE_TRIAL_CREDITS;
   const isSubscribed = status?.is_subscribed;
   const allowance = isSubscribed ? rawAllowance : Math.max(rawAllowance, FREE_TRIAL_CREDITS);
@@ -100,16 +102,22 @@ const SubscriptionPage = () => {
 
   const statusMessage = (() => {
     if (cancelAtPeriodEnd) {
-      return `Cancellation scheduled. You keep access and remaining credits until ${periodEndLabel}, then credits reset to 0.`;
+      return packCredits > 0
+        ? `Cancellation scheduled. Subscription credits end on ${periodEndLabel}; ${packCredits} pack credit${packCredits === 1 ? '' : 's'} never expire.`
+        : `Cancellation scheduled. You keep access and remaining credits until ${periodEndLabel}, then subscription credits reset.`;
     }
     if (isSubscribed && isExhausted) {
-      return 'All evaluations used this period. Credits reset on renewal.';
+      return packCredits > 0
+        ? 'Period allotment used. Pack credits still available, and credits refill on renewal.'
+        : 'All evaluations used this period. Credits reset on renewal.';
     }
     if (!isSubscribed && isExhausted) {
-      return 'You have used your free evaluations. Subscribe to keep practicing.';
+      return 'You have used your free evaluations. Subscribe or buy a one-time pack to keep practicing.';
     }
     if (!isSubscribed && remaining > 0) {
-      return `${remaining} free evaluation${remaining === 1 ? '' : 's'} remaining. No card required until you subscribe.`;
+      return packCredits > 0 && packCredits === remaining
+        ? `${remaining} pack credit${remaining === 1 ? '' : 's'} remaining (never expire).`
+        : `${remaining} free evaluation${remaining === 1 ? '' : 's'} remaining. No card required until you subscribe.`;
     }
     if (isLow) {
       return `Only ${remaining} credit${remaining === 1 ? '' : 's'} left this period.`;
@@ -268,7 +276,11 @@ const SubscriptionPage = () => {
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt className="text-[#667085]">After period ends</dt>
-                      <dd className="font-semibold text-[#344054]">Credits reset to 0</dd>
+                      <dd className="font-semibold text-[#344054]">
+                        {packCredits > 0
+                          ? `Period credits end · ${packCredits} pack keep`
+                          : 'Subscription credits end'}
+                      </dd>
                     </div>
                   </dl>
                 </div>
@@ -336,8 +348,8 @@ const SubscriptionPage = () => {
             ) : (
               <p className="text-[12px] text-[#667085] leading-relaxed px-1">
                 {isExhausted
-                  ? 'Your free credits are used. View Plans to choose Weekly or Monthly and continue grading.'
-                  : 'When you need more practice, View Plans opens pricing so you can pick Weekly or Monthly.'}
+                  ? 'Your free credits are used. View Plans to subscribe, or buy a one-time pack that never expires.'
+                  : 'When you need more practice, View Plans opens pricing for Weekly, Monthly, or one-time packs.'}
               </p>
             )}
           </div>

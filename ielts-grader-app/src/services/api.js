@@ -450,6 +450,20 @@ export const api = {
     return res.json();
   },
 
+  // pack: 'starter' | 'boost'
+  createPackCheckout: async (pack) => {
+    const res = await fetch(`${BASE_URL}/stripe/create-pack-checkout`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ pack }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to create pack checkout.');
+    }
+    return res.json();
+  },
+
   createBillingPortalSession: async ({ flow } = {}) => {
     const res = await fetch(`${BASE_URL}/stripe/create-billing-portal-session`, {
       method: 'POST',

@@ -10,6 +10,9 @@ export function isFreeTrialUser(user) {
   if (!user) return false;
   if (user.is_admin) return false;
   if (user.is_subscribed || user.subscription_status === 'active') return false;
+  if (user.has_paid) return false;
+  const packCredits = Number(user.pack_credits);
+  if (Number.isFinite(packCredits) && packCredits > 0) return false;
   const allowance = Number(user.credits_allowance);
   if (Number.isFinite(allowance) && allowance > FREE_TRIAL_ALLOWANCE_MAX) return false;
   return true;

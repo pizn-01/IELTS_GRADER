@@ -21,6 +21,7 @@ const UpgradePage = () => {
   const autoCheckoutStarted = useRef(false);
 
   const [loadingPlanKey, setLoadingPlanKey] = useState(autoCheckout ? (planFromUrl || 'monthly') : null);
+  const [loadingPackKey, setLoadingPackKey] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState(null);
@@ -60,6 +61,22 @@ const UpgradePage = () => {
       setError(err.message || 'Something went wrong. Please try again.');
       setLoadingPlanKey(null);
       clearCheckoutParams();
+    }
+  };
+
+  const handleSelectPack = async (packKey) => {
+    trackEvent('upgrade_cta_clicked', {
+      source: 'upgrade_pack_card',
+      pack_key: packKey,
+    });
+    setLoadingPackKey(packKey);
+    setError('');
+    try {
+      const { url } = await api.createPackCheckout(packKey);
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+      setLoadingPackKey(null);
     }
   };
 
@@ -124,10 +141,12 @@ const UpgradePage = () => {
           highlightPlanKey={planFromUrl}
           subscriberState={subscriberState}
           loadingPlanKey={loadingPlanKey}
+          loadingPackKey={loadingPackKey}
           portalLoading={portalLoading}
           error={error}
           onSelectFree={() => navigate('/dashboard')}
           onSelectPlan={handleSelectPlan}
+          onSelectPack={handleSelectPack}
           onManageSubscription={() => openBillingPortal()}
           onUpgradeToMonthly={() => openBillingPortal('subscription_update')}
         />

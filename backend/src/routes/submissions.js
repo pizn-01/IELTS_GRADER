@@ -3,6 +3,7 @@ const { supabaseAdmin } = require('../services/supabase');
 const { authenticateToken } = require('../middleware/auth');
 const { gradeEssayAsync } = require('../services/graderEngine');
 const { isPeriodEnded, expireSubscriptionAccess } = require('../services/subscriptionSync');
+const { spendOneCredit, restoreSpentCredit } = require('../services/creditPacks');
 const { trackProductEvent } = require('../utils/productEvents');
 const { FREE_TRIAL_CREDITS, FREE_TRIAL_ALLOWANCE_MAX } = require('../services/subscriptionPlans');
 
@@ -51,9 +52,9 @@ router.post('/', authenticateToken, async (req, res) => {
   const word_count = essay_content.trim().split(/\s+/).filter(Boolean).length;
 
   // Fetch current credit balance and subscription access
-  const { data: profile, error: profileError } = await supabaseAdmin
+  let { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('credits_remaining, credits_allowance, subscription_status, subscription_period_end, is_admin')
+    .select('credits_remaining, pack_credits, credits_allowance, subscription_status, subscription_period_end, stripe_subscription_id, is_admin')
     .eq('id', userId)
     .single();
 
@@ -62,17 +63,27 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 
   if (isPeriodEnded(profile.subscription_period_end)) {
-    // Paid period over → zero credits and clear period so free/admin credits can work again.
+    // Paid period over → clear period credits, keep pack wallet, then allow pack spend.
     if (
       profile.subscription_status === 'active'
       || profile.subscription_status === 'past_due'
+      || profile.stripe_subscription_id
       || profile.credits_remaining > 0
     ) {
       await expireSubscriptionAccess(userId);
+      const refreshed = await supabaseAdmin
+        .from('profiles')
+        .select('credits_remaining, pack_credits, credits_allowance, subscription_status, subscription_period_end, stripe_subscription_id, is_admin')
+        .eq('id', userId)
+        .single();
+      profile = refreshed.data || profile;
     }
-    return res.status(403).json({
-      error: 'Your subscription has ended. Subscribe to continue grading.',
-    });
+
+    if ((Number(profile.credits_remaining) || 0) <= 0) {
+      return res.status(403).json({
+        error: 'Your subscription has ended. Subscribe to continue grading.',
+      });
+    }
   }
 
   if (profile.credits_remaining <= 0) {
@@ -81,21 +92,19 @@ router.post('/', authenticateToken, async (req, res) => {
     });
   }
 
-  // Deduct 1 credit atomically with optimistic lock — verify a row was actually updated
-  const { error: deductError, count: deductCount } = await supabaseAdmin
-    .from('profiles')
-    .update({ credits_remaining: profile.credits_remaining - 1 })
-    .eq('id', userId)
-    .eq('credits_remaining', profile.credits_remaining) // Optimistic lock
-    .select('*', { count: 'exact' });
+  // Deduct 1 credit: period wallet first, then pack (optimistic lock inside helper)
+  const spendResult = await spendOneCredit(userId, profile);
 
-  if (deductError) {
+  if (!spendResult.ok) {
+    if (spendResult.reason === 'conflict') {
+      return res.status(409).json({ error: 'Credit balance changed concurrently. Please try again.' });
+    }
+    if (spendResult.reason === 'insufficient') {
+      return res.status(403).json({
+        error: 'Insufficient evaluation credits. Please purchase more to continue.',
+      });
+    }
     return res.status(500).json({ error: 'Failed to deduct credit. Please try again.' });
-  }
-
-  // count === 0 means another request already changed the balance (race condition)
-  if (deductCount === 0) {
-    return res.status(409).json({ error: 'Credit balance changed concurrently. Please try again.' });
   }
 
   // #region agent log
@@ -152,10 +161,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
   if (subError) {
     // Refund the credit on insertion failure
-    await supabaseAdmin
-      .from('profiles')
-      .update({ credits_remaining: profile.credits_remaining })
-      .eq('id', userId);
+    await restoreSpentCredit(userId, spendResult);
     console.error('[submissions/post] Insert error:', subError.message);
     return res.status(500).json({ error: 'Failed to create submission.' });
   }

@@ -23,6 +23,7 @@ const PricingPage = () => {
   const autoCheckoutStarted = useRef(false);
 
   const [loadingPlanKey, setLoadingPlanKey] = useState(autoCheckout ? planFromUrl : null);
+  const [loadingPackKey, setLoadingPackKey] = useState(null);
   const [error, setError] = useState('');
   const [status, setStatus] = useState(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -65,6 +66,7 @@ const PricingPage = () => {
   const clearCheckoutParams = () => {
     const next = new URLSearchParams(searchParams);
     next.delete('checkout');
+    next.delete('pack');
     setSearchParams(next, { replace: true });
   };
 
@@ -81,6 +83,18 @@ const PricingPage = () => {
     }
   };
 
+  const startPackCheckout = async (packKey) => {
+    setLoadingPackKey(packKey);
+    setError('');
+    try {
+      const { url } = await api.createPackCheckout(packKey);
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+      setLoadingPackKey(null);
+    }
+  };
+
   const requestAuthForCheckout = (planKey) => {
     navigate('/login', {
       state: {
@@ -88,6 +102,18 @@ const PricingPage = () => {
         from: {
           pathname: '/pricing',
           search: `?plan=${planKey}&checkout=1`,
+        },
+      },
+    });
+  };
+
+  const requestAuthForPack = (packKey) => {
+    navigate('/login', {
+      state: {
+        authMode: 'signup',
+        from: {
+          pathname: '/pricing',
+          search: `?pack=${packKey}&checkout=1`,
         },
       },
     });
@@ -114,16 +140,43 @@ const PricingPage = () => {
     startCheckout(planKey);
   };
 
+  const handleSelectPack = (packKey) => {
+    trackEvent('upgrade_cta_clicked', {
+      source: 'pricing_pack_card',
+      pack_key: packKey,
+    });
+
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      requestAuthForPack(packKey);
+      return;
+    }
+
+    startPackCheckout(packKey);
+  };
+
   const handleSelectFree = () => {
     navigate(isAuthenticated ? '/dashboard' : '/report');
   };
 
-  // Deep-link: /pricing?plan=monthly&checkout=1 after auth
+  // Deep-link: /pricing?plan=monthly&checkout=1 or ?pack=starter&checkout=1 after auth
   useEffect(() => {
     if (authLoading || statusLoading || !autoCheckout || autoCheckoutStarted.current) return;
+    const packFromUrl = searchParams.get('pack');
     if (!isAuthenticated) {
       autoCheckoutStarted.current = true;
-      requestAuthForCheckout(planFromUrl || 'monthly');
+      if (packFromUrl === 'starter' || packFromUrl === 'boost') {
+        requestAuthForPack(packFromUrl);
+      } else {
+        requestAuthForCheckout(planFromUrl || 'monthly');
+      }
+      return;
+    }
+    if (packFromUrl === 'starter' || packFromUrl === 'boost') {
+      autoCheckoutStarted.current = true;
+      startPackCheckout(packFromUrl);
+      clearCheckoutParams();
       return;
     }
     if (status?.is_subscribed) {
@@ -143,7 +196,7 @@ const PricingPage = () => {
     const planKey = planFromUrl || 'monthly';
     startCheckout(planKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, statusLoading, status, autoCheckout, planFromUrl, isAuthenticated, error]);
+  }, [authLoading, statusLoading, status, autoCheckout, planFromUrl, isAuthenticated, error, searchParams]);
 
   const openBillingPortal = async (flow) => {
     setLoadingPlanKey(flow === 'subscription_update' ? 'monthly' : 'portal');
@@ -159,7 +212,7 @@ const PricingPage = () => {
     }
   };
 
-  const showCheckoutSpinner = autoCheckout && loadingPlanKey && !error;
+  const showCheckoutSpinner = autoCheckout && (loadingPlanKey || loadingPackKey) && !error;
 
   return (
     <div className="min-h-screen bg-[#EFF6FF]">
@@ -182,6 +235,7 @@ const PricingPage = () => {
             highlightPlanKey={planFromUrl}
             subscriberState={subscriberState}
             loadingPlanKey={loadingPlanKey === 'portal' ? null : loadingPlanKey}
+            loadingPackKey={loadingPackKey}
             portalLoading={
               loadingPlanKey === 'portal'
               || (loadingPlanKey === 'monthly' && subscriberState === 'weekly')
@@ -189,6 +243,7 @@ const PricingPage = () => {
             error={error}
             onSelectFree={handleSelectFree}
             onSelectPlan={handleSelectPlan}
+            onSelectPack={handleSelectPack}
             onManageSubscription={() => openBillingPortal()}
             onUpgradeToMonthly={() => openBillingPortal('subscription_update')}
           />

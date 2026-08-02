@@ -8,6 +8,12 @@ import {
   SUBSCRIPTION_TRUST_LINE_PROMO,
   formatPromoPrice,
 } from '../constants/subscriptionPlans';
+import {
+  CREDIT_PACK_LIST,
+  CREDIT_PACK_SECTION_HEADING,
+  CREDIT_PACK_SECTION_SUBHEAD,
+  CREDIT_PACK_NEVER_EXPIRE,
+} from '../constants/creditPacks';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
@@ -32,8 +38,65 @@ const MONTHLY_FEATURES = [
   '25% less per exam vs weekly',
 ];
 
+function PacksSection({
+  showPacks,
+  onSelectPack,
+  loadingPackKey,
+  anyLoading,
+}) {
+  if (!showPacks || !onSelectPack) return null;
+
+  return (
+    <div className="mt-12 md:mt-14 max-w-[720px] mx-auto">
+      <div className="text-center mb-6">
+        <h2 className="text-[18px] md:text-[20px] font-bold text-[#344054] mb-2">
+          {CREDIT_PACK_SECTION_HEADING}
+        </h2>
+        <p className="text-[13px] md:text-[14px] text-[#667085] max-w-[520px] mx-auto">
+          {CREDIT_PACK_SECTION_SUBHEAD}
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {CREDIT_PACK_LIST.map((pack) => {
+          const isLoading = loadingPackKey === pack.key;
+          return (
+            <div
+              key={pack.key}
+              className="bg-white rounded-[12px] p-5 border border-[#E5E7EB] flex flex-col"
+            >
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#1a1f36]">{pack.name}</h3>
+                  <p className="text-[12px] text-[#667085] mt-0.5">{pack.credits} evaluations</p>
+                </div>
+                <span className="shrink-0 text-[11px] font-semibold text-[#475467] bg-[#F2F4F7] px-2 py-1 rounded">
+                  {CREDIT_PACK_NEVER_EXPIRE}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-[28px] font-extrabold text-[#1a1f36]">{pack.price}</span>
+                <span className="text-[13px] text-[#667085]">one-time</span>
+              </div>
+              <p className="text-[13px] text-[#667085] mb-5 flex-1">{pack.description}</p>
+              <button
+                type="button"
+                onClick={() => onSelectPack(pack.key)}
+                disabled={isLoading || anyLoading}
+                className="w-full h-[44px] rounded-[10px] font-semibold text-[14px] bg-white text-[#1a1f36] border border-[#D0D5DD] hover:border-[#1a1f36] transition-all disabled:opacity-60"
+              >
+                {isLoading ? 'Redirecting to Stripe…' : `Buy ${pack.name}`}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Shared Free / Weekly / Monthly offer UI for /pricing and /upgrade.
+ * Optional secondary one-time packs block (never-expire escape hatch).
  */
 export default function PricingPlansSection({
   promoEligible = true,
@@ -41,14 +104,17 @@ export default function PricingPlansSection({
   highlightPlanKey = null,
   subscriberState = 'none',
   loadingPlanKey = null,
+  loadingPackKey = null,
   error = '',
   onSelectFree,
   onSelectPlan,
+  onSelectPack,
   onManageSubscription,
   onUpgradeToMonthly,
   heading = 'Choose Your Path to Success',
   subheading = 'Select the plan that fits your IELTS preparation goals.',
   showHeader = true,
+  showPacks = true,
   portalLoading = false,
 }) {
   const weeklyPricing = formatPromoPrice(WEEKLY, { showPromo: promoEligible });
@@ -56,39 +122,47 @@ export default function PricingPlansSection({
   const monthlyFull = formatPromoPrice(MONTHLY, { showPromo: false });
   const isWeeklySub = subscriberState === 'weekly';
   const isMonthlySub = subscriberState === 'monthly';
-  const anyLoading = Boolean(loadingPlanKey) || portalLoading;
+  const anyLoading = Boolean(loadingPlanKey) || Boolean(loadingPackKey) || portalLoading;
 
   if (isMonthlySub) {
     return (
-      <div className="w-full max-w-[560px] mx-auto text-center">
-        {showHeader && (
-          <div className="mb-8">
-            <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1a1f36] mb-3">
-              You&apos;re on Monthly Mastery
-            </h1>
-            <p className="text-[14px] md:text-[16px] text-[#6B7280]">
-              You have an active monthly subscription with {MONTHLY.credits} evaluations per month.
+      <div className="w-full">
+        <div className="w-full max-w-[560px] mx-auto text-center">
+          {showHeader && (
+            <div className="mb-8">
+              <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1a1f36] mb-3">
+                You&apos;re on Monthly Mastery
+              </h1>
+              <p className="text-[14px] md:text-[16px] text-[#6B7280]">
+                You have an active monthly subscription with {MONTHLY.credits} evaluations per month.
+              </p>
+            </div>
+          )}
+          <div className="bg-white rounded-[16px] p-6 md:p-8 border-2 border-[#E5E7EB] shadow-sm">
+            {error && (
+              <p className="text-[13px] text-[#EA4335] bg-red-50 rounded-[8px] px-4 py-2.5 mb-4">
+                {error}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={onManageSubscription}
+              disabled={portalLoading}
+              className="w-full h-[50px] rounded-[10px] font-bold text-[15px] bg-[#101828] text-white hover:bg-[#1D2939] transition-all disabled:opacity-60"
+            >
+              {portalLoading ? 'Opening…' : 'Manage Subscription'}
+            </button>
+            <p className="text-[13px] text-[#667085] mt-4">
+              Cancel, switch plans, or update payment in the billing portal.
             </p>
           </div>
-        )}
-        <div className="bg-white rounded-[16px] p-6 md:p-8 border-2 border-[#E5E7EB] shadow-sm">
-          {error && (
-            <p className="text-[13px] text-[#EA4335] bg-red-50 rounded-[8px] px-4 py-2.5 mb-4">
-              {error}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={onManageSubscription}
-            disabled={portalLoading}
-            className="w-full h-[50px] rounded-[10px] font-bold text-[15px] bg-[#101828] text-white hover:bg-[#1D2939] transition-all disabled:opacity-60"
-          >
-            {portalLoading ? 'Opening…' : 'Manage Subscription'}
-          </button>
-          <p className="text-[13px] text-[#667085] mt-4">
-            Cancel, switch plans, or update payment in the billing portal.
-          </p>
         </div>
+        <PacksSection
+          showPacks={showPacks}
+          onSelectPack={onSelectPack}
+          loadingPackKey={loadingPackKey}
+          anyLoading={anyLoading}
+        />
       </div>
     );
   }
@@ -292,6 +366,13 @@ export default function PricingPlansSection({
           </button>
         </div>
       )}
+
+      <PacksSection
+        showPacks={showPacks}
+        onSelectPack={onSelectPack}
+        loadingPackKey={loadingPackKey}
+        anyLoading={anyLoading}
+      />
     </div>
   );
 }
