@@ -94,15 +94,22 @@ const Stat = ({ label, value, sub }) => (
   </div>
 );
 
+const DATE_RANGE_OPTIONS = [
+  { days: 1, label: 'Today' },
+  { days: 7, label: '7d' },
+  { days: 30, label: '30d' },
+  { days: 90, label: '90d' },
+];
+
 const DateRangeBar = ({ days, setDays }) => (
   <div className="flex gap-2">
-    {[7, 30, 90].map(d => (
+    {DATE_RANGE_OPTIONS.map((opt) => (
       <button
-        key={d}
-        onClick={() => setDays(d)}
-        className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all ${days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+        key={opt.days}
+        onClick={() => setDays(opt.days)}
+        className={`px-4 h-[34px] rounded-[8px] text-[12px] font-bold border transition-all ${days === opt.days ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
       >
-        {d}d
+        {opt.label}
       </button>
     ))}
   </div>

@@ -7,18 +7,25 @@ import EventFunnelSection from './EventFunnelSection';
 const formatRevenue = (cents) =>
   `$${((cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const DATE_RANGE_OPTIONS = [
+  { days: 1, label: 'Today' },
+  { days: 7, label: '7d' },
+  { days: 30, label: '30d' },
+  { days: 90, label: '90d' },
+];
+
 const DateRangeBar = ({ days, setDays }) => (
   <div className="flex gap-1.5">
-    {[7, 30, 90].map((d) => (
+    {DATE_RANGE_OPTIONS.map((opt) => (
       <button
-        key={d}
+        key={opt.days}
         type="button"
-        onClick={() => setDays(d)}
+        onClick={() => setDays(opt.days)}
         className={`px-3 h-[28px] rounded-[6px] text-[11px] font-bold border transition-all ${
-          days === d ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+          days === opt.days ? 'bg-[#2C3E50] text-white border-transparent' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
         }`}
       >
-        {d}d
+        {opt.label}
       </button>
     ))}
   </div>
@@ -147,8 +154,8 @@ export default function AdminOverview({ onNavigateTab }) {
   }, [load]);
 
   const acq = stats?.acquisition;
-  const periodLabel = `Last ${days} days`;
-  const periodShort = `${days}d`;
+  const periodLabel = days === 1 ? 'Today' : `Last ${days} days`;
+  const periodShort = days === 1 ? 'Today' : `${days}d`;
 
   const formatChartDate = (date) => {
     if (!date) return '';

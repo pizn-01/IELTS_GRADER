@@ -6,7 +6,24 @@ function parseDays(days, defaultDays = 30) {
   return Math.min(n, 365);
 }
 
+/** Start of a Toronto calendar day as an ISO timestamp. */
+function startOfTorontoDayIso(date = new Date()) {
+  const dateKey = torontoDateKey(date.toISOString());
+  // America/Toronto is UTC−4 (EDT) or UTC−5 (EST); midnight is 04:00Z or 05:00Z.
+  for (const utcHour of [4, 5]) {
+    const iso = `${dateKey}T${String(utcHour).padStart(2, '0')}:00:00.000Z`;
+    if (torontoDateKey(iso) === dateKey && torontoHour(iso) === 0) {
+      return iso;
+    }
+  }
+  return `${dateKey}T04:00:00.000Z`;
+}
+
 function sinceIso(days) {
+  // "Today" (1d) = from Toronto midnight to now. Longer windows keep prior UTC-midnight behavior.
+  if (days === 1) {
+    return startOfTorontoDayIso(new Date());
+  }
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - days);
   d.setUTCHours(0, 0, 0, 0);
