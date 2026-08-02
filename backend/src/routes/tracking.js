@@ -14,6 +14,11 @@ function isPricingPath(path) {
   return path === '/pricing' || path.startsWith('/pricing/');
 }
 
+function isDashboardPath(path) {
+  if (!path || typeof path !== 'string') return false;
+  return path === '/dashboard' || path.startsWith('/dashboard/');
+}
+
 // ─── POST /api/tracking/pageview ─────────────────────────────────────────────
 router.post('/pageview', optionalAuth, async (req, res) => {
   const {
@@ -103,17 +108,26 @@ router.post('/pageview', optionalAuth, async (req, res) => {
     });
     if (pvErr) throw pvErr;
 
-    if (isPricingPath(path)) {
-      const userId = req.user?.userId || null;
-      // Admins browsing pricing must not inflate the funnel.
-      if (!(userId && await isAdminUserId(userId))) {
-        trackProductEvent({
-          eventName: 'pricing_viewed',
-          userId,
-          sessionId: session_id,
-          properties: { path },
-        }).catch(() => {});
-      }
+    const userId = req.user?.userId || null;
+    // Admins must not inflate the funnel.
+    const skipFunnel = userId && await isAdminUserId(userId);
+
+    if (!skipFunnel && isPricingPath(path)) {
+      trackProductEvent({
+        eventName: 'pricing_viewed',
+        userId,
+        sessionId: session_id,
+        properties: { path },
+      }).catch(() => {});
+    }
+
+    if (!skipFunnel && userId && isDashboardPath(path)) {
+      trackProductEvent({
+        eventName: 'dashboard_visited',
+        userId,
+        sessionId: session_id,
+        properties: { path },
+      }).catch(() => {});
     }
 
     return res.json({ ok: true });

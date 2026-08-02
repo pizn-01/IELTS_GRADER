@@ -2,6 +2,7 @@ import React from 'react';
 
 const EVENT_LABELS = {
   signup: 'Signup',
+  dashboard_visited: 'Dashboard visited',
   test_started: 'Test started',
   test_completed: 'Test completed',
   grading_completed: 'Grading completed',

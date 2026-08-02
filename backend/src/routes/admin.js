@@ -1297,14 +1297,6 @@ router.get('/events/funnel', async (req, res) => {
       fetchAdminUserIds(),
     ]);
 
-    // Sessions that ever appear with an admin user_id — exclude those from session-only rows.
-    const adminSessions = new Set();
-    for (const row of rows) {
-      if (row.user_id && adminIds.has(row.user_id) && row.session_id) {
-        adminSessions.add(row.session_id);
-      }
-    }
-
     const byEvent = Object.fromEntries(
       TRACKED_EVENTS.map((name) => [name, { actors: new Set() }])
     );
@@ -1313,12 +1305,10 @@ router.get('/events/funnel', async (req, res) => {
       const bucket = byEvent[row.event_name];
       if (!bucket) continue;
 
-      if (row.user_id && adminIds.has(row.user_id)) continue;
-      if (!row.user_id && row.session_id && adminSessions.has(row.session_id)) continue;
-
-      // Unique actors: prefer user_id; fall back to session for anonymous events.
-      const actor = row.user_id || row.session_id;
-      if (actor) bucket.actors.add(actor);
+      // Unique users only — skip anonymous rows; repeat events from the same user count once.
+      if (!row.user_id) continue;
+      if (adminIds.has(row.user_id)) continue;
+      bucket.actors.add(row.user_id);
     }
 
     const steps = FUNNEL_EVENTS.map((eventName, index) => {

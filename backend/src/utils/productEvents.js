@@ -3,6 +3,7 @@ const { supabaseAdmin } = require('../services/supabase');
 /** Sequential signup → payment funnel (admin conversion chain). */
 const FUNNEL_EVENTS = [
   'signup',
+  'dashboard_visited',
   'test_started',
   'test_completed',
   'grading_completed',
