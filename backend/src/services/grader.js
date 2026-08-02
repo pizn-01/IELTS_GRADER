@@ -5,6 +5,11 @@ const { trackProductEvent } = require('../utils/productEvents');
 const { looksLikePromptCopy, buildPromptCopyGradeResult } = require('../utils/promptCopyDetection');
 const { resolveTaskVariant } = require('../utils/taskVariant');
 const { elevateModelBand } = require('../utils/modelAnswerBand');
+const {
+  sanitizeBandSet,
+  isNonAnswerEssay,
+  buildNonAnswerGradeResult,
+} = require('../utils/bandScores');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000 });
 const JS_IN_PROCESS_RETRIES = Number(process.env.JS_IN_PROCESS_RETRIES || 3);
@@ -15,6 +20,7 @@ function sleep(ms) {
 }
 
 // Clamp a raw score to valid IELTS 0.5-increment bands (1.0–9.0)
+// Kept for secondary_bands path; primary bands use sanitizeBandSet.
 function clampBand(raw) {
   const num = parseFloat(raw);
   if (isNaN(num)) return 5.0;
@@ -266,6 +272,45 @@ async function gradeEssayOnce(submissionId, {
   const questionText = bankQuestion || uploadedQuestionText || null;
   const taskVariant = resolveTaskVariant(exam_type, task_type);
 
+  if (isNonAnswerEssay(essay_content)) {
+    console.warn(`[grader] Non-answer / too-short essay — short-circuit submission=${submissionId}`);
+    const canned = buildNonAnswerGradeResult();
+    const { error: repError } = await supabaseAdmin
+      .from('reports')
+      .insert({
+        submission_id: submissionId,
+        overall_band: canned.overall_band,
+        response_band: canned.response_band,
+        coherence_band: canned.coherence_band,
+        vocabulary_band: canned.vocabulary_band,
+        grammar_band: canned.grammar_band,
+        strengths: canned.strengths,
+        weaknesses: canned.weaknesses,
+        high_impact_fixes: canned.high_impact_fixes,
+        model_answer: null,
+        vocabulary_analysis: null,
+        grammar_analysis: null,
+        data_structure_analysis: null,
+        raw_grader_output: {
+          question_text: questionText || null,
+          task_variant: taskVariant,
+          non_answer_detected: true,
+          primary: { ...canned, model: 'non-answer-guard' },
+          deep: {},
+          secondary_bands: null,
+        },
+      });
+    if (repError) throw new Error(`Report insert failed: ${repError.message}`);
+    await supabaseAdmin.from('submissions').update({ status: 'graded' }).eq('id', submissionId);
+    trackProductEvent({
+      eventName: 'grading_completed',
+      userId: userId || null,
+      properties: { submission_id: submissionId, non_answer_detected: true },
+    }).catch(() => {});
+    console.log(`[grader] Done (non-answer): submission=${submissionId} band=${canned.overall_band}`);
+    return;
+  }
+
   if (looksLikePromptCopy(essay_content, questionText || '')) {
     console.warn(`[grader] Prompt-copy detected — short-circuit grade submission=${submissionId}`);
     const canned = buildPromptCopyGradeResult(taskVariant);
@@ -327,11 +372,12 @@ async function gradeEssayOnce(submissionId, {
   }
 
   // Validate and sanitize all band scores
-  primary.overall_band   = clampBand(primary.overall_band);
-  primary.response_band  = clampBand(primary.response_band);
-  primary.coherence_band = clampBand(primary.coherence_band);
-  primary.vocabulary_band = clampBand(primary.vocabulary_band);
-  primary.grammar_band   = clampBand(primary.grammar_band);
+  const sanitized = sanitizeBandSet(primary);
+  primary.overall_band = sanitized.overall_band;
+  primary.response_band = sanitized.response_band;
+  primary.coherence_band = sanitized.coherence_band;
+  primary.vocabulary_band = sanitized.vocabulary_band;
+  primary.grammar_band = sanitized.grammar_band;
   primary.strengths        = Array.isArray(primary.strengths) ? primary.strengths : [];
   primary.weaknesses       = Array.isArray(primary.weaknesses) ? primary.weaknesses : [];
   primary.high_impact_fixes = Array.isArray(primary.high_impact_fixes) ? primary.high_impact_fixes : [];

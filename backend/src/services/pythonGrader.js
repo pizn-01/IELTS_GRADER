@@ -15,6 +15,11 @@ const {
 const { trackProductEvent } = require('../utils/productEvents');
 const { looksLikePromptCopy, buildPromptCopyGradeResult } = require('../utils/promptCopyDetection');
 const { elevateModelBand } = require('../utils/modelAnswerBand');
+const {
+  sanitizeBandSet,
+  isNonAnswerEssay,
+  buildNonAnswerGradeResult,
+} = require('../utils/bandScores');
 
 const PYTHON_DIR = path.join(__dirname, '..', '..', 'python');
 // Hard ceiling for a single Python grading child. Matches ~UI patience while
@@ -243,6 +248,18 @@ const CRITERIA_ORDER = [
 const SEVERITY_MAP = { major: 'Major', high: 'High', medium: 'Medium', low: 'Low' };
 
 function mapPythonResult(raw) {
+  // Critical Python failure payload — no criteria_scores; old clampBand made overall=1 + criteria=5.
+  if (raw?.score === 'Error' || raw?.error) {
+    const canned = buildNonAnswerGradeResult();
+    return {
+      ...canned,
+      weaknesses: [
+        raw.summary || 'Grading could not fully evaluate this response. Please submit a complete IELTS essay.',
+        ...canned.weaknesses,
+      ],
+    };
+  }
+
   // Already in the flat contract (defensive: allows older/other scripts).
   if (raw.response_band != null) return raw;
 
@@ -469,26 +486,58 @@ async function gradeEssayAsync(submissionId, submissionData) {
     const questionText = taskRow?.question_text || uploadedQuestionText || '';
     const examName = taskRow?.title || `${exam_type} ${task_type}`;
 
-    // #region agent log
-    try {
-      fs.appendFileSync('/Users/amir/IELTS_GRADER/.cursor/debug-247e96.log', JSON.stringify({
-        sessionId: '247e96',
-        runId: 'post-fix',
-        hypothesisId: 'D',
-        location: 'pythonGrader.js:pre-grade',
-        message: 'Prompt-copy check before grading',
-        data: {
-          submissionId,
-          taskVariant,
-          exam_task_id: exam_task_id || null,
-          promptCopy: looksLikePromptCopy(essay_content, questionText),
-          essayPreview: String(essay_content || '').slice(0, 140),
-          questionPreview: String(questionText || '').slice(0, 140),
-        },
-        timestamp: Date.now(),
-      }) + '\n');
-    } catch (_) {}
-    // #endregion
+    if (isNonAnswerEssay(essay_content)) {
+      console.warn(`[pythonGrader] Non-answer / too-short essay — short-circuit submission=${submissionId}`);
+      const canned = buildNonAnswerGradeResult();
+      const { data: report, error: repError } = await supabaseAdmin
+        .from('reports')
+        .insert({
+          submission_id: submissionId,
+          overall_band: canned.overall_band,
+          response_band: canned.response_band,
+          coherence_band: canned.coherence_band,
+          vocabulary_band: canned.vocabulary_band,
+          grammar_band: canned.grammar_band,
+          strengths: canned.strengths,
+          weaknesses: canned.weaknesses,
+          high_impact_fixes: canned.high_impact_fixes,
+          model_answer: null,
+          vocabulary_analysis: null,
+          grammar_analysis: null,
+          data_structure_analysis: null,
+          raw_grader_output: {
+            question_text: questionText || null,
+            task_variant: taskVariant,
+            non_answer_detected: true,
+            primary: {
+              overall_band: canned.overall_band,
+              response_band: canned.response_band,
+              coherence_band: canned.coherence_band,
+              vocabulary_band: canned.vocabulary_band,
+              grammar_band: canned.grammar_band,
+              strengths: canned.strengths,
+              weaknesses: canned.weaknesses,
+              high_impact_fixes: canned.high_impact_fixes,
+              errors: [],
+              sub_category_scores: {},
+              model: 'non-answer-guard',
+            },
+            deep: {},
+            secondary_bands: null,
+          },
+        })
+        .select('id')
+        .single();
+      if (repError) throw new Error(`Report insert failed: ${repError.message}`);
+      await supabaseAdmin.from('submissions').update({ status: 'graded' }).eq('id', submissionId);
+      trackProductEvent({
+        eventName: 'grading_completed',
+        userId: userId || null,
+        properties: { submission_id: submissionId, non_answer_detected: true },
+      }).catch(() => {});
+      console.log(`[pythonGrader] Done (non-answer): submission=${submissionId} band=${canned.overall_band} report=${report?.id}`);
+      return;
+    }
 
     if (looksLikePromptCopy(essay_content, questionText)) {
       console.warn(`[pythonGrader] Prompt-copy detected — short-circuit grade submission=${submissionId}`);
@@ -652,11 +701,13 @@ async function gradeEssayAsync(submissionId, submissionData) {
 
     // ── Validate and sanitize all band scores (safety net — same
     //    validation grader.js applies before insert) ──────────────────────
-    const overall_band = clampBand(result.overall_band);
-    const response_band = clampBand(result.response_band);
-    const coherence_band = clampBand(result.coherence_band);
-    const vocabulary_band = clampBand(result.vocabulary_band);
-    const grammar_band = clampBand(result.grammar_band);
+    const {
+      overall_band,
+      response_band,
+      coherence_band,
+      vocabulary_band,
+      grammar_band,
+    } = sanitizeBandSet(result);
     const strengths = Array.isArray(result.strengths) ? result.strengths : [];
     const weaknesses = Array.isArray(result.weaknesses) ? result.weaknesses : [];
     const high_impact_fixes = Array.isArray(result.high_impact_fixes) ? result.high_impact_fixes : [];
