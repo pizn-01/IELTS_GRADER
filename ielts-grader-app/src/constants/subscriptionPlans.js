@@ -111,6 +111,13 @@ export const SUBSCRIPTION_FEATURES = [
 export const SUBSCRIPTION_PLAN_NOTE =
   'One plan covers Academic & General Training · Instant access · Cancel anytime';
 
+/** Footer trust lines under primary subscribe CTAs. */
+export const SUBSCRIPTION_TRUST_LINE_PROMO =
+  'First month at 50% off. Then regular price. Cancel anytime. Credits reset each billing period.';
+
+export const SUBSCRIPTION_TRUST_LINE =
+  'Cancel anytime. No long-term commitment. Credits reset each billing period.';
+
 export function planKeyFromSelection(selected) {
   return selected === 'Weekly' ? 'weekly' : 'monthly';
 }

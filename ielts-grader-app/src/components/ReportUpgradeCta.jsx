@@ -23,7 +23,7 @@ export default function ReportUpgradeCta({
 
   const goUpgrade = () => {
     track();
-    navigate('/upgrade', { state: { from: 'report' } });
+    navigate('/pricing?plan=monthly');
   };
 
   const goPractice = () => {

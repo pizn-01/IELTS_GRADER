@@ -6,7 +6,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate('/upgrade', { replace: true });
+    navigate('/pricing', { replace: true });
   }, [navigate]);
 
   return null;

@@ -29,7 +29,7 @@ export default function ReportUpgradeModal({
   const goUpgrade = () => {
     track();
     onDismiss?.();
-    navigate('/upgrade', { state: { from: 'report' } });
+    navigate('/pricing?plan=monthly');
   };
 
   const goPractice = () => {

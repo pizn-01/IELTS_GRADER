@@ -7,7 +7,8 @@ import { api } from '../services/api';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
 import AIProcessingModal from '../marketing/AIProcessingModal';
-import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_FEATURES, planKeyFromSelection, SUBSCRIPTION_PLANS, SUBSCRIPTION_PLAN_NOTE, SUBSCRIPTION_TRUST_LINE_PROMO, SUBSCRIPTION_TRUST_LINE, formatPromoPrice } from '../constants/subscriptionPlans';
+import { NewUserPromoBanner, PromoPriceDisplay } from '../components/PromoPricing';
 import {
   peekPendingGradePayload,
   consumePendingGradePayload,
@@ -208,6 +209,10 @@ const AnalysisReadyPage = () => {
   const isOutOfCredits = forceOutOfCredits || (user && user.credits_remaining <= 0);
   const hasCredits = !forceOutOfCredits && user && user.credits_remaining > 0;
   const isSubscribed = user?.subscription_status === 'active' || user?.is_subscribed === true;
+  const promoEligible = !user?.has_paid && !isSubscribed;
+  const weeklyPricing = formatPromoPrice(SUBSCRIPTION_PLANS.weekly, { showPromo: promoEligible });
+  const monthlyPricing = formatPromoPrice(SUBSCRIPTION_PLANS.monthly, { showPromo: promoEligible });
+  const selectedPricing = selectedPlan === 'Weekly' ? weeklyPricing : monthlyPricing;
   const outOfCreditsMessage = isSubscribed
     ? "You've used all your credits in your current subscription plan. Upgrade or wait for renewal to keep practicing."
     : "You've used your free credits. Upgrade to keep practicing with more full evaluations and detailed feedback.";
@@ -359,6 +364,8 @@ const AnalysisReadyPage = () => {
                 </div>
               </div>
 
+              {promoEligible && <NewUserPromoBanner compact />}
+
               <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-full px-4 py-2.5 mb-6 text-center">
                 <p className="text-[12px] font-medium text-[#475467] leading-snug">
                   {SUBSCRIPTION_PLAN_NOTE}
@@ -370,27 +377,59 @@ const AnalysisReadyPage = () => {
                 {/* Weekly Plan */}
                 <div 
                   onClick={() => setSelectedPlan('Weekly')}
-                  className={`cursor-pointer rounded-[8px] p-3 transition-all duration-300 flex flex-col justify-center border ${
+                  className={`cursor-pointer rounded-[8px] p-3 transition-all duration-300 flex flex-col justify-center border relative overflow-hidden ${
                     selectedPlan === 'Weekly' 
                       ? 'border-[#4FA1FF] bg-[#EAF5FF]' 
                       : 'border-[#E5E7EB] bg-white hover:border-[#4FA1FF]/40'
                   }`}
                 >
+                  {weeklyPricing.showPromo && (
+                    <span className="absolute top-0 right-0 bg-[#059669] text-white text-[8px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-bl-[8px]">
+                      50% OFF
+                    </span>
+                  )}
                   <p className="text-[11px] font-semibold text-[#6B7280] mb-1.5">Weekly Sprint</p>
-                  <p className="text-[18px] font-extrabold text-[#1a1f36]">{SUBSCRIPTION_PLANS.weekly.price}{SUBSCRIPTION_PLANS.weekly.period}</p>
+                  {weeklyPricing.showPromo ? (
+                    <PromoPriceDisplay
+                      originalPrice={weeklyPricing.originalPrice}
+                      displayPrice={weeklyPricing.displayPrice}
+                      period={weeklyPricing.period}
+                      size="md"
+                    />
+                  ) : (
+                    <p className="text-[18px] font-extrabold text-[#1a1f36]">
+                      {weeklyPricing.displayPrice}{weeklyPricing.period}
+                    </p>
+                  )}
                 </div>
 
                 {/* Monthly Plan */}
                 <div 
                   onClick={() => setSelectedPlan('Monthly')}
-                  className={`cursor-pointer rounded-[8px] p-3 transition-all duration-300 flex flex-col justify-center border ${
+                  className={`cursor-pointer rounded-[8px] p-3 transition-all duration-300 flex flex-col justify-center border relative overflow-hidden ${
                     selectedPlan === 'Monthly' 
                       ? 'border-[#4FA1FF] bg-[#EAF5FF]' 
                       : 'border-[#E5E7EB] bg-white hover:border-[#4FA1FF]/40'
                   }`}
                 >
+                  {monthlyPricing.showPromo && (
+                    <span className="absolute top-0 right-0 bg-[#059669] text-white text-[8px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-bl-[8px]">
+                      50% OFF
+                    </span>
+                  )}
                   <p className="text-[11px] font-semibold text-[#6B7280] mb-1.5">Monthly Mastery</p>
-                  <p className="text-[18px] font-extrabold text-[#1a1f36]">{SUBSCRIPTION_PLANS.monthly.price}{SUBSCRIPTION_PLANS.monthly.period}</p>
+                  {monthlyPricing.showPromo ? (
+                    <PromoPriceDisplay
+                      originalPrice={monthlyPricing.originalPrice}
+                      displayPrice={monthlyPricing.displayPrice}
+                      period={monthlyPricing.period}
+                      size="md"
+                    />
+                  ) : (
+                    <p className="text-[18px] font-extrabold text-[#1a1f36]">
+                      {monthlyPricing.displayPrice}{monthlyPricing.period}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -416,10 +455,14 @@ const AnalysisReadyPage = () => {
                   disabled={subscribeLoading}
                   className="w-full bg-[#313E50] text-white py-[14px] rounded-[8px] font-semibold text-[13px] mb-3 hover:bg-[#252f3d] transition-all disabled:opacity-60"
                 >
-                  {subscribeLoading ? 'Redirecting to Stripe…' : 'Subscribe & Unlock Unlimited Practice'}
+                  {subscribeLoading
+                    ? 'Redirecting to Stripe…'
+                    : promoEligible
+                      ? `Subscribe — ${selectedPricing.displayPrice}${selectedPricing.period} (50% off)`
+                      : `Subscribe — ${selectedPricing.displayPrice}${selectedPricing.period}`}
                 </button>
                 <p className="text-[10px] text-[#6B7280] font-medium text-center">
-                  Cancel anytime. No long-term commitment
+                  {promoEligible ? SUBSCRIPTION_TRUST_LINE_PROMO : SUBSCRIPTION_TRUST_LINE}
                 </p>
               </div>
             </div>

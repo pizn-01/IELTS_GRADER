@@ -12,6 +12,17 @@ function isGuestContinueFlow(fromLocation) {
   return path === '/analysis-ready' || path.startsWith('/analysis-ready');
 }
 
+/** Pricing / upgrade checkout intent — prefer signup for new buyers. */
+function isPricingCheckoutFlow(fromLocation) {
+  if (!fromLocation?.pathname) return false;
+  const path = fromLocation.pathname;
+  return path === '/pricing' || path === '/upgrade' || path.startsWith('/pricing');
+}
+
+function prefersSignupFirst(fromLocation) {
+  return isGuestContinueFlow(fromLocation) || isPricingCheckoutFlow(fromLocation);
+}
+
 const LoginPage1 = () => {
   const { login, register, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -23,11 +34,12 @@ const LoginPage1 = () => {
     : '/dashboard';
   const fromState = fromLocation?.state;
   const isGuestFlow = isGuestContinueFlow(fromLocation);
+  const preferSignup = prefersSignupFirst(fromLocation);
 
   const initialMode =
     location.state?.authMode === 'signup' || location.state?.authMode === 'login'
       ? location.state.authMode
-      : isGuestFlow
+      : preferSignup
         ? 'signup'
         : 'login';
 
@@ -53,7 +65,7 @@ const LoginPage1 = () => {
     const next =
       location.state?.authMode === 'signup' || location.state?.authMode === 'login'
         ? location.state.authMode
-        : isGuestContinueFlow(location.state?.from)
+        : prefersSignupFirst(location.state?.from)
           ? 'signup'
           : null;
     if (next) setMode(next);

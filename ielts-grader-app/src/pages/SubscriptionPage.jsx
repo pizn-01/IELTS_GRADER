@@ -337,7 +337,7 @@ const SubscriptionPage = () => {
               <p className="text-[12px] text-[#667085] leading-relaxed px-1">
                 {isExhausted
                   ? 'Your free credits are used. View Plans to choose Weekly or Monthly and continue grading.'
-                  : 'When you need more practice, View Plans lets you pick Weekly or Monthly. Checkout is on the next screen.'}
+                  : 'When you need more practice, View Plans opens pricing so you can pick Weekly or Monthly.'}
               </p>
             )}
           </div>
@@ -360,7 +360,7 @@ const SubscriptionPage = () => {
                   type="button"
                   onClick={() => {
                     trackEvent('upgrade_cta_clicked', { source: 'subscription_page' });
-                    navigate('/upgrade');
+                    navigate('/pricing?plan=monthly');
                   }}
                   className="w-full sm:w-auto px-8 h-10 bg-[#344054] text-white rounded-lg text-[13px] font-bold hover:bg-[#1D2939] transition-all shadow-sm"
                 >
