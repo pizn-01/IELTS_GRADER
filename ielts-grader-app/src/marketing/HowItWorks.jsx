@@ -45,7 +45,15 @@ const HowItWorks = () => {
               <div className="relative">
                 {/* Step 1 Card Image */}
                 <div className="relative z-10 w-full max-w-[528px]">
-                  <img src="/images/how-it-works/Background+Border+Shadow.png" alt="Evaluate Writing Skills" className="w-full h-auto" />
+                  <img
+                    src="/images/how-it-works/step-1.webp"
+                    alt="Evaluate Writing Skills"
+                    className="w-full h-auto"
+                    width={900}
+                    height={600}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
  
                 {/* Connector SVG to Step 2 */}
@@ -74,7 +82,15 @@ const HowItWorks = () => {
               <div className="relative">
                 {/* Step 2 Card Image */}
                 <div className="relative z-10 w-full max-w-[528px]">
-                  <img src="/images/how-it-works/Background+Border+Shadow-1.png" alt="AI Grading" className="w-full h-auto" />
+                  <img
+                    src="/images/how-it-works/step-2.webp"
+                    alt="AI Grading"
+                    className="w-full h-auto"
+                    width={900}
+                    height={600}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
  
                 {/* Connector SVG to Step 3 */}
@@ -102,7 +118,15 @@ const HowItWorks = () => {
             <div className="w-full md:w-[50%] flex justify-center">
               {/* Step 3 Card Image */}
               <div className="relative z-10 w-full max-w-[528px]">
-                <img src="/images/how-it-works/Background+Border+Shadow-2.png" alt="IELTS Report Dashboard" className="w-full h-auto" />
+                <img
+                  src="/images/how-it-works/step-3.webp"
+                  alt="IELTS Report Dashboard"
+                  className="w-full h-auto"
+                  width={900}
+                  height={600}
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             </div>
           </div>

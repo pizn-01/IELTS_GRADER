@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Lenis from 'lenis';
 
@@ -7,9 +7,8 @@ import { GradeProvider } from './context/GradeContext';
 
 // ── Route Guard ───────────────────────────────────────────────────────────────
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
-import AdminPage from './pages/AdminPage';
 
-// ── Marketing Site Components ─────────────────────────────────────────────────
+// ── Marketing Site Components (eager — P0 CWV) ───────────────────────────────
 import Navbar from './marketing/Navbar';
 import Hero from './marketing/Hero';
 import HowItWorks from './marketing/HowItWorks';
@@ -19,46 +18,41 @@ import FAQ, { homeFaqs } from './marketing/FAQ';
 import CTA from './marketing/CTA';
 import Footer from './marketing/Footer';
 
-// ── Auth Pages ────────────────────────────────────────────────────────────────
-import LoginPage from './auth/LoginPage1';
-import SignupPage from './auth/SignupPage5';
-import ForgotPasswordPage from './auth/ForgotPasswordPage7';
-import CheckEmailPage from './auth/CheckEmailPage9';
-import ResetPasswordPage from './auth/ResetPasswordPage11';
-import PasswordResetSuccessPage from './auth/PasswordResetSuccessPage13';
-import OAuthCallbackPage from './auth/OAuthCallbackPage';
-
-// ── Public Functional Pages ───────────────────────────────────────────────────
+// ── Public SEO / marketing pages (eager) ─────────────────────────────────────
 import PricingPage from './pages/PricingPage';
-import CheckoutPage from './pages/CheckoutPage';
-import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
-import UpgradePage from './pages/UpgradePage';
 import SampleReportPage from './pages/SampleReportPage';
 import FeaturesPage from './pages/FeaturesPage';
 import GradeEssayPage from './pages/GradeEssayPage';
-
-// ── Protected Functional Pages ────────────────────────────────────────────────
-import SubscriptionPage from './pages/SubscriptionPage';
-import MockExamPage from './pages/MockExamPage';
-import ReportPage from './pages/ReportPage';
-import AnalysisReadyPage from './pages/AnalysisReadyPage';
-import PersonalizedLearningPage from './pages/PersonalizedLearningPage';
-
-// ── Dashboard ─────────────────────────────────────────────────────────────────
-import DashboardApp from './dashboard/DashboardApp';
-import Layout from './components/Layout';
-import Settings from './components/Settings';
-import { useAuth } from './context/AuthContext';
-
-import { useVisitorTracking } from './hooks/useVisitorTracking';
-
-// ── SEO pages (additive — no marketing redesign) ─────────────────────────────
 import BlogListPage from './pages/BlogListPage';
 import BlogPostPage from './pages/BlogPostPage';
 import LegalPage from './pages/LegalPage';
 import ToolLandingPage from './seo/ToolLandingPage';
 import SeoHead from './seo/SeoHead';
 import { toolPages } from './content/toolPagesData';
+
+// ── Heavy app / auth routes (lazy — keep marketing JS lean) ───────────────────
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const LoginPage = lazy(() => import('./auth/LoginPage1'));
+const SignupPage = lazy(() => import('./auth/SignupPage5'));
+const ForgotPasswordPage = lazy(() => import('./auth/ForgotPasswordPage7'));
+const CheckEmailPage = lazy(() => import('./auth/CheckEmailPage9'));
+const ResetPasswordPage = lazy(() => import('./auth/ResetPasswordPage11'));
+const PasswordResetSuccessPage = lazy(() => import('./auth/PasswordResetSuccessPage13'));
+const OAuthCallbackPage = lazy(() => import('./auth/OAuthCallbackPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const CheckoutSuccessPage = lazy(() => import('./pages/CheckoutSuccessPage'));
+const UpgradePage = lazy(() => import('./pages/UpgradePage'));
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const MockExamPage = lazy(() => import('./pages/MockExamPage'));
+const ReportPage = lazy(() => import('./pages/ReportPage'));
+const AnalysisReadyPage = lazy(() => import('./pages/AnalysisReadyPage'));
+const PersonalizedLearningPage = lazy(() => import('./pages/PersonalizedLearningPage'));
+const DashboardApp = lazy(() => import('./dashboard/DashboardApp'));
+const Layout = lazy(() => import('./components/Layout'));
+const Settings = lazy(() => import('./components/Settings'));
+
+import { useAuth } from './context/AuthContext';
+import { useVisitorTracking } from './hooks/useVisitorTracking';
 
 const SEO_MARKETING_ROUTES = [
   '/',
@@ -241,6 +235,7 @@ function App() {
 
   return (
     <GradeProvider>
+      <Suspense fallback={<div className="min-h-screen bg-white" aria-hidden="true" />}>
       <Routes>
         {/* ── Landing Page ─────────────────────────────────── */}
         <Route path="/" element={<HomeRoute />} />
@@ -347,6 +342,7 @@ function App() {
           </ProtectedRoute>
         } />
       </Routes>
+      </Suspense>
     </GradeProvider>
   );
 }

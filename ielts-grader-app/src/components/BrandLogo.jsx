@@ -18,10 +18,13 @@ const BrandLogo = ({
     className={`inline-flex items-center gap-1.5 shrink-0 no-underline hover:opacity-80 transition-opacity cursor-pointer ${className}`}
   >
     <img
-      src="/brand-logo.png"
+      src="/brand-logo.webp"
       alt=""
+      width={32}
+      height={26}
       className={`${imgClassName} object-contain object-left block`}
       decoding="async"
+      fetchPriority="high"
     />
     <span className={textClassName} style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800 }}>
       IELTSGRADER

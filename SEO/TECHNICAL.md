@@ -65,11 +65,22 @@ python3 SEO/scripts/generate_sitemap.py
 
 ### You (post-deploy)
 
-- [ ] Google Search Console verified
+- [x] Google Search Console verified
 - [ ] Bing Webmaster Tools verified
-- [ ] Sitemap submitted
-- [ ] Request indexing for key URLs
-- [ ] Core Web Vitals check in PageSpeed Insights
+- [x] Sitemap submitted
+- [x] Request indexing for key URLs
+- [x] Core Web Vitals check in PageSpeed Insights / Lighthouse (2026-08-03)
+
+**CWV baseline (mobile Lighthouse, pre-fix → post-fix targets):**
+
+| URL | Perf (pre) | LCP (pre) | Main issues fixed |
+|-----|------------|-----------|-------------------|
+| `/` | 63 | 14.3s | Oversized How-it-works/Features PNGs → WebP; brand logo 160KB→2KB; route code-splitting; hero LCP eager |
+| `/ielts-essay-checker` | 62 | 8.1s | Shared-bundle trim via lazy routes |
+| `/ielts-ai-tutor` | 62 | 8.4s | Same |
+| `/ielts-writing-band-score` | 59 | 8.3s | Same |
+
+CLS was already good (0) on all four. Re-measure after deploy.
 
 ### Optional / later
 

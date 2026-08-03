@@ -7,7 +7,15 @@ const Features = () => {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px] grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-[60px] items-center">
         {/* Left Column - Mockups Image (height locked to the text column on desktop) */}
         <div className="relative z-10 w-full animate-fadeIn order-2 lg:order-1 lg:self-stretch">
-          <img src="/images/Group 1597890526.png" alt="IELTS Report Mockup" className="w-full h-auto drop-shadow-xl lg:absolute lg:inset-0 lg:h-full lg:w-full lg:object-contain lg:object-left" />
+          <img
+            src="/images/features-report-mockup.webp"
+            alt="IELTS Report Mockup"
+            className="w-full h-auto drop-shadow-xl lg:absolute lg:inset-0 lg:h-full lg:w-full lg:object-contain lg:object-left"
+            width={1000}
+            height={800}
+            loading="lazy"
+            decoding="async"
+          />
         </div>
 
         {/* Right Column - Text & Checklist */}

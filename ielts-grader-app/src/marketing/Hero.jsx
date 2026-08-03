@@ -204,13 +204,17 @@ const Hero = () => {
     </ul>
   );
 
-  const ShotImage = ({ shot }) => (
+  const ShotImage = ({ shot, priority = false }) => (
     <div className="hero-shot-stage flex items-center justify-start h-[340px] xl:h-[360px] w-full max-w-[560px]">
       <img
         src={shot.image}
         alt={shot.imageAlt}
         className="h-full w-auto max-w-full object-contain object-left rounded-[12px] shadow-[0_12px_36px_rgba(15,23,42,0.12)]"
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
+        decoding="async"
+        width={1024}
+        height={600}
         draggable={false}
       />
     </div>
@@ -520,7 +524,7 @@ const Hero = () => {
                               {s.caption}
                             </span>
                           </div>
-                          <ShotImage shot={s} />
+                          <ShotImage shot={s} priority={i === slideIndex || i === 0} />
                         </div>
                       );
                     })}
@@ -540,7 +544,7 @@ const Hero = () => {
                 <div className="flex -space-x-2">
                   {AVATARS.map((src) => (
                     <div key={src} className="w-7 h-7 rounded-full border-2 border-white bg-slate-200 overflow-hidden shrink-0 shadow-sm">
-                      <img src={src} alt="" className="w-full h-full object-cover" />
+                      <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" width={28} height={28} />
                     </div>
                   ))}
                 </div>
