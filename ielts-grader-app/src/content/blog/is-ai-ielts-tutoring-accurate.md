@@ -6,6 +6,7 @@ keyword: AI IELTS grading accurate
 type: trust
 status: published
 publishedAt: 2026-07-14
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
 ---
 
@@ -13,7 +14,7 @@ author: IELTS AI Tutor Team
 
 Students ask a fair question: can an **IELTS AI Tutor** give feedback accurate enough to guide real improvement, or is it just a random score generator?
 
-This trust guide from **IELTS AI Tutor by IELTSGRADER** explains what AI tutoring does well, where it has limits, and how to use it responsibly. No invented student counts, no fake star ratings, just a clear picture of what to expect.
+This trust guide from **IELTS AI Tutor by IELTSGRADER** explains what AI tutoring does well, where it has limits, and how to use it responsibly. No invented student counts, no fake star ratings, just a clear picture of what to expect. For the ChatGPT-specific band comparison, see [Is ChatGPT Accurate for IELTS Writing Scores?](/blog/is-chatgpt-accurate-ielts-writing).
 
 ## Short answer
 
