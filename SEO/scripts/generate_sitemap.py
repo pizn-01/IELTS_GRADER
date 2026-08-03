@@ -13,6 +13,8 @@ OUTPUT = APP_PUBLIC / "sitemap.xml"
 STATIC_ROUTES = [
     "/",
     "/pricing",
+    "/features",
+    "/sample-report",
     "/ielts-ai-tutor",
     "/ielts-essay-checker",
     "/ielts-task-1-checker",
@@ -38,6 +40,8 @@ PRIORITY = {
     "/grade-my-essay": "0.9",
     "/mock-exam": "0.8",
     "/blog": "0.8",
+    "/features": "0.8",
+    "/sample-report": "0.7",
     "/pricing": "0.7",
 }
 
