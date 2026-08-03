@@ -51,10 +51,18 @@ function getAllPacks() {
   }));
 }
 
+function isUniqueViolation(error) {
+  if (!error) return false;
+  if (error.code === '23505') return true;
+  const msg = String(error.message || '').toLowerCase();
+  return msg.includes('duplicate key') || msg.includes('unique constraint');
+}
+
 /**
  * Grant pack credits into both wallets.
  * credits_remaining += N, pack_credits += N.
- * Idempotent on stripe_session_id.
+ * Idempotent on stripe_session_id: claim the payment row with a plain INSERT first
+ * so webhook + verify-session races cannot both credit.
  */
 async function grantPackCredits(userId, packKey, { sessionId, paymentIntent, amountCents } = {}) {
   const pack = getPackByKey(packKey);
@@ -65,16 +73,26 @@ async function grantPackCredits(userId, packKey, { sessionId, paymentIntent, amo
     throw new Error('sessionId required to grant pack credits');
   }
 
-  const { data: existing } = await supabaseAdmin
+  // Claim first — unique on stripe_session_id is the race lock.
+  const { error: insertError } = await supabaseAdmin
     .from('payments')
-    .select('id')
-    .eq('stripe_session_id', sessionId)
-    .eq('status', 'completed')
-    .maybeSingle();
+    .insert({
+      user_id: userId,
+      stripe_session_id: sessionId,
+      stripe_payment_intent: paymentIntent || null,
+      amount_cents: amountCents ?? pack.amountCents,
+      credits_granted: pack.credits,
+      pack_name: pack.name,
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    });
 
-  if (existing) {
-    console.log('[creditPacks] Duplicate session skipped:', sessionId);
-    return false;
+  if (insertError) {
+    if (isUniqueViolation(insertError)) {
+      console.log('[creditPacks] Duplicate session skipped:', sessionId);
+      return false;
+    }
+    throw insertError;
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -84,6 +102,8 @@ async function grantPackCredits(userId, packKey, { sessionId, paymentIntent, amo
     .single();
 
   if (profileError || !profile) {
+    // Release claim so webhook/verify can retry after the profile is available.
+    await supabaseAdmin.from('payments').delete().eq('stripe_session_id', sessionId);
     throw new Error(`User not found for pack grant: ${userId}`);
   }
 
@@ -104,27 +124,15 @@ async function grantPackCredits(userId, packKey, { sessionId, paymentIntent, amo
     updates.credits_allowance = Math.max(currentAllowance, nextRemaining);
   }
 
-  await Promise.all([
-    supabaseAdmin
-      .from('profiles')
-      .update(updates)
-      .eq('id', userId),
-    supabaseAdmin
-      .from('payments')
-      .upsert(
-        {
-          user_id: userId,
-          stripe_session_id: sessionId,
-          stripe_payment_intent: paymentIntent || null,
-          amount_cents: amountCents ?? pack.amountCents,
-          credits_granted: pack.credits,
-          pack_name: pack.name,
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-        },
-        { onConflict: 'stripe_session_id' },
-      ),
-  ]);
+  const { error: profileUpdateError } = await supabaseAdmin
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+
+  if (profileUpdateError) {
+    await supabaseAdmin.from('payments').delete().eq('stripe_session_id', sessionId);
+    throw profileUpdateError;
+  }
 
   trackProductEvent({
     eventName: 'payment_completed',

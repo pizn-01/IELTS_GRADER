@@ -169,6 +169,25 @@ async function validateStripePriceCatalog() {
         console.error(`[stripe] Failed to retrieve price for ${check.label}:`, err.message);
       }
     }
+
+    const couponId = process.env.STRIPE_COUPON_NEW_USER;
+    if (couponId) {
+      try {
+        const coupon = await stripe.coupons.retrieve(couponId);
+        if (!coupon.valid) {
+          console.error(
+            `[stripe] Promo coupon ${couponId} exists but is not valid ` +
+            `(expired or max redemptions reached). Intro checkouts will fail.`
+          );
+        }
+      } catch (err) {
+        console.error(
+          `[stripe] Failed to retrieve promo coupon ${couponId}:`,
+          err.message,
+          '— intro-eligible checkouts will fail until this is fixed.'
+        );
+      }
+    }
   } catch (err) {
     console.error('[stripe] Price catalog validation failed:', err.message);
   }
@@ -341,7 +360,9 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
     return res.json({ url: session.url });
   } catch (err) {
     console.error('[stripe/create-upgrade-checkout]', err.message);
-    return res.status(500).json({ error: 'Failed to create checkout session. ' + err.message });
+    return res.status(500).json({
+      error: 'Something went wrong starting checkout. Please try again.',
+    });
   }
 });
 
@@ -406,7 +427,9 @@ router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
     return res.json({ url: session.url });
   } catch (err) {
     console.error('[stripe/create-pack-checkout]', err.message);
-    return res.status(500).json({ error: 'Failed to create checkout session. ' + err.message });
+    return res.status(500).json({
+      error: 'Something went wrong starting checkout. Please try again.',
+    });
   }
 });
 
