@@ -241,12 +241,12 @@ export const toolPages = [
     slug: 'ielts-writing-band-score',
     path: '/ielts-writing-band-score',
     shortTitle: 'Band score',
-    title: 'IELTS Writing Band Score: How Your AI Tutor Calculates It | IELTSGRADER',
+    title: 'IELTS Writing Band Score: How It Is Calculated & What to Fix | IELTSGRADER',
     description:
-      'Understand your IELTS writing band score. AI tutor explains Task Response, Coherence, Lexical Resource, and Grammar. Get your practice score free.',
-    h1: 'Your IELTS Writing Band Score: Explained',
+      'IELTS writing band scores are the average of four equally weighted criteria, with Task 2 counting double. See the formula, a worked example, and get your practice score free.',
+    h1: 'IELTS Writing Band Score: How It Is Calculated (and How to Raise It)',
     intro:
-      'Your overall writing band is the average of four criteria. Your AI tutor shows each one so you know what to fix first, not just a single number.',
+      'Your IELTS writing band score is the average of four equally weighted criteria — Task Response, Coherence & Cohesion, Lexical Resource, and Grammar — and Task 2 counts twice as much as Task 1 in your final writing band. Submit an essay to see your four criterion scores and what is capping your average.',
     highlights: [
       { title: 'Four criteria', body: 'TR/TA, CC, LR, GRA, each scored separately.' },
       { title: 'Average & rounding', body: 'Understand how criterion scores become an overall band.' },
@@ -254,6 +254,14 @@ export const toolPages = [
       { title: 'Practice scores', body: 'Use AI bands for training, official tests remain separate.' },
     ],
     sections: [
+      {
+        heading: 'How is the IELTS writing band score calculated?',
+        paragraphs: [
+          'Examiners give each task a whole-band score (0–9) on four equally weighted criteria: Task Achievement / Task Response, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy. The task score is the average of those four.',
+          'Worked example: TR 6, CC 7, LR 6, GRA 7 averages to 6.5 for that task. If your lowest criterion is a 6, that single skill is what caps your band — which is why targeted practice beats rewriting everything.',
+          'Your final writing band then combines both tasks, with Task 2 weighted twice as heavily as Task 1. A strong Task 2 can lift a weaker Task 1, but not the other way around.',
+        ],
+      },
       {
         heading: 'The four writing criteria',
         items: [
@@ -276,7 +284,9 @@ export const toolPages = [
       { title: 'Re-test', body: 'Submit a new prompt and compare the same criterion.' },
     ],
     faqs: [
-      { q: 'How is the overall writing band calculated?', a: 'It is the average of the four criteria, then rounded to the nearest half or whole band according to IELTS rounding conventions.' },
+      { q: 'How is the overall writing band calculated?', a: 'Each task is scored on four equally weighted criteria and averaged. Your final writing band combines both tasks, with Task 2 counting twice as much as Task 1, rounded to the nearest half or whole band.' },
+      { q: 'What band is my essay?', a: 'Submit your essay to the free checker to see an overall band estimate plus a score for each of the four criteria, with an explanation of what is holding your band down.' },
+      { q: 'Does Task 2 count more than Task 1?', a: 'Yes. Task 2 is weighted twice as heavily as Task 1 in your final writing band, so prioritize Task 2 practice if your time is limited.' },
       { q: 'Can AI guarantee my official score?', a: 'No. Practice feedback helps you prepare; only official examiners set your test score.' },
       { q: 'What should I fix first?', a: 'Usually your lowest criterion, that is what caps the average.' },
     ],
@@ -284,7 +294,9 @@ export const toolPages = [
     secondaryCta: { label: 'How writing is scored', href: '/blog/how-ielts-writing-is-scored' },
     links: [
       { href: '/blog/how-ielts-writing-is-scored', label: 'How writing is scored' },
-      { href: '/ielts-essay-checker', label: 'Essay checker' },
+      { href: '/ielts-essay-checker', label: 'Check your essay with AI' },
+      { href: '/ielts-task-2-checker', label: 'Task 2 checker' },
+      { href: '/blog/band-6-vs-7-task-2', label: 'Band 6 vs 7 Task 2' },
       { href: '/blog/task-response-vs-achievement', label: 'Task Response vs Achievement' },
     ],
   },
