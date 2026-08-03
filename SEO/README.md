@@ -7,8 +7,9 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 1. Open **[TRACKER.md](TRACKER.md)** — master checklist with every task, owner, and status.
 2. Run progress: `python3 SEO/scripts/tracker_status.py`
 3. Read **[BRANDING.md](BRANDING.md)** before writing any copy.
-4. For **ongoing site SEO ops** (daily/weekly/monthly on ieltsgrader.com): **[WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md)** / [PDF](WEBSITE_SEO_CADENCE.pdf).
-5. Follow phases in order: A → B → C → D → E → F → G.
+4. For **strategy + 12-week content/URL roadmap**: **[WEBSITE_SEO_ROADMAP.md](WEBSITE_SEO_ROADMAP.md)** / [PDF](WEBSITE_SEO_ROADMAP.pdf).
+5. For **ongoing site SEO ops** (daily/weekly/monthly on ieltsgrader.com): **[WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md)** / [PDF](WEBSITE_SEO_CADENCE.pdf).
+6. Follow phases in order: A → B → C → D → E → F → G.
 
 ## Folder map
 
@@ -18,9 +19,10 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 | [BRANDING.md](BRANDING.md) | Dual-brand voice: IELTS AI Tutor + IELTSGRADER |
 | [KEYWORDS.md](KEYWORDS.md) | Keyword clusters and target URLs |
 | [TECHNICAL.md](TECHNICAL.md) | Technical SEO checklist |
-| [CONTENT_CALENDAR.md](CONTENT_CALENDAR.md) | 8-week publish schedule |
+| [CONTENT_CALENDAR.md](CONTENT_CALENDAR.md) | Phase 2 done + Phase 3 queue (from roadmap) |
 | [INTERNAL_LINKING.md](INTERNAL_LINKING.md) | Link rules between pages |
 | [MEASUREMENT.md](MEASUREMENT.md) | Weekly KPI scorecard |
+| [WEBSITE_SEO_ROADMAP.md](WEBSITE_SEO_ROADMAP.md) | **Strategy roadmap** — diagnosis, flywheel, improve/create queues, 12-week plan (+ [PDF](WEBSITE_SEO_ROADMAP.pdf)) |
 | [WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md) | **Site-only** daily / weekly / monthly SEO ops (+ [PDF](WEBSITE_SEO_CADENCE.pdf)) |
 | [EXTERNAL_CHECKLIST.md](EXTERNAL_CHECKLIST.md) | Your action items (Reddit, GSC, directories) |
 | [social-media/](social-media/) | Social strategy, employee PDF, weekly/historical discovery scripts |
