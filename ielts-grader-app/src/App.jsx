@@ -15,7 +15,7 @@ import Hero from './marketing/Hero';
 import HowItWorks from './marketing/HowItWorks';
 import Features from './marketing/Features';
 import Testimonials from './marketing/Testimonials';
-import FAQ from './marketing/FAQ';
+import FAQ, { homeFaqs } from './marketing/FAQ';
 import CTA from './marketing/CTA';
 import Footer from './marketing/Footer';
 
@@ -96,32 +96,11 @@ const HOME_JSON_LD = [
   {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: [
-      {
-        '@type': 'Question',
-        name: 'What is an IELTS AI Tutor?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'An IELTS AI Tutor grades your essays, explains mistakes criterion by criterion, and builds personalized study plans. IELTS AI Tutor by IELTSGRADER covers Task 1, Task 2, Academic and General Training.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'How does the IELTS AI Tutor help me reach my target band?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'It scores each writing criterion, shows what to fix first, tracks progress across exams, and builds a personalized study plan toward your goal.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'Is the first evaluation free?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Yes. New users get two free full evaluations with no credit card required.',
-        },
-      },
-    ],
+    mainEntity: homeFaqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
   },
   {
     '@context': 'https://schema.org',
@@ -153,8 +132,8 @@ const HOME_JSON_LD = [
 const LandingPage = () => (
   <>
     <SeoHead
-      title="IELTS AI Tutor: Your Assistant to Your Target Band | IELTSGRADER"
-      description="Your IELTS AI Tutor—not just a score. Get criterion feedback, track progress, and follow a personalized plan toward your target band. Free evaluation, no card."
+      title="IELTS AI Tutor by IELTSGRADER: Free Essay Evaluation & Band Score"
+      description="Grade your IELTS essay in about 60 seconds: band score, criterion feedback, fix cards, and a plan to your target band. Two free evaluations, no card needed."
       path="/"
       jsonLd={HOME_JSON_LD}
     />

@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronDown, Plus, Minus } from 'lucide-react';
 
-const FAQ = () => {
-  const [activeFaq, setActiveFaq] = useState(0); // First one open by default
-  const [showAll, setShowAll] = useState(false);
-
-  const faqs = [
+// Exported so the homepage FAQPage JSON-LD stays in sync with the visible FAQ
+// (Google requires schema questions to be visible on the page).
+export const homeFaqs = [
     {
       q: 'Can I upload handwritten essays?',
       a: 'Yes, our OCR technology reads handwriting instantly. Simply take a clear photo of your handwritten essay and upload it in JPG or PNG format.'
@@ -46,7 +44,13 @@ const FAQ = () => {
       q: 'Is my writing and personal data kept private?',
       a: 'Yes. Your essays and reports are stored securely in your own account and are never shared with other users or used publicly. Only you (and, if applicable, your school administrator) can view your submissions and results.'
     }
-  ];
+];
+
+const FAQ = () => {
+  const [activeFaq, setActiveFaq] = useState(0); // First one open by default
+  const [showAll, setShowAll] = useState(false);
+
+  const faqs = homeFaqs;
 
   const visibleFaqs = showAll ? faqs : faqs.slice(0, 3);
 
