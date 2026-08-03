@@ -172,7 +172,7 @@ No tool should claim that. Our feedback is a practice estimate aligned with publ
 
 ### Is there a perfect ChatGPT prompt for IELTS scoring?
 
-Prompts can improve format (ask for four criteria), but they do not turn a general chatbot into a calibrated examiner. Specialized systems encode the rubric by design.
+Prompts can improve format (ask for four criteria), but they do not turn a general chatbot into a calibrated examiner. Specialized systems encode the rubric by design. Copy-paste template: [ultimate ChatGPT prompt for IELTS Task 2](/blog/ultimate-chatgpt-prompt-ielts-task-2).
 
 ## Next steps
 

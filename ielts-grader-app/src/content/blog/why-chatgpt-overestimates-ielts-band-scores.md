@@ -170,7 +170,7 @@ Not always — outputs vary. Overestimation is common on mid-band scripts with t
 
 ### Can a better prompt fix the overestimate?
 
-Prompts can improve format (ask for TR/CC/LR/GRA). They do not turn a general chatbot into a calibrated IELTS scoring system. See also the accuracy comparison post linked above.
+Prompts can improve format (ask for TR/CC/LR/GRA). They do not turn a general chatbot into a calibrated IELTS scoring system. Use our [ultimate ChatGPT prompt for IELTS Task 2](/blog/ultimate-chatgpt-prompt-ielts-task-2) for better format — then verify with a specialized checker.
 
 ### Should I ignore ChatGPT completely for Writing?
 
