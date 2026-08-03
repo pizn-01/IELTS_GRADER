@@ -7,10 +7,16 @@ export function SeoCta({
   href = '/signup',
   title = 'Try IELTS AI Tutor free',
   subtitle = 'Get criterion feedback, track progress, and follow a personalized plan toward your target band.',
+  tone = 'default',
 }) {
+  const editorial = tone === 'editorial';
+  const shellClass = editorial
+    ? 'bg-gradient-to-br from-[#F4F7FB] via-[#F8FAFC] to-[#EEF4FF] rounded-[24px] md:rounded-[28px] p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-10 border border-[#E2E8F0] shadow-[0_20px_50px_-28px_rgba(26,31,54,0.22)]'
+    : 'bg-[#F8FAFC] rounded-[24px] md:rounded-[32px] p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-10 border border-[#F1F5F9] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.03)]';
+
   return (
     <section className="mt-14 mb-4">
-      <div className="bg-[#F8FAFC] rounded-[24px] md:rounded-[32px] p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-10 border border-[#F1F5F9] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.03)]">
+      <div className={shellClass}>
         <div className="max-w-[520px]">
           <h2 className="text-[26px] md:text-[32px] font-bold text-[#1a1f36] leading-[1.25] mb-3 font-['Nunito',_sans-serif]">
             {title}
