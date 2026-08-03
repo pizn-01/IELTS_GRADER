@@ -19,6 +19,7 @@ const STATIC = [
   '/sample-report',
   '/features',
   '/blog',
+  '/methodology',
   '/terms',
   '/privacy',
   '/cookies',
