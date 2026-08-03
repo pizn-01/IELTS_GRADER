@@ -118,12 +118,12 @@ export default function PricingPlansSection({
   return (
     <div className="w-full">
       {showHeader && (
-        <div className="text-center mb-9 md:mb-11">
-          <h1 className="text-[28px] md:text-[34px] font-bold text-[#101828] tracking-tight mb-3">
+        <div className="text-center mb-8">
+          <h1 className="text-[22px] md:text-[26px] font-bold text-[#101828] tracking-tight mb-2">
             {isWeeklySub ? 'Upgrade or top up' : isMonthlySub ? 'Your Premium plan' : heading}
           </h1>
           {!isMonthlySub && (
-            <p className="text-[15px] text-[#667085] max-w-[520px] mx-auto leading-relaxed">
+            <p className="text-[14px] md:text-[15px] text-[#667085] max-w-[640px] mx-auto leading-relaxed">
               {subheading}
             </p>
           )}

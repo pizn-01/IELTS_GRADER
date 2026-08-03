@@ -33,11 +33,7 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null, allowance 
       <button
         onClick={() => {
           trackEvent('upgrade_cta_clicked', { source: 'notification_banner' });
-          goToUpgradeShop({
-            navigate,
-            from: credits === 0 ? 'out_of_credits' : 'upgrade',
-            plan: 'monthly',
-          });
+          goToUpgradeShop({ navigate, from: 'upgrade', plan: 'monthly' });
         }}
         className="bg-[#2C3E50] text-white w-full sm:w-auto px-5 h-[34px] rounded-[10px] text-[12px] font-semibold hover:bg-[#1D2939] transition-all flex items-center justify-center whitespace-nowrap shrink-0"
       >
