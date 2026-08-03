@@ -61,12 +61,12 @@ export const toolPages = [
     slug: 'ielts-essay-checker',
     path: '/ielts-essay-checker',
     shortTitle: 'Essay checker',
-    title: 'IELTS Essay Checker: AI Tutor to Your Target Band | IELTSGRADER',
+    title: 'IELTS Writing Checker: Check Your Essay & Get a Band Score | IELTSGRADER',
     description:
-      'Check your IELTS essay with an AI tutor. Criterion feedback, fix cards, and a personalized plan toward your target band. Free evaluation.',
-    h1: 'IELTS Essay Checker with AI Tutor Feedback',
+      'Check your IELTS essay online and get a band score in about 60 seconds. AI feedback on all four criteria, fix cards, and a model answer. Free evaluation.',
+    h1: 'IELTS Writing Checker: Check Your Essay & Get a Band Score',
     intro:
-      'Paste your essay and get more than a score—get tutor-level feedback on every IELTS writing criterion and a clear path toward your target band.',
+      'Paste your IELTS essay and get an estimated band score in about a minute — plus tutor-level feedback on all four writing criteria, fix cards for weak sentences, and a model answer for your prompt. Your first evaluations are free.',
     highlights: [
       { title: 'Overall + 4 criteria', body: 'See exactly which skill is holding your band down.' },
       { title: 'Actionable fixes', body: 'Improved sentences and clearer structure suggestions.' },
@@ -75,10 +75,17 @@ export const toolPages = [
     ],
     sections: [
       {
-        heading: 'Why use an AI essay checker for IELTS?',
+        heading: 'Can AI check my IELTS essay?',
+        paragraphs: [
+          'Yes. Submit your Task 1 report, GT letter, or Task 2 essay and the AI checker scores it against IELTS-style band descriptors, then explains exactly why you got each criterion score — Task Response, Coherence & Cohesion, Lexical Resource, and Grammar.',
+          'Unlike generic AI chatbots, IELTS AI Tutor by IELTSGRADER is built only for IELTS writing. It applies public band descriptors consistently instead of guessing, and every report ends with the highest-impact fixes to raise your band.',
+        ],
+      },
+      {
+        heading: 'Why use an IELTS writing checker for daily practice?',
         paragraphs: [
           'Human feedback is valuable but slow and expensive for daily practice. An IELTS essay checker that behaves like a tutor lets you submit often, learn from each report, and build exam stamina.',
-          'IELTS AI Tutor by IELTSGRADER evaluates Task Response/Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy, then highlights the highest-impact improvements.',
+          'Each submission is tracked, so you can watch your weakest criterion improve from essay to essay instead of rewriting blindly.',
         ],
       },
       {
@@ -98,15 +105,20 @@ export const toolPages = [
       { title: 'Practice the weak spot', body: 'Rewrite one paragraph, then check again.' },
     ],
     faqs: [
+      { q: 'Can AI check my IELTS essay?', a: 'Yes. Paste or upload your essay and the AI checker returns an estimated band score with feedback on Task Response, Coherence & Cohesion, Lexical Resource, and Grammar in about 60 seconds.' },
+      { q: 'What band is my essay?', a: 'Submit your essay to see an overall band estimate plus a score for each of the four IELTS writing criteria, with an explanation of what is capping your band.' },
       { q: 'Can I check Task 1 and Task 2?', a: 'Yes. Academic reports, GT letters, and Task 2 essays are supported.' },
       { q: 'Can I upload handwriting?', a: 'Yes. Clear photos or scans can be processed with OCR.' },
       { q: 'How fast is it?', a: 'Most reports are ready in about 60 seconds.' },
-      { q: 'Is there a free check?', a: 'New accounts include two free full evaluations.' },
+      { q: 'Is there a free check?', a: 'New accounts include two free full evaluations — no credit card required.' },
+      { q: 'Will this match my official IELTS score?', a: 'Feedback is aligned with public band descriptors for practice. It is not an official IELTS result, but it shows the same criteria examiners use so you know what to fix.' },
     ],
     cta: { label: 'Check your essay free', href: '/' },
     secondaryCta: { label: 'View pricing', href: '/pricing' },
     links: [
+      { href: '/ielts-ai-tutor', label: 'How the IELTS AI Tutor works' },
       { href: '/ielts-task-2-checker', label: 'Task 2 checker' },
+      { href: '/ielts-task-1-checker', label: 'Task 1 checker' },
       { href: '/ielts-writing-band-score', label: 'Writing band score guide' },
       { href: '/blog/band-6-vs-7-task-2', label: 'Band 6 vs 7 Task 2' },
       { href: '/blog/ielts-writing-error-taxonomy', label: 'IELTS writing error taxonomy' },
