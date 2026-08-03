@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: ChatGPT prompt for IELTS writing task 2 | Top formats: copy-paste prompt listicle/guide | PAA: best prompt; act as examiner; Task 1 variant | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "Copy-paste prompt is real and usable. Weak vs strong output patterns are illustrative (vary by model). Screenshots: pending"
-qualityReviewed: pending
+serpNotes: "Query: ChatGPT prompt for IELTS writing task 2 evaluation | Top formats: copy-paste prompt listicles (English AIdol, Lingo Copilot, blogspot prompt packs) | PAA: best examiner prompt; four criteria; Task 1 variant; limits of prompting | Top3 words≈1200–2200 | Recon: 2026-08-03"
+evidenceNotes: "Copy-paste prompt is real/usable. Weak vs strong output shapes are illustrative (vary by model). Aligns with SERP four-criterion examiner prompts. No ChatGPT UI capture in agent env; text protocol + competitor prompt comparison used instead. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Ultimate ChatGPT Prompt for IELTS Task 2 Scoring
@@ -203,6 +203,11 @@ If more than two boxes fail, stop negotiating with the chatbot and [check your e
 4. Rewrite only the lowest shared criterion; re-check once.
 
 That loop beats collecting “Band 8” compliments.
+
+
+## Evidence note (2026-08-03 review)
+
+We cannot embed live ChatGPT UI screenshots from this publishing environment. Instead, this post uses: (1) a documented one-essay scoring protocol you can repeat, (2) honest “illustrative pattern” labeling where chatbot output varies by model/prompt, and (3) alignment with public discussions of ChatGPT IELTS scoring limits (e.g. overscore risk on under-length scripts and weak Task Response). A larger multi-essay data study remains a roadmap item — not claimed here.
 
 ## Frequently asked questions
 

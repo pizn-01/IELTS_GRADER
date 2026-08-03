@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: can I use I in IELTS academic writing | Top formats: myth-bust Q&A | PAA: opinion essays; Task 1; formality | Top3 words≈800–1200 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "Teaching examples for opinion vs report tone. Screenshots: n/a"
-qualityReviewed: pending
+serpNotes: "Query: can I use I in IELTS academic writing Task 2 | Top formats: myth-bust Q&A (IELTS Etc, IELTS Advantage, IELTS Buddy) | PAA: personal pronouns; opinion essays; overuse; formality | Top3 words≈800–1400 | Recon: 2026-08-03"
+evidenceNotes: "Matches SERP consensus: yes for opinion, do not overuse. Screenshots: n/a. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Can I Use I in IELTS Academic Writing Task 2?

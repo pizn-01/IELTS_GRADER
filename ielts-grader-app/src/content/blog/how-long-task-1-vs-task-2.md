@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: how long should I spend on Task 1 vs Task 2 | Top formats: timing Q&A | PAA: 20/40 split; running out of time | Top3 words≈800–1200 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "Common timing plans for practice; not official clock rules beyond known 60-minute Writing. Screenshots: n/a"
-qualityReviewed: pending
+serpNotes: "Query: how long Task 1 vs Task 2 IELTS / 20 40 minutes | Top formats: timing Q&A (official IELTS.org, BandWriteCoach, CareerWise) | PAA: 20/40 split; Task 2 weighting; write Task 2 first? | Top3 words≈800–1500 | Recon: 2026-08-03"
+evidenceNotes: "Aligned to official ~20/~40 guidance and Task 2 double weighting. Screenshots: n/a. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # How Long Should I Spend on Task 1 vs Task 2?

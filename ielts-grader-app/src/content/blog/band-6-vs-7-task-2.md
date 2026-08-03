@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-07-10
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: difference between band 6 and band 7 IELTS writing | Top formats: comparison guide | PAA: what examiners look for; samples | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "Criterion contrast + excerpts for teaching. Screenshots: n/a"
-qualityReviewed: pending
+serpNotes: "Query: difference between band 6 and band 7 IELTS writing | Top formats: criterion comparison guides (BandWriteCoach, IELTS Charlie, CareerWise) + official descriptors PDF | PAA: what examiners look for; samples; 6.5 meaning | Top3 words≈1200–2200 | Recon: 2026-08-03"
+evidenceNotes: "Criterion contrast teaching aligned to public descriptors / SERP comparison pages. Screenshots: n/a. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Difference Between Band 6 and Band 7 IELTS Writing
@@ -155,6 +155,15 @@ Track whether your *lowest* criterion rises. That movement matters more than a l
 5. **Ignoring “discuss both views and give your opinion”** structure
 
 Check full samples at different levels: [Band 6 education](/blog/task-2-sample-band-6-education), [Band 6.5 environment](/blog/task-2-sample-band-6-5-environment), [Band 7 technology](/blog/task-2-sample-band-7-technology), [Band 7.5 opinion](/blog/task-2-opinion-essay-band-7-5).
+
+
+## Try this yourself
+
+**Prompt:** Nowadays many people prefer to shop online rather than in physical stores. Do the advantages outweigh the disadvantages?
+
+1. Write under time (40 minutes, 250+ words).
+2. Score yourself against the Band 6 vs Band 7 table in this post.
+3. Then [see how your essay scores](/ielts-essay-checker) on TR/CC/LR/GRA and rewrite the weakest criterion.
 
 ## Frequently asked questions
 

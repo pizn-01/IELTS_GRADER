@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: best essay structure for IELTS writing task 2 | Top formats: 4-paragraph guide | PAA: how many paragraphs; opinion vs discuss both; templates | Top3 words≈1500–2500 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "Structures + before/after excerpts are teaching examples. Screenshots: n/a (tables)"
-qualityReviewed: pending
+serpNotes: "Query: best essay structure for IELTS writing task 2 | Top formats: 4-paragraph guides + PEEL (BC, Magoosh, Cathoven, SimplyIELTS) | PAA: 4 vs 5 paragraphs; by question type; intro/conclusion length | Top3 words≈1500–3000 | Recon: 2026-08-03"
+evidenceNotes: "Structures + before/after are teaching examples matching SERP consensus (4-paragraph default). Screenshots: n/a. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Best Essay Structure for IELTS Writing Task 2

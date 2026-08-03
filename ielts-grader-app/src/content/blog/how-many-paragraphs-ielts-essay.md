@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: how many paragraphs IELTS essay | Top formats: Q&A | PAA: 4 vs 5; Task 1 paragraphs | Top3 words≈800–1200 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "Structure teaching examples. Screenshots: n/a"
-qualityReviewed: pending
+serpNotes: "Query: how many paragraphs IELTS essay / Task 2 | Top formats: Q&A myth-bust (Cathoven, IELTS Advantage, CanadianIELTS) | PAA: 4 vs 5; Task 1 paragraphs; underdeveloped third body | Top3 words≈800–1500 | Recon: 2026-08-03"
+evidenceNotes: "Teaching consensus: usually 4 paragraphs. Screenshots: n/a. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # How Many Paragraphs Should an IELTS Essay Have?

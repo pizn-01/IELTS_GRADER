@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-07-26
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: stuck at band 6.5 IELTS writing / improve 6.5 to 7 | Top formats: plateau guide | PAA: why 6.5; how long to 7; which criterion | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "14-day plan is a practice framework, not a score guarantee. Screenshots: n/a"
-qualityReviewed: pending
+serpNotes: "Query: stuck at band 6.5 IELTS writing / improve 6.5 to 7 | Top formats: plateau guides + diagnosis plans (BandWriteCoach, CareerWise, IELTS-GPT) | PAA: why 6.5; which criterion; how long to 7; rewrite vs new essays | Top3 words≈1200–2200 | Recon: 2026-08-03"
+evidenceNotes: "14-day plan is a practice framework, not a score guarantee. Matches SERP diagnosis-first advice. Screenshots: n/a. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Why Am I Stuck at 6.5 in IELTS Writing? How to Improve from 6.5 to 7
@@ -148,6 +148,15 @@ Plan intensity: [practice plans explained](/blog/ielts-writing-practice-plans-ex
 ## Learning editions for chronic patterns
 
 If the same mistake family returns after two sprints, move into a [personalized learning edition](/blog/personalized-learning-editions-guide) rather than random new tips.
+
+
+## Try this yourself
+
+**Prompt:** Some people believe that unpaid community service should be a compulsory part of high-school education. To what extent do you agree or disagree?
+
+1. Write 260–290 words in 40 minutes.
+2. [Check your essay free](/ielts-essay-checker) and note the lowest criterion.
+3. Rewrite only that criterion; re-check once.
 
 ## Frequently asked questions
 

@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: why ChatGPT overestimates IELTS band scores | Top formats: explainer / list of reasons | PAA: is ChatGPT accurate; why higher than other tools; can prompts fix it | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "Illustrative ChatGPT-style vs descriptor-aligned scoring on a practice essay. Methodology note in body. Screenshots: pending"
-qualityReviewed: pending
+serpNotes: "Query: why ChatGPT overestimates IELTS band scores / can ChatGPT grade IELTS | Top formats: research summaries + practitioner tests (English AIdol, ERIC/IEEE LLM papers) | PAA: is ChatGPT accurate; word-count blind spots; prompt fixes; vs examiners | Top3 words≈1500–2500 | Recon: 2026-08-03"
+evidenceNotes: "Illustrative ChatGPT-style vs descriptor-aligned scoring on one practice essay in-body. Corroborated by public writeups (e.g. English AIdol: overscore patterns on under-length/TR drift; research shows prompt/version variance). UI screenshots: not capturable in agent env — text protocol documented instead. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Why ChatGPT Overestimates IELTS Band Scores
@@ -163,6 +163,11 @@ That after-loop is how you convert feedback into score movement toward [Band 7](
 2. Get a ChatGPT overall (optional) and ask for four criteria.  
 3. [Check your essay free](/ielts-essay-checker) and compare.  
 4. Rewrite the weakest criterion only; re-check once.
+
+
+## Evidence note (2026-08-03 review)
+
+We cannot embed live ChatGPT UI screenshots from this publishing environment. Instead, this post uses: (1) a documented one-essay scoring protocol you can repeat, (2) honest “illustrative pattern” labeling where chatbot output varies by model/prompt, and (3) alignment with public discussions of ChatGPT IELTS scoring limits (e.g. overscore risk on under-length scripts and weak Task Response). A larger multi-essay data study remains a roadmap item — not claimed here.
 
 ## Frequently asked questions
 

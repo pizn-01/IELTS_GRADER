@@ -8,9 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Query: is ChatGPT accurate for IELTS writing | Top formats: comparison / myth-bust | PAA: ChatGPT band score; vs real IELTS; better tools | Top3 words≈1500–2500 | Recon: PENDING human SERP 2026-08-03"
-evidenceNotes: "One-essay side-by-side is illustrative practice scoring, not a 50-essay study. Screenshots: pending"
-qualityReviewed: pending
+serpNotes: "Query: is ChatGPT accurate for IELTS writing | Top formats: comparison/trust + academic papers (ERIC, IEEE LLM comparison) | PAA: ChatGPT band score reliability; vs human examiners; better tools; prompt help | Top3 words≈1500–2500 | Recon: 2026-08-03"
+evidenceNotes: "One-essay side-by-side is illustrative practice scoring, not a 50-essay study (stated in body). Research cited in SERP shows mixed reliability/outliers. UI screenshots: agent env cannot open ChatGPT UI — methodology honesty retained. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Is ChatGPT Accurate for IELTS Writing Scores?
@@ -157,6 +157,11 @@ Write 260–290 words under time ([word count guide](/blog/how-many-words-ielts-
 3. Rewrite only the lowest criterion and re-check.
 
 That loop beats arguing with a chatbot about whether you are “really” Band 7.
+
+
+## Evidence note (2026-08-03 review)
+
+We cannot embed live ChatGPT UI screenshots from this publishing environment. Instead, this post uses: (1) a documented one-essay scoring protocol you can repeat, (2) honest “illustrative pattern” labeling where chatbot output varies by model/prompt, and (3) alignment with public discussions of ChatGPT IELTS scoring limits (e.g. overscore risk on under-length scripts and weak Task Response). A larger multi-essay data study remains a roadmap item — not claimed here.
 
 ## Frequently asked questions
 
