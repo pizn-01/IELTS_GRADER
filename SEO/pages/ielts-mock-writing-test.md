@@ -1,29 +1,30 @@
 # IELTS Mock Writing Test
 
 **URL:** `/ielts-mock-writing-test`  
-**Title:** IELTS Mock Writing Test — Timed Practice with AI Tutor | IELTSGRADER  
-**Meta:** Practice IELTS writing like the real exam. Timed mock test with AI tutor feedback after. Academic & General Training. Start free.
+**Title:** IELTS Mock Writing Test: Timed AI Feedback | IELTSGRADER  
+**Meta:** IELTS mock writing test with timed Task 1 + Task 2 practice and AI tutor feedback after you finish. Academic and General Training. Start free today.
 
-## H1: IELTS Mock Writing Test — Practice Like Exam Day
+## H1: IELTS Mock Writing Test: Timed Practice Like Exam Day
 
-Timed conditions build stamina and time management. After you finish, your AI tutor grades your work and explains what to improve before the real test.
+Timed conditions build stamina. After you finish, the AI tutor grades your work and explains what broke under pressure.
 
-## What's included
+## Recommended timing
 
-- Computer-based layout similar to test day
-- Timer for Task 1 and Task 2
-- Academic and General Training prompts
-- Full tutor report after submission
+- ~20 minutes Task 1, ~40 minutes Task 2
+- Protect Task 2 time — it counts double
 
-## How to use mock tests
+## Weekly cycle
 
-1. Take a full timed mock once per week
-2. Review your tutor report the same day
-3. Rewrite one weak paragraph before the next mock
+1. One full timed mock
+2. Same-day report review
+3. Rewrite one weak paragraph
+4. Short criterion drill mid-week
+5. Next mock to measure progress
 
 [Start mock writing test →](/mock-exam)
 
 ## Related
 
-- [Mock writing practice guide](/blog/ielts-mock-writing-practice-guide)
-- [IELTS AI Tutor](/ielts-ai-tutor)
+- [Mock practice guide](/blog/ielts-mock-writing-practice-guide)
+- [Mock → 14-day sprint](/blog/mock-exam-to-14-day-sprint)
+- [Band score calculator](/ielts-writing-band-score)

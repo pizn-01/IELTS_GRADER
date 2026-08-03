@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import SeoLayout from './SeoLayout';
 import SeoHead from './SeoHead';
 import { SeoCta, SeoFaq, SeoFeatureGrid, SeoPrimaryButton, SeoSecondaryButton } from './SeoBlocks';
+import BandScoreCalculator from './BandScoreCalculator';
 
 export default function ToolLandingPage({ page }) {
   const faqLd = page.faqs?.length
@@ -29,7 +30,34 @@ export default function ToolLandingPage({ page }) {
     },
   };
 
-  const jsonLd = faqLd ? [webPageLd, faqLd] : webPageLd;
+  const howToLd = page.showCalculator
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: 'How to calculate your IELTS Writing band score',
+        description:
+          'Combine Task 1 and Task 2 bands with Task 2 weighted twice, then round to the nearest half band.',
+        step: [
+          {
+            '@type': 'HowToStep',
+            name: 'Enter Task 1 and Task 2 bands',
+            text: 'Use your practice or estimated task bands from 0 to 9 in half-band steps.',
+          },
+          {
+            '@type': 'HowToStep',
+            name: 'Apply the 1:2 weighting',
+            text: 'Calculate (Task 1 + 2 × Task 2) ÷ 3.',
+          },
+          {
+            '@type': 'HowToStep',
+            name: 'Round to the nearest half band',
+            text: 'Report the result as a whole or half band for practice planning.',
+          },
+        ],
+      }
+    : null;
+
+  const jsonLd = [webPageLd, faqLd, howToLd].filter(Boolean);
 
   return (
     <SeoLayout
@@ -57,6 +85,8 @@ export default function ToolLandingPage({ page }) {
         {page.highlights?.length > 0 && (
           <SeoFeatureGrid items={page.highlights} />
         )}
+
+        {page.showCalculator && <BandScoreCalculator />}
 
         {page.sections.map((section) => (
           <section key={section.heading} className="mb-10">

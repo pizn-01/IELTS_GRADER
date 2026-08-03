@@ -1,28 +1,28 @@
 # IELTS Task 2 Checker
 
 **URL:** `/ielts-task-2-checker`  
-**Title:** IELTS Task 2 Checker — AI Tutor Essay Feedback | IELTSGRADER  
-**Meta:** Check your IELTS Task 2 essay with an AI tutor. Band score, Task Response, Coherence, Vocabulary, Grammar feedback. Free first check.
+**Title:** IELTS Task 2 Checker: Band Score & Feedback | IELTSGRADER  
+**Meta:** IELTS Task 2 checker with AI tutor feedback: estimated band score plus Task Response, Coherence, Lexical Resource, and Grammar. Free first evaluation.
 
-## H1: IELTS Task 2 Checker — AI Tutor for Your Essays
+## H1: IELTS Task 2 Checker: Band Score & Criterion Feedback
 
-Task 2 is worth twice the marks of Task 1. Your AI tutor helps you improve position, development, cohesion, and language — criterion by criterion.
+Task 2 carries more weight than Task 1. Paste your essay (and question) to get an estimated band plus TR, CC, LR, and GRA feedback — then rewrite the weakest criterion.
 
-## What the tutor checks
+## What the checker evaluates
 
-- **Task Response** — Did you answer all parts? Is your position clear?
-- **Coherence & Cohesion** — Paragraph logic and linking
-- **Lexical Resource** — Range and precision of vocabulary
-- **Grammatical Range & Accuracy** — Sentence variety and errors
+- **Task Response** — Answer all parts with a clear, developed position
+- **Coherence & Cohesion** — Focused paragraphs without linker spam
+- **Lexical Resource** — Precise, natural vocabulary
+- **Grammatical Range & Accuracy** — Controlled complex sentences under time
 
-## Sample improvements
+## From Band 6 to Band 7
 
-Unlike a simple checker, you get rewritten sentences and a model Band 8+ answer for your prompt.
+Usually fuller development and fewer meaning-blocking errors — not rarer words. Fix the lowest criterion first.
 
 [Check Task 2 essay free →](/)
 
 ## Related
 
-- [IELTS essay checker](/ielts-essay-checker)
-- [Band 6 vs 7 Task 2 guide](/blog/band-6-vs-7-task-2)
-- [Task 2 sample Band 7](/blog/task-2-sample-band-7-technology)
+- [Best Task 2 essay structure](/blog/best-essay-structure-ielts-task-2)
+- [Band 6 vs 7 Task 2](/blog/band-6-vs-7-task-2)
+- [Stuck at 6.5?](/blog/stuck-at-band-6-5-plateau)
