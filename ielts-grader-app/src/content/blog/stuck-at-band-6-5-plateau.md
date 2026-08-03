@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-07-26
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: stuck at band 6.5 IELTS writing / improve 6.5 to 7 | Top formats: plateau guide | PAA: why 6.5; how long to 7; which criterion | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "14-day plan is a practice framework, not a score guarantee. Screenshots: n/a"
+qualityReviewed: pending
 ---
 
 # Why Am I Stuck at 6.5 in IELTS Writing? How to Improve from 6.5 to 7

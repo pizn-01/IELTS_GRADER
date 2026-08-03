@@ -6,7 +6,11 @@ keyword: IELTS lexical resource collocations
 type: guide
 status: published
 publishedAt: 2026-07-23
+updatedAt: 2026-07-23
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Lexical Resource Band 6 to 7: Collocations That Sound Natural

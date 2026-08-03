@@ -24,7 +24,7 @@ All week 1–8 posts expanded to production depth (guides 900–1500 words; samp
 
 ## Phase 3 queue (from roadmap — do not invent near-duplicates)
 
-**Velocity:** 2–3 creates/week + 2 improves/week. Improves with GSC impressions beat new posts if capacity is tight. Every post passes B4 quality bar + SERP recon (see roadmap).
+**Velocity:** 2–3 creates/week + 2 improves/week. Improves with GSC impressions beat new posts if capacity is tight. Every post passes **[CONTENT_QUALITY_BAR.md](CONTENT_QUALITY_BAR.md)** (B2/B4 + SERP recon) before `status: published` — run `python3 SEO/scripts/validate_blog_quality.py`.
 
 ### Improve first (Part C — before creating siblings)
 

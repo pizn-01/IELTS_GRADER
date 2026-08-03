@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: ChatGPT prompt for IELTS writing task 2 | Top formats: copy-paste prompt listicle/guide | PAA: best prompt; act as examiner; Task 1 variant | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Copy-paste prompt is real and usable. Weak vs strong output patterns are illustrative (vary by model). Screenshots: pending"
+qualityReviewed: pending
 ---
 
 # Ultimate ChatGPT Prompt for IELTS Task 2 Scoring
@@ -18,11 +21,14 @@ This guide from **IELTS AI Tutor by IELTSGRADER** gives a copy-paste evaluation 
 
 ## In this guide
 
-1. What a good IELTS scoring prompt must include  
-2. The copy-paste ultimate prompt (Task 2)  
-3. Weak vs strong prompt — same essay  
-4. Limits of prompt engineering  
-5. Try it yourself + FAQ  
+1. [What a good IELTS Task 2 scoring prompt must include](#what-a-good-ielts-task-2-scoring-prompt-must-include)
+2. [Ultimate ChatGPT prompt for IELTS Task 2 (copy-paste)](#ultimate-chatgpt-prompt-for-ielts-task-2-copy-paste)
+3. [Step framework: how to use the prompt (5 minutes)](#step-framework-how-to-use-the-prompt-5-minutes)
+4. [Before / after: weak prompt vs ultimate prompt](#before-after-weak-prompt-vs-ultimate-prompt)
+5. [Criterion table: what the prompt should make ChatGPT check](#criterion-table-what-the-prompt-should-make-chatgpt-check)
+6. [Honest limits of the “ultimate” ChatGPT prompt](#honest-limits-of-the-ultimate-chatgpt-prompt)
+7. [Try this yourself](#try-this-yourself)
+
 
 ## What a good IELTS Task 2 scoring prompt must include
 

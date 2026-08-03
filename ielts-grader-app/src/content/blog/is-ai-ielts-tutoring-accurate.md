@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-07-14
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Is AI IELTS Tutoring Accurate?

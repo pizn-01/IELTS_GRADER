@@ -6,7 +6,11 @@ keyword: IELTS Task 1 trends
 type: guide
 status: published
 publishedAt: 2026-07-12
+updatedAt: 2026-07-12
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Academic Task 1: Describe Trends Without Repeating Vocabulary

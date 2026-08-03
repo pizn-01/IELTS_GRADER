@@ -138,10 +138,11 @@ export default function BlogPostPage() {
           <Link to="/methodology" className="text-[#3B82F6] no-underline hover:underline">
             IELTS AI Tutor Editorial Team
           </Link>
-          {' · '}Scored against official IELTS band descriptors ·{' '}
+          {' · '}Practice feedback aligned to public IELTS Writing band descriptors ·{' '}
           <Link to="/methodology" className="text-[#3B82F6] no-underline hover:underline">
-            our methodology
+            how we grade
           </Link>
+          {' · '}Not an official IELTS score
         </p>
 
         <MarkdownContent content={bodyContent} />

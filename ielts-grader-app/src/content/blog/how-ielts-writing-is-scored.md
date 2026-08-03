@@ -6,7 +6,11 @@ keyword: IELTS writing criteria
 type: guide
 status: published
 publishedAt: 2026-07-09
+updatedAt: 2026-07-09
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # How IELTS Writing Is Scored: A Tutor's Guide to the 4 Criteria

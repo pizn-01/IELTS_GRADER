@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: how many words IELTS task 2 / word count penalty | Top formats: Q&A snippet | PAA: under 250; over 300; Task 1 words | Top3 words≈800–1500 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Teaching guidance aligned to common exam advice; not official IELTS policy document. Screenshots: n/a"
+qualityReviewed: pending
 ---
 
 # How Many Words Should You Write in IELTS Task 2?

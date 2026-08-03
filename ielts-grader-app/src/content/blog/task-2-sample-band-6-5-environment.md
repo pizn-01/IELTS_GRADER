@@ -6,7 +6,11 @@ keyword: IELTS environment essay
 type: sample
 status: published
 publishedAt: 2026-07-11
+updatedAt: 2026-07-11
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Task 2 Sample: Band 6.5 Essay on Environment with Fixes

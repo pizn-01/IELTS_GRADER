@@ -6,7 +6,11 @@ keyword: IELTS Task 2 band 7
 type: sample
 status: published
 publishedAt: 2026-07-10
+updatedAt: 2026-07-10
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # IELTS Task 2 Sample Essay Band 7: Annotated by Your Tutor

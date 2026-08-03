@@ -6,7 +6,11 @@ keyword: IELTS writing practice plans
 type: guide
 status: published
 publishedAt: 2026-07-25
+updatedAt: 2026-07-25
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # IELTS Writing Practice Plans Explained: Free, Weekly, Monthly

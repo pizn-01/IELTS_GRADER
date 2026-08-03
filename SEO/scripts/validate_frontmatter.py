@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""Validate blog markdown frontmatter in src/content/blog."""
+"""Validate blog markdown frontmatter in src/content/blog.
 
-import re
+Also runs B2/B4 quality checks for published app posts:
+  python3 SEO/scripts/validate_blog_quality.py
+"""
+
+import subprocess
 import sys
 from pathlib import Path
 
@@ -53,7 +57,12 @@ def main():
         print(f"\n{len(errors)} error(s) in {checked} file(s)")
         return 1
 
-    print(f"OK: {checked} blog file(s) validated")
+    print(f"OK: {checked} blog file(s) frontmatter validated")
+
+    quality = REPO_ROOT / "SEO" / "scripts" / "validate_blog_quality.py"
+    if quality.exists():
+        print("\nRunning B2/B4 quality bar…")
+        return subprocess.call([sys.executable, str(quality)])
     return 0
 
 

@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: how to improve IELTS writing from 7 to 8 | Top formats: long guide + checklist | PAA: band 7 vs 8 differences; how long to reach 8; criteria that matter | Top3 words≈1500–2500 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Practice criterion tables + before/after excerpts (illustrative). Not a multi-essay lab study. Screenshots: pending"
+qualityReviewed: pending
 ---
 
 # How to Improve IELTS Writing from Band 7 to 8
@@ -18,11 +21,14 @@ This guide from **IELTS AI Tutor by IELTSGRADER** shows what examiners treat as 
 
 ## In this guide
 
-1. Band 7 vs Band 8 at a glance  
-2. Criterion-by-criterion upgrades  
-3. Before / after excerpts  
-4. 14-day plan + checklist  
-5. Try it yourself + FAQ  
+1. [Band 7 vs Band 8 (quick table)](#band-7-vs-band-8-quick-table)
+2. [Step framework: diagnose the real 7→8 gap](#step-framework-diagnose-the-real-78-gap)
+3. [How to raise each criterion from 7 toward 8](#how-to-raise-each-criterion-from-7-toward-8)
+4. [Before / after: Band 7 development vs Band 8 extension](#before-after-band-7-development-vs-band-8-extension)
+5. [Structure still matters at Band 8](#structure-still-matters-at-band-8)
+6. [14-day plan: Band 7 → sharper Band 8 habits](#14-day-plan-band-7-sharper-band-8-habits)
+7. [Try this yourself](#try-this-yourself)
+
 
 ## Band 7 vs Band 8 (quick table)
 

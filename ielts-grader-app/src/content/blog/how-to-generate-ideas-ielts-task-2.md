@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: how to generate ideas for IELTS writing task 2 | Top formats: how-to / steps | PAA: no ideas; brainstorming; examples | Top3 words≈800–1500 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Step framework + practice prompt. Screenshots: n/a"
+qualityReviewed: pending
 ---
 
 # How to Generate Ideas for IELTS Writing Task 2?

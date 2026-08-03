@@ -6,7 +6,11 @@ keyword: Academic vs General Training IELTS Writing
 type: comparison
 status: published
 publishedAt: 2026-07-22
+updatedAt: 2026-07-22
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Academic vs General Training Writing: Which Path and How to Practise

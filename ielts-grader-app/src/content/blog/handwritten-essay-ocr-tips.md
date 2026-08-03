@@ -6,7 +6,11 @@ keyword: handwritten IELTS essay OCR
 type: guide
 status: published
 publishedAt: 2026-07-24
+updatedAt: 2026-07-24
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Handwritten IELTS Essays: OCR Tips for Clear AI Feedback

@@ -6,7 +6,11 @@ keyword: coherence cohesion IELTS
 type: plan
 status: published
 publishedAt: 2026-07-11
+updatedAt: 2026-07-11
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # 14-Day Plan to Improve Coherence & Cohesion

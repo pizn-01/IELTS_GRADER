@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: can you use idioms in IELTS writing | Top formats: myth-bust Q&A | PAA: Task 2 idioms; Band 7 vocabulary | Top3 words≈800–1200 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Descriptor-aligned teaching; illustrative examples. Screenshots: n/a"
+qualityReviewed: pending
 ---
 
 # Can You Use Idioms in IELTS Writing?

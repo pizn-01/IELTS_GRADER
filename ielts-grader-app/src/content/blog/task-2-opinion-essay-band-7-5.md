@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-07-15
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Task 2 Opinion Essay Sample Band 7.5 with Tutor Breakdown

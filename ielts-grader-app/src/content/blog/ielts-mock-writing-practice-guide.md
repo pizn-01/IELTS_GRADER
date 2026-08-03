@@ -6,7 +6,11 @@ keyword: IELTS mock writing test
 type: guide
 status: published
 publishedAt: 2026-07-15
+updatedAt: 2026-07-15
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # How to Practice IELTS Writing Like the Real Exam

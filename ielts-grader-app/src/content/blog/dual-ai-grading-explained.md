@@ -6,7 +6,11 @@ keyword: dual AI IELTS grading
 type: trust
 status: published
 publishedAt: 2026-07-18
+updatedAt: 2026-07-18
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Dual AI Grading Explained: How Two Models Build Trust

@@ -6,7 +6,11 @@ keyword: personalized IELTS study plan
 type: guide
 status: published
 publishedAt: 2026-07-21
+updatedAt: 2026-07-21
 author: IELTS AI Tutor Team
+serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
+evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
+qualityReviewed: pending
 ---
 
 # Personalized Learning Editions: Study Paths from Your Mistakes

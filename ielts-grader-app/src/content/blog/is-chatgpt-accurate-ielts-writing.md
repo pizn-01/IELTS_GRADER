@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: is ChatGPT accurate for IELTS writing | Top formats: comparison / myth-bust | PAA: ChatGPT band score; vs real IELTS; better tools | Top3 words≈1500–2500 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "One-essay side-by-side is illustrative practice scoring, not a 50-essay study. Screenshots: pending"
+qualityReviewed: pending
 ---
 
 # Is ChatGPT Accurate for IELTS Writing Scores?
@@ -18,11 +21,14 @@ This comparison from **IELTS AI Tutor by IELTSGRADER** shows a side-by-side on o
 
 ## In this guide
 
-1. What “accurate” means for IELTS practice scoring  
-2. Side-by-side: one essay, two scoring styles  
-3. Why ChatGPT often overestimates band scores  
-4. ChatGPT vs specialized IELTS AI tutor  
-5. Try this yourself + FAQ  
+1. [What does “accurate” mean for IELTS writing scores?](#what-does-accurate-mean-for-ielts-writing-scores)
+2. [Side-by-side band comparison test (one essay)](#side-by-side-band-comparison-test-one-essay)
+3. [Why ChatGPT overestimates IELTS band scores](#why-chatgpt-overestimates-ielts-band-scores)
+4. [ChatGPT vs IELTS AI Tutor (honest comparison)](#chatgpt-vs-ielts-ai-tutor-honest-comparison)
+5. [How to test ChatGPT accuracy yourself (5 minutes)](#how-to-test-chatgpt-accuracy-yourself-5-minutes)
+6. [Try this yourself](#try-this-yourself)
+7. [Frequently asked questions](#frequently-asked-questions)
+
 
 ## What does “accurate” mean for IELTS writing scores?
 

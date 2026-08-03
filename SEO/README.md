@@ -8,8 +8,9 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 2. Run progress: `python3 SEO/scripts/tracker_status.py`
 3. Read **[BRANDING.md](BRANDING.md)** before writing any copy.
 4. For **strategy + 12-week content/URL roadmap**: **[WEBSITE_SEO_ROADMAP.md](WEBSITE_SEO_ROADMAP.md)** / [PDF](WEBSITE_SEO_ROADMAP.pdf).
-5. For **ongoing site SEO ops** (daily/weekly/monthly on ieltsgrader.com): **[WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md)** / [PDF](WEBSITE_SEO_CADENCE.pdf).
-6. Follow phases in order: A → B → C → D → E → F → G.
+5. Before publishing any post: **[CONTENT_QUALITY_BAR.md](CONTENT_QUALITY_BAR.md)** + `python3 SEO/scripts/validate_blog_quality.py`
+6. For **ongoing site SEO ops** (daily/weekly/monthly on ieltsgrader.com): **[WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md)** / [PDF](WEBSITE_SEO_CADENCE.pdf).
+7. Follow phases in order: A → B → C → D → E → F → G.
 
 ## Folder map
 
@@ -25,6 +26,7 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 | [MEASUREMENT.md](MEASUREMENT.md) | Weekly KPI scorecard |
 | [WEBSITE_SEO_ROADMAP.md](WEBSITE_SEO_ROADMAP.md) | **Strategy roadmap** — diagnosis, flywheel, improve/create queues, 12-week plan (+ [PDF](WEBSITE_SEO_ROADMAP.pdf)) |
 | [WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md) | **Site-only** daily / weekly / monthly SEO ops (+ [PDF](WEBSITE_SEO_CADENCE.pdf)) |
+| [CONTENT_QUALITY_BAR.md](CONTENT_QUALITY_BAR.md) | **B2/B4 pre-publish gate** + what You do for live posts |
 | [EXTERNAL_CHECKLIST.md](EXTERNAL_CHECKLIST.md) | Your action items (Reddit, GSC, directories) |
 | [social-media/](social-media/) | Social strategy, employee PDF, weekly/historical discovery scripts |
 | [guides/](guides/) | External playbooks (GSC, Reddit, backlinks, etc.) |

@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: best essay structure for IELTS writing task 2 | Top formats: 4-paragraph guide | PAA: how many paragraphs; opinion vs discuss both; templates | Top3 words≈1500–2500 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Structures + before/after excerpts are teaching examples. Screenshots: n/a (tables)"
+qualityReviewed: pending
 ---
 
 # Best Essay Structure for IELTS Writing Task 2
@@ -18,11 +21,14 @@ This guide from **IELTS AI Tutor by IELTSGRADER** gives a step framework, struct
 
 ## In this guide
 
-1. The 4-paragraph core (and when to use 5)  
-2. Structures by Task 2 question type  
-3. Before / after: template mess vs clear jobs  
-4. How structure affects each criterion  
-5. Band 7 structure checklist + try it yourself  
+1. [Step framework: plan before you write (5 minutes)](#step-framework-plan-before-you-write-5-minutes)
+2. [The core 4-paragraph structure (default)](#the-core-4-paragraph-structure-default)
+3. [Best structure by IELTS Task 2 question type](#best-structure-by-ielts-task-2-question-type)
+4. [Body paragraph formula (claim → explain → example)](#body-paragraph-formula-claim-explain-example)
+5. [Introduction and conclusion: keep them short](#introduction-and-conclusion-keep-them-short)
+6. [Before / after: structure that looks busy vs structure that scores](#before-after-structure-that-looks-busy-vs-structure-that-scores)
+7. [Try this yourself](#try-this-yourself)
+
 
 ## Step framework: plan before you write (5 minutes)
 

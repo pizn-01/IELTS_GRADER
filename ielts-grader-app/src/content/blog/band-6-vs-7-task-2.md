@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-07-10
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: difference between band 6 and band 7 IELTS writing | Top formats: comparison guide | PAA: what examiners look for; samples | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Criterion contrast + excerpts for teaching. Screenshots: n/a"
+qualityReviewed: pending
 ---
 
 # Difference Between Band 6 and Band 7 IELTS Writing

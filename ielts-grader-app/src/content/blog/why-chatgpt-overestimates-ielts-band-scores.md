@@ -8,6 +8,9 @@ status: published
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
+serpNotes: "Query: why ChatGPT overestimates IELTS band scores | Top formats: explainer / list of reasons | PAA: is ChatGPT accurate; why higher than other tools; can prompts fix it | Top3 words≈1200–2000 | Recon: PENDING human SERP 2026-08-03"
+evidenceNotes: "Illustrative ChatGPT-style vs descriptor-aligned scoring on a practice essay. Methodology note in body. Screenshots: pending"
+qualityReviewed: pending
 ---
 
 # Why ChatGPT Overestimates IELTS Band Scores
@@ -18,11 +21,14 @@ This explainer from **IELTS AI Tutor by IELTSGRADER** breaks down the mechanisms
 
 ## In this guide
 
-1. What “overestimate” means in practice  
-2. Five mechanisms that inflate ChatGPT bands  
-3. Before / after: same essay, two scoring styles  
-4. How to verify any AI band in 5 minutes  
-5. Try it yourself + FAQ  
+1. [What “overestimate” means (and what it does not)](#what-overestimate-means-and-what-it-does-not)
+2. [Why ChatGPT overestimates IELTS band scores (5 mechanisms)](#why-chatgpt-overestimates-ielts-band-scores-5-mechanisms)
+3. [Side-by-side: same essay, two scoring styles](#side-by-side-same-essay-two-scoring-styles)
+4. [How inflation shows up per criterion](#how-inflation-shows-up-per-criterion)
+5. [What ChatGPT is still good for](#what-chatgpt-is-still-good-for)
+6. [How to verify any AI band in 5 minutes](#how-to-verify-any-ai-band-in-5-minutes)
+7. [Try this yourself](#try-this-yourself)
+
 
 ## What “overestimate” means (and what it does not)
 
