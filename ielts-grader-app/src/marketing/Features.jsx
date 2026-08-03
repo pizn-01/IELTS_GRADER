@@ -21,7 +21,7 @@ const Features = () => {
         {/* Right Column - Text & Checklist */}
         <div className="flex flex-col items-start text-left order-1 lg:order-2">
           <h2 className="text-[32px] md:text-[38px] font-bold text-[#1a1f36] leading-[1.2] tracking-tight mb-8 font-['Nunito',_sans-serif]">
-            Stop guessing. See exactly where you lost points and how to rewrite your sentences to hit Band 7.5+.
+            Stop guessing. See exactly where you lost points and how to rewrite weak sentences toward your target band.
           </h2>
           <ul className="flex flex-col gap-4 mb-10 list-none w-full">
             {[

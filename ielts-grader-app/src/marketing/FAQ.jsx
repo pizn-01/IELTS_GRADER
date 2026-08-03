@@ -14,7 +14,7 @@ export const homeFaqs = [
     },
     {
       q: 'How accurate is the AI?',
-      a: "Every essay is graded by our Dual-AI Engine, a primary examiner model that scores your writing in detail, cross-checked by a second, independent model against official IELTS band descriptors. This keeps your band scores consistent and reliable, not just a single AI's guess."
+      a: "Every essay is graded by our Dual-AI Engine: a primary model scores your writing in detail, then a second, independent model cross-checks it against publicly available IELTS band descriptors. That keeps practice scores more consistent than a single chatbot guess — but results are still practice estimates, not official IELTS scores."
     },
     {
       q: "What's the difference between Academic and General Training?",

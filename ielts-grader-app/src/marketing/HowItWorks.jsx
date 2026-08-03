@@ -6,7 +6,7 @@ const HowItWorks = () => {
   const [activeTooltip, setActiveTooltip] = React.useState(null);
 
   const tooltips = {
-    essay: { text: "Paste or upload your IELTS question prompt and written answer for accurate evaluation." },
+    essay: { text: "Paste or upload your IELTS question prompt and written answer for criterion-based evaluation." },
     mock: { text: "Practice under exam conditions to simulate a real computer-based IELTS environment." }
   };
 

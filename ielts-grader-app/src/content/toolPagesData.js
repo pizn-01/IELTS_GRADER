@@ -379,7 +379,7 @@ export const toolPages = [
       {
         heading: 'How we research and write our guides',
         paragraphs: [
-          'Blog guides and tool pages are written by the IELTS AI Tutor editorial team using official IELTS task types and publicly available band descriptors as the source of truth, combined with patterns we see across thousands of graded practice essays.',
+          'Blog guides and tool pages are written by the IELTS AI Tutor editorial team using official IELTS task types and publicly available band descriptors as the source of truth, combined with patterns we see across graded practice essays.',
           'We do not fabricate exam questions as "leaked" content or claim insider access to real test papers. Sample essays are original practice material written to match known task formats.',
         ],
       },

@@ -65,11 +65,11 @@ Max ~155 characters.
 ## Claims requiring your approval (D8)
 
 Before publishing widely, confirm or soften:
-- "10,000+ students"
-- "4.9/5 from 2,400+ reviews"
-- "Trusted by schools"
+- "10,000+ students" — **softened 2026-08-03** (see `CLAIMS.md`)
+- "4.9/5 from 2,400+ reviews" — **do not use** until verified
+- "Trusted by schools" — **do not use** until named partners approved
 
-Mark in drafts as `[CLAIM — verify]` until approved.
+Mark in drafts as `[CLAIM — verify]` until approved. Full decision log: [`CLAIMS.md`](CLAIMS.md).
 
 ## CTA copy (SEO pages)
 

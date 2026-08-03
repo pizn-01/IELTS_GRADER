@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRight, Gift, BarChart3, Target } from 'lucide-react';
+import { FileCheck2, Clock, Info, Zap, ShieldCheck, ChevronLeft, ChevronRight, Gift, BarChart3, Target } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -436,13 +436,9 @@ const Hero = () => {
         {cardView !== 'mock' && (
           <div className="lg:hidden order-3 flex-1 flex flex-col justify-center gap-3.5 w-full max-w-[480px] mx-auto px-5 pt-1 pb-1 animate-fadeInUp animate-delay-150">
             <div className="flex items-center gap-1.5 shrink-0 pb-3 mb-0.5 border-b border-[#E8ECF1]/90">
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="w-3.5 h-3.5 text-[#F59E0B]" fill="#F59E0B" />
-                ))}
-              </div>
-              <span className="text-[13px] font-bold text-[#1a1f36]">4.9/5</span>
-              <span className="text-[12px] text-[#9CA3AF]">· Rated by IELTS learners</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[#0D9488] shrink-0" strokeWidth={2} />
+              <span className="text-[13px] font-bold text-[#1a1f36]">2 free evaluations</span>
+              <span className="text-[12px] text-[#9CA3AF]">· No card required</span>
             </div>
             <div
               key={`m-chip-${slide.id}`}
@@ -549,14 +545,10 @@ const Hero = () => {
                   ))}
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star key={i} className="w-4 h-4 text-[#F59E0B]" fill="#F59E0B" />
-                    ))}
-                  </div>
+                  <ShieldCheck className="w-4 h-4 text-[#0D9488] shrink-0" strokeWidth={2} />
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[15px] font-bold text-[#1a1f36]">4.9/5</span>
-                    <span className="text-[14px] text-[#64748B]">Rated by IELTS learners</span>
+                    <span className="text-[15px] font-bold text-[#1a1f36]">2 free evaluations</span>
+                    <span className="text-[14px] text-[#64748B]">No card required</span>
                   </div>
                 </div>
               </div>

@@ -45,7 +45,7 @@ export default function SampleReportPage() {
         eyebrow: 'Sample report',
         title: 'See exactly what your IELTS writing report looks like',
         subtitle:
-          'Stop guessing. Here is the same report design students get after uploading an essay: band scores, fix cards, and a clear path to Band 7.5+.',
+          'Stop guessing. Here is the same report design students get after uploading an essay: band scores, fix cards, and a clear path toward your target band.',
         actions: (
           <>
             <SeoPrimaryButton to="/signup">Get your free report</SeoPrimaryButton>

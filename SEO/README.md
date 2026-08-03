@@ -17,6 +17,7 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 |------|---------|
 | [TRACKER.md](TRACKER.md) | Progress tracker (update status as you go) |
 | [BRANDING.md](BRANDING.md) | Dual-brand voice: IELTS AI Tutor + IELTSGRADER |
+| [CLAIMS.md](CLAIMS.md) | Keep / soften / prove decisions for marketing claims |
 | [KEYWORDS.md](KEYWORDS.md) | Keyword clusters and target URLs |
 | [TECHNICAL.md](TECHNICAL.md) | Technical SEO checklist |
 | [CONTENT_CALENDAR.md](CONTENT_CALENDAR.md) | Phase 2 done + Phase 3 queue (from roadmap) |
