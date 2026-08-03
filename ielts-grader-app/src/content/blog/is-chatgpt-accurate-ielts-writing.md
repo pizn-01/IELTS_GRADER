@@ -95,6 +95,8 @@ We label this **illustrative** because chatbot outputs vary by model version and
 
 ## Why ChatGPT overestimates IELTS band scores
 
+For a deeper dive into the mechanisms (helpfulness bias, vocabulary traps, prompt gaming), see [why ChatGPT overestimates IELTS band scores](/blog/why-chatgpt-overestimates-ielts-band-scores).
+
 ### 1. It optimises for helpfulness, not descriptors
 
 Chatbots are trained to be supportive. Encouraging “Band 7.5” feels nice and keeps the conversation going. IELTS descriptors are stricter: under-developed ideas stay mid-band even when tone sounds academic.
