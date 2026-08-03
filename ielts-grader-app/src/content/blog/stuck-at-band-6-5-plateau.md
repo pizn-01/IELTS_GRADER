@@ -166,6 +166,8 @@ Not if you never rewrite. One diagnosed essay plus two purposeful rewrites beats
 
 ## Next steps
 
+Once your practice band is stable near 7, use [how to improve from Band 7 to 8](/blog/improve-ielts-writing-band-7-to-8) for the next precision jump.
+
 Stop negotiating with the overall band. Raise the criterion that caps you, retest, then raise the next one.
 
 Get a plateau diagnosis with the [essay checker](/ielts-essay-checker) or [mock writing test](/ielts-mock-writing-test), follow through on [IELTS AI Tutor](/ielts-ai-tutor), and [signup](/signup) when you are ready to run a real 14-day breaker instead of another week of strategy hopping.
