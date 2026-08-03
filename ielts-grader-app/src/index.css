@@ -136,10 +136,6 @@ html.lenis body {
   to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes lineFlow {
-  to { stroke-dashoffset: -20; }
-}
-
 @keyframes heroSlideEnter {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
@@ -220,6 +216,14 @@ html.lenis body {
   animation-delay: 150ms;
 }
 
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fadeIn,
   .animate-fadeInUp,
@@ -227,7 +231,8 @@ html.lenis body {
   .animate-in,
   .hero-slide-enter,
   .hero-cta-pulse,
-  .hero-free-badge {
+  .hero-free-badge,
+  .hiw-bar {
     animation: none !important;
   }
 }
@@ -286,13 +291,15 @@ html.lenis body {
 }
 
 /* --- Marketing Site Specific --- */
-.connector-line {
-  stroke: #E2E8F0;
-  stroke-width: 2;
-  stroke-dasharray: 6 6;
-  fill: none;
-  stroke-linecap: round;
-  z-index: 0;
+@keyframes hiwBarGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.hiw-bar {
+  transform-origin: left center;
+  animation: hiwBarGrow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.25s;
 }
 
 .faq-content {
