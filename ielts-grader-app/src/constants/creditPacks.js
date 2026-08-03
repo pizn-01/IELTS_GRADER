@@ -28,6 +28,7 @@ export const CREDIT_PACK_NEVER_EXPIRE = 'Never expires';
 
 /** Single bullet list for the One-time box (no overlap with Premium). */
 export const ONE_TIME_BULLETS = [
+  'No automatic renewal — no surprise charges',
   'Pay once — 10 or 25 evaluations',
   'Credits never expire (keep after cancel)',
   'Same full band report and fix cards',
