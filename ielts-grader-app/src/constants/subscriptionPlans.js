@@ -124,10 +124,14 @@ export const SUBSCRIPTION_TRUST_LINE_PROMO =
 export const SUBSCRIPTION_TRUST_LINE =
   'Cancel anytime. Subscription credits reset each billing period.';
 
-/** Per-evaluation unit economics shown on plan/pack chips. */
+/**
+ * Per-evaluation unit economics at full (non-promo) price.
+ * Keep these on the full catalog so chips stay honest when promo is off.
+ * Weekly $5/20 · Monthly $15/80 · Starter $5/10 · Boost $12/25.
+ */
 export const PLAN_PER_EVAL = {
   weekly: '~$0.25 / evaluation',
-  monthly: '~$0.09 / evaluation',
+  monthly: '~$0.19 / evaluation',
 };
 
 export const PACK_PER_EVAL = {

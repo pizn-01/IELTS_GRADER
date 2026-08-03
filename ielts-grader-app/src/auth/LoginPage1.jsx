@@ -51,6 +51,8 @@ function parseCheckoutIntent(fromLocation) {
   }
   const planKey = plan === 'weekly' ? 'weekly' : 'monthly';
   const planData = SUBSCRIPTION_PLANS[planKey];
+  // Guests are almost always promo-eligible; show the intro price they clicked on /pricing.
+  // Ineligible returning users are caught by UpgradePage before Stripe redirect.
   const pricing = formatPromoPrice(planData, { showPromo: true });
   return {
     kind: 'plan',

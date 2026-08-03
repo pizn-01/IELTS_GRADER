@@ -5,6 +5,7 @@ import PricingPlansSection from '../components/PricingPlansSection';
 import { trackEvent } from '../utils/trackEvent';
 import { cancelPathForCheckout, intentBannerForFrom } from '../utils/pricingNav';
 import { FULL_PRICE_PLANS } from '../constants/subscriptionPlans';
+import { useAuth } from '../context/AuthContext';
 
 function normalizePlanKey(value) {
   if (value === 'weekly' || value === 'monthly') return value;
@@ -22,6 +23,7 @@ function normalizePackKey(value) {
  */
 const UpgradePage = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const planFromUrl = normalizePlanKey(searchParams.get('plan'));
   const packFromUrl = normalizePackKey(searchParams.get('pack'));
@@ -65,7 +67,9 @@ const UpgradePage = () => {
     setSearchParams(next, { replace: true });
   };
 
+  /** Clear stale in-memory session so LoginPage actually shows the form. */
   const redirectToLoginForCheckout = (planKey, packKey) => {
+    logout();
     const params = new URLSearchParams();
     if (packKey) params.set('pack', packKey);
     else params.set('plan', planKey || 'monthly');

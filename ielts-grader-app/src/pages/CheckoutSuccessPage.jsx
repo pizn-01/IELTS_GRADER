@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const CheckoutSuccessPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { updateUser, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { updateUser, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const sessionId = searchParams.get('session_id');
 
   const [status, setStatus] = useState('polling'); // 'polling' | 'success' | 'timeout'
@@ -22,23 +22,28 @@ const CheckoutSuccessPage = () => {
     navigate('/dashboard');
   };
 
+  const redirectToLoginForSession = () => {
+    if (authRedirectStarted.current) return;
+    authRedirectStarted.current = true;
+    logout();
+    navigate('/login', {
+      replace: true,
+      state: {
+        authMode: 'login',
+        from: {
+          pathname: '/checkout/success',
+          search: `?session_id=${encodeURIComponent(sessionId)}`,
+        },
+      },
+    });
+  };
+
   useEffect(() => {
     if (!sessionId) { navigate('/dashboard'); return; }
     if (authLoading) return;
 
     if (!isAuthenticated) {
-      if (authRedirectStarted.current) return;
-      authRedirectStarted.current = true;
-      navigate('/login', {
-        replace: true,
-        state: {
-          authMode: 'login',
-          from: {
-            pathname: '/checkout/success',
-            search: `?session_id=${encodeURIComponent(sessionId)}`,
-          },
-        },
-      });
+      redirectToLoginForSession();
       return;
     }
 
@@ -77,19 +82,7 @@ const CheckoutSuccessPage = () => {
         }
       } catch (err) {
         if (err?.status === 401) {
-          if (!cancelled && !authRedirectStarted.current) {
-            authRedirectStarted.current = true;
-            navigate('/login', {
-              replace: true,
-              state: {
-                authMode: 'login',
-                from: {
-                  pathname: '/checkout/success',
-                  search: `?session_id=${encodeURIComponent(sessionId)}`,
-                },
-              },
-            });
-          }
+          if (!cancelled) redirectToLoginForSession();
           return;
         }
       }

@@ -37,12 +37,13 @@ const getStripe = () => {
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app';
 
-/** Checkout sessions expire after 24h; recovery lets buyers resume via Stripe email/link. */
-const CHECKOUT_SESSION_TTL_SECONDS = 24 * 60 * 60;
-
+/**
+ * Recovery URL after Stripe's default 24h expiry.
+ * Do NOT set expires_at explicitly — Stripe's ceiling is exactly 24h from
+ * session creation; a server clock slightly ahead of Stripe rejects the create.
+ */
 function checkoutExpirationParams() {
   return {
-    expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_SESSION_TTL_SECONDS,
     after_expiration: {
       recovery: { enabled: true },
     },
