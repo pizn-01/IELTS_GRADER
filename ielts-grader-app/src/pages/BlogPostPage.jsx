@@ -30,21 +30,28 @@ export default function BlogPostPage() {
     ? related
     : blogPosts.filter((p) => p.slug !== post.slug).slice(0, 3);
 
+  const dateModified = post.updatedAt || post.publishedAt;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: post.title,
     description: post.description,
     datePublished: post.publishedAt,
-    dateModified: post.publishedAt,
+    dateModified,
     author: {
       '@type': 'Organization',
-      name: 'IELTS AI Tutor by IELTSGRADER',
+      name: 'IELTS AI Tutor Editorial Team',
+      url: 'https://www.ieltsgrader.com/methodology',
     },
     publisher: {
       '@type': 'Organization',
       name: 'IELTSGRADER',
       url: 'https://www.ieltsgrader.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.ieltsgrader.com/favicon-512x512.png',
+      },
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
@@ -74,7 +81,7 @@ export default function BlogPostPage() {
         eyebrow: 'IELTS AI Tutor by IELTSGRADER',
         title: titleClean,
         subtitle: post.description,
-        meta: `${post.publishedAt || ''} · ${post.type || 'article'} · ${estimateReadMinutes(post.content)} min read`,
+        meta: `Published ${post.publishedAt || ''}${dateModified && dateModified !== post.publishedAt ? ` · Updated ${dateModified}` : ''} · ${post.type || 'article'} · ${estimateReadMinutes(post.content)} min read`,
       }}
     >
       <SeoHead
@@ -86,6 +93,17 @@ export default function BlogPostPage() {
       />
 
       <article className="max-w-3xl">
+        <p className="text-[13px] text-[#6B7280] mb-8 pb-6 border-b border-[#E5E7EB]">
+          Written by{' '}
+          <Link to="/methodology" className="text-[#3B82F6] no-underline hover:underline">
+            IELTS AI Tutor Editorial Team
+          </Link>
+          {' · '}Scored against official IELTS band descriptors ·{' '}
+          <Link to="/methodology" className="text-[#3B82F6] no-underline hover:underline">
+            our methodology
+          </Link>
+        </p>
+
         <MarkdownContent content={bodyContent} />
         <SeoCta />
 

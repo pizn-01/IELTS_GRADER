@@ -19,6 +19,7 @@ const Footer = () => {
     { label: 'Terms', href: '/terms' },
     { label: 'Privacy', href: '/privacy' },
     { label: 'Cookies', href: '/cookies' },
+    { label: 'Methodology', href: '/methodology' },
   ];
 
   return (

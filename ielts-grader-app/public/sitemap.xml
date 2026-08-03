@@ -79,6 +79,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.ieltsgrader.com/methodology</loc>
+    <lastmod>2026-08-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://www.ieltsgrader.com/terms</loc>
     <lastmod>2026-08-03</lastmod>
     <changefreq>monthly</changefreq>

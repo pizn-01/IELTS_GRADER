@@ -24,6 +24,7 @@ STATIC_ROUTES = [
     "/grade-my-essay",
     "/mock-exam",
     "/blog",
+    "/methodology",
     "/terms",
     "/privacy",
     "/cookies",
@@ -43,6 +44,7 @@ PRIORITY = {
     "/features": "0.8",
     "/sample-report": "0.7",
     "/pricing": "0.7",
+    "/methodology": "0.5",
 }
 
 

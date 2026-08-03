@@ -352,6 +352,67 @@ export const toolPages = [
       { href: '/ielts-ai-tutor', label: 'IELTS AI Tutor' },
     ],
   },
+  {
+    slug: 'methodology',
+    path: '/methodology',
+    shortTitle: 'Methodology',
+    title: 'Our Grading Methodology: How IELTS AI Tutor Scores Essays | IELTSGRADER',
+    description:
+      'How IELTS AI Tutor grades your writing: a dual-AI engine checked against public IELTS band descriptors, plus how our editorial team researches and reviews every guide.',
+    h1: 'Our Methodology: How We Grade and How We Write',
+    intro:
+      'IELTS AI Tutor by IELTSGRADER is built by an editorial and engineering team focused only on IELTS writing. This page explains exactly how essays are scored and how our guides are researched, written, and kept up to date — so you know what you can trust.',
+    highlights: [
+      { title: 'Dual-AI grading', body: 'A primary model scores your essay; a second, independent model cross-checks it against band descriptors.' },
+      { title: 'Public band descriptors', body: 'Every criterion score is grounded in the publicly available IELTS writing band descriptors, applied consistently.' },
+      { title: 'Editorial review', body: 'Guides are researched from official IELTS materials and real tutoring patterns, then reviewed before publishing.' },
+      { title: 'Visible updates', body: 'Posts show a last-updated date whenever we refresh content, so you know how current it is.' },
+    ],
+    sections: [
+      {
+        heading: 'How your essay is scored',
+        paragraphs: [
+          'When you submit an essay, a primary AI model evaluates it against the four official IELTS writing criteria: Task Achievement/Response, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy. A second, independent model then cross-checks that evaluation for consistency before your report is finalized.',
+          'This dual-check step exists because a single AI model can be inconsistent essay to essay. Cross-checking against the same public band descriptors keeps scores comparable across your submissions, so progress tracking is meaningful.',
+        ],
+      },
+      {
+        heading: 'How we research and write our guides',
+        paragraphs: [
+          'Blog guides and tool pages are written by the IELTS AI Tutor editorial team using official IELTS task types and publicly available band descriptors as the source of truth, combined with patterns we see across thousands of graded practice essays.',
+          'We do not fabricate exam questions as "leaked" content or claim insider access to real test papers. Sample essays are original practice material written to match known task formats.',
+        ],
+      },
+      {
+        heading: 'Review and update cadence',
+        paragraphs: [
+          'Every published guide lists a publish date, and pages we substantively revise show a separate "last updated" date. We do not change the update date for typo fixes; only for meaningful content or accuracy changes.',
+        ],
+      },
+      {
+        heading: 'What this is not',
+        items: [
+          'Not an official IELTS, British Council, IDP, or Cambridge product or score',
+          'Not a guarantee of your official test-day band',
+          'Not a substitute for a full mock exam under real timing at least once before test day',
+        ],
+      },
+    ],
+    faqs: [
+      { q: 'Is AI IELTS grading accurate?', a: 'Scores are grounded in the same public band descriptors examiners use and cross-checked by a second model for consistency, but they are practice estimates, not official results.' },
+      { q: 'Who writes your blog guides?', a: 'The IELTS AI Tutor editorial team, using official task formats and public band descriptors as the source, reviewed before publishing.' },
+      { q: 'How often is content updated?', a: 'We run a regular refresh pass on our most-read pages and mark meaningfully revised pages with a last-updated date.' },
+      { q: 'Can I trust the sample essays?', a: 'Sample essays are original practice writing built to match real task formats — not leaked or copied exam content.' },
+    ],
+    cta: { label: 'Check your essay free', href: '/' },
+    secondaryCta: { label: 'See a sample report', href: '/sample-report' },
+    links: [
+      { href: '/ielts-essay-checker', label: 'Essay checker' },
+      { href: '/blog/dual-ai-grading-explained', label: 'How dual-AI grading works' },
+      { href: '/blog/is-ai-ielts-tutoring-accurate', label: 'Is AI IELTS tutoring accurate?' },
+      { href: '/sample-report', label: 'Sample report' },
+    ],
+  },
 ];
 
 export function getToolPageBySlug(slug) {
