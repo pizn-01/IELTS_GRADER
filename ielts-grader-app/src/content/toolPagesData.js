@@ -3,12 +3,12 @@ export const toolPages = [
     slug: 'ielts-ai-tutor',
     path: '/ielts-ai-tutor',
     shortTitle: 'IELTS AI Tutor',
-    title: 'IELTS AI Tutor: Your Assistant to Your Target Band | IELTSGRADER',
+    title: 'IELTS AI Tutor: Band Scores, Feedback & Study Plans | IELTSGRADER',
     description:
-      'IELTS AI Tutor by IELTSGRADER explains every criterion, tracks progress, and builds a personalized plan toward your target band. Task 1, Task 2, mock exams. Free evaluation.',
-    h1: 'Your IELTS AI Tutor: Not Just a Score',
+      'IELTS AI Tutor grades your essay in about 60 seconds, explains all four criteria, and builds a study plan to your target band. Task 1, Task 2, mock exams. Free evaluation.',
+    h1: 'IELTS AI Tutor: More Than a Score — a Plan to Your Target Band',
     intro:
-      'IELTS AI Tutor by IELTSGRADER is an AI writing coach built for IELTS. It grades your essays, explains why you lost marks, and turns that feedback into a study plan, so every practice session moves you closer to your target band.',
+      'IELTS AI Tutor by IELTSGRADER grades your essay in about 60 seconds, explains why you lost marks on each of the four writing criteria, and turns that feedback into a study plan — so every practice session moves you closer to your target band. Your first evaluations are free.',
     highlights: [
       { title: 'Criterion-level feedback', body: 'Task Response/Achievement, Coherence, Lexical Resource, and Grammar, not a single vague score.' },
       { title: 'Fix cards & model answers', body: 'See rewritten sentences and Band 8+ models for your prompt.' },
@@ -21,6 +21,13 @@ export const toolPages = [
         paragraphs: [
           'A simple checker returns a number. A tutor explains the four IELTS writing criteria, shows what to fix first, and helps you practice with intention. That is the difference IELTS AI Tutor is built for.',
           'Whether you are preparing for Academic or General Training, you can submit Task 1 reports, GT letters, or Task 2 essays and receive feedback aligned with public band descriptors, then use that report to plan your next week of practice.',
+        ],
+      },
+      {
+        heading: 'How is an IELTS AI tutor different from ChatGPT?',
+        paragraphs: [
+          'Generic chatbots give inconsistent scores because they are not built around the IELTS band descriptors. IELTS AI Tutor evaluates only IELTS writing, applies the public descriptors the same way every time, and structures every report the same way — so you can compare essay to essay and actually see progress.',
+          'It also remembers your history: recurring grammar errors, vocabulary gaps, and your weakest criterion feed into personalized study materials instead of one-off answers.',
         ],
       },
       {
@@ -43,6 +50,9 @@ export const toolPages = [
     ],
     faqs: [
       { q: 'Is this just an essay grader?', a: 'No. A grader gives a number. Your AI tutor explains criteria, suggests fixes, tracks patterns, and builds study plans.' },
+      { q: 'Is AI IELTS tutoring accurate?', a: 'The tutor scores against the public IELTS band descriptors and applies them the same way on every essay, so scores are consistent and the feedback maps to what examiners actually assess.' },
+      { q: 'Can AI replace a human IELTS tutor?', a: 'For daily writing practice, an AI tutor gives faster, cheaper, and more consistent feedback. Human tutors still help with speaking practice and motivation — many students combine both.' },
+      { q: 'How is this different from ChatGPT?', a: 'ChatGPT is general-purpose and scores inconsistently. IELTS AI Tutor is built only for IELTS writing, uses fixed band-descriptor rubrics, and tracks your progress across essays.' },
       { q: 'Does it cover Task 1 and Task 2?', a: 'Yes. Academic Task 1, General Training letters, and Task 2 essays.' },
       { q: 'Is the first evaluation free?', a: 'Yes. New users get two free full evaluations with no credit card required.' },
       { q: 'Will this match my official IELTS score?', a: 'Feedback is aligned with public band descriptors for practice. It is not an official IELTS result and cannot guarantee your test-day score.' },
@@ -53,6 +63,8 @@ export const toolPages = [
       { href: '/ielts-essay-checker', label: 'IELTS essay checker' },
       { href: '/ielts-task-2-checker', label: 'Task 2 checker' },
       { href: '/ielts-mock-writing-test', label: 'Mock writing test' },
+      { href: '/blog/is-ai-ielts-tutoring-accurate', label: 'Is AI IELTS tutoring accurate?' },
+      { href: '/blog/ai-tutor-vs-human-tutor', label: 'AI tutor vs human tutor' },
       { href: '/blog/how-ielts-writing-is-scored', label: 'How IELTS writing is scored' },
       { href: '/blog/dual-ai-grading-explained', label: 'How dual-AI grading works' },
     ],
