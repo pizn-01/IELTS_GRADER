@@ -4,18 +4,20 @@ This folder is the **single source of truth** for organic SEO work. It does not 
 
 ## Quick start
 
-1. Open **[TRACKER.md](TRACKER.md)** — master checklist with every task, owner, and status.
-2. Run progress: `python3 SEO/scripts/tracker_status.py`
-3. Read **[BRANDING.md](BRANDING.md)** before writing any copy.
-4. For **strategy + 12-week content/URL roadmap**: **[WEBSITE_SEO_ROADMAP.md](WEBSITE_SEO_ROADMAP.md)** / [PDF](WEBSITE_SEO_ROADMAP.pdf).
-5. Before publishing any post: **[CONTENT_QUALITY_BAR.md](CONTENT_QUALITY_BAR.md)** + `python3 SEO/scripts/validate_blog_quality.py`
-6. For **ongoing site SEO ops** (daily/weekly/monthly on ieltsgrader.com): **[WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md)** / [PDF](WEBSITE_SEO_CADENCE.pdf).
-7. Follow phases in order: A → B → C → D → E → F → G.
+1. Open **[NEXT_SESSION.md](NEXT_SESSION.md)** — where to resume (Week 3–4 leftovers → Wave B).
+2. Open **[TRACKER.md](TRACKER.md)** — master checklist with every task, owner, and status (Phase R = roadmap).
+3. Run progress: `python3 SEO/scripts/tracker_status.py`
+4. Read **[BRANDING.md](BRANDING.md)** before writing any copy.
+5. For **strategy + 12-week content/URL roadmap**: **[WEBSITE_SEO_ROADMAP.md](WEBSITE_SEO_ROADMAP.md)** / [PDF](WEBSITE_SEO_ROADMAP.pdf).
+6. Before publishing any post: **[CONTENT_QUALITY_BAR.md](CONTENT_QUALITY_BAR.md)** + `python3 SEO/scripts/validate_blog_quality.py`
+7. For **ongoing site SEO ops** (daily/weekly/monthly on ieltsgrader.com): **[WEBSITE_SEO_CADENCE.md](WEBSITE_SEO_CADENCE.md)** / [PDF](WEBSITE_SEO_CADENCE.pdf).
+8. Follow phases in order: A → B → C → D → E → F → G.
 
 ## Folder map
 
 | Path | Purpose |
 |------|---------|
+| [NEXT_SESSION.md](NEXT_SESSION.md) | **Resume here** — progress + next actions |
 | [TRACKER.md](TRACKER.md) | Progress tracker (update status as you go) |
 | [BRANDING.md](BRANDING.md) | Dual-brand voice: IELTS AI Tutor + IELTSGRADER |
 | [CLAIMS.md](CLAIMS.md) | Keep / soften / prove decisions for marketing claims |
