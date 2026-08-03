@@ -75,14 +75,14 @@ const STEPS = [
   {
     n: '2',
     title: 'Dual-AI grades all 4 criteria',
-    body: 'Task Response, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy — criterion-based feedback aligned with public band descriptors (practice scores, not official).',
+    body: 'Task Response, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy, with criterion-based feedback aligned with public band descriptors (practice scores, not official).',
     Visual: StepCriteriaVisual,
     delayClass: 'animate-delay-200',
   },
   {
     n: '3',
     title: 'Get your tutor report',
-    body: 'Band breakdown, fix cards, model answer, and what to practice next — most reports in about 60 seconds.',
+    body: 'Band breakdown, fix cards, model answer, and what to practice next, with most reports in about 60 seconds.',
     Visual: null,
     delayClass: 'animate-delay-300',
   },
@@ -92,16 +92,15 @@ const HowItWorks = () => {
   return (
     <section
       id="how-it-works"
-      className="bg-[#1A96F30D] py-12 lg:py-20 overflow-hidden font-['Nunito',_sans-serif]"
+      className="bg-white py-12 lg:py-20 overflow-hidden font-['Nunito',_sans-serif]"
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-[60px] lg:px-[100px]">
-        <div className="text-center mb-10 lg:mb-14 max-w-[640px] mx-auto">
+        <div className="text-center mb-10 lg:mb-14 mx-auto">
           <h2 className="text-[28px] lg:text-[32px] font-bold text-[#1a1f36] mb-3 tracking-tight leading-tight">
             How it works
           </h2>
-          <p className="text-[15px] lg:text-[16px] text-[#6B7280] leading-relaxed m-0">
-            From essay to a full tutor report in three steps — 2 free evaluations with signup, no card
-            required.
+          <p className="text-[14px] sm:text-[15px] lg:text-[16px] text-[#6B7280] leading-relaxed m-0 sm:whitespace-nowrap">
+            From essay to a full tutor report in three steps, 2 free evaluations with signup, no card required.
           </p>
         </div>
 
@@ -150,10 +149,10 @@ const HowItWorks = () => {
             Check your essay free
           </Link>
           <Link
-            to="/sample-report"
+            to="/ielts-mock-writing-test"
             className="text-[#101828] font-semibold no-underline text-[16px] hover:text-[#3B82F6] transition-all flex items-center gap-1"
           >
-            See a sample report <span className="text-[#4B5563] ml-0.5">→</span>
+            Try a timed mock exam <span className="text-[#4B5563] ml-0.5">→</span>
           </Link>
         </div>
       </div>
