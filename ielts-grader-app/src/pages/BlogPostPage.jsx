@@ -10,6 +10,31 @@ function estimateReadMinutes(content = '') {
   return Math.max(3, Math.round(words / 220));
 }
 
+/** Extract Q&A pairs from a "## Frequently asked questions" section for FAQPage schema. */
+function extractFaqs(content = '') {
+  const match = content.match(/##\s+Frequently asked questions\s*\n([\s\S]*?)(?=\n##\s+|$)/i);
+  if (!match) return [];
+  const block = match[1].trim();
+  const faqs = [];
+  const parts = block.split(/\n###\s+/);
+  for (let i = 0; i < parts.length; i++) {
+    let part = parts[i].trim();
+    if (i === 0) part = part.replace(/^###\s+/, '');
+    if (!part) continue;
+    const nl = part.indexOf('\n');
+    if (nl === -1) continue;
+    const q = part.slice(0, nl).trim();
+    const a = part
+      .slice(nl + 1)
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[*_`]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (q && a) faqs.push({ q, a });
+  }
+  return faqs;
+}
+
 export default function BlogPostPage() {
   const { slug } = useParams();
   const post = getPostBySlug(slug);
@@ -31,6 +56,7 @@ export default function BlogPostPage() {
     : blogPosts.filter((p) => p.slug !== post.slug).slice(0, 3);
 
   const dateModified = post.updatedAt || post.publishedAt;
+  const faqs = extractFaqs(bodyContent);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -70,6 +96,20 @@ export default function BlogPostPage() {
     ],
   };
 
+  const faqLd = faqs.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      }
+    : null;
+
+  const schemaGraph = [jsonLd, breadcrumbLd, faqLd].filter(Boolean);
+
   return (
     <SeoLayout
       breadcrumbs={[
@@ -89,7 +129,7 @@ export default function BlogPostPage() {
         description={post.description}
         path={path}
         type="article"
-        jsonLd={[jsonLd, breadcrumbLd]}
+        jsonLd={schemaGraph}
       />
 
       <article className="max-w-3xl">
