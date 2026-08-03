@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SUBSCRIPTION_PLANS, FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 import { trackEvent } from '../utils/trackEvent';
+import { goToUpgradeShop } from '../utils/pricingNav';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
@@ -16,8 +17,8 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null, allowance 
     if (credits >= fullBalance) return null; // hide when user has a full balance
   }
   const message = credits === 0
-    ? `You've used all your evaluation credits. Subscribe to keep practicing: Weekly ${WEEKLY.label} (${WEEKLY.credits} exams) or Monthly ${MONTHLY.label} (${MONTHLY.credits} exams).`
-    : `Only ${credits} evaluation credit${credits === 1 ? '' : 's'} remaining. Subscribe to Monthly Mastery for ${MONTHLY.credits} exams/month.`;
+    ? `You've used all your evaluations. Choose Premium (Weekly ${WEEKLY.label} / Monthly ${MONTHLY.label}) or a one-time pack that never expires.`
+    : `Only ${credits} evaluation${credits === 1 ? '' : 's'} remaining. Top up with Premium or a one-time pack.`;
 
   return (
     <div className="bg-[#EFF8FF]/80 border border-[#B2DDFF] rounded-[16px] px-4 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
@@ -32,11 +33,15 @@ export const NotificationBanner = ({ isOpen, onClose, credits = null, allowance 
       <button
         onClick={() => {
           trackEvent('upgrade_cta_clicked', { source: 'notification_banner' });
-          navigate('/pricing?plan=monthly');
+          goToUpgradeShop({
+            navigate,
+            from: credits === 0 ? 'out_of_credits' : 'upgrade',
+            plan: 'monthly',
+          });
         }}
         className="bg-[#2C3E50] text-white w-full sm:w-auto px-5 h-[34px] rounded-[10px] text-[12px] font-semibold hover:bg-[#1D2939] transition-all flex items-center justify-center whitespace-nowrap shrink-0"
       >
-        Upgrade
+        View plans
       </button>
     </div>
   );

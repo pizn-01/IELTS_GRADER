@@ -1,27 +1,41 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import PricingPlansSection from '../components/PricingPlansSection';
 import { trackEvent } from '../utils/trackEvent';
+import { cancelPathForCheckout, intentBannerForFrom } from '../utils/pricingNav';
 
 function normalizePlanKey(value) {
   if (value === 'weekly' || value === 'monthly') return value;
   return null;
 }
 
+function normalizePackKey(value) {
+  if (value === 'starter' || value === 'boost') return value;
+  return null;
+}
+
+const PACK_PROMO_CONFIRM =
+  'One-time packs are full price. Buying a pack counts as a paid purchase, so the 50% first-month Premium discount will not apply later. Continue?';
+
 /**
  * Authenticated pricing / checkout surface.
  * Offer UI matches /pricing via PricingPlansSection; handles Stripe + billing portal.
  */
 const UpgradePage = () => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const planFromUrl = normalizePlanKey(searchParams.get('plan'));
+  const packFromUrl = normalizePackKey(searchParams.get('pack'));
+  const fromParam = searchParams.get('from') || 'upgrade';
   const autoCheckout = searchParams.get('checkout') === '1';
   const autoCheckoutStarted = useRef(false);
 
-  const [loadingPlanKey, setLoadingPlanKey] = useState(autoCheckout ? (planFromUrl || 'monthly') : null);
-  const [loadingPackKey, setLoadingPackKey] = useState(null);
+  const [loadingPlanKey, setLoadingPlanKey] = useState(
+    autoCheckout && !packFromUrl ? (planFromUrl || 'monthly') : null,
+  );
+  const [loadingPackKey, setLoadingPackKey] = useState(
+    autoCheckout && packFromUrl ? packFromUrl : null,
+  );
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState(null);
@@ -44,61 +58,14 @@ const UpgradePage = () => {
     ? Boolean(status.promo?.eligible) || (!status.has_paid && !isSubscribed)
     : false;
 
+  const intentBanner = intentBannerForFrom(fromParam);
+  const cancelPath = cancelPathForCheckout();
+
   const clearCheckoutParams = () => {
     const next = new URLSearchParams(searchParams);
     next.delete('checkout');
     setSearchParams(next, { replace: true });
   };
-
-  const handleSubscribe = async (planKey) => {
-    if (isSubscribed) return;
-    setLoadingPlanKey(planKey);
-    setError('');
-    try {
-      const { url } = await api.createSubscriptionCheckout(planKey);
-      window.location.href = url;
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
-      setLoadingPlanKey(null);
-      clearCheckoutParams();
-    }
-  };
-
-  const handleSelectPack = async (packKey) => {
-    trackEvent('upgrade_cta_clicked', {
-      source: 'upgrade_pack_card',
-      pack_key: packKey,
-    });
-    setLoadingPackKey(packKey);
-    setError('');
-    try {
-      const { url } = await api.createPackCheckout(packKey);
-      window.location.href = url;
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
-      setLoadingPackKey(null);
-    }
-  };
-
-  useEffect(() => {
-    if (statusLoading || !autoCheckout || autoCheckoutStarted.current) return;
-    if (!status) {
-      if (error) {
-        autoCheckoutStarted.current = true;
-        setLoadingPlanKey(null);
-        clearCheckoutParams();
-      }
-      return;
-    }
-    if (status.is_subscribed) {
-      clearCheckoutParams();
-      setLoadingPlanKey(null);
-      return;
-    }
-    autoCheckoutStarted.current = true;
-    handleSubscribe(planFromUrl || 'monthly');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusLoading, status, autoCheckout, planFromUrl, error]);
 
   const openBillingPortal = async (flow) => {
     setPortalLoading(true);
@@ -114,15 +81,94 @@ const UpgradePage = () => {
     }
   };
 
+  const handleSubscribe = async (planKey) => {
+    if (isSubscribed) {
+      setError('You already have an active subscription. Manage it from Your Subscription or billing portal.');
+      return;
+    }
+    setLoadingPlanKey(planKey);
+    setError('');
+    try {
+      const { url } = await api.createSubscriptionCheckout(planKey, { cancelPath });
+      window.location.href = url;
+    } catch (err) {
+      const msg = err.message || 'Something went wrong. Please try again.';
+      setError(msg);
+      setLoadingPlanKey(null);
+      clearCheckoutParams();
+      if (/already have an active subscription/i.test(msg)) {
+        // leave error visible; Manage button below via subscriber UI after refresh
+      }
+    }
+  };
+
+  const handleSelectPack = async (packKey, { skipPromoConfirm = false } = {}) => {
+    trackEvent('upgrade_cta_clicked', {
+      source: 'upgrade_pack_card',
+      pack_key: packKey,
+      from: fromParam,
+    });
+    if (!skipPromoConfirm && promoEligible) {
+      const ok = window.confirm(PACK_PROMO_CONFIRM);
+      if (!ok) return;
+    }
+    setLoadingPackKey(packKey);
+    setError('');
+    try {
+      const { url } = await api.createPackCheckout(packKey, { cancelPath });
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+      setLoadingPackKey(null);
+    }
+  };
+
+  useEffect(() => {
+    if (statusLoading || !autoCheckout || autoCheckoutStarted.current) return;
+    if (!status) {
+      if (error) {
+        autoCheckoutStarted.current = true;
+        setLoadingPlanKey(null);
+        setLoadingPackKey(null);
+        clearCheckoutParams();
+      }
+      return;
+    }
+
+    if (packFromUrl) {
+      autoCheckoutStarted.current = true;
+      // Post-auth resume: skip confirm to avoid blocking redirect mid-flow
+      handleSelectPack(packFromUrl, { skipPromoConfirm: true });
+      clearCheckoutParams();
+      return;
+    }
+
+    if (status.is_subscribed) {
+      clearCheckoutParams();
+      setLoadingPlanKey(null);
+      return;
+    }
+    autoCheckoutStarted.current = true;
+    handleSubscribe(planFromUrl || 'monthly');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusLoading, status, autoCheckout, planFromUrl, packFromUrl, error]);
+
   const handleSelectPlan = (planKey) => {
     trackEvent('upgrade_cta_clicked', {
       source: 'upgrade_plan_card',
       plan_key: planKey,
+      from: fromParam,
     });
     handleSubscribe(planKey);
   };
 
-  if (statusLoading || (autoCheckout && loadingPlanKey && !error)) {
+  const scrollToPacks = () => {
+    document.getElementById('one-time-packs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const showSpinner = autoCheckout && (loadingPlanKey || loadingPackKey) && !error;
+
+  if (statusLoading || showSpinner) {
     return (
       <div className="flex flex-col items-center px-4 py-12">
         <p className="text-[14px] text-gray-400">
@@ -132,21 +178,54 @@ const UpgradePage = () => {
     );
   }
 
+  const showDupSubCta = isSubscribed && /already have an active subscription/i.test(error);
+
   return (
-    <div className="flex flex-col items-center px-4 py-10 md:py-12 bg-[#EFF6FF] min-h-[60vh] -mx-4 sm:mx-0 rounded-[16px]">
-      <div className="w-full max-w-[1200px]">
+    <div className="flex flex-col items-center px-4 py-10 md:py-12 bg-[#F8FAFC] min-h-[60vh] -mx-4 sm:mx-0 rounded-[16px]">
+      <div className="w-full max-w-[1100px]">
+        {intentBanner && (
+          <div className="mb-8 text-center max-w-[640px] mx-auto">
+            <h2 className="text-[22px] md:text-[26px] font-bold text-[#101828] tracking-tight mb-2">
+              {intentBanner.title}
+            </h2>
+            <p className="text-[14px] md:text-[15px] text-[#667085] leading-relaxed">
+              {intentBanner.body}
+            </p>
+            {intentBanner.showPackJump && (
+              <button
+                type="button"
+                onClick={scrollToPacks}
+                className="mt-3 text-[13px] font-semibold text-[#175CD3] hover:text-[#0B4A9E] underline-offset-2 hover:underline"
+              >
+                Or jump to one-time packs
+              </button>
+            )}
+          </div>
+        )}
+        {showDupSubCta && (
+          <div className="mb-6 text-center">
+            <button
+              type="button"
+              onClick={() => openBillingPortal()}
+              disabled={portalLoading}
+              className="h-10 px-5 rounded-[10px] bg-[#344054] text-white text-[13px] font-semibold hover:bg-[#1D2939] disabled:opacity-60"
+            >
+              {portalLoading ? 'Opening…' : 'Manage subscription'}
+            </button>
+          </div>
+        )}
         <PricingPlansSection
           promoEligible={promoEligible}
-          showFreeCard={subscriberState === 'none'}
           highlightPlanKey={planFromUrl}
+          highlightPackKey={packFromUrl}
           subscriberState={subscriberState}
           loadingPlanKey={loadingPlanKey}
           loadingPackKey={loadingPackKey}
           portalLoading={portalLoading}
           error={error}
-          onSelectFree={() => navigate('/dashboard')}
+          showHeader={!intentBanner}
           onSelectPlan={handleSelectPlan}
-          onSelectPack={handleSelectPack}
+          onSelectPack={(key) => handleSelectPack(key)}
           onManageSubscription={() => openBillingPortal()}
           onUpgradeToMonthly={() => openBillingPortal('subscription_update')}
         />

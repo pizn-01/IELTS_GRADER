@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, X } from 'lucide-react';
 import { trackEvent } from '../utils/trackEvent';
+import { goToUpgradeShop } from '../utils/pricingNav';
 
 /**
  * Post-report upgrade offer. Parent must open only after TargetBand /
@@ -29,7 +30,11 @@ export default function ReportUpgradeModal({
   const goUpgrade = () => {
     track();
     onDismiss?.();
-    navigate('/pricing?plan=monthly');
+    goToUpgradeShop({
+      navigate,
+      from: 'report',
+      plan: 'monthly',
+    });
   };
 
   const goPractice = () => {

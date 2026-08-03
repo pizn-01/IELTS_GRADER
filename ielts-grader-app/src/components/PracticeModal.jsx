@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileCheck2, Clock, Info, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { goToUpgradeShop } from '../utils/pricingNav';
 import { useAuth } from '../context/AuthContext';
 import { showFreeTrialEvalMessage, FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
@@ -144,14 +145,14 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
       });
       if ((Number(fresh.credits_remaining) || 0) <= 0) {
         onClose?.();
-        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
         return true;
       }
       return false;
     } catch {
       // Fail closed — do not allow practice if credits cannot be verified
       onClose?.();
-      navigate('/analysis-ready', { state: { outOfCredits: true } });
+      goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
       return true;
     }
   };
@@ -208,7 +209,7 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
     } catch (err) {
       stopProgressAnimation();
       if (err.message && err.message.includes('Insufficient evaluation credits')) {
-        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
         return;
       }
       setGradingError(err.message || 'Submission failed. Please check your credits and try again.');
@@ -385,8 +386,8 @@ const PracticeModal = ({ isOpen, onClose, onAnalysisComplete, onStartMock, onSta
                   <p className="text-center text-[12px] text-[#9CA3AF] mt-5 mb-0">
                     {isFreeTrialOffer
                       ? (user
-                          ? `${Number(user.credits_remaining) || 0} free evaluation${(Number(user.credits_remaining) || 0) === 1 ? '' : 's'} remaining · Results in about 60 seconds`
-                          : `${FREE_TRIAL_CREDITS} free evaluations · Results in about 60 seconds`)
+                          ? `${Number(user.credits_remaining) || 0} evaluation${(Number(user.credits_remaining) || 0) === 1 ? '' : 's'} remaining · Results in about 60 seconds`
+                          : `${FREE_TRIAL_CREDITS} evaluations · Results in about 60 seconds`)
                       : 'Results in about 60 seconds'}
                   </p>
 

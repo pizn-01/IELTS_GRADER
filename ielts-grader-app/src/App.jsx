@@ -38,7 +38,6 @@ import FeaturesPage from './pages/FeaturesPage';
 import GradeEssayPage from './pages/GradeEssayPage';
 
 // ── Protected Functional Pages ────────────────────────────────────────────────
-import SelectionPage from './pages/SelectionPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import MockExamPage from './pages/MockExamPage';
 import ReportPage from './pages/ReportPage';
@@ -181,6 +180,13 @@ const PerformanceRedirect = () => {
   return <Navigate to={query ? `/dashboard?${query}` : '/dashboard'} replace />;
 };
 
+/** Legacy /selection → public Pricing, preserving query (e.g. ?plan=monthly). */
+const SelectionToPricingRedirect = () => {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.toString();
+  return <Navigate to={query ? `/pricing?${query}` : '/pricing'} replace />;
+};
+
 // ── Home Route — redirects authenticated users to dashboard ───────────────────
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -204,6 +210,7 @@ function App() {
   const handleProtectedNavigate = (target, label) => {
     if (target === 'dashboard') navigate('/dashboard');
     else if (target === 'learning') navigate('/learning');
+    else if (target === 'plans') navigate('/upgrade?plan=monthly&from=upgrade');
     else if (target === 'subscription') navigate('/subscription');
     else if (target === 'settings') navigate('/settings', { state: { activeTab: label } });
     else if (target === 'logout') {
@@ -279,7 +286,7 @@ function App() {
 
         <Route path="/upgrade" element={
           <ProtectedRoute>
-            <Layout currentView="" onNavigate={handleProtectedNavigate} profileImage={profileImage}>
+            <Layout currentView="plans" onNavigate={handleProtectedNavigate} profileImage={profileImage}>
               <UpgradePage />
             </Layout>
           </ProtectedRoute>
@@ -298,7 +305,7 @@ function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute><DashboardApp /></ProtectedRoute>
         } />
-        <Route path="/selection" element={<SelectionPage />} />
+        <Route path="/selection" element={<SelectionToPricingRedirect />} />
         <Route path="/mock-exam" element={<MockExamPage />} />
         <Route path="/report" element={
           <ProtectedRoute>

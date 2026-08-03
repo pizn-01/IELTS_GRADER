@@ -11,6 +11,7 @@ import { isGeneralTask1Letter } from '../utils/parseLetterQuestion';
 import { detectChartType } from './QuestionChart';
 import { setPendingGradePayload } from '../utils/authStorage';
 import { trackEvent } from '../utils/trackEvent';
+import { goToUpgradeShop } from '../utils/pricingNav';
 
 const QUESTION_BANK = {
   'Academic-Task 2': [
@@ -249,7 +250,7 @@ const MockExam = ({ examType, taskType, onExit }) => {
       setContextSubmissionId(res.submission_id); // persist for AnalysisReadyPage polling
     } catch (err) {
       if (err.message && err.message.includes('Insufficient evaluation credits')) {
-        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
         return;
       }
       // If server is reachable and threw a real error (e.g. no credits), surface it

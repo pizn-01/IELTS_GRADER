@@ -49,10 +49,15 @@ const Navbar = ({ showCredits }) => {
 
   const navLinks = ['How it works', 'Sample Report', 'Pricing', 'Blog', 'FAQS', 'Contact'];
   const isBlogActive = location.pathname === '/blog' || location.pathname.startsWith('/blog/');
-  const isPricingActive = location.pathname === '/pricing';
+  const isPricingActive =
+    location.pathname === '/pricing' || location.pathname === '/upgrade';
   const navLinkTo = (link) => {
     if (link === 'Blog') return '/blog';
-    if (link === 'Pricing') return '/pricing';
+    if (link === 'Pricing') {
+      return user
+        ? '/upgrade?plan=monthly&from=upgrade'
+        : '/pricing';
+    }
     if (link === 'Contact') return '/settings?tab=Support';
     return `/#${link.toLowerCase().replace(/\s+/g, '-')}`;
   };

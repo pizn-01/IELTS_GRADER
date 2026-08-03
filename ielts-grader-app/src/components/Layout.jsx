@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BookOpen } from 'lucide-react';
+import { Bell, Menu, X, User, HelpCircle, LogOut, CircleDollarSign, LayoutDashboard, BookOpen, Tag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLearningNavBadge } from '../hooks/useLearningNavBadge';
 import BrandLogo from './BrandLogo';
@@ -36,6 +36,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
   const navItems = [
     { label: 'Dashboard', id: 'dashboard' },
     { label: 'Personalized Learning', id: 'learning' },
+    { label: 'Plans', id: 'plans' },
     { label: 'Your Subscription', id: 'subscription' },
     { label: 'Settings', id: 'settings' },
   ];
@@ -178,6 +179,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
                       <div className="px-3 space-y-1">
                         {[
                           { label: 'Profile', icon: <User size={18} />, id: 'settings' },
+                          { label: 'Plans', icon: <Tag size={18} />, id: 'plans' },
                           { label: 'Subscription', icon: <CircleDollarSign size={18} />, id: 'subscription' },
                           { label: 'Support', icon: <HelpCircle size={18} />, id: 'settings' },
                         ].map((item, idx) => (
@@ -257,6 +259,7 @@ const Layout = ({ children, onNavigate, currentView = 'dashboard', actions, prof
               {[
                 { label: 'Dashboard',    icon: <LayoutDashboard size={20} />, id: 'dashboard' },
                 { label: 'Learning',     icon: <BookOpen size={20} />,        id: 'learning' },
+                { label: 'Plans',        icon: <Tag size={20} />,             id: 'plans' },
                 { label: 'Profile',      icon: <User size={20} />,            id: 'settings' },
                 { label: 'Subscription', icon: <CircleDollarSign size={20} />,id: 'subscription' },
                 { label: 'Support',      icon: <HelpCircle size={20} />,      id: 'settings' },

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { goToUpgradeShop } from '../utils/pricingNav';
 import { extractFileText, UPLOAD_ACCEPT } from '../utils/extractFileText';
 import { normalizeParagraphBreaks } from '../utils/normalizeParagraphBreaks';
 import { setPendingGradePayload } from '../utils/authStorage';
@@ -135,7 +136,7 @@ export default function GradeEssayForm({
       }
     } catch (err) {
       if (err.message && err.message.includes('Insufficient evaluation credits')) {
-        navigate('/analysis-ready', { state: { outOfCredits: true } });
+        goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
       } else {
         setFileReadError(err.message || 'Submission failed. Please try again.');
         setIsSubmitting(false);

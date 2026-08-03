@@ -36,7 +36,7 @@ const FAQ = () => {
     },
     {
       q: 'How do credits and pricing work?',
-      a: 'Every account starts with 2 free evaluation credits. After that, you can choose a plan on our Pricing page, from a fixed number of evaluations per week to a larger monthly allowance, depending on how intensively you want to practice.'
+      a: 'Every account starts with 2 free evaluation credits. After that, choose Premium (Weekly or Monthly) or a one-time pack from Pricing (or Plans in your account when signed in), depending on how intensively you want to practice.'
     },
     {
       q: 'Can I practice under real exam conditions?',

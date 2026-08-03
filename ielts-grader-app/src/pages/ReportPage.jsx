@@ -9,6 +9,7 @@ import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { trackEvent } from '../utils/trackEvent';
+import { goToUpgradeShop } from '../utils/pricingNav';
 import {
   hasDismissedReportUpgradeModal,
   markReportUpgradeModalDismissed,
@@ -194,7 +195,7 @@ const ReportPage = () => {
   };
 
   const redirectOutOfCredits = () => {
-    navigate('/analysis-ready', { state: { outOfCredits: true } });
+    goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
   };
 
   const handlePracticeAgain = async () => {
@@ -292,12 +293,12 @@ const ReportPage = () => {
             });
             if ((Number(fresh.credits_remaining) || 0) <= 0) {
               setShowPracticeModal(false);
-              navigate('/analysis-ready', { state: { outOfCredits: true } });
+              goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
               return;
             }
           } catch {
             setShowPracticeModal(false);
-            navigate('/analysis-ready', { state: { outOfCredits: true } });
+            goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
             return;
           }
           setShowPracticeModal(false);

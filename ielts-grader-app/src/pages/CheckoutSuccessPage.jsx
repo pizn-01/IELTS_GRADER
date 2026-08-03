@@ -11,7 +11,8 @@ const CheckoutSuccessPage = () => {
   const sessionId = searchParams.get('session_id');
 
   const [status, setStatus] = useState('polling'); // 'polling' | 'success' | 'timeout'
-  const [packName, setPackName] = useState('');
+  const [purchaseType, setPurchaseType] = useState(null); // 'subscription' | 'credit_pack'
+  const [productName, setProductName] = useState('');
   const [creditsGranted, setCreditsGranted] = useState(0);
   const redirectTimerRef = useRef(null);
 
@@ -32,7 +33,9 @@ const CheckoutSuccessPage = () => {
         const result = await api.verifyStripeSession(sessionId);
 
         if (result.status === 'completed') {
-          setPackName(result.pack_name || 'Credit Pack');
+          const type = result.type === 'subscription' ? 'subscription' : 'credit_pack';
+          setPurchaseType(type);
+          setProductName(result.pack_name || (type === 'subscription' ? 'Premium' : 'Credit Pack'));
           setCreditsGranted(result.credits_granted || 0);
           setStatus('success');
 
@@ -50,7 +53,7 @@ const CheckoutSuccessPage = () => {
           } catch {}
 
           if (!cancelled) {
-            redirectTimerRef.current = setTimeout(() => navigate('/dashboard'), 3000);
+            redirectTimerRef.current = setTimeout(() => navigate('/dashboard'), 5000);
           }
           return;
         }
@@ -90,15 +93,30 @@ const CheckoutSuccessPage = () => {
               <CheckCircle className="w-9 h-9 text-[#10B981]" />
             </div>
             <h1 className="text-[28px] font-bold text-[#1a1f36] mb-2">Payment successful!</h1>
-            <p className="text-[15px] text-[#4B5563] mb-1">
-              <span className="font-bold text-[#1a1f36]">{creditsGranted} credits</span> on <span className="font-semibold">{packName}</span> are now active.
-            </p>
-            {/pack/i.test(packName) && (
-              <p className="text-[13px] text-[#667085] mt-2">
-                Pack credits never expire — they stay after renewals and cancelations.
+            {purchaseType === 'subscription' ? (
+              <p className="text-[15px] text-[#4B5563] mb-1">
+                You&apos;re on <span className="font-semibold text-[#1a1f36]">{productName}</span>.{' '}
+                <span className="font-bold text-[#1a1f36]">{creditsGranted} evaluations</span> ready.
               </p>
+            ) : (
+              <>
+                <p className="text-[15px] text-[#4B5563] mb-1">
+                  <span className="font-bold text-[#1a1f36]">{creditsGranted} credits</span> on{' '}
+                  <span className="font-semibold">{productName}</span> are now active.
+                </p>
+                <p className="text-[13px] text-[#667085] mt-2">
+                  Pack credits never expire — they stay after renewals and cancelations.
+                </p>
+              </>
             )}
-            <p className="text-[13px] text-[#9CA3AF] mt-4">Redirecting you to the dashboard…</p>
+            <button
+              type="button"
+              onClick={goDashboard}
+              className="mt-6 w-full h-[48px] bg-[#1a1f36] text-white rounded-[10px] font-bold text-[14px] hover:bg-[#2a2f46] transition-all"
+            >
+              Start practice
+            </button>
+            <p className="text-[13px] text-[#9CA3AF] mt-3">Or wait — redirecting to the dashboard…</p>
           </>
         )}
 
@@ -109,13 +127,13 @@ const CheckoutSuccessPage = () => {
             </div>
             <h1 className="text-[24px] font-bold text-[#1a1f36] mb-2">Payment received</h1>
             <p className="text-[14px] text-[#4B5563] mb-6">
-              Your payment was processed. Credits may take a moment to appear. Refresh your dashboard if they haven't shown up yet.
+              Your payment was processed. Credits may take a moment to appear. Refresh your dashboard if they haven&apos;t shown up yet.
             </p>
             <button
               onClick={goDashboard}
               className="w-full h-[48px] bg-[#1a1f36] text-white rounded-[10px] font-bold text-[14px] hover:bg-[#2a2f46] transition-all"
             >
-              Go to Dashboard
+              Start practice
             </button>
           </>
         )}

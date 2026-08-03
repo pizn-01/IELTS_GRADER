@@ -437,11 +437,12 @@ export const api = {
 
   // ─── Stripe API ───────────────────────────────────────────────────────────────
   // plan: 'weekly' | 'monthly'
-  createSubscriptionCheckout: async (plan) => {
+  // opts.cancelPath — pathname(+search) returned on Stripe cancel (allowlisted server-side)
+  createSubscriptionCheckout: async (plan, { cancelPath } = {}) => {
     const res = await fetch(`${BASE_URL}/stripe/create-upgrade-checkout`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, cancel_path: cancelPath || undefined }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -451,11 +452,11 @@ export const api = {
   },
 
   // pack: 'starter' | 'boost'
-  createPackCheckout: async (pack) => {
+  createPackCheckout: async (pack, { cancelPath } = {}) => {
     const res = await fetch(`${BASE_URL}/stripe/create-pack-checkout`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ pack }),
+      body: JSON.stringify({ pack, cancel_path: cancelPath || undefined }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

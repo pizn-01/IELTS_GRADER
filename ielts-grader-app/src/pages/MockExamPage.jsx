@@ -4,6 +4,7 @@ import MockExam from '../components/MockExam';
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { goToUpgradeShop } from '../utils/pricingNav';
 import SeoHead from '../seo/SeoHead';
 import { redirectIfNeedsDashboardBridge } from '../utils/dashboardBridge';
 
@@ -44,7 +45,7 @@ const MockExamPage = () => {
         });
         const remaining = Number(fresh.credits_remaining) || 0;
         if (remaining <= 0) {
-          navigate('/analysis-ready', { state: { outOfCredits: true }, replace: true });
+          goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly', replace: true });
           return;
         }
         const blocked = await redirectIfNeedsDashboardBridge({
@@ -56,7 +57,7 @@ const MockExamPage = () => {
         setAllowed(true);
       } catch {
         if (cancelled) return;
-        navigate('/analysis-ready', { state: { outOfCredits: true }, replace: true });
+        goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly', replace: true });
       } finally {
         if (!cancelled) setCreditCheckDone(true);
       }

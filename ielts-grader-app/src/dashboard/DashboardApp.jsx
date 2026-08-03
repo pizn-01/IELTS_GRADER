@@ -23,6 +23,7 @@ import LearningEditionModal from '../components/LearningEditionModal';
 import { useLearningEditionPromo } from '../hooks/useLearningEditionPromo';
 import { usePerformanceAnalytics } from '../hooks/usePerformanceAnalytics';
 import { trackEvent } from '../utils/trackEvent';
+import { goToUpgradeShop } from '../utils/pricingNav';
 import {
   hasSeenDashboardTabsGuide,
   markDashboardTabsGuideSeen,
@@ -217,7 +218,7 @@ function DashboardApp() {
   }, [isLoading, perf.loading, user, bandForPrompt]);
 
   const redirectOutOfCredits = () => {
-    navigate('/analysis-ready', { state: { outOfCredits: true } });
+    goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
   };
 
   const handleStartPractice = async () => {
@@ -530,12 +531,12 @@ function DashboardApp() {
               });
               if ((Number(fresh.credits_remaining) || 0) <= 0) {
                 setShowModal(false);
-                navigate('/analysis-ready', { state: { outOfCredits: true } });
+                goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
                 return;
               }
             } catch {
               setShowModal(false);
-              navigate('/analysis-ready', { state: { outOfCredits: true } });
+              goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
               return;
             }
             setShowModal(false);

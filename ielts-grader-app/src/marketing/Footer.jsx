@@ -1,11 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Footer = () => {
+  const { user } = useAuth();
+  const pricingHref = user
+    ? '/upgrade?plan=monthly&from=upgrade'
+    : '/pricing';
+
   const primaryLinks = [
     { label: 'Blog', href: '/blog' },
     { label: 'Essay checker', href: '/ielts-essay-checker' },
-    { label: 'Pricing', href: '/pricing' },
+    { label: 'Pricing', href: pricingHref },
     { label: 'FAQ', href: '/#faqs' },
     { label: 'Support', href: '/settings?tab=Support' },
   ];

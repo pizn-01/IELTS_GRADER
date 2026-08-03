@@ -35,6 +35,41 @@ const getStripe = () => {
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app';
 
+/**
+ * Allow only /pricing or /upgrade (+ safe query) as Stripe cancel destinations.
+ * Drops checkout=1 and unknown params so Cancel cannot re-fire auto-checkout.
+ */
+function resolveCancelUrl(cancelPath) {
+  const fallback = `${FRONTEND_URL}/upgrade`;
+  if (!cancelPath || typeof cancelPath !== 'string') return fallback;
+  const trimmed = cancelPath.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return fallback;
+  if (trimmed.includes('://') || trimmed.includes('\\')) return fallback;
+  if (trimmed.length > 256) return fallback;
+
+  const qIndex = trimmed.indexOf('?');
+  const pathOnly = qIndex >= 0 ? trimmed.slice(0, qIndex) : trimmed;
+  if (pathOnly !== '/pricing' && pathOnly !== '/upgrade') return fallback;
+
+  const search = qIndex >= 0 ? trimmed.slice(qIndex + 1) : '';
+  if (!search) return `${FRONTEND_URL}${pathOnly}`;
+
+  const incoming = new URLSearchParams(search);
+  const outgoing = new URLSearchParams();
+  const plan = incoming.get('plan');
+  if (plan === 'weekly' || plan === 'monthly') outgoing.set('plan', plan);
+  const from = incoming.get('from');
+  if (from === 'out_of_credits' || from === 'upgrade' || from === 'report') {
+    outgoing.set('from', from);
+  }
+  const pack = incoming.get('pack');
+  if (pack === 'starter' || pack === 'boost') outgoing.set('pack', pack);
+  // checkout and any other keys are dropped
+
+  const qs = outgoing.toString();
+  return qs ? `${FRONTEND_URL}${pathOnly}?${qs}` : `${FRONTEND_URL}${pathOnly}`;
+}
+
 async function resolveStripeCustomerId(stripe, userId, email) {
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -110,13 +145,13 @@ router.post('/create-billing-portal-session', authenticateToken, async (req, res
 // ─── POST /api/stripe/create-public-checkout ──────────────────────────────
 // Deprecated — subscriptions only. Kept for backwards compatibility.
 router.post('/create-public-checkout', async (_req, res) => {
-  return res.status(410).json({ error: 'One-time checkout is no longer available. Please subscribe at /upgrade.' });
+  return res.status(410).json({ error: 'One-time checkout is no longer available. Choose a plan on Pricing or Upgrade.' });
 });
 
 // ─── POST /api/stripe/create-upgrade-checkout ────────────────────────────────
 // Authenticated subscription checkout for Weekly Sprint / Monthly Mastery plans
 router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
-  const { plan: planKey } = req.body;
+  const { plan: planKey, cancel_path: cancelPath } = req.body;
   const userId = req.user.userId;
   const email = req.user.email;
 
@@ -158,6 +193,13 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
     const periodEnded = profile?.subscription_period_end
       && new Date(profile.subscription_period_end) <= new Date();
     const isSubscribed = profile?.subscription_status === 'active' && !periodEnded;
+
+    if (isSubscribed) {
+      return res.status(400).json({
+        error: 'You already have an active subscription. Manage it from Your Subscription.',
+      });
+    }
+
     const hasPaid = isSubscribed || (paymentCount ?? 0) > 0;
     const promoEligible = !hasPaid && isNewUserPromoConfigured();
     const couponId = process.env.STRIPE_COUPON_NEW_USER;
@@ -189,7 +231,7 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
         },
       },
       success_url: `${FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${FRONTEND_URL}/upgrade`,
+      cancel_url: resolveCancelUrl(cancelPath),
     };
 
     if (promoEligible) {
@@ -218,7 +260,7 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
 // ─── POST /api/stripe/create-pack-checkout ───────────────────────────────────
 // Authenticated one-time credit pack checkout (starter 10/$5, boost 25/$12)
 router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
-  const { pack: packKey } = req.body;
+  const { pack: packKey, cancel_path: cancelPath } = req.body;
   const userId = req.user.userId;
   const email = req.user.email;
 
@@ -250,6 +292,8 @@ router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: userId,
+      // Packs are always full price — never attach coupons or allow promo codes.
+      allow_promotion_codes: false,
       metadata: {
         user_id: userId,
         pack_key: pack.key,
@@ -258,7 +302,7 @@ router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
         type: 'credit_pack',
       },
       success_url: `${FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${FRONTEND_URL}/upgrade`,
+      cancel_url: resolveCancelUrl(cancelPath),
     });
 
     trackProductEvent({
@@ -282,7 +326,7 @@ router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
 // Deprecated legacy packs endpoint — use create-pack-checkout.
 router.post('/create-checkout-session', authenticateToken, async (_req, res) => {
   return res.status(410).json({
-    error: 'This checkout endpoint is deprecated. Use /create-pack-checkout or subscribe at /upgrade.',
+    error: 'This checkout endpoint is deprecated. Use /create-pack-checkout, or subscribe via Pricing or Upgrade.',
   });
 });
 
@@ -605,6 +649,7 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
     if (payment?.status === 'completed') {
       return res.json({
         status: payment.status,
+        type: 'credit_pack',
         credits_granted: payment.credits_granted,
         pack_name: payment.pack_name,
       });
@@ -627,8 +672,10 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
       if (creditsReady) {
         return res.json({
           status: 'completed',
-          credits_granted: refreshed.credits_remaining,
+          type: 'subscription',
+          credits_granted: plan.credits,
           pack_name: plan.name,
+          plan_key: refreshed.subscription_plan,
         });
       }
     }

@@ -3,6 +3,7 @@ import { FileCheck2, Clock, Info, Star, Zap, ShieldCheck, ChevronLeft, ChevronRi
 import { useGrade } from '../context/GradeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { goToUpgradeShop } from '../utils/pricingNav';
 import GradeEssayForm from '../components/GradeEssayForm';
 import { redirectIfNeedsDashboardBridge } from '../utils/dashboardBridge';
 
@@ -154,7 +155,7 @@ const Hero = () => {
 
   const handleStartMock = async (examType, taskType) => {
     if (user && (user.credits_remaining ?? 0) <= 0) {
-      navigate('/analysis-ready', { state: { outOfCredits: true } });
+      goToUpgradeShop({ navigate, from: 'out_of_credits', plan: 'monthly' });
       return;
     }
     if (user?.id && await redirectIfNeedsDashboardBridge({ userId: user.id, navigate })) {

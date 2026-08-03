@@ -10,7 +10,7 @@ const CTA = () => {
               Join over <span className="text-[#3B82F6]">10,000</span> students already using IELTSGRADER to prepare for their exams.
             </h2>
             <a
-              href="#"
+              href="/report"
               className="inline-block bg-[#1a1f36] text-white px-8 py-4 rounded-[12px] text-[16px] font-bold no-underline hover:bg-[#2a2f46] transition-all shadow-md active:scale-[0.98]"
             >
               Get started. It's free!

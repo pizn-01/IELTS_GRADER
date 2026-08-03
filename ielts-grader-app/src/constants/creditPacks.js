@@ -23,7 +23,24 @@ export const CREDIT_PACKS = {
 
 export const CREDIT_PACK_LIST = Object.values(CREDIT_PACKS);
 
-export const CREDIT_PACK_SECTION_HEADING = 'Prefer a one-time purchase?';
-export const CREDIT_PACK_SECTION_SUBHEAD =
-  'Credits never expire. Subscriptions refill each period and are better value for ongoing practice.';
+export const CREDIT_PACK_SECTION_HEADING = 'One-time purchase';
 export const CREDIT_PACK_NEVER_EXPIRE = 'Never expires';
+
+/** Contrast bullets inside the One-time offer box (full price only — never promo). */
+export const ONE_TIME_CONTRAST = [
+  'Pay once — no subscription',
+  '10 or 25 evaluations',
+  'Credits never expire',
+  'Best for occasional practice or a top-up',
+  'Charged at listed price (no promo codes)',
+];
+
+export const ONE_TIME_FEATURES = [
+  'Same full band report and fix cards',
+  'All task types: Academic & General Training',
+  'Credits survive cancelation and renewals',
+  'No automatic renewal',
+];
+
+export const ONE_TIME_TRUST_LINE =
+  'Full price · No subscription · Credits never expire.';

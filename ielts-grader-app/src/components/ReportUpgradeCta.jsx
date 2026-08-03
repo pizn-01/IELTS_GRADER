@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trackEvent } from '../utils/trackEvent';
+import { goToUpgradeShop } from '../utils/pricingNav';
 
 /**
  * Inline upgrade CTA for the report Overview (after Strengths/Weaknesses).
@@ -23,7 +24,11 @@ export default function ReportUpgradeCta({
 
   const goUpgrade = () => {
     track();
-    navigate('/pricing?plan=monthly');
+    goToUpgradeShop({
+      navigate,
+      from: 'report',
+      plan: 'monthly',
+    });
   };
 
   const goPractice = () => {
