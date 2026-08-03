@@ -446,7 +446,9 @@ export const api = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to create checkout session.');
+      const err = new Error(data.error || 'Failed to create checkout session.');
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   },
@@ -460,7 +462,9 @@ export const api = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to create pack checkout.');
+      const err = new Error(data.error || 'Failed to create pack checkout.');
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   },
@@ -473,7 +477,9 @@ export const api = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to open billing portal.');
+      const err = new Error(data.error || 'Failed to open billing portal.');
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   },
@@ -482,14 +488,20 @@ export const api = {
     const res = await fetch(`${BASE_URL}/subscriptions/status`, { headers: getHeaders() });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to load subscription status.');
+      const err = new Error(data.error || 'Failed to load subscription status.');
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   },
 
   verifyStripeSession: async (sessionId) => {
     const res = await fetch(`${BASE_URL}/stripe/verify-session/${sessionId}`, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Session verification failed.');
+    if (!res.ok) {
+      const err = new Error('Session verification failed.');
+      err.status = res.status;
+      throw err;
+    }
     return res.json();
   },
 

@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import PricingPlansSection from '../components/PricingPlansSection';
 import { trackEvent } from '../utils/trackEvent';
 import { cancelPathForCheckout, intentBannerForFrom } from '../utils/pricingNav';
+import { FULL_PRICE_PLANS } from '../constants/subscriptionPlans';
 
 function normalizePlanKey(value) {
   if (value === 'weekly' || value === 'monthly') return value;
@@ -20,6 +21,7 @@ function normalizePackKey(value) {
  * Offer UI matches /pricing via PricingPlansSection; handles Stripe + billing portal.
  */
 const UpgradePage = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const planFromUrl = normalizePlanKey(searchParams.get('plan'));
   const packFromUrl = normalizePackKey(searchParams.get('pack'));
@@ -35,6 +37,7 @@ const UpgradePage = () => {
   );
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState('');
+  const [promoNotice, setPromoNotice] = useState('');
   const [status, setStatus] = useState(null);
   const [statusLoading, setStatusLoading] = useState(true);
 
@@ -62,6 +65,23 @@ const UpgradePage = () => {
     setSearchParams(next, { replace: true });
   };
 
+  const redirectToLoginForCheckout = (planKey, packKey) => {
+    const params = new URLSearchParams();
+    if (packKey) params.set('pack', packKey);
+    else params.set('plan', planKey || 'monthly');
+    params.set('checkout', '1');
+    params.set('from', fromParam);
+    navigate('/login', {
+      state: {
+        authMode: 'login',
+        from: {
+          pathname: '/upgrade',
+          search: `?${params.toString()}`,
+        },
+      },
+    });
+  };
+
   const openBillingPortal = async (flow) => {
     setPortalLoading(true);
     setError('');
@@ -71,6 +91,10 @@ const UpgradePage = () => {
       );
       window.location.href = url;
     } catch (err) {
+      if (err.status === 401) {
+        redirectToLoginForCheckout(planFromUrl || 'monthly', packFromUrl);
+        return;
+      }
       setError(err.message || 'Failed to open billing portal.');
       setPortalLoading(false);
     }
@@ -83,17 +107,19 @@ const UpgradePage = () => {
     }
     setLoadingPlanKey(planKey);
     setError('');
+    setPromoNotice('');
     try {
       const { url } = await api.createSubscriptionCheckout(planKey, { cancelPath });
       window.location.href = url;
     } catch (err) {
+      if (err.status === 401) {
+        redirectToLoginForCheckout(planKey, null);
+        return;
+      }
       const msg = err.message || 'Something went wrong. Please try again.';
       setError(msg);
       setLoadingPlanKey(null);
       clearCheckoutParams();
-      if (/already have an active subscription/i.test(msg)) {
-        // leave error visible; Manage button below via subscriber UI after refresh
-      }
     }
   };
 
@@ -109,6 +135,10 @@ const UpgradePage = () => {
       const { url } = await api.createPackCheckout(packKey, { cancelPath });
       window.location.href = url;
     } catch (err) {
+      if (err.status === 401) {
+        redirectToLoginForCheckout(null, packKey);
+        return;
+      }
       setError(err.message || 'Something went wrong. Please try again.');
       setLoadingPackKey(null);
     }
@@ -138,6 +168,21 @@ const UpgradePage = () => {
       setLoadingPlanKey(null);
       return;
     }
+
+    // Never auto-redirect to Stripe when the intro offer does not apply —
+    // the user may have clicked a promo price on /pricing.
+    if (!status.promo?.eligible) {
+      autoCheckoutStarted.current = true;
+      const planKey = planFromUrl || 'monthly';
+      const full = FULL_PRICE_PLANS[planKey];
+      setPromoNotice(
+        `The intro offer applies to first-time subscribers — your price is ${full?.label || '$15/month'}. Confirm below to continue.`
+      );
+      setLoadingPlanKey(null);
+      clearCheckoutParams();
+      return;
+    }
+
     autoCheckoutStarted.current = true;
     handleSubscribe(planFromUrl || 'monthly');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,7 +197,7 @@ const UpgradePage = () => {
     handleSubscribe(planKey);
   };
 
-  const showSpinner = autoCheckout && (loadingPlanKey || loadingPackKey) && !error;
+  const showSpinner = autoCheckout && (loadingPlanKey || loadingPackKey) && !error && !promoNotice;
 
   if (statusLoading || showSpinner) {
     return (
@@ -178,6 +223,11 @@ const UpgradePage = () => {
               {intentBanner.body}
             </p>
           </div>
+        )}
+        {promoNotice && (
+          <p className="text-[13px] text-[#B54708] bg-[#FFFAEB] border border-[#FEDF89] rounded-[10px] px-4 py-2.5 mb-6 text-center max-w-[720px] mx-auto">
+            {promoNotice}
+          </p>
         )}
         {showDupSubCta && (
           <div className="mb-6 text-center">

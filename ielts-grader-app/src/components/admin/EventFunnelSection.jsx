@@ -8,6 +8,7 @@ const EVENT_LABELS = {
   grading_completed: 'Grading completed',
   upgrade_cta_clicked: 'Upgrade CTA clicked',
   pricing_viewed: 'Pricing viewed',
+  plans_viewed: 'Plans viewed',
   checkout_started: 'Checkout started',
   payment_completed: 'Payment completed',
 };

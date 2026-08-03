@@ -119,10 +119,24 @@ export const SUBSCRIPTION_PLAN_NOTE =
 
 /** Footer trust lines under primary subscribe CTAs. */
 export const SUBSCRIPTION_TRUST_LINE_PROMO =
-  'First month at 50% off when eligible. Then regular price. Cancel anytime.';
+  'First month at 50% off. Then regular price. Cancel anytime.';
 
 export const SUBSCRIPTION_TRUST_LINE =
   'Cancel anytime. Subscription credits reset each billing period.';
+
+/** Per-evaluation unit economics shown on plan/pack chips. */
+export const PLAN_PER_EVAL = {
+  weekly: '~$0.25 / evaluation',
+  monthly: '~$0.09 / evaluation',
+};
+
+export const PACK_PER_EVAL = {
+  starter: '$0.50 / evaluation',
+  boost: '~$0.48 / evaluation',
+};
+
+export const PRICING_PAYMENT_TRUST =
+  'Secure checkout powered by Stripe · Cards & Link · Cancel anytime.';
 
 export function planKeyFromSelection(selected) {
   return selected === 'Weekly' ? 'weekly' : 'monthly';

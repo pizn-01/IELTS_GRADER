@@ -43,10 +43,11 @@ export function NewUserPromoBanner({ compact = false }) {
 
 /**
  * Sale price with loud strikethrough + SAVE badge.
- * @param {{ originalPrice: string, displayPrice: string, period?: string, size?: 'lg' | 'md' }} props
+ * @param {{ originalPrice: string, displayPrice: string, period?: string, size?: 'lg' | 'md', planKey?: 'weekly' | 'monthly' }} props
  */
-export function PromoPriceDisplay({ originalPrice, displayPrice, period, size = 'lg' }) {
+export function PromoPriceDisplay({ originalPrice, displayPrice, period, size = 'lg', planKey = 'monthly' }) {
   const isLg = size === 'lg';
+  const durationLabel = planKey === 'weekly' ? 'First 4 weeks' : 'First month only';
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2 flex-wrap">
@@ -54,7 +55,7 @@ export function PromoPriceDisplay({ originalPrice, displayPrice, period, size = 
           Save {NEW_USER_PROMO.percentOff}%
         </span>
         <span className="text-[12px] font-semibold text-[#059669]">
-          First month only
+          {durationLabel}
         </span>
       </div>
       <div className="flex items-baseline gap-2 flex-wrap">

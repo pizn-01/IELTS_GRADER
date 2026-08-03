@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const CheckoutSuccessPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { updateUser } = useAuth();
+  const { updateUser, isAuthenticated, isLoading: authLoading } = useAuth();
   const sessionId = searchParams.get('session_id');
 
   const [status, setStatus] = useState('polling'); // 'polling' | 'success' | 'timeout'
@@ -15,6 +15,7 @@ const CheckoutSuccessPage = () => {
   const [productName, setProductName] = useState('');
   const [creditsGranted, setCreditsGranted] = useState(0);
   const redirectTimerRef = useRef(null);
+  const authRedirectStarted = useRef(false);
 
   const goDashboard = () => {
     if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
@@ -23,6 +24,23 @@ const CheckoutSuccessPage = () => {
 
   useEffect(() => {
     if (!sessionId) { navigate('/dashboard'); return; }
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      if (authRedirectStarted.current) return;
+      authRedirectStarted.current = true;
+      navigate('/login', {
+        replace: true,
+        state: {
+          authMode: 'login',
+          from: {
+            pathname: '/checkout/success',
+            search: `?session_id=${encodeURIComponent(sessionId)}`,
+          },
+        },
+      });
+      return;
+    }
 
     let attempts = 0;
     const maxAttempts = 15; // 30 seconds at 2s intervals
@@ -50,14 +68,31 @@ const CheckoutSuccessPage = () => {
               is_subscribed: fresh.is_subscribed,
               has_paid: fresh.has_paid,
             });
-          } catch {}
+          } catch { /* ignore refresh errors */ }
 
           if (!cancelled) {
             redirectTimerRef.current = setTimeout(() => navigate('/dashboard'), 5000);
           }
           return;
         }
-      } catch {}
+      } catch (err) {
+        if (err?.status === 401) {
+          if (!cancelled && !authRedirectStarted.current) {
+            authRedirectStarted.current = true;
+            navigate('/login', {
+              replace: true,
+              state: {
+                authMode: 'login',
+                from: {
+                  pathname: '/checkout/success',
+                  search: `?session_id=${encodeURIComponent(sessionId)}`,
+                },
+              },
+            });
+          }
+          return;
+        }
+      }
 
       attempts++;
       if (attempts >= maxAttempts) {
@@ -74,7 +109,7 @@ const CheckoutSuccessPage = () => {
       if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sessionId, authLoading, isAuthenticated]);
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-6 font-['Inter',_sans-serif]">
@@ -83,7 +118,7 @@ const CheckoutSuccessPage = () => {
           <>
             <Loader className="w-12 h-12 text-[#4FA1FF] animate-spin mx-auto mb-6" />
             <h1 className="text-[24px] font-bold text-[#1a1f36] mb-2">Confirming your payment…</h1>
-            <p className="text-[14px] text-[#6B7280]">This only takes a moment. Please don't close this tab.</p>
+            <p className="text-[14px] text-[#6B7280]">This only takes a moment. Please don&apos;t close this tab.</p>
           </>
         )}
 
@@ -125,9 +160,9 @@ const CheckoutSuccessPage = () => {
             <div className="w-[72px] h-[72px] bg-[#FEF9C3] rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-9 h-9 text-[#EAB308]" />
             </div>
-            <h1 className="text-[24px] font-bold text-[#1a1f36] mb-2">Payment received</h1>
+            <h1 className="text-[24px] font-bold text-[#1a1f36] mb-2">We&apos;re still confirming your payment</h1>
             <p className="text-[14px] text-[#4B5563] mb-6">
-              Your payment was processed. Credits may take a moment to appear. Refresh your dashboard if they haven&apos;t shown up yet.
+              Credits may take a moment to appear. Check your dashboard in a minute, or contact support if they haven&apos;t shown up.
             </p>
             <button
               onClick={goDashboard}

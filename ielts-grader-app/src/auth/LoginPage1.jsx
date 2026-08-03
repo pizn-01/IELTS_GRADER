@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { Icons, formStyles, COLORS } from './Common.jsx';
 import { useAuth } from '../context/AuthContext';
 import { getRememberedEmail, setPostAuthRedirect } from '../utils/authStorage';
+import { SUBSCRIPTION_PLANS, formatPromoPrice } from '../constants/subscriptionPlans';
+import { CREDIT_PACKS } from '../constants/creditPacks';
 
 /** Guest continuing grading/exam — prefer signup first. */
 function isGuestContinueFlow(fromLocation) {
@@ -23,6 +25,45 @@ function prefersSignupFirst(fromLocation) {
   return isGuestContinueFlow(fromLocation) || isPricingCheckoutFlow(fromLocation);
 }
 
+/** True when auth was opened mid-purchase (resume to /upgrade?checkout=1). */
+function isCheckoutIntentFlow(fromLocation) {
+  if (!fromLocation?.pathname) return false;
+  if (fromLocation.pathname !== '/upgrade' && fromLocation.pathname !== '/pricing') return false;
+  const params = new URLSearchParams(fromLocation.search || '');
+  return params.get('checkout') === '1';
+}
+
+function parseCheckoutIntent(fromLocation) {
+  if (!isCheckoutIntentFlow(fromLocation)) return null;
+  const params = new URLSearchParams(fromLocation.search || '');
+  const pack = params.get('pack');
+  const plan = params.get('plan');
+  if (pack === 'starter' || pack === 'boost') {
+    const packData = CREDIT_PACKS[pack];
+    return {
+      kind: 'pack',
+      key: pack,
+      name: packData.name,
+      price: packData.price,
+      detail: `${packData.credits} evaluations · one-time`,
+      showPromo: false,
+    };
+  }
+  const planKey = plan === 'weekly' ? 'weekly' : 'monthly';
+  const planData = SUBSCRIPTION_PLANS[planKey];
+  const pricing = formatPromoPrice(planData, { showPromo: true });
+  return {
+    kind: 'plan',
+    key: planKey,
+    name: planData.name,
+    price: pricing.displayPrice,
+    originalPrice: pricing.originalPrice,
+    period: pricing.period,
+    detail: `${planData.credits} evaluations · ${planKey === 'weekly' ? 'weekly' : 'monthly'}`,
+    showPromo: pricing.showPromo,
+  };
+}
+
 const LoginPage1 = () => {
   const { login, register, signInWithGoogle, rememberMePreference, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -35,6 +76,8 @@ const LoginPage1 = () => {
   const fromState = fromLocation?.state;
   const isGuestFlow = isGuestContinueFlow(fromLocation);
   const preferSignup = prefersSignupFirst(fromLocation);
+  const checkoutIntent = useMemo(() => parseCheckoutIntent(fromLocation), [fromLocation]);
+  const isCheckoutIntent = Boolean(checkoutIntent);
 
   const initialMode =
     location.state?.authMode === 'signup' || location.state?.authMode === 'login'
@@ -115,7 +158,9 @@ const LoginPage1 = () => {
     setSignupData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const isSignupValid = Object.values(signupData).every((val) => val.length > 0);
+  const isSignupValid = isCheckoutIntent
+    ? Boolean(signupData.email && signupData.password && signupData.confirmPassword)
+    : Object.values(signupData).every((val) => val.length > 0);
 
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
@@ -127,10 +172,13 @@ const LoginPage1 = () => {
     setError('');
     setIsSubmitting(true);
     try {
+      const first = isCheckoutIntent ? '' : signupData.firstName;
+      const last = isCheckoutIntent ? '' : signupData.lastName;
+      const fullName = `${first} ${last}`.trim() || signupData.email.split('@')[0] || 'User';
       await register({
-        first_name: signupData.firstName,
-        last_name: signupData.lastName,
-        full_name: `${signupData.firstName} ${signupData.lastName}`.trim(),
+        first_name: first,
+        last_name: last,
+        full_name: fullName,
         email: signupData.email,
         password: signupData.password,
       });
@@ -144,17 +192,39 @@ const LoginPage1 = () => {
 
   const isSignup = mode === 'signup';
   const title = isSignup
-    ? isGuestFlow
-      ? 'Create your free account'
-      : 'Create free account'
-    : 'Welcome back';
+    ? isCheckoutIntent
+      ? 'Create your account to complete checkout'
+      : isGuestFlow
+        ? 'Create your free account'
+        : 'Create free account'
+    : isCheckoutIntent
+      ? 'Log in to complete checkout'
+      : 'Welcome back';
   const subtitle = isSignup
-    ? isGuestFlow
-      ? 'Sign up to get your report: 2 free evaluations, no card required.'
-      : 'Join IELTSGRADER and start improving in minutes.'
-    : isGuestFlow
-      ? 'Log in to continue and get your report.'
-      : 'Log in to access your account and manage everything in one place.';
+    ? isCheckoutIntent
+      ? 'Almost there — create a free account, then continue to secure payment.'
+      : isGuestFlow
+        ? 'Sign up to get your report: 2 free evaluations, no card required.'
+        : 'Join IELTSGRADER and start improving in minutes.'
+    : isCheckoutIntent
+      ? 'Sign in to finish your purchase.'
+      : isGuestFlow
+        ? 'Log in to continue and get your report.'
+        : 'Log in to access your account and manage everything in one place.';
+
+  const signupCtaLabel = isSubmitting
+    ? 'Creating account...'
+    : isCheckoutIntent
+      ? 'Continue to payment'
+      : isGuestFlow
+        ? 'Create account & continue'
+        : 'Create free account';
+
+  const loginCtaLabel = isSubmitting
+    ? 'Signing in...'
+    : isCheckoutIntent
+      ? 'Continue to payment'
+      : 'Sign In';
 
   const tabBtn = (id, label) => {
     const active = mode === id;
@@ -201,6 +271,53 @@ const LoginPage1 = () => {
             {subtitle}
           </p>
         </div>
+
+        {checkoutIntent && (
+          <div
+            style={{
+              background: '#F0F9FF',
+              border: '1.5px solid #B2DDFF',
+              borderRadius: '12px',
+              padding: '14px 16px',
+              marginBottom: '20px',
+              textAlign: 'left',
+            }}
+          >
+            <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 700, color: '#175CD3', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              Your order
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#101828' }}>
+                  {checkoutIntent.name}
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#667085' }}>
+                  {checkoutIntent.detail}
+                </p>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                {checkoutIntent.showPromo && checkoutIntent.originalPrice ? (
+                  <>
+                    <span style={{ fontSize: '13px', color: '#9CA3AF', textDecoration: 'line-through', marginRight: 6 }}>
+                      {checkoutIntent.originalPrice}{checkoutIntent.period || ''}
+                    </span>
+                    <span style={{ fontSize: '16px', fontWeight: 800, color: '#059669' }}>
+                      {checkoutIntent.price}{checkoutIntent.period || ''}
+                    </span>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', fontWeight: 600, color: '#059669' }}>
+                      50% off first month
+                    </p>
+                  </>
+                ) : (
+                  <span style={{ fontSize: '16px', fontWeight: 800, color: '#101828' }}>
+                    {checkoutIntent.price}
+                    {checkoutIntent.period || (checkoutIntent.kind === 'pack' ? ' one-time' : '')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Log in / Sign up toggle */}
         <div
@@ -387,39 +504,41 @@ const LoginPage1 = () => {
               }}
               disabled={!email || !password || isSubmitting}
             >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
+              {loginCtaLabel}
             </button>
           </form>
         ) : (
           <form onSubmit={handleSignupSubmit}>
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={formStyles.label}>First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  placeholder="Enter First Name"
-                  value={signupData.firstName}
-                  onChange={handleSignupChange}
-                  style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
-                  onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
-                  onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
-                />
+            {!isCheckoutIntent && (
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={formStyles.label}>First Name</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    placeholder="Enter First Name"
+                    value={signupData.firstName}
+                    onChange={handleSignupChange}
+                    style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                    onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={formStyles.label}>Last Name</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    placeholder="Enter Last Name"
+                    value={signupData.lastName}
+                    onChange={handleSignupChange}
+                    style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
+                    onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
+                  />
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <label style={formStyles.label}>Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  placeholder="Enter Last Name"
-                  value={signupData.lastName}
-                  onChange={handleSignupChange}
-                  style={{ ...formStyles.input, border: '1.5px solid #E5E7EB', transition: 'all 0.2s' }}
-                  onFocus={(e) => { e.target.style.borderColor = COLORS.blue; }}
-                  onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; }}
-                />
-              </div>
-            </div>
+            )}
 
             <div style={{ marginBottom: '20px' }}>
               <label style={formStyles.label}>Email</label>
@@ -532,7 +651,7 @@ const LoginPage1 = () => {
               }}
               disabled={!isSignupValid || isSubmitting}
             >
-              {isSubmitting ? 'Creating account...' : isGuestFlow ? 'Create account & continue' : 'Create free account'}
+              {signupCtaLabel}
             </button>
           </form>
         )}

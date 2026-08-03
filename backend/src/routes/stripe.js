@@ -37,6 +37,18 @@ const getStripe = () => {
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ielts-grader-akx4.vercel.app';
 
+/** Checkout sessions expire after 24h; recovery lets buyers resume via Stripe email/link. */
+const CHECKOUT_SESSION_TTL_SECONDS = 24 * 60 * 60;
+
+function checkoutExpirationParams() {
+  return {
+    expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_SESSION_TTL_SECONDS,
+    after_expiration: {
+      recovery: { enabled: true },
+    },
+  };
+}
+
 /**
  * Allow only /pricing or /upgrade (+ safe query) as Stripe cancel destinations.
  * Drops checkout=1 and unknown params so Cancel cannot re-fire auto-checkout.
@@ -96,6 +108,70 @@ const UPGRADE_PLANS = {
   weekly:  { ...SUBSCRIPTION_PLANS.weekly,  get priceId() { return process.env.STRIPE_PRICE_WEEKLY_SPRINT;  } },
   monthly: { ...SUBSCRIPTION_PLANS.monthly, get priceId() { return process.env.STRIPE_PRICE_MONTHLY_MASTERY; } },
 };
+
+/**
+ * Compare Stripe Price.unit_amount to local catalog amountCents.
+ * Logs errors on mismatch so displayed prices stay in sync with charges.
+ * Fire-and-forget from server boot — never throws.
+ */
+async function validateStripePriceCatalog() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.warn('[stripe] STRIPE_SECRET_KEY not set — skipping price catalog validation.');
+    return;
+  }
+  if (!isNewUserPromoConfigured()) {
+    console.warn(
+      '[stripe] STRIPE_COUPON_NEW_USER is not set. Promo-eligible checkouts will fail until it is configured.'
+    );
+  }
+
+  try {
+    const stripe = getStripe();
+    const checks = [
+      {
+        label: 'weekly',
+        priceId: process.env.STRIPE_PRICE_WEEKLY_SPRINT,
+        expectedCents: SUBSCRIPTION_PLANS.weekly.amountCents,
+      },
+      {
+        label: 'monthly',
+        priceId: process.env.STRIPE_PRICE_MONTHLY_MASTERY,
+        expectedCents: SUBSCRIPTION_PLANS.monthly.amountCents,
+      },
+      {
+        label: 'starter',
+        priceId: process.env.STRIPE_PRICE_CREDITS_10,
+        expectedCents: getPackByKey('starter')?.amountCents,
+      },
+      {
+        label: 'boost',
+        priceId: process.env.STRIPE_PRICE_CREDITS_25,
+        expectedCents: getPackByKey('boost')?.amountCents,
+      },
+    ];
+
+    for (const check of checks) {
+      if (!check.priceId) {
+        console.warn(`[stripe] Missing price env for ${check.label} — catalog check skipped.`);
+        continue;
+      }
+      if (check.expectedCents == null) continue;
+      try {
+        const price = await stripe.prices.retrieve(check.priceId);
+        if (price.unit_amount !== check.expectedCents) {
+          console.error(
+            `[stripe] PRICE DRIFT: ${check.label} Stripe unit_amount=${price.unit_amount} ` +
+            `but catalog amountCents=${check.expectedCents} (price ${check.priceId})`
+          );
+        }
+      } catch (err) {
+        console.error(`[stripe] Failed to retrieve price for ${check.label}:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[stripe] Price catalog validation failed:', err.message);
+  }
+}
 
 // ─── POST /api/stripe/create-billing-portal-session ─────────────────────────
 // Redirects the user to Stripe Customer Portal to manage plan, payment method, invoices.
@@ -208,18 +284,21 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
       stripeSubscriptionId: profile?.stripe_subscription_id,
       hasSubscriptionPayment: (subPaymentCount ?? 0) > 0,
     });
-    const promoEligible = basePromoEligible && isNewUserPromoConfigured();
     const couponId = process.env.STRIPE_COUPON_NEW_USER;
 
     if (basePromoEligible && !isNewUserPromoConfigured()) {
-      console.warn(
-        '[stripe/create-upgrade-checkout] New-user promo eligible but STRIPE_COUPON_NEW_USER is not set; charging full price.'
+      console.error(
+        '[stripe/create-upgrade-checkout] New-user promo eligible but STRIPE_COUPON_NEW_USER is not set.'
       );
+      return res.status(500).json({
+        error: 'Intro offer is temporarily unavailable. Please try again shortly or contact support.',
+      });
     }
+
+    const promoEligible = basePromoEligible && isNewUserPromoConfigured();
 
     const sessionParams = {
       mode: 'subscription',
-      payment_method_types: ['card'],
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: userId,
@@ -239,6 +318,7 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
       },
       success_url: `${FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: resolveCancelUrl(cancelPath),
+      ...checkoutExpirationParams(),
     };
 
     if (promoEligible) {
@@ -295,7 +375,6 @@ router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      payment_method_types: ['card'],
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: userId,
@@ -310,6 +389,7 @@ router.post('/create-pack-checkout', authenticateToken, async (req, res) => {
       },
       success_url: `${FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: resolveCancelUrl(cancelPath),
+      ...checkoutExpirationParams(),
     });
 
     trackProductEvent({
@@ -632,6 +712,24 @@ router.post('/webhook', async (req, res) => {
 
       return res.json({ received: true });
     }
+
+    if (event.type === 'checkout.session.expired') {
+      const session = event.data.object;
+      const userId = session.metadata?.user_id || session.client_reference_id || null;
+      trackProductEvent({
+        eventName: 'checkout_abandoned',
+        userId,
+        properties: {
+          stripe_session_id: session.id,
+          mode: session.mode || null,
+          plan_key: session.metadata?.plan_key || null,
+          pack_key: session.metadata?.pack_key || null,
+          type: session.metadata?.type || null,
+          recovery_url: session.after_expiration?.recovery?.url || null,
+        },
+      }).catch(() => {});
+      return res.json({ received: true });
+    }
   } catch (err) {
     console.error('[stripe/webhook] Unhandled event error:', err.message);
     return res.status(500).json({ error: 'Webhook processing failed.' });
@@ -687,6 +785,34 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
       }
     }
 
+    // Pack checkout — grant directly if webhook is delayed (idempotent on session id)
+    if (
+      session.mode === 'payment'
+      && session.payment_status === 'paid'
+      && session.metadata?.type === 'credit_pack'
+      && (session.client_reference_id === userId || session.metadata?.user_id === userId)
+    ) {
+      const packKey = session.metadata?.pack_key
+        || getPackKeyFromPriceId(session.line_items?.data?.[0]?.price?.id)
+        || null;
+      if (packKey && getPackByKey(packKey)) {
+        await grantPackCredits(userId, packKey, {
+          sessionId: session.id,
+          paymentIntent: typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id,
+          amountCents: session.amount_total || undefined,
+        });
+        const pack = getPackByKey(packKey);
+        return res.json({
+          status: 'completed',
+          type: 'credit_pack',
+          credits_granted: pack.credits,
+          pack_name: pack.name,
+        });
+      }
+    }
+
     return res.json({ status: 'pending' });
   } catch (err) {
     console.error('[stripe/verify-session]', err.message);
@@ -695,3 +821,4 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
 });
 
 module.exports = router;
+module.exports.validateStripePriceCatalog = validateStripePriceCatalog;

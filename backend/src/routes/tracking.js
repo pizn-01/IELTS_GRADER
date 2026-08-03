@@ -14,6 +14,11 @@ function isPricingPath(path) {
   return path === '/pricing' || path.startsWith('/pricing/');
 }
 
+function isUpgradePath(path) {
+  if (!path || typeof path !== 'string') return false;
+  return path === '/upgrade' || path.startsWith('/upgrade/');
+}
+
 function isDashboardPath(path) {
   if (!path || typeof path !== 'string') return false;
   return path === '/dashboard' || path.startsWith('/dashboard/');
@@ -115,6 +120,15 @@ router.post('/pageview', optionalAuth, async (req, res) => {
     if (!skipFunnel && isPricingPath(path)) {
       trackProductEvent({
         eventName: 'pricing_viewed',
+        userId,
+        sessionId: session_id,
+        properties: { path },
+      }).catch(() => {});
+    }
+
+    if (!skipFunnel && userId && isUpgradePath(path)) {
+      trackProductEvent({
+        eventName: 'plans_viewed',
         userId,
         sessionId: session_id,
         properties: { path },

@@ -9,6 +9,7 @@ const FUNNEL_EVENTS = [
   'grading_completed',
   'upgrade_cta_clicked',
   'pricing_viewed',
+  'plans_viewed',
   'checkout_started',
   'payment_completed',
 ];
@@ -22,7 +23,12 @@ const FREE_TRIAL_ENGAGEMENT_EVENTS = [
   'free_credits_all_used',
 ];
 
-const TRACKED_EVENTS = [...FUNNEL_EVENTS, ...FREE_TRIAL_ENGAGEMENT_EVENTS];
+/** Tracked but not part of the linear conversion chain. */
+const AUX_EVENTS = [
+  'checkout_abandoned',
+];
+
+const TRACKED_EVENTS = [...FUNNEL_EVENTS, ...FREE_TRIAL_ENGAGEMENT_EVENTS, ...AUX_EVENTS];
 const FUNNEL_EVENT_SET = new Set(FUNNEL_EVENTS);
 const TRACKED_EVENT_SET = new Set(TRACKED_EVENTS);
 
@@ -111,6 +117,7 @@ async function trackProductEvent({ eventName, userId = null, sessionId = null, p
 module.exports = {
   FUNNEL_EVENTS,
   FREE_TRIAL_ENGAGEMENT_EVENTS,
+  AUX_EVENTS,
   TRACKED_EVENTS,
   FUNNEL_EVENT_SET,
   TRACKED_EVENT_SET,

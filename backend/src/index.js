@@ -220,4 +220,12 @@ app.listen(PORT, '0.0.0.0', () => {
   } catch (err) {
     console.warn('[grading-reconcile] not started:', err.message);
   }
+  try {
+    const { validateStripePriceCatalog } = require('./routes/stripe');
+    validateStripePriceCatalog().catch((err) => {
+      console.warn('[stripe] price catalog validation error:', err.message);
+    });
+  } catch (err) {
+    console.warn('[stripe] price catalog validation not started:', err.message);
+  }
 });

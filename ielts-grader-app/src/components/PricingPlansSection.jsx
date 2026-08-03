@@ -7,6 +7,9 @@ import {
   SUBSCRIPTION_TRUST_LINE_PROMO,
   SUBSCRIPTION_FEATURES,
   formatPromoPrice,
+  PLAN_PER_EVAL,
+  PACK_PER_EVAL,
+  PRICING_PAYMENT_TRUST,
 } from '../constants/subscriptionPlans';
 import {
   CREDIT_PACKS,
@@ -98,8 +101,8 @@ export default function PricingPlansSection({
   };
 
   const premiumCtaLabel = (() => {
-    if (portalLoading || loadingPlanKey === 'portal') return 'Opening…';
-    if (loadingPlanKey && loadingPlanKey !== 'portal') return 'Redirecting to Stripe…';
+    if (portalLoading) return 'Opening…';
+    if (loadingPlanKey) return 'Redirecting to Stripe…';
     if (isMonthlySub) return 'Manage Subscription';
     if (isWeeklySub && selectedPlan === 'monthly') {
       return portalLoading ? 'Opening…' : 'Upgrade to Monthly';
@@ -110,10 +113,6 @@ export default function PricingPlansSection({
     }
     return `Subscribe — ${selectedPricing.displayPrice}${selectedPricing.period}`;
   })();
-
-  const premiumBullets = isMonthlySub
-    ? SUBSCRIPTION_FEATURES.filter((line) => !/50%|first month/i.test(line))
-    : SUBSCRIPTION_FEATURES;
 
   return (
     <div className="w-full">
@@ -187,6 +186,7 @@ export default function PricingPlansSection({
                         originalPrice={opt.pricing.originalPrice}
                         displayPrice={opt.pricing.displayPrice}
                         period={opt.pricing.period}
+                        planKey={opt.key}
                         size="md"
                       />
                     ) : (
@@ -197,6 +197,9 @@ export default function PricingPlansSection({
                         </span>
                       </p>
                     )}
+                    <p className="text-[11px] font-medium text-[#175CD3] mt-1.5">
+                      {PLAN_PER_EVAL[opt.key]}
+                    </p>
                   </button>
                 );
               })}
@@ -210,7 +213,7 @@ export default function PricingPlansSection({
             </p>
           )}
 
-          <BulletList items={premiumBullets} tone="premium" />
+          <BulletList items={SUBSCRIPTION_FEATURES} tone="premium" />
 
           <div className="mt-auto pt-1">
             <button
@@ -274,6 +277,9 @@ export default function PricingPlansSection({
                       <span className="text-[12px] font-semibold text-[#667085]"> one-time</span>
                     </p>
                     <p className="text-[12px] text-[#0F766E] font-medium mt-1">{pack.credits} evaluations</p>
+                    <p className="text-[11px] font-medium text-[#0F766E] mt-1">
+                      {PACK_PER_EVAL[pack.key]}
+                    </p>
                   </button>
                 );
               })}
@@ -299,6 +305,10 @@ export default function PricingPlansSection({
           </div>
         )}
       </div>
+
+      <p className="text-[12px] text-[#667085] text-center mt-6 max-w-[720px] mx-auto leading-relaxed">
+        {PRICING_PAYMENT_TRUST}
+      </p>
     </div>
   );
 }

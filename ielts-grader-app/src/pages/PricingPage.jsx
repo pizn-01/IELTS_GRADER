@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../marketing/Navbar';
 import Footer from '../marketing/Footer';
@@ -31,6 +31,9 @@ const PricingPage = () => {
   const packFromUrl = normalizePackKey(searchParams.get('pack'));
   const autoCheckout = searchParams.get('checkout') === '1';
   const fromParam = searchParams.get('from') || 'upgrade';
+
+  // Queue CTA clicks that arrive while auth is still bootstrapping
+  const [pendingIntent, setPendingIntent] = useState(null);
 
   // Authenticated → in-app shop (preserve plan/pack/checkout/from)
   useEffect(() => {
@@ -72,12 +75,27 @@ const PricingPage = () => {
     });
   };
 
+  // Flush queued intent once auth finishes loading (guest path)
+  useEffect(() => {
+    if (authLoading || isAuthenticated || !pendingIntent) return;
+    if (pendingIntent.type === 'pack') {
+      requestAuthForPack(pendingIntent.key);
+    } else {
+      requestAuthForCheckout(pendingIntent.key);
+    }
+    setPendingIntent(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated, pendingIntent]);
+
   const handleSelectPlan = (planKey) => {
     trackEvent('upgrade_cta_clicked', {
       source: 'pricing_plan_card',
       plan_key: planKey,
     });
-    if (authLoading) return;
+    if (authLoading) {
+      setPendingIntent({ type: 'plan', key: planKey });
+      return;
+    }
     requestAuthForCheckout(planKey);
   };
 
@@ -86,7 +104,10 @@ const PricingPage = () => {
       source: 'pricing_pack_card',
       pack_key: packKey,
     });
-    if (authLoading) return;
+    if (authLoading) {
+      setPendingIntent({ type: 'pack', key: packKey });
+      return;
+    }
     requestAuthForPack(packKey);
   };
 
@@ -126,6 +147,8 @@ const PricingPage = () => {
           highlightPlanKey={planFromUrl}
           highlightPackKey={packFromUrl}
           subscriberState="none"
+          loadingPlanKey={pendingIntent?.type === 'plan' ? pendingIntent.key : null}
+          loadingPackKey={pendingIntent?.type === 'pack' ? pendingIntent.key : null}
           onSelectPlan={handleSelectPlan}
           onSelectPack={handleSelectPack}
         />
