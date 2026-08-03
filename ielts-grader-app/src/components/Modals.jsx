@@ -1,24 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SUBSCRIPTION_PLANS, FREE_TRIAL_CREDITS } from '../constants/subscriptionPlans';
+import { SUBSCRIPTION_PLANS } from '../constants/subscriptionPlans';
 import { trackEvent } from '../utils/trackEvent';
 import { goToUpgradeShop } from '../utils/pricingNav';
 
 const { weekly: WEEKLY, monthly: MONTHLY } = SUBSCRIPTION_PLANS;
 
-export const NotificationBanner = ({ isOpen, onClose, credits = null, allowance = null }) => {
+export const NotificationBanner = ({ isOpen, onClose, credits = null }) => {
   const navigate = useNavigate();
-  // Only show when explicitly open and when credits are low or exhausted
-  if (!isOpen) return null;
-  if (credits !== null) {
-    const fullBalance = Number.isFinite(Number(allowance)) && Number(allowance) > 0
-      ? Number(allowance)
-      : FREE_TRIAL_CREDITS;
-    if (credits >= fullBalance) return null; // hide when user has a full balance
-  }
-  const message = credits === 0
-    ? `You've used all your evaluations. Choose Premium (Weekly ${WEEKLY.label} / Monthly ${MONTHLY.label}) or a one-time pack that never expires.`
-    : `Only ${credits} evaluation${credits === 1 ? '' : 's'} remaining. Top up with Premium or a one-time pack.`;
+  // Only show when explicitly open and the user is fully out of evaluations.
+  if (!isOpen || credits !== 0) return null;
+  const message = `You've used all your evaluations. Choose Premium (Weekly ${WEEKLY.label} / Monthly ${MONTHLY.label}) or a one-time pack that never expires.`;
 
   return (
     <div className="bg-[#EFF8FF]/80 border border-[#B2DDFF] rounded-[16px] px-4 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">

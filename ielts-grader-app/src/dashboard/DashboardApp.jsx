@@ -162,6 +162,7 @@ function DashboardApp() {
   const handleNavigate = (target, label) => {
     if (target === 'learning') { navigate('/learning'); }
     else if (target === 'dashboard') { navigate('/dashboard'); }
+    else if (target === 'plans') { navigate('/upgrade?plan=monthly&from=upgrade'); }
     else if (target === 'subscription') { navigate('/subscription'); }
     else if (target === 'settings') { navigate('/settings', { state: { activeTab: label } }); }
     else if (target === 'logout') { logout(); }
@@ -288,7 +289,6 @@ function DashboardApp() {
               isOpen={showBanner}
               onClose={() => setShowBanner(false)}
               credits={creditsRemaining}
-              allowance={Number(user?.credits_allowance) || 0}
             />
 
             {!user?.target_band_confirmed && bandForPrompt != null && (
