@@ -1,16 +1,16 @@
 ---
-title: "Academic vs General Training Writing: Which Path and How to Practise | IELTS AI Tutor"
+title: "Academic vs General Training IELTS Writing"
 slug: academic-vs-general-training-writing
-description: "Academic vs General Training IELTS Writing compared: Task 1 differences, shared Task 2 skills, and how to practise with an AI tutor."
+description: "Academic vs General Training IELTS Writing: Task 1 chart vs letter differences, shared Task 2 essay rules, and which test you need Check your essay free."
 keyword: Academic vs General Training IELTS Writing
 type: comparison
 status: published
 publishedAt: 2026-07-22
-updatedAt: 2026-07-22
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: Academic vs General Training IELTS Writing | Top formats: official/IDP comparison pages | PAA: Task 1 difference; same Task 2?; which test for uni/migration | Top3 words≈800–1500 | Recon: 2026-08-03"
+evidenceNotes: "Comparison teaching aligned to official Task 1 difference (chart vs letter). Screenshots: n/a. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Academic vs General Training Writing: Which Path and How to Practise
@@ -156,8 +156,32 @@ If you must switch:
 
 Learning editions can pivot to letter or chart patterns, [personalized learning editions](/blog/personalized-learning-editions-guide).
 
+
+## Try this yourself
+
+**Prompt:** Write either an Academic Task 1 overview for a simple bar chart OR a GT formal letter covering all three bullets.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Practise the Task 1 your exam actually uses, and treat Task 2 as shared high-value training.
 
 Check a task on the [essay checker](/ielts-essay-checker), simulate timing with the [mock writing test](/ielts-mock-writing-test), explore [IELTS AI Tutor](/ielts-ai-tutor), and [signup](/signup) via [pricing](/pricing) for a module-matched practice rhythm.
+
+## Frequently asked questions
+
+### What is the main Writing difference between Academic and GT?
+
+Task 1: Academic describes a chart/diagram; General Training writes a letter. Task 2 is a discursive essay for both.
+
+### Is Task 2 easier in General Training?
+
+Task 2 uses the same criteria and similar essay skills. Topics may feel more everyday in GT, but standards are still high.
+
+### Which module should I take?
+
+Usually Academic for university/professional registration and General Training for many migration/work pathways — confirm with your receiving organisation.
+

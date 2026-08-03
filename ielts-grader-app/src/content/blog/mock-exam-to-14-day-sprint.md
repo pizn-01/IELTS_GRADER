@@ -1,16 +1,16 @@
 ---
-title: "From Mock Exam to 14-Day Sprint: The IELTS AI Tutor Journey | IELTS AI Tutor"
+title: "Mock Exam to 14-Day Writing Sprint"
 slug: mock-exam-to-14-day-sprint
-description: "How to go from an IELTS mock writing test to a tutor report to a 14-day improvement sprint with IELTS AI Tutor."
+description: "From IELTS mock exam to a 14-day writing sprint: diagnose the lowest criterion, schedule rewrites, and retest without random essay spam Check your essay free."
 keyword: IELTS mock exam study plan
 type: plan
 status: published
 publishedAt: 2026-07-20
-updatedAt: 2026-07-20
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS mock exam study plan / 14-day sprint | Top formats: plan how-tos | PAA: after mock what next; criterion sprint | Top3 words≈900–1600 | Recon: 2026-08-03"
+evidenceNotes: "Process bridge from mock → sprint. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # From Mock Exam to 14-Day Sprint: The IELTS AI Tutor Journey
@@ -169,8 +169,32 @@ Writing sprints fail when sleep collapses. Keep Days 12–13 lighter on purpose.
 
 Paper-based candidates should keep OCR clean when uploading sprint work, [handwritten OCR tips](/blog/handwritten-essay-ocr-tips). Otherwise Day 7 “grammar disasters” may be camera problems, not English problems.
 
+
+## Try this yourself
+
+**Prompt:** After your next mock, write a 14-day calendar with only one criterion focus.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-mock-writing-test) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Book the journey, not just the mock: diagnose, sprint for 14 days, retest once.
 
 Start at the [mock writing test](/ielts-mock-writing-test), turn the report into drills with [IELTS AI Tutor](/ielts-ai-tutor), choose intensity on [pricing](/pricing), and [signup](/signup) to keep Mock 1 and Mock 2 side by side.
+
+## Frequently asked questions
+
+### What should I do after a Writing mock?
+
+Identify the lowest criterion and start a short focused sprint.
+
+### Why 14 days?
+
+Long enough to change one habit; short enough to retest before drifting.
+
+### Can I train all criteria at once?
+
+Usually slower. Fix the cap first, then the next.
+

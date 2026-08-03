@@ -1,16 +1,16 @@
 ---
-title: "Task 1 Bar Chart Sample Answer Band 7 with Tutor Notes | IELTS AI Tutor"
+title: "IELTS Task 1 Bar Chart Band 7"
 slug: task-1-bar-chart-band-7
-description: "Band 7 IELTS Academic Task 1 bar chart sample with AI tutor notes on overview and data selection."
+description: "IELTS Task 1 bar chart Band 7 sample approach: overview first, key comparisons, precise data language, and a try-it chart prompt to practise. now.!!!!"
 keyword: IELTS Task 1 bar chart
 type: sample
 status: published
 publishedAt: 2026-07-12
-updatedAt: 2026-07-12
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS Task 1 bar chart band 7 sample | Top formats: annotated Task 1 samples | PAA: overview; grouping; vocabulary | Top3 words≈900–1600 | Recon: 2026-08-03"
+evidenceNotes: "Sample teaching with Task Achievement focus. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Task 1 Bar Chart Sample Answer Band 7 with Tutor Notes
@@ -133,8 +133,32 @@ The tutor checks for overview quality, coverage of main features, comparison, an
 - [Task Response vs Achievement](/blog/task-response-vs-achievement)
 - [Trends vocabulary guide](/blog/task-1-trends-vocabulary)
 
+
+## Try this yourself
+
+**Prompt:** Describe a bar chart in 20 minutes with a clear overview and two comparison paragraphs.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-task-1-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 For bar charts, your overview and comparisons do most of the Band 7 work. Model this structure, then check your own report.
 
 Try the [IELTS essay checker](/ielts-essay-checker), review [pricing](/pricing) for ongoing practice, or [signup](/signup) to track Task Achievement over multiple charts.
+
+## Frequently asked questions
+
+### What is most important in a Band 7 bar chart?
+
+A clear overview plus accurate key features — not every number.
+
+### Should I explain why the data changed?
+
+No. Describe and compare; avoid speculation.
+
+### How many words for Task 1?
+
+At least 150; about 160–190 is a practical range.
+

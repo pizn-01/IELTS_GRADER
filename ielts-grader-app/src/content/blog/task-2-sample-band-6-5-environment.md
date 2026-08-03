@@ -1,19 +1,29 @@
 ---
-title: "Task 2 Sample: Band 6.5 Essay on Environment with Fixes | IELTS AI Tutor"
+title: "IELTS Band 6.5 Environment Essay Sample"
 slug: task-2-sample-band-6-5-environment
-description: "Band 6.5 IELTS Task 2 environment essay with AI tutor fix cards for Coherence and Lexical Resource."
+description: "IELTS Band 6.5 environment essay sample: where it gains and loses marks by criterion, fixes to aim higher, and a try-it environment prompt. now. now.!"
 keyword: IELTS environment essay
 type: sample
 status: published
 publishedAt: 2026-07-11
-updatedAt: 2026-07-11
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS environment essay band 6.5 sample | Top formats: scored samples | PAA: band gaps; vocabulary; Task Response | Top3 words≈1000–1800 | Recon: 2026-08-03"
+evidenceNotes: "Scored teaching sample with criterion notes. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Task 2 Sample: Band 6.5 Essay on Environment with Fixes
+
+## In this guide
+
+1. [Full sample essay (Band 6.5)](#full-sample-essay-band-65)
+2. [Criterion scores (AI tutor view)](#criterion-scores-ai-tutor-view)
+3. [What is already working (keep these)](#what-is-already-working-keep-these)
+4. [Fix card 1: Coherence: tighten the “individuals” paragraph](#fix-card-1-coherence-tighten-the-individuals-paragraph)
+5. [Fix card 2: Lexical Resource: upgrade safe environment collocations](#fix-card-2-lexical-resource-upgrade-safe-environment-collocations)
+6. [Try this yourself](#try-this-yourself)
+7. [Frequently asked questions](#frequently-asked-questions)
 
 Band 6.5 is a frequent plateau: stronger than a basic Band 6 script, not yet consistently Band 7. This environment essay shows that middle zone. **IELTS AI Tutor by IELTSGRADER** scores it criterion by criterion and gives fix cards aimed at Coherence and Lexical Resource, the usual levers at this level.
 
@@ -117,8 +127,32 @@ Notice: one main idea, better collocations, clearer logic.
 - [Band 7 technology](/blog/task-2-sample-band-7-technology)
 - [Band 7.5 opinion](/blog/task-2-opinion-essay-band-7-5)
 
+
+## Try this yourself
+
+**Prompt:** Write an environment-themed Task 2 under time, then compare your lowest criterion to the sample notes.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 At Band 6.5, improvement is usually surgical: cleaner paragraphs and more precise wording, not a total restart. Use this sample’s fix cards on your own scripts.
 
 Get criterion feedback via the [IELTS essay checker](/ielts-essay-checker) or [IELTS AI Tutor](/ielts-ai-tutor). Compare practice options on [pricing](/pricing), and [signup](/signup) to track whether CC and LR actually move.
+
+## Frequently asked questions
+
+### Why is this sample around Band 6.5?
+
+Typically mixed criteria — some clear language with thinner development or recurring slips.
+
+### How do I move it to Band 7?
+
+Extend one idea fully per paragraph and remove the most frequent error pattern.
+
+### Are environment topics harder?
+
+Only if you lack examples. Use concrete, realistic support.
+

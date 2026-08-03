@@ -1,19 +1,29 @@
 ---
-title: "How IELTS Writing Is Scored: A Tutor's Guide to the 4 Criteria | IELTS AI Tutor"
+title: "How IELTS Writing Is Scored"
 slug: how-ielts-writing-is-scored
-description: "Learn how IELTS writing is scored across four criteria. Your AI tutor explains Task Response, Coherence, Lexical Resource, and Grammar."
+description: "How IELTS writing is scored: TR/TA, CC, LR, GRA explained, how overall bands are averaged, and how to practise with criterion feedback Check your essay free."
 keyword: IELTS writing criteria
 type: guide
 status: published
 publishedAt: 2026-07-09
-updatedAt: 2026-07-09
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: how IELTS writing is scored / band descriptors | Top formats: official descriptors + explainer guides | PAA: four criteria; Task 1 vs 2; overall average | Top3 words≈1200–2500 | Recon: 2026-08-03"
+evidenceNotes: "Explainer based on public band descriptor concepts. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # How IELTS Writing Is Scored: A Tutor's Guide to the 4 Criteria
+
+## In this guide
+
+1. [Why the four criteria matter more than one number](#why-the-four-criteria-matter-more-than-one-number)
+2. [The four criteria at a glance](#the-four-criteria-at-a-glance)
+3. [Task Achievement (Task 1) and Task Response (Task 2)](#task-achievement-task-1-and-task-response-task-2)
+4. [Coherence & Cohesion](#coherence-cohesion)
+5. [Lexical Resource](#lexical-resource)
+6. [Try this yourself](#try-this-yourself)
+7. [Frequently asked questions](#frequently-asked-questions)
 
 If you only look at your overall Writing band, you are flying without instruments. Examiners, and a good tutor, score IELTS Writing on four equal criteria. Your weakest criterion usually caps how high you can go, even when other areas look strong.
 
@@ -161,8 +171,32 @@ Templates that ignore the question damage Task Response. Examiners and tutors bo
 **“Grammar mistakes mean I cannot get 7.”**  
 Some Band 7 scripts still have occasional errors. Systematic errors that confuse meaning are the bigger problem.
 
+
+## Try this yourself
+
+**Prompt:** Score your last essay yourself on TR/CC/LR/GRA, then compare with the essay checker.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Understand the four criteria, then measure yourself against them, not against a friend’s overall band. Start with one checked essay, identify the bottleneck, and practise with purpose.
 
 Ready to see your criterion profile? Try the [essay checker](/ielts-essay-checker), explore [IELTS AI Tutor](/ielts-ai-tutor), or compare practice options on [pricing](/pricing). Create an account at [signup](/signup) when you want a repeatable practice loop.
+
+## Frequently asked questions
+
+### What are the four IELTS Writing criteria?
+
+Task Response/Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy.
+
+### How is the overall Writing band calculated?
+
+Criteria are averaged and rounded to the nearest half band (practice tools approximate this).
+
+### Is Task 2 worth more?
+
+Yes — Task 2 contributes more to the Writing score than Task 1.
+

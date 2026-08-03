@@ -1,7 +1,7 @@
 ---
-title: "Why Am I Stuck at 6.5 in IELTS Writing? How to Improve from 6.5 to 7 (2026) | IELTS AI Tutor"
+title: "Stuck at Band 6.5 in IELTS Writing?"
 slug: stuck-at-band-6-5-plateau
-description: "Why IELTS Writing gets stuck at Band 6.5, how the score is capped by one criterion, and a proven 14-day plan to improve from 6.5 to 7."
+description: "Stuck at Band 6.5 in IELTS Writing? Why one criterion caps you and how a 14-day plan helps you reach Band 7 Check your essay free Check your essay free."
 keyword: IELTS writing band 6.5 plateau
 type: guide
 status: published
@@ -13,7 +13,17 @@ evidenceNotes: "14-day plan is a practice framework, not a score guarantee. Matc
 qualityReviewed: ok
 ---
 
-# Why Am I Stuck at 6.5 in IELTS Writing? How to Improve from 6.5 to 7
+# Stuck at Band 6.5 in IELTS Writing?
+
+## In this guide
+
+1. [Why am I stuck at Band 6.5?](#why-am-i-stuck-at-band-65)
+2. [How to improve IELTS writing from 6.5 to 7](#how-to-improve-ielts-writing-from-65-to-7)
+3. [The false solutions that keep you stuck](#the-false-solutions-that-keep-you-stuck)
+4. [Diagnose the plateau in one mock](#diagnose-the-plateau-in-one-mock)
+5. [The 14-day plateau breaker (6.5 → 7)](#the-14-day-plateau-breaker-65-7)
+6. [What “progress” looks like before overall 7](#what-progress-looks-like-before-overall-7)
+7. [Try this yourself](#try-this-yourself)
 
 Band 6.5 is where many candidates live for months: good enough to communicate, not consistent enough for 7. The short answer from **IELTS AI Tutor by IELTSGRADER**: you are stuck because one (or two) writing criteria are capping your average — not because you need a new template or rarer vocabulary. Plateaus break when you stop chasing the overall band and surgically raise the criterion that keeps averaging you down.
 

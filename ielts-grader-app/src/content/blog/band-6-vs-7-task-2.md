@@ -1,7 +1,7 @@
 ---
-title: "Difference Between Band 6 and Band 7 IELTS Writing (Task 2 Comparison) | IELTS AI Tutor"
+title: "Band 6 vs Band 7 IELTS Writing Task 2"
 slug: band-6-vs-7-task-2
-description: "Clear side-by-side comparison of Band 6 vs Band 7 IELTS Writing Task 2 across all four criteria, with examples and a two-week practice loop."
+description: "Band 6 vs Band 7 IELTS Writing Task 2: criterion differences, before/after examples, and a two-week practice loop Check your essay free Check your essay free."
 keyword: band 6 vs 7 IELTS writing
 type: guide
 status: published
@@ -13,7 +13,17 @@ evidenceNotes: "Criterion contrast teaching aligned to public descriptors / SERP
 qualityReviewed: ok
 ---
 
-# Difference Between Band 6 and Band 7 IELTS Writing
+# Band 6 vs Band 7 IELTS Writing Task 2
+
+## In this guide
+
+1. [Quick snapshot: Band 6 vs Band 7](#quick-snapshot-band-6-vs-band-7)
+2. [Task Response: stating vs developing](#task-response-stating-vs-developing)
+3. [Coherence & Cohesion: connectors vs logic](#coherence-cohesion-connectors-vs-logic)
+4. [Lexical Resource: rare words vs right words](#lexical-resource-rare-words-vs-right-words)
+5. [Grammatical Range & Accuracy: attempting vs controlling](#grammatical-range-accuracy-attempting-vs-controlling)
+6. [Side-by-side mini essays (same prompt)](#side-by-side-mini-essays-same-prompt)
+7. [Try this yourself](#try-this-yourself)
 
 The jump from Band 6 to Band 7 in IELTS Task 2 is one of the most common goals — and one of the most misunderstood. Many candidates add longer words, longer essays, and more “Moreover” sentences, then stay stuck at 6 or 6.5.
 

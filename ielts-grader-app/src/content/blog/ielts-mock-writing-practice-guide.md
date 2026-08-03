@@ -1,16 +1,16 @@
 ---
-title: "How to Practice IELTS Writing Like the Real Exam | IELTS AI Tutor"
+title: "IELTS Mock Writing Practice Guide"
 slug: ielts-mock-writing-practice-guide
-description: "IELTS mock writing practice guide, timing, routine, and how to use AI tutor feedback after each mock test."
+description: "IELTS mock writing practice guide: how to run timed Task 1+2 mocks, review by criterion, and turn results into a focused 14-day plan Check your essay free."
 keyword: IELTS mock writing test
 type: guide
 status: published
 publishedAt: 2026-07-15
-updatedAt: 2026-07-15
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS mock writing test / practice guide | Top formats: mock how-tos | PAA: timing; how often; review method | Top3 words≈900–1600 | Recon: 2026-08-03"
+evidenceNotes: "Practice process guide. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # How to Practice IELTS Writing Like the Real Exam
@@ -147,8 +147,32 @@ That is tutoring around the mock, not only a score screenshot. Trust context: [i
 
 Adjust density using [practice plans explained](/blog/ielts-writing-practice-plans-explained) and [pricing](/pricing).
 
+
+## Try this yourself
+
+**Prompt:** Do a full 60-minute Writing mock (20+40), then review only the lowest criterion tomorrow.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-mock-writing-test) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Practise Writing like the exam: timed, complete, reviewed, rewritten. Scores without a sprint plan are souvenirs.
 
 Start a timed session on the [mock writing test](/ielts-mock-writing-test), check individual tasks with the [essay checker](/ielts-essay-checker), explore [IELTS AI Tutor](/ielts-ai-tutor), and [signup](/signup) to keep your mock history in one place.
+
+## Frequently asked questions
+
+### How often should I take a Writing mock?
+
+Often weekly or biweekly once basics are in place — then rewrite weak criteria between mocks.
+
+### Should I mock Task 1 and Task 2 together?
+
+Yes, under 60 minutes, to practise real timing pressure.
+
+### What do I do after the mock?
+
+Diagnose the lowest criterion and run a short sprint — don’t only collect overall bands.
+

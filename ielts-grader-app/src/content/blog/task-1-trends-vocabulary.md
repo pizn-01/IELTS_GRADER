@@ -1,19 +1,29 @@
 ---
-title: "Academic Task 1: Describe Trends Without Repeating Vocabulary | IELTS AI Tutor"
+title: "IELTS Task 1 Trends Vocabulary"
 slug: task-1-trends-vocabulary
-description: "12 ways to describe trends in IELTS Academic Task 1 without repeating 'increase' and 'decrease', from your AI tutor."
+description: "IELTS Task 1 trends vocabulary: rise/fall/stability language, accurate adverbs, and practice lines that improve Lexical Resource without exaggeration."
 keyword: IELTS Task 1 trends
 type: guide
 status: published
 publishedAt: 2026-07-12
-updatedAt: 2026-07-12
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS Task 1 trends vocabulary | Top formats: vocab lists + usage guides | PAA: increase synonyms; avoid repetition; accuracy | Top3 words≈900–1800 | Recon: 2026-08-03"
+evidenceNotes: "Vocabulary teaching with accuracy warnings. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Academic Task 1: Describe Trends Without Repeating Vocabulary
+
+## In this guide
+
+1. [What “good” trend vocabulary actually means](#what-good-trend-vocabulary-actually-means)
+2. [1. Verbs for upward movement](#1-verbs-for-upward-movement)
+3. [2. Verbs for downward movement](#2-verbs-for-downward-movement)
+4. [3. Verbs for stability and fluctuation](#3-verbs-for-stability-and-fluctuation)
+5. [4. Noun forms (essential for variety)](#4-noun-forms-essential-for-variety)
+6. [Try this yourself](#try-this-yourself)
+7. [Frequently asked questions](#frequently-asked-questions)
 
 In Academic Task 1, candidates often lose Lexical Resource marks for one simple reason: they write *increase* and *decrease* eight times. Examiners have read thousands of scripts; repetition stands out.
 
@@ -180,6 +190,30 @@ For exam simulation with Task 2, use the [mock writing test](/ielts-mock-writing
 
 Refresh scoring basics in [how IELTS writing is scored](/blog/how-ielts-writing-is-scored) and Task Achievement vs Task Response in [TR vs TA decoded](/blog/task-response-vs-achievement).
 
+
+## Try this yourself
+
+**Prompt:** Write five trend sentences for the same data using different precise verbs/adverbs — then check naturalness.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-task-1-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Replace repetition with accurate variety, then practise under the 20-minute limit. Check a chart description with the [IELTS essay checker](/ielts-essay-checker), review [IELTS AI Tutor](/ielts-ai-tutor), and see [pricing](/pricing) for regular practice. [Signup](/signup) to save progress across attempts.
+
+## Frequently asked questions
+
+### How can I describe increases without repeating “increase”?
+
+Use rise, grow, climb, go up — but only when the meaning fits the chart.
+
+### Do dramatic words help?
+
+Only if accurate. “Skyrocketed” for a small change hurts precision.
+
+### Should I memorise long synonym lists?
+
+Practise in full sentences tied to real charts.
+

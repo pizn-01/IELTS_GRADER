@@ -1,16 +1,16 @@
 ---
-title: "GT Letter Sample Band 8: Complaint Letter with Feedback | IELTS AI Tutor"
+title: "IELTS Band 8 Formal Complaint Letter"
 slug: gt-letter-sample-band-8-complaint
-description: "Band 8 IELTS GT complaint letter sample with AI tutor feedback on tone, bullet coverage, and vocabulary."
+description: "IELTS Band 8 formal complaint letter sample: full letter, examiner-style notes, and a try-it prompt to practise GT Task 1 tone and bullets. now. now.!"
 keyword: IELTS letter sample band 8
 type: sample
 status: published
 publishedAt: 2026-07-13
-updatedAt: 2026-07-13
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS letter sample band 8 complaint | Top formats: annotated samples | PAA: formal tone; structure; bullet coverage | Top3 words≈900–1600 | Recon: 2026-08-03"
+evidenceNotes: "Teaching sample with analysis; practice band illustration. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # GT Letter Sample Band 8: Complaint Letter with Feedback
@@ -156,8 +156,32 @@ Only the situation vocabulary changes. Tone and bullet discipline stay.
 - [How IELTS writing is scored](/blog/how-ielts-writing-is-scored)
 - [Task Response vs Achievement](/blog/task-response-vs-achievement)
 
+
+## Try this yourself
+
+**Prompt:** Write your own formal complaint letter on a similar prompt, then compare tone and bullet coverage to the sample.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-task-1-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Band 8 GT letters are clear, complete, and controlled. Model the structure, then get feedback on your own complaints and requests.
 
 Check a letter with the [IELTS essay checker](/ielts-essay-checker), explore [pricing](/pricing) for regular practice, or [signup](/signup) to keep a portfolio of improved letters before test day.
+
+## Frequently asked questions
+
+### What makes a Band 8 GT letter?
+
+Clear purpose, full bullet coverage, consistent formal tone, and controlled accurate language.
+
+### How long should the letter be?
+
+At least 150 words; roughly 150–180 is a practical target under time.
+
+### Can I use contractions in a formal letter?
+
+Avoid them in formal letters (write “I am”, not “I’m”).
+

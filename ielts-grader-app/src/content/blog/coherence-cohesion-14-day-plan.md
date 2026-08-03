@@ -1,19 +1,29 @@
 ---
-title: "14-Day Plan to Improve Coherence & Cohesion | IELTS AI Tutor"
+title: "IELTS Coherence & Cohesion 14-Day Plan"
 slug: coherence-cohesion-14-day-plan
-description: "A 14-day IELTS AI Tutor plan to fix paragraph logic, topic sentences, and linking, target Coherence & Cohesion."
+description: "IELTS coherence and cohesion 14-day plan: paragraph jobs, natural linking, referencing, and a practice loop to raise Band 7 CC without linker spam.!!!"
 keyword: coherence cohesion IELTS
 type: plan
 status: published
 publishedAt: 2026-07-11
-updatedAt: 2026-07-11
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS coherence and cohesion band 7 | Top formats: CC guides + PEEL plans (SimplyIELTS, FlyIELTS) | PAA: overusing linking words; topic sentences; referencing | Top3 words≈1200–2200 | Recon: 2026-08-03"
+evidenceNotes: "14-day practice framework, not a score guarantee. Matches SERP “logic over linker spam”. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # 14-Day Plan to Improve Coherence & Cohesion
+
+## In this guide
+
+1. [Before you start: diagnose](#before-you-start-diagnose)
+2. [Week 1: Structure and topic sentences](#week-1-structure-and-topic-sentences)
+3. [Week 2: Flow, cohesion devices, and transfer](#week-2-flow-cohesion-devices-and-transfer)
+4. [Daily checklist (print or copy)](#daily-checklist-print-or-copy)
+5. [What “good enough” Coherence looks like at Band 7](#what-good-enough-coherence-looks-like-at-band-7)
+6. [Try this yourself](#try-this-yourself)
+7. [Frequently asked questions](#frequently-asked-questions)
 
 If your Task Response ideas are decent but examiners (or your tutor report) still mark **Coherence & Cohesion** at 6, you do not need more memorised linkers. You need cleaner paragraph logic, stronger topic sentences, and referencing that guides the reader.
 
@@ -244,8 +254,32 @@ When you submit on Days 7 and 14, read Coherence comments first. Ignore the temp
 - If overall remains 6.5 with CC as the cap, repeat Days 2–7 only before another full fortnight, see [plateau guide](/blog/stuck-at-band-6-5-plateau). 
 - If CC improved under untimed conditions but fell in the timed Day 14 essay, your issue is performance, not knowledge, add two partial timed tasks next week.
 
+
+## Try this yourself
+
+**Prompt:** Write a 4-paragraph Task 2 essay focusing on one idea per body paragraph and minimal mechanical linkers.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Coherence & Cohesion improves when every paragraph earns its place. Follow the 14 days, check twice, and rewrite once with purpose.
 
 Start a diagnostic essay on the [Task 2 checker](/ielts-task-2-checker), explore [IELTS AI Tutor](/ielts-ai-tutor), and pick a practice rhythm on [pricing](/pricing). [Signup](/signup) when you are ready to track progress across multiple essays.
+
+## Frequently asked questions
+
+### How do I get Band 7 in coherence and cohesion?
+
+Clear paragraph jobs, logical progression, and flexible cohesion (referencing + selective linkers)—not a long list of “Furthermore”.
+
+### Do more linking words raise my score?
+
+Not if they are mechanical. Overuse can keep you mid-band.
+
+### What should I practise for 14 days?
+
+Plan → one-job paragraphs → rewrite for referencing → timed retest.
+

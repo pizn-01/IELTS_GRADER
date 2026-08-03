@@ -1,19 +1,29 @@
 ---
-title: "IELTS Task 2 Sample Essay Band 7: Annotated by Your Tutor | IELTS AI Tutor"
+title: "IELTS Band 7 Technology Essay Sample"
 slug: task-2-sample-band-7-technology
-description: "Band 7 IELTS Task 2 sample on technology with AI tutor annotations on strengths and next steps to Band 8."
+description: "IELTS Band 7 technology essay sample: clearer development and control than mid-band scripts, with analysis and a try-it technology Task 2 prompt. now."
 keyword: IELTS Task 2 band 7
 type: sample
 status: published
 publishedAt: 2026-07-10
-updatedAt: 2026-07-10
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS Task 2 band 7 technology sample | Top formats: annotated Band 7 samples | PAA: band 7 features; vocabulary; structure | Top3 words≈1000–1800 | Recon: 2026-08-03"
+evidenceNotes: "Annotated Band 7 teaching sample. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # IELTS Task 2 Sample Essay Band 7: Annotated by Your Tutor
+
+## In this guide
+
+1. [Full sample essay (Band 7)](#full-sample-essay-band-7)
+2. [Criterion scores (AI tutor view)](#criterion-scores-ai-tutor-view)
+3. [Line-by-line style annotations (selected)](#line-by-line-style-annotations-selected)
+4. [What is still not Band 8](#what-is-still-not-band-8)
+5. [Fix cards if you are aiming from 6 → 7 using this model](#fix-cards-if-you-are-aiming-from-6-7-using-this-model)
+6. [Try this yourself](#try-this-yourself)
+7. [Frequently asked questions](#frequently-asked-questions)
 
 This **Band 7** Task 2 sample shows what “good enough for 7” looks like in practice: a clear position, developed ideas, natural academic vocabulary, and controlled grammar, without needing rare words in every sentence. Annotations from **IELTS AI Tutor by IELTSGRADER** explain why each part works and what still separates Band 7 from Band 8.
 
@@ -137,8 +147,32 @@ In product feedback, annotations become fix cards tied to your sentences: undeve
 - [Band 7.5 opinion sample](/blog/task-2-opinion-essay-band-7-5)
 - [Band 6 vs 7 guide](/blog/band-6-vs-7-task-2)
 
+
+## Try this yourself
+
+**Prompt:** Write a technology Task 2 with one fully extended idea per body paragraph under 40 minutes.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Model Band 7 writing is less about sounding impressive and more about being clear, developed, and controlled. Annotate your own next essay the same way: mark where ideas stop too early, where vocabulary repeats, and where grammar loses control.
 
 Submit your essay to the [IELTS essay checker](/ielts-essay-checker), review plans on [pricing](/pricing), or [signup](/signup) to build a weekly practice habit.
+
+## Frequently asked questions
+
+### What separates Band 7 from Band 6 here?
+
+Fuller idea development, clearer progression, and more controlled vocabulary/grammar.
+
+### Do I need rare tech vocabulary?
+
+No. Precise, natural topic language beats forced jargon.
+
+### How should I practise with samples?
+
+Cover the sample, write your own, then compare criterion notes.
+

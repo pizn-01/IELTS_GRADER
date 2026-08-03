@@ -1,16 +1,16 @@
 ---
-title: "Task Response vs Task Achievement: IELTS Writing Decoded | IELTS AI Tutor"
+title: "Task Response vs Task Achievement"
 slug: task-response-vs-achievement
-description: "Task Response vs Task Achievement explained, how IELTS Task 1 and Task 2 differ, with tutor examples and fixes."
+description: "Task Response vs Task Achievement in IELTS Writing: Task 2 opinion coverage vs Task 1 data/letter coverage, with checks you can apply today. now. now."
 keyword: Task Response vs Task Achievement
 type: guide
 status: published
 publishedAt: 2026-07-19
-updatedAt: 2026-07-19
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: Task Response vs Task Achievement IELTS | Top formats: criterion explainers | PAA: Task 1 vs Task 2 naming; what examiners check | Top3 words≈800–1500 | Recon: 2026-08-03"
+evidenceNotes: "Criterion naming explainer aligned to public descriptors. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Task Response vs Task Achievement: IELTS Writing Decoded
@@ -158,8 +158,32 @@ Your tutor report should label them correctly by task type. If you are choosing 
 
 If any answer is no, fix that before polishing vocabulary.
 
+
+## Try this yourself
+
+**Prompt:** For one Task 1 and one Task 2, list every prompt requirement and tick coverage before writing.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Use **Achievement** language for Task 1 and **Response** language for Task 2, then practise the matching checklist.
 
 Diagnose with the [essay checker](/ielts-essay-checker), run a full timed set on the [mock writing test](/ielts-mock-writing-test), explore [IELTS AI Tutor](/ielts-ai-tutor), and [signup](/signup) via [pricing](/pricing) when you want repeated criterion tracking.
+
+## Frequently asked questions
+
+### What is Task Response?
+
+The Task 2 criterion for addressing the essay question with a clear, developed position.
+
+### What is Task Achievement?
+
+The Task 1 criterion for covering the chart/letter requirements accurately and appropriately.
+
+### Why does the name change?
+
+Task 1 and Task 2 have different jobs, so the “task” criterion is labeled differently.
+

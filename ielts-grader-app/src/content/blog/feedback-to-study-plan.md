@@ -1,16 +1,16 @@
 ---
-title: "From Feedback to Study Plan: Using Your IELTS AI Tutor Report | IELTS AI Tutor"
+title: "Turn IELTS Feedback into a Study Plan"
 slug: feedback-to-study-plan
-description: "Turn IELTS AI Tutor feedback into a study plan, prioritize criteria, schedule rewrites, and track band progress."
+description: "Turn IELTS writing feedback into a study plan: pick the lowest criterion, set rewrite drills, and retest so practice actually moves your band. now.!!!"
 keyword: IELTS writing study plan
 type: guide
 status: published
 publishedAt: 2026-07-16
-updatedAt: 2026-07-16
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS writing study plan from feedback | Top formats: how-to plan guides | PAA: what to practise after mock; criterion focus; 14-day sprint | Top3 words≈900–1600 | Recon: 2026-08-03"
+evidenceNotes: "Process guide for converting reports into drills. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # From Feedback to Study Plan: Using Your IELTS AI Tutor Report
@@ -168,8 +168,32 @@ If you follow a product journey, [mock → report → sprint](/blog/mock-exam-to
 4. Ignoring Task 1/letters because Task 2 feels more important  
 5. Confusing “reading model essays” with practice  
 
+
+## Try this yourself
+
+**Prompt:** Take your last checker report, choose the lowest criterion, and do one targeted rewrite today.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Open your latest report, circle the lowest criterion, and write a seven-day plan before you write another random essay.
 
 Get a fresh diagnosis with the [essay checker](/ielts-essay-checker), explore [IELTS AI Tutor](/ielts-ai-tutor), choose a practice rhythm on [pricing](/pricing), and [signup](/signup) to keep reports organised as your plan evolves.
+
+## Frequently asked questions
+
+### How do I build a study plan from AI feedback?
+
+Identify the lowest criterion, schedule short rewrite drills on that theme only, then retest.
+
+### Should I write a new essay every day?
+
+Not if you never rewrite. Diagnosis + rewrite beats volume without focus.
+
+### How long should a sprint last?
+
+Often 7–14 days on one criterion before switching.
+

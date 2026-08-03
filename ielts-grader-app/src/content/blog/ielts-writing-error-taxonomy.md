@@ -1,19 +1,29 @@
 ---
-title: "IELTS Writing Error Taxonomy: Mistakes Your AI Tutor Flags | IELTS AI Tutor"
+title: "IELTS Writing Error Taxonomy"
 slug: ielts-writing-error-taxonomy
-description: "A practical taxonomy of IELTS Writing mistakes by criterion: Task Response, Coherence, Lexical Resource, and Grammar, as flagged by your AI tutor."
+description: "IELTS writing error taxonomy: TR, CC, LR, and GRA mistake families that cap bands, with fix priorities and a practice rewrite loop Check your essay free."
 keyword: IELTS writing mistakes
 type: guide
 status: published
 publishedAt: 2026-07-17
-updatedAt: 2026-07-17
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS writing mistakes / error types by criterion | Top formats: taxonomy/list guides | PAA: grammar vs task response; what caps 6.5 | Top3 words≈1200–2200 | Recon: 2026-08-03"
+evidenceNotes: "Teaching taxonomy for practice diagnosis. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # IELTS Writing Error Taxonomy: Mistakes Your AI Tutor Flags
+
+## In this guide
+
+1. [How to use this taxonomy](#how-to-use-this-taxonomy)
+2. [1. Task Response / Task Achievement errors](#1-task-response-task-achievement-errors)
+3. [2. Coherence & Cohesion errors](#2-coherence-cohesion-errors)
+4. [3. Lexical Resource errors](#3-lexical-resource-errors)
+5. [4. Grammatical Range & Accuracy errors](#4-grammatical-range-accuracy-errors)
+6. [Try this yourself](#try-this-yourself)
+7. [Frequently asked questions](#frequently-asked-questions)
 
 Not all Writing mistakes are equal. A missing overview, a wrong collocation, and an article error hurt different criteria, and need different fixes. This taxonomy from **IELTS AI Tutor by IELTSGRADER** groups common issues the way a tutor reads your script: by criterion first, then by pattern.
 
@@ -281,8 +291,32 @@ Review the codebook for five minutes before every timed essay. This is more effe
 
 For timed discovery of your taxonomy profile, take a [mock writing test](/ielts-mock-writing-test). If the same codes return after a sprint, move into a [learning edition](/blog/personalized-learning-editions-guide) rather than collecting new random tips. Plateau context: [stuck at Band 6.5](/blog/stuck-at-band-6-5-plateau).
 
+
+## Try this yourself
+
+**Prompt:** Highlight errors in your last essay by criterion family, then rewrite only the top two patterns.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Stop treating every mistake as equal. Classify, prioritise, drill.
 
 Run an essay through the [essay checker](/ielts-essay-checker), map flags to this taxonomy, then build a week from [feedback to study plan](/blog/feedback-to-study-plan). Compare [pricing](/pricing) and [signup](/signup) when you want repeated checks to track whether each error family shrinks.
+
+## Frequently asked questions
+
+### What mistakes most often cap Band 6.5?
+
+Under-developed Task Response, mechanical coherence, collocation errors, and repeated grammar slips.
+
+### Should I fix grammar first?
+
+Only if GRA is clearly the lowest. Otherwise fix the criterion that actually caps you.
+
+### How do I use an error taxonomy?
+
+Label mistakes by criterion, count repeats, and drill the highest-frequency family.
+

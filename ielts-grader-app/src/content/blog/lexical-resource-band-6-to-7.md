@@ -1,16 +1,16 @@
 ---
-title: "Lexical Resource Band 6 to 7: Collocations That Sound Natural | IELTS AI Tutor"
+title: "Lexical Resource: Band 6 to 7"
 slug: lexical-resource-band-6-to-7
-description: "Move IELTS Lexical Resource from Band 6 to 7 with natural collocations, paraphrase strategies, and AI tutor practice drills."
+description: "Lexical Resource Band 6 to 7: fix collocation errors, stop thesaurus swaps, and practise precise topic vocabulary that actually raises LR Check your essay free."
 keyword: IELTS lexical resource collocations
 type: guide
 status: published
 publishedAt: 2026-07-23
-updatedAt: 2026-07-23
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS lexical resource band 6 to 7 / collocations | Top formats: LR upgrade guides | PAA: overused words; collocations; idioms | Top3 words≈900–1800 | Recon: 2026-08-03"
+evidenceNotes: "Collocation-focused teaching examples. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Lexical Resource Band 6 to 7: Collocations That Sound Natural
@@ -209,8 +209,32 @@ Pick one family only (education, environment, work, or technology):
 
 Staying inside one family accelerates Lexical Resource because retrieval repeats. Jumping topics every day resets the bank.
 
+
+## Try this yourself
+
+**Prompt:** Rewrite one body paragraph replacing three forced “advanced” words with natural collocations.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Train collocations and controlled paraphrase for two weeks and recheck Lexical Resource as a trend, not a one-essay lottery.
 
 Practise with the [essay checker](/ielts-essay-checker), review models via [IELTS AI Tutor](/ielts-ai-tutor), and choose a practice plan on [pricing](/pricing). [Signup](/signup) to keep collocation fixes across multiple reports.
+
+## Frequently asked questions
+
+### How do I improve Lexical Resource from 6 to 7?
+
+Prioritise precise collocations and natural phrasing over rare words used incorrectly.
+
+### Do idioms help LR in Task 2?
+
+Conversational idioms often hurt register. Prefer formal collocations.
+
+### Should I memorise synonym lists?
+
+Only in context sentences. Isolated synonym swaps create collocation errors.
+

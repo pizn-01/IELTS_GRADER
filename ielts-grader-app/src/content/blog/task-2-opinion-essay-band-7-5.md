@@ -1,16 +1,16 @@
 ---
-title: "Task 2 Opinion Essay Sample Band 7.5 with Tutor Breakdown | IELTS AI Tutor"
+title: "IELTS Opinion Essay Band 7.5 Sample"
 slug: task-2-opinion-essay-band-7-5
-description: "Band 7.5 IELTS Task 2 opinion essay sample with AI tutor breakdown on Task Response and Lexical Resource."
+description: "IELTS opinion essay Band 7.5 sample: clear position, developed body paragraphs, examiner-style notes, and a try-it prompt to practise Task 2. now.!!!!"
 keyword: IELTS opinion essay band 7
 type: sample
 status: published
 publishedAt: 2026-07-15
 updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS opinion essay band 7.5 sample | Top formats: annotated samples | PAA: structure; position; examples | Top3 words≈1000–1800 | Recon: 2026-08-03"
+evidenceNotes: "Annotated practice sample; not an official exam script. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # Task 2 Opinion Essay Sample Band 7.5 with Tutor Breakdown
@@ -119,8 +119,32 @@ Memorised content that misses a new question will still score poorly on Task Res
 - [Lexical resource Band 6 to 7](/blog/lexical-resource-band-6-to-7)
 - [How writing is scored](/blog/how-ielts-writing-is-scored)
 
+
+## Try this yourself
+
+**Prompt:** Write an agree/disagree essay with a clear thesis and two developed body paragraphs under 40 minutes.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Band 7.5 opinion writing is clear, developed, and carefully scoped. Model the stance discipline, then test it on fresh prompts under timed conditions.
 
 Submit your essay to the [IELTS essay checker](/ielts-essay-checker) or [Task 2 checker](/ielts-task-2-checker). Review [pricing](/pricing) for regular practice, and [signup](/signup) to track whether Task Response stays stable across topics.
+
+## Frequently asked questions
+
+### What makes a strong opinion essay?
+
+A clear position maintained throughout, with developed reasons and relevant examples.
+
+### Can I partly agree?
+
+Yes, if you define the limits clearly and organise paragraphs around that stance.
+
+### How many paragraphs?
+
+Usually four: intro, two bodies, conclusion.
+

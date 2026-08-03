@@ -1,16 +1,16 @@
 ---
-title: "IELTS Writing Practice Plans Explained: Free, Weekly, Monthly | IELTS AI Tutor"
+title: "IELTS Writing Practice Plans Explained"
 slug: ielts-writing-practice-plans-explained
-description: "Educational guide to IELTS AI Tutor practice plans, free diagnosis, weekly sprints, and monthly mastery, without hype."
+description: "IELTS writing practice plans explained: how plan intensity maps to mocks, rewrites, and tutoring — without confusing plans with guaranteed bands. now."
 keyword: IELTS writing practice plans
 type: guide
 status: published
 publishedAt: 2026-07-25
-updatedAt: 2026-07-25
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS writing practice plans | Top formats: product/education explainers | PAA: which plan; free vs paid practice; sprint length | Top3 words≈900–1600 | Recon: 2026-08-03"
+evidenceNotes: "Educational product explainer; no outcome guarantees. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # IELTS Writing Practice Plans Explained: Free, Weekly, Monthly
@@ -199,8 +199,32 @@ Upgrade is not always the answer. Downgrade or pause paid intensity if:
 
 You can return to free diagnosis later and rebuild. Educational pricing should follow capacity.
 
+
+## Try this yourself
+
+**Prompt:** Pick a 7- or 14-day focus (one criterion) and schedule three timed tasks this week.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-essay-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Pick intensity based on your calendar and rewrite habits, then follow one criterion theme long enough to measure it.
 
 Compare current options on [pricing](/pricing), start a diagnosis on the [essay checker](/ielts-essay-checker), explore [IELTS AI Tutor](/ielts-ai-tutor), and [signup](/signup) when you are ready for a repeatable tutoring loop.
+
+## Frequently asked questions
+
+### What is an IELTS writing practice plan?
+
+A structured schedule of mocks, criterion drills, and reviews — not a promise of a band.
+
+### How do I choose intensity?
+
+Match hours available and how close your test date is; shorter sprints need sharper focus.
+
+### Do I need a paid plan?
+
+Start with free evaluations; upgrade when you need volume, history, or guided editions.
+

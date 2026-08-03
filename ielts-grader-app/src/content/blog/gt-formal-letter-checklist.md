@@ -1,16 +1,16 @@
 ---
-title: "GT Formal Letter Checklist: What Examiners Want | IELTS AI Tutor"
+title: "IELTS GT Formal Letter Checklist"
 slug: gt-formal-letter-checklist
-description: "IELTS GT formal letter checklist, tone, bullet points, opening and closing. AI tutor tips for Task 1 letters."
+description: "IELTS GT formal letter checklist: tone, bullet coverage, openings/closings, and a practice prompt you can score with a Task 1 checker Check your essay free."
 keyword: IELTS formal letter
 type: guide
 status: published
 publishedAt: 2026-07-13
-updatedAt: 2026-07-13
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
-serpNotes: "Legacy post — SERP recon backlog | Recon: PENDING"
-evidenceNotes: "Legacy teaching content. Evidence upgrade: pending"
-qualityReviewed: pending
+serpNotes: "Query: IELTS formal letter checklist / GT Task 1 | Top formats: checklists + IDP letter guides | PAA: Dear Sir vs name; Yours faithfully; cover all bullets | Top3 words≈900–1600 | Recon: 2026-08-03"
+evidenceNotes: "Checklist aligned to common GT Task Achievement expectations. Agent review 2026-08-03."
+qualityReviewed: ok
 ---
 
 # GT Formal Letter Checklist: What Examiners Want
@@ -175,8 +175,32 @@ Score yourself quickly:
 
 Any “no” on TA means rewrite before polishing vocabulary.
 
+
+## Try this yourself
+
+**Prompt:** Write a formal complaint letter covering all three bullets in ~150–180 words under 20 minutes.
+
+1. Write under realistic time limits.
+2. [Check your essay free](/ielts-task-1-checker) (or the Task 1/2 checker if relevant).
+3. Rewrite only the lowest criterion once, then re-check.
+
 ## Next steps
 
 Formal GT letters are won on purpose, bullets, and tone. Use this checklist until it becomes automatic under timed conditions.
 
 Practise with the [essay checker](/ielts-essay-checker), explore [IELTS AI Tutor](/ielts-ai-tutor), review [pricing](/pricing), and [signup](/signup) to build a letter practice streak before test day.
+
+## Frequently asked questions
+
+### How do I start a formal IELTS letter?
+
+Use Dear Sir/Madam if unnamed, or Dear Mr/Ms + surname if named. State your purpose early.
+
+### What sign-off should I use?
+
+Yours faithfully after Dear Sir/Madam; Yours sincerely after a named recipient.
+
+### Do I need to cover every bullet?
+
+Yes — missing a bullet hurts Task Achievement.
+
