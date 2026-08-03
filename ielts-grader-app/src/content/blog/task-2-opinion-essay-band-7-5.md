@@ -6,12 +6,13 @@ keyword: IELTS opinion essay band 7
 type: sample
 status: published
 publishedAt: 2026-07-15
+updatedAt: 2026-08-03
 author: IELTS AI Tutor Team
 ---
 
 # Task 2 Opinion Essay Sample Band 7.5 with Tutor Breakdown
 
-Opinion essays (*To what extent do you agree or disagree?*) reward a clear position sustained from start to finish. This **Band 7.5** sample from **IELTS AI Tutor by IELTSGRADER** shows strong Task Response and Lexical Resource, with a full essay and criterion breakdown you can model.
+Opinion essays (*To what extent do you agree or disagree?*) reward a clear position sustained from start to finish. For the full Task 2 structure map across question types, see [best essay structure for IELTS Task 2](/blog/best-essay-structure-ielts-task-2). This **Band 7.5** sample from **IELTS AI Tutor by IELTSGRADER** shows strong Task Response and Lexical Resource, with a full essay and criterion breakdown you can model.
 
 **Prompt:** Some people think that unpaid community service should be a compulsory part of high school programmes. To what extent do you agree or disagree?
 
