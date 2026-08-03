@@ -5,6 +5,8 @@ const {
   SUBSCRIPTION_PLANS,
   NEW_USER_PROMO,
   isNewUserPromoConfigured,
+  isFirstMonthPromoEligible,
+  subscriptionPaymentNames,
   getPlanByKey,
   getPlanKeyFromPriceId,
 } = require('../services/subscriptionPlans');
@@ -177,17 +179,18 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
       .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
       .eq('id', userId);
 
-    const [{ data: profile }, { count: paymentCount }] = await Promise.all([
+    const [{ data: profile }, { count: subPaymentCount }] = await Promise.all([
       supabaseAdmin
         .from('profiles')
-        .select('subscription_status, subscription_period_end')
+        .select('subscription_status, subscription_period_end, stripe_subscription_id')
         .eq('id', userId)
         .maybeSingle(),
       supabaseAdmin
         .from('payments')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('status', 'completed'),
+        .eq('status', 'completed')
+        .in('pack_name', subscriptionPaymentNames()),
     ]);
 
     const periodEnded = profile?.subscription_period_end
@@ -200,11 +203,15 @@ router.post('/create-upgrade-checkout', authenticateToken, async (req, res) => {
       });
     }
 
-    const hasPaid = isSubscribed || (paymentCount ?? 0) > 0;
-    const promoEligible = !hasPaid && isNewUserPromoConfigured();
+    const basePromoEligible = isFirstMonthPromoEligible({
+      isSubscribed,
+      stripeSubscriptionId: profile?.stripe_subscription_id,
+      hasSubscriptionPayment: (subPaymentCount ?? 0) > 0,
+    });
+    const promoEligible = basePromoEligible && isNewUserPromoConfigured();
     const couponId = process.env.STRIPE_COUPON_NEW_USER;
 
-    if (!hasPaid && !isNewUserPromoConfigured()) {
+    if (basePromoEligible && !isNewUserPromoConfigured()) {
       console.warn(
         '[stripe/create-upgrade-checkout] New-user promo eligible but STRIPE_COUPON_NEW_USER is not set; charging full price.'
       );

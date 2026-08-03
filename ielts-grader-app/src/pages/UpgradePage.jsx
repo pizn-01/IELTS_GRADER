@@ -15,9 +15,6 @@ function normalizePackKey(value) {
   return null;
 }
 
-const PACK_PROMO_CONFIRM =
-  'One-time packs are full price. Buying a pack counts as a paid purchase, so the 50% first-month Premium discount will not apply later. Continue?';
-
 /**
  * Authenticated pricing / checkout surface.
  * Offer UI matches /pricing via PricingPlansSection; handles Stripe + billing portal.
@@ -54,9 +51,7 @@ const UpgradePage = () => {
     ? (currentPlan === 'monthly' ? 'monthly' : currentPlan === 'weekly' ? 'weekly' : 'none')
     : 'none';
 
-  const promoEligible = status
-    ? Boolean(status.promo?.eligible) || (!status.has_paid && !isSubscribed)
-    : false;
+  const promoEligible = Boolean(status?.promo?.eligible);
 
   const intentBanner = intentBannerForFrom(fromParam);
   const cancelPath = cancelPathForCheckout();
@@ -102,16 +97,12 @@ const UpgradePage = () => {
     }
   };
 
-  const handleSelectPack = async (packKey, { skipPromoConfirm = false } = {}) => {
+  const handleSelectPack = async (packKey) => {
     trackEvent('upgrade_cta_clicked', {
       source: 'upgrade_pack_card',
       pack_key: packKey,
       from: fromParam,
     });
-    if (!skipPromoConfirm && promoEligible) {
-      const ok = window.confirm(PACK_PROMO_CONFIRM);
-      if (!ok) return;
-    }
     setLoadingPackKey(packKey);
     setError('');
     try {
@@ -137,8 +128,7 @@ const UpgradePage = () => {
 
     if (packFromUrl) {
       autoCheckoutStarted.current = true;
-      // Post-auth resume: skip confirm to avoid blocking redirect mid-flow
-      handleSelectPack(packFromUrl, { skipPromoConfirm: true });
+      handleSelectPack(packFromUrl);
       clearCheckoutParams();
       return;
     }
@@ -160,10 +150,6 @@ const UpgradePage = () => {
       from: fromParam,
     });
     handleSubscribe(planKey);
-  };
-
-  const scrollToPacks = () => {
-    document.getElementById('one-time-packs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const showSpinner = autoCheckout && (loadingPlanKey || loadingPackKey) && !error;
@@ -191,15 +177,6 @@ const UpgradePage = () => {
             <p className="text-[14px] md:text-[15px] text-[#667085] leading-relaxed">
               {intentBanner.body}
             </p>
-            {intentBanner.showPackJump && (
-              <button
-                type="button"
-                onClick={scrollToPacks}
-                className="mt-3 text-[13px] font-semibold text-[#175CD3] hover:text-[#0B4A9E] underline-offset-2 hover:underline"
-              >
-                Or jump to one-time packs
-              </button>
-            )}
           </div>
         )}
         {showDupSubCta && (

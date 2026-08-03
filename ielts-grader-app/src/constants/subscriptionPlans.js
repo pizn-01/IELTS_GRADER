@@ -104,20 +104,14 @@ export function formatPromoPrice(plan, { showPromo = true } = {}) {
 }
 
 export const SUBSCRIPTION_FEATURES = [
-  '20 full evaluations per week (Weekly) or 80 per month (Monthly)',
-  'All task types: Academic & General Training',
+  'Refills every period — 20 / week or 80 / month',
   'Detailed band report, fix cards & grammar analysis',
   'Personalized learning guides',
+  'Academic & General Training · Cancel anytime',
 ];
 
-/** Contrast bullets inside the Premium offer box. */
-export const PREMIUM_CONTRAST = [
-  'Recurring Weekly or Monthly billing',
-  '20 evaluations / week or 80 / month',
-  'Subscription credits reset each billing period',
-  'Best for ongoing practice',
-  'New users: 50% off first month when eligible',
-];
+/** Contrast bullets inside the Premium offer box (alias of features). */
+export const PREMIUM_CONTRAST = SUBSCRIPTION_FEATURES;
 
 /** Shown where the old Academic/GT toggle sat — plan covers both. */
 export const SUBSCRIPTION_PLAN_NOTE =
@@ -125,10 +119,10 @@ export const SUBSCRIPTION_PLAN_NOTE =
 
 /** Footer trust lines under primary subscribe CTAs. */
 export const SUBSCRIPTION_TRUST_LINE_PROMO =
-  'First month at 50% off. Then regular price. Cancel anytime. Subscription credits reset each period; one-time packs never expire.';
+  'First month at 50% off when eligible. Then regular price. Cancel anytime.';
 
 export const SUBSCRIPTION_TRUST_LINE =
-  'Cancel anytime. Subscription credits reset each period; one-time packs never expire.';
+  'Cancel anytime. Subscription credits reset each billing period.';
 
 export function planKeyFromSelection(selected) {
   return selected === 'Weekly' ? 'weekly' : 'monthly';

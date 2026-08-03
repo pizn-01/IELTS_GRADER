@@ -72,14 +72,12 @@ export function intentBannerForFrom(from) {
     return {
       title: "You're out of evaluations",
       body: 'Choose Premium for refills each period, or a one-time pack that never expires.',
-      showPackJump: true,
     };
   }
   if (from === 'report') {
     return {
       title: 'Keep practicing with full evaluations',
       body: 'Pick Premium or a one-time pack — same detailed reports either way.',
-      showPackJump: true,
     };
   }
   return null;

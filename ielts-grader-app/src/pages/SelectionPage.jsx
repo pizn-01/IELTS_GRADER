@@ -38,7 +38,9 @@ const SelectionPage = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumError, setPremiumError] = useState('');
 
-  const promoEligible = !user?.has_paid && !user?.is_subscribed && user?.subscription_status !== 'active';
+  const promoEligible = !user?.is_subscribed
+    && user?.subscription_status !== 'active'
+    && !user?.stripe_subscription_id;
   const weeklyPricing = formatPromoPrice(SUBSCRIPTION_PLANS.weekly, { showPromo: promoEligible });
   const monthlyPricing = formatPromoPrice(SUBSCRIPTION_PLANS.monthly, { showPromo: promoEligible });
   const selectedPricing = selectedPlan === 'Weekly' ? weeklyPricing : monthlyPricing;

@@ -30,6 +30,26 @@ const NEW_USER_PROMO = {
   badge: '50% off first month',
 };
 
+/** Payment pack_name values written for subscription grants (not credit packs). */
+function subscriptionPaymentNames() {
+  return Object.values(SUBSCRIPTION_PLANS).map((p) => p.name);
+}
+
+/**
+ * First-month promo: available until the user has started a subscription.
+ * One-time credit packs do NOT consume eligibility.
+ */
+function isFirstMonthPromoEligible({
+  isSubscribed = false,
+  stripeSubscriptionId = null,
+  hasSubscriptionPayment = false,
+} = {}) {
+  if (isSubscribed) return false;
+  if (stripeSubscriptionId) return false;
+  if (hasSubscriptionPayment) return false;
+  return true;
+}
+
 function discountedCents(amountCents, percentOff) {
   return Math.round(amountCents * (100 - percentOff) / 100);
 }
@@ -83,6 +103,8 @@ module.exports = {
   NEW_USER_PROMO,
   isNewUserPromoConfigured,
   getNewUserPromoPayload,
+  isFirstMonthPromoEligible,
+  subscriptionPaymentNames,
   getPlanByKey,
   getPlanKeyFromPriceId,
   getAllPlans,

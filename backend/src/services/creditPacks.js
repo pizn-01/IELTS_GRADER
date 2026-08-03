@@ -1,6 +1,6 @@
 /**
  * One-time credit pack catalog — secondary escape hatch vs subscriptions.
- * Packs never expire; promo is blocked after any completed payment (including packs).
+ * Packs never expire. Buying a pack does not consume the first-month subscription promo.
  */
 const { supabaseAdmin } = require('./supabase');
 const { trackProductEvent } = require('../utils/productEvents');

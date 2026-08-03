@@ -5,7 +5,12 @@ const {
   buildSubscriptionStatusPayload,
   reconcileUserSubscription,
 } = require('../services/subscriptionSync');
-const { getAllPlans, getNewUserPromoPayload } = require('../services/subscriptionPlans');
+const {
+  getAllPlans,
+  getNewUserPromoPayload,
+  isFirstMonthPromoEligible,
+  subscriptionPaymentNames,
+} = require('../services/subscriptionPlans');
 
 const router = express.Router();
 
@@ -16,7 +21,7 @@ router.get('/status', authenticateToken, async (req, res) => {
   try {
     const reconciled = await reconcileUserSubscription(userId);
 
-    const [{ data: profile, error }, { count: paymentCount }] = await Promise.all([
+    const [{ data: profile, error }, { count: paymentCount }, { count: subPaymentCount }] = await Promise.all([
       supabaseAdmin
         .from('profiles')
         .select(`
@@ -35,6 +40,12 @@ router.get('/status', authenticateToken, async (req, res) => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('status', 'completed'),
+      supabaseAdmin
+        .from('payments')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .in('pack_name', subscriptionPaymentNames()),
     ]);
 
     if (error || !profile) {
@@ -48,10 +59,16 @@ router.get('/status', authenticateToken, async (req, res) => {
       has_paid: hasPaid,
     });
 
+    const promoEligible = isFirstMonthPromoEligible({
+      isSubscribed: payload.is_subscribed,
+      stripeSubscriptionId: profile.stripe_subscription_id || reconciled?.stripe_subscription_id,
+      hasSubscriptionPayment: (subPaymentCount ?? 0) > 0,
+    });
+
     return res.json({
       ...payload,
       plans: getAllPlans(),
-      promo: getNewUserPromoPayload({ eligible: !payload.has_paid }),
+      promo: getNewUserPromoPayload({ eligible: promoEligible }),
     });
   } catch (err) {
     console.error('[subscriptions/status]', err.message);
