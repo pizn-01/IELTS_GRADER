@@ -25,6 +25,7 @@ Full checklist: **[CONTENT_QUALITY_BAR.md](CONTENT_QUALITY_BAR.md)** § “You �
 - [ ] `/blog/best-essay-structure-ielts-task-2`
 - [ ] `/blog/how-many-words-ielts-task-2` (+ paragraphs / idioms / “I” / timing / ideas)
 - [ ] `/blog/stuck-at-band-6-5-plateau` · `/blog/band-6-vs-7-task-2`
+- [ ] **Wave B:** `/blog/task-2-essay-types-hub` · `to-what-extent-agree-template` · `discuss-both-views-structure` · `advantage-disadvantage-4-paragraph` · `problem-solution-essay-structure` · `two-part-question-essay-structure` · `fix-task-response-task-achievement` · `top-10-grammatical-errors-ielts-ai`
 
 **Human quality pass (this week):**
 - [ ] SERP recon each primary keyword → replace `PENDING` in `serpNotes` (or send notes to agent)

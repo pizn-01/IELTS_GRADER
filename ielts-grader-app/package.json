@@ -8,9 +8,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run prerender",
+    "build": "npm run sitemap && vite build && npm run prerender",
     "build:vite": "vite build",
-    "build:prerender": "vite build && npm run prerender",
+    "build:prerender": "npm run sitemap && vite build && npm run prerender",
     "prerender": "node scripts/prerender.mjs",
     "sitemap": "node scripts/generate-sitemap.mjs",
     "lint": "eslint .",

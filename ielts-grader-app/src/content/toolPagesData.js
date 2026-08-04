@@ -200,6 +200,7 @@ export const toolPages = [
     links: [
       { href: '/ielts-essay-checker', label: 'Essay checker' },
       { href: '/ielts-task-1-checker', label: 'Task 1 checker' },
+      { href: '/blog/task-2-essay-types-hub', label: 'Task 2 essay types hub' },
       { href: '/blog/best-essay-structure-ielts-task-2', label: 'Best Task 2 essay structure' },
       { href: '/blog/band-6-vs-7-task-2', label: 'Band 6 vs 7 guide' },
       { href: '/blog/task-2-sample-band-7-technology', label: 'Task 2 Band 7 sample' },

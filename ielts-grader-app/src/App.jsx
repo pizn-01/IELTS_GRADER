@@ -13,6 +13,7 @@ import Navbar from './marketing/Navbar';
 import Hero from './marketing/Hero';
 import HowItWorks from './marketing/HowItWorks';
 import Features from './marketing/Features';
+import LatestFromBlog from './marketing/LatestFromBlog';
 import Testimonials from './marketing/Testimonials';
 import FAQ, { homeFaqs } from './marketing/FAQ';
 import CTA from './marketing/CTA';
@@ -136,6 +137,7 @@ const LandingPage = () => (
     <div className="bg-white">
       <HowItWorks />
       <Features />
+      <LatestFromBlog />
       <Testimonials />
       <FAQ />
     </div>

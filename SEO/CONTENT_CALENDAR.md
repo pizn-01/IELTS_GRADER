@@ -65,22 +65,22 @@ Planned slugs (adjust after SERP recon):
 
 ### Wave B — create (criteria + essay types)
 
-| Slug | Title |
-|------|-------|
-| `fix-task-response-task-achievement` | Fix Weak Task Response / Task Achievement |
-| `top-10-grammatical-errors-ielts-ai` | Top 10 Grammatical Errors AI Catches |
-| `to-what-extent-agree-template` | To What Extent Do You Agree — Band 8 Template |
-| `discuss-both-views-structure` | Discuss Both Views Structure for Band 7.5+ |
-| `advantage-disadvantage-4-paragraph` | Advantage & Disadvantage 4-Paragraph Formula |
-| `problem-solution-essay-structure` | Problem-Solution Essay Structure |
-| `two-part-question-essay-structure` | Two-Part Question Essay Structure |
-| `task-2-essay-types-hub` | IELTS Writing Task 2 Essay Types (hub) |
-| `write-task-2-introduction-paraphrase` | How to Write a Task 2 Introduction |
-| `self-editing-checklist-ielts-essay` | Self-Editing Checklist Before Submitting |
-| `task-1-overview-examples` | Task 1 Overview Examples |
-| `common-mistakes-task-1-charts` | Common Mistakes in Task 1 / Charts |
-| `gt-formal-vs-informal-letter` | GT Formal vs Informal Letter Openings |
-| `task-1-vs-task-2-differences` | Task 1 vs Task 2: Full Differences Guide |
+| Slug | Title | Status |
+|------|-------|--------|
+| `fix-task-response-task-achievement` | Fix Weak Task Response / Task Achievement | **published** 2026-08-04 |
+| `top-10-grammatical-errors-ielts-ai` | Top 10 Grammatical Errors AI Catches | **published** 2026-08-04 |
+| `to-what-extent-agree-template` | To What Extent Do You Agree — Band 8 Template | **published** 2026-08-04 |
+| `discuss-both-views-structure` | Discuss Both Views Structure for Band 7.5+ | **published** 2026-08-04 |
+| `advantage-disadvantage-4-paragraph` | Advantage & Disadvantage 4-Paragraph Formula | **published** 2026-08-04 |
+| `problem-solution-essay-structure` | Problem-Solution Essay Structure | **published** 2026-08-04 |
+| `two-part-question-essay-structure` | Two-Part Question Essay Structure | **published** 2026-08-04 |
+| `task-2-essay-types-hub` | IELTS Writing Task 2 Essay Types (hub) | **published** 2026-08-04 |
+| `write-task-2-introduction-paraphrase` | How to Write a Task 2 Introduction | queue (Weeks 7–8) |
+| `self-editing-checklist-ielts-essay` | Self-Editing Checklist Before Submitting | queue (Weeks 7–8) |
+| `task-1-overview-examples` | Task 1 Overview Examples | queue (Weeks 7–8) |
+| `common-mistakes-task-1-charts` | Common Mistakes in Task 1 / Charts | queue (Weeks 7–8) |
+| `gt-formal-vs-informal-letter` | GT Formal vs Informal Letter Openings | queue (Weeks 7–8) |
+| `task-1-vs-task-2-differences` | Task 1 vs Task 2: Full Differences Guide | queue (Weeks 7–8) |
 
 ### Wave C — topic Band 9 flywheel pages
 

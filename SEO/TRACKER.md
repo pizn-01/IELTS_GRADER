@@ -129,9 +129,9 @@ Pick-up detail: `SEO/NEXT_SESSION.md`. Plan: `WEBSITE_SEO_ROADMAP_PLAN.md` Part 
 | R4 | Week 3–4 leftover: internal-link audit | R | Agent | done | 4 Aug 2026 — `INTERNAL_LINK_AUDIT.md` |
 | R5 | Week 3–4 leftover: first off-site action | R | Shared | blocked_on_you | Draft: `offsite/FIRST_OFFSITE_DRAFT.md` — you post |
 | R6 | Week 3–4 leftover: data study #2 collection start | R | Shared | in_progress | Protocol done; need essay corpus |
-| R7 | Weeks 5–6 Wave B hub + 5 templates + TR/GRA | R | Agent | todo | After R4–R6 |
-| R8 | Weeks 5–6 homepage “latest from blog” | R | Agent | todo | |
-| R9 | Weeks 5–6 publish accuracy data study | R | Shared | todo | After R6 |
+| R7 | Weeks 5–6 Wave B hub + 5 templates + TR/GRA | R | Agent | done | 8 posts 2026-08-04; qualityReviewed pending |
+| R8 | Weeks 5–6 homepage “latest from blog” | R | Agent | done | `LatestFromBlog.jsx` on `/` |
+| R9 | Weeks 5–6 publish accuracy data study | R | Shared | todo | After essay corpus |
 
 ## Phase S — Social media activity pack
 

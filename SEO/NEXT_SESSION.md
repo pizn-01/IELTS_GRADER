@@ -1,8 +1,7 @@
 # Next session — pick up here
 
 **Updated:** 4 Aug 2026  
-**Done through Weeks 0–4 (content + tools):** Wave A blogs, B2/B4 quality gate, tool page depth, Writing band calculator.  
-**Week 3–4 leftovers (agent):** internal-link audit **done**; off-site **draft ready** (you post); data study #2 **protocol ready** (collection not started).
+**Last ship:** Wave B essay-types cluster (8 posts) + homepage latest-from-blog · sitemap 62 URLs
 
 ---
 
@@ -10,30 +9,41 @@
 
 | Block | Status |
 |-------|--------|
-| Weeks 0–1 foundation | Done (on-site); GSC indexing = **user/manual** |
-| Weeks 1–2 P0 + E-E-A-T + Wave A start | Done |
-| Weeks 3–4 Wave A + tools + calculator | Done |
-| Week 3–4 leftover: internal-link audit | **Done** (`INTERNAL_LINK_AUDIT.md`) |
-| Week 3–4 leftover: first off-site action | **Draft ready** — you post `SEO/offsite/FIRST_OFFSITE_DRAFT.md` |
-| Week 3–4 leftover: data study #2 collection | **Protocol ready** — gather essays next (`SEO/data-studies/chatgpt-vs-us-vs-examiner-PROTOCOL.md`) |
-| Weeks 5–6 Wave B | **Not started** |
+| Weeks 0–4 content + tools + calculator | Done |
+| Week 3–4 leftover: internal-link audit | Done |
+| Week 3–4 leftover: first off-site | Draft ready — **you post** `SEO/offsite/FIRST_OFFSITE_DRAFT.md` |
+| Week 3–4 leftover: data study #2 | Protocol ready — **you gather essays** |
+| Weeks 5–6 Wave B hub + 5 templates + TR/GRA | **Done** (qualityReviewed: pending — human skim) |
+| Weeks 5–6 homepage “latest from blog” | **Done** |
+| Weeks 5–6 data study publish | Blocked on corpus |
+| Weeks 7–8 Wave B finish | **Next agent block** |
 
 ---
 
 ## Do next
 
-### Still on you (leftovers)
-1. Post Reddit draft (and optional Quora) from `SEO/offsite/FIRST_OFFSITE_DRAFT.md`
-2. Start essay corpus for data study (consent + anonymize) per protocol
+### You (manual)
+1. GSC request indexing for Wave B URLs (list below)
+2. Human skim → set `qualityReviewed: ok` on 8 new posts
+3. Post Reddit/Quora draft; start data-study essay corpus
 
-### Agent when you say “next”
-**Weeks 5–6 Wave B:**
-1. Task 2 essay-types hub + 5 templates
-2. Supporting posts: weak TR/TA + GRA errors
-3. Homepage “latest from the blog”
-4. Data study publish when sheet ≥30 rows
+### Agent when you say “next” — Weeks 7–8
+1. Intro/paraphrase · self-edit checklist · Task 1 overview · Task 1 mistakes · GT formal vs informal · Task 1 vs Task 2 differences  
+2. Monthly refresh pass on Tier-1 posts  
+3. Data study publish if sheet ≥30 rows  
 
 ---
+
+## Wave B index list (www)
+
+- `/blog/task-2-essay-types-hub`
+- `/blog/to-what-extent-agree-template`
+- `/blog/discuss-both-views-structure`
+- `/blog/advantage-disadvantage-4-paragraph`
+- `/blog/problem-solution-essay-structure`
+- `/blog/two-part-question-essay-structure`
+- `/blog/fix-task-response-task-achievement`
+- `/blog/top-10-grammatical-errors-ielts-ai`
 
 ## Source of truth
 

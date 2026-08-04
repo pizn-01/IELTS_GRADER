@@ -40,7 +40,7 @@ This guide from **IELTS AI Tutor by IELTSGRADER** gives a step framework, struct
 | 4. Add one example each | 1–2 min | Concrete, relevant support |
 | 5. Check coverage | 30 sec | Every part of the question answered |
 
-If you skip planning, structure collapses into one long block — a common Coherence cap. Related: [how many paragraphs](/blog/how-many-paragraphs-ielts-essay) and [how to generate ideas](/blog/how-to-generate-ideas-ielts-task-2).
+If you skip planning, structure collapses into one long block — a common Coherence cap. Related: [how many paragraphs](/blog/how-many-paragraphs-ielts-essay), [how to generate ideas](/blog/how-to-generate-ideas-ielts-task-2), and the full [Task 2 essay types hub](/blog/task-2-essay-types-hub).
 
 ## The core 4-paragraph structure (default)
 
