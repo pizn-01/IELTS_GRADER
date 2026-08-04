@@ -76,7 +76,7 @@ An experienced teacher may know your school system, common L1 interference patte
 **Every 2–4 weeks:** Human review of one script + discussion of your AI reports.  
 **Final 2 weeks:** More mocks; human session for confidence and last-mile clarity.
 
-This hybrid uses AI for volume and humans for calibration. It also matches what we recommend in [is AI IELTS tutoring accurate?](/blog/is-ai-ielts-tutoring-accurate).
+This hybrid uses AI for volume and humans for calibration. It also matches what we recommend in [is AI IELTS tutoring accurate?](/blog/is-ai-ielts-tutoring-accurate). If you are deciding whether free tools are enough, see [free vs paid IELTS checker](/blog/free-vs-paid-ielts-checker).
 
 ## Cost and time: a realistic framing
 

@@ -81,7 +81,7 @@ If you upload handwriting for practice, see [OCR tips for handwritten essays](/b
 
 Write for **40 minutes**. Target **260–290 words**. Then [check your essay with AI](/ielts-essay-checker) and look only at Task Response first: Did you answer the outweigh question? Are both sides present if needed? Is each body idea extended?
 
-Related structure help: [Band 7.5 opinion essay](/blog/task-2-opinion-essay-band-7-5) and [stuck at 6.5 plateau](/blog/stuck-at-band-6-5-plateau).
+Related structure help: [how many paragraphs](/blog/how-many-paragraphs-ielts-essay), [best Task 2 structure](/blog/best-essay-structure-ielts-task-2), [Band 7.5 opinion essay](/blog/task-2-opinion-essay-band-7-5), and [stuck at 6.5 plateau](/blog/stuck-at-band-6-5-plateau). After writing, use the [Task 2 checker](/ielts-task-2-checker) if you want a Task-2-focused report.
 
 ## Frequently asked questions
 

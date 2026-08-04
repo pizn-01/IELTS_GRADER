@@ -36,7 +36,7 @@ An overall 6.5 can hide very different profiles:
 - Task Response 7, Coherence 7, Lexical 6, Grammar 6 → vocabulary and accuracy are the bottleneck
 - Task Response 6, Coherence 6, Lexical 7, Grammar 7 → ideas and structure need work first
 
-Two students with the same overall band need different study plans. That is why your [IELTS AI Tutor](/ielts-ai-tutor) report shows each criterion separately, with fix cards tied to weak sentences, not just a single score.
+Two students with the same overall band need different study plans. That is why your [IELTS AI Tutor](/ielts-ai-tutor) report shows each criterion separately, with fix cards tied to weak sentences, not just a single score. Use the [Writing band score calculator](/ielts-writing-band-score) if you want to combine Task 1 and Task 2 practice bands (Task 2 counts double).
 
 ## The four criteria at a glance
 

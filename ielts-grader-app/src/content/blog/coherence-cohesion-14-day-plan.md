@@ -251,8 +251,10 @@ When you submit on Days 7 and 14, read Coherence comments first. Ignore the temp
 
 - If CC rose but TR is now lowest, switch to idea-development drills using [Band 6 vs 7 Task 2](/blog/band-6-vs-7-task-2). 
 - If CC is still flat, slow down planning: spend 8 minutes outlining before every timed essay for one more week. 
+- If CC is stable but Lexical Resource is now the floor, switch to [lexical resource Band 6→7](/blog/lexical-resource-band-6-to-7).
 - If overall remains 6.5 with CC as the cap, repeat Days 2–7 only before another full fortnight, see [plateau guide](/blog/stuck-at-band-6-5-plateau). 
 - If CC improved under untimed conditions but fell in the timed Day 14 essay, your issue is performance, not knowledge, add two partial timed tasks next week.
+- Convert the Day 14 report into a weekly rhythm with [feedback to study plan](/blog/feedback-to-study-plan).
 
 
 ## Try this yourself

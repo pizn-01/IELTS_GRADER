@@ -42,7 +42,8 @@ Full checklist: **[CONTENT_QUALITY_BAR.md](CONTENT_QUALITY_BAR.md)** § “You �
 - [ ] Weekly GSC scorecard ([MEASUREMENT.md](MEASUREMENT.md))
 - [ ] Social media hire: follow [social-media/STRATEGY.md](social-media/STRATEGY.md) + [social-media/EMPLOYEE_PLAYBOOK.pdf](social-media/EMPLOYEE_PLAYBOOK.pdf) + [social-media/PLATFORM_GUIDELINES.pdf](social-media/PLATFORM_GUIDELINES.pdf)
 - [ ] Add `SERPER_API_KEY` + `YOUTUBE_API_KEY` and run weekly: `python3 SEO/social-media/scripts/search_weekly.py`
-- [ ] Reddit value-first ([guides/REDDIT.md](guides/REDDIT.md) + social playbook) — prefer linking a ChatGPT trust post, not a hard sell
+- [ ] Reddit value-first ([guides/REDDIT.md](guides/REDDIT.md)) — **draft ready:** [offsite/FIRST_OFFSITE_DRAFT.md](offsite/FIRST_OFFSITE_DRAFT.md) (you post; no product links in r/IELTS)
+- [ ] Optional Quora answer from same draft (product + blog link OK)
 - [ ] Product Hunt + AlternativeTo ([guides/BACKLINKS.md](guides/BACKLINKS.md))
 - [ ] One YouTube Short ([guides/YOUTUBE_SHORTS.md](guides/YOUTUBE_SHORTS.md))
 

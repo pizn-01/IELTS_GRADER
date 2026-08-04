@@ -199,6 +199,7 @@ export const toolPages = [
     secondaryCta: { label: 'Best Task 2 structure guide', href: '/blog/best-essay-structure-ielts-task-2' },
     links: [
       { href: '/ielts-essay-checker', label: 'Essay checker' },
+      { href: '/ielts-task-1-checker', label: 'Task 1 checker' },
       { href: '/blog/best-essay-structure-ielts-task-2', label: 'Best Task 2 essay structure' },
       { href: '/blog/band-6-vs-7-task-2', label: 'Band 6 vs 7 guide' },
       { href: '/blog/task-2-sample-band-7-technology', label: 'Task 2 Band 7 sample' },
@@ -265,6 +266,8 @@ export const toolPages = [
     cta: { label: 'Check Task 1 free', href: '/' },
     secondaryCta: { label: 'GT letter checklist', href: '/blog/gt-formal-letter-checklist' },
     links: [
+      { href: '/ielts-task-2-checker', label: 'Task 2 checker' },
+      { href: '/ielts-essay-checker', label: 'Essay checker' },
       { href: '/blog/task-1-trends-vocabulary', label: 'Task 1 trends vocabulary' },
       { href: '/blog/task-1-bar-chart-band-7', label: 'Bar chart Band 7 approach' },
       { href: '/blog/gt-formal-letter-checklist', label: 'GT formal letter checklist' },

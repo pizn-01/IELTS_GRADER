@@ -132,6 +132,7 @@ The tutor checks for overview quality, coverage of main features, comparison, an
 - [How IELTS writing is scored](/blog/how-ielts-writing-is-scored)
 - [Task Response vs Achievement](/blog/task-response-vs-achievement)
 - [Trends vocabulary guide](/blog/task-1-trends-vocabulary)
+- [How long for Task 1 vs Task 2](/blog/how-long-task-1-vs-task-2)
 
 
 ## Try this yourself

@@ -83,7 +83,7 @@ If overall score is stuck while ideas feel “enough,” read [why am I stuck at
 
 Write a **4-paragraph** essay in 40 minutes. Before you submit, label each paragraph’s job in the margin (intro / advantage / disadvantage+opinion / conclusion). Then [see how your essay scores](/ielts-essay-checker) and check Coherence first: Does each body paragraph stay on one idea?
 
-More structure models: [opinion essay Band 7.5](/blog/task-2-opinion-essay-band-7-5).
+More structure models: [best Task 2 essay structure](/blog/best-essay-structure-ielts-task-2), [word count guide](/blog/how-many-words-ielts-task-2), and [opinion essay Band 7.5](/blog/task-2-opinion-essay-band-7-5).
 
 ## Frequently asked questions
 

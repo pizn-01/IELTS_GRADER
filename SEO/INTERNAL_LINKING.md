@@ -41,16 +41,25 @@ Every blog post must include:
 ## Cluster links
 
 ### Band improvement cluster
-- `how-ielts-writing-is-scored` → `band-6-vs-7-task-2` → `coherence-cohesion-14-day-plan` → `feedback-to-study-plan`
+- `how-ielts-writing-is-scored` → `band-6-vs-7-task-2` → `coherence-cohesion-14-day-plan` → `feedback-to-study-plan` → `/ielts-writing-band-score`
 
-### Task 2 cluster
+### Task 2 structure / Q&A cluster
+- `best-essay-structure-ielts-task-2` → `how-many-paragraphs-ielts-essay` → `how-many-words-ielts-task-2` → `/ielts-task-2-checker`
+
+### Task 2 samples cluster
 - `band-6-vs-7-task-2` → all Task 2 samples → `/ielts-task-2-checker`
 
 ### Task 1 cluster
-- `task-1-trends-vocabulary` → `task-1-bar-chart-band-7` → `/ielts-task-1-checker`
+- `task-1-trends-vocabulary` → `task-1-bar-chart-band-7` → `how-long-task-1-vs-task-2` → `/ielts-task-1-checker`
 
-### Trust cluster
+### ChatGPT / trust cluster
+- `is-chatgpt-accurate-ielts-writing` → `why-chatgpt-overestimates-ielts-band-scores` → `ultimate-chatgpt-prompt-ielts-task-2`
 - `is-ai-ielts-tutoring-accurate` → `ai-tutor-vs-human-tutor` → `free-vs-paid-ielts-checker`
+
+### Mock cluster
+- `ielts-mock-writing-practice-guide` → `mock-exam-to-14-day-sprint` → `/ielts-mock-writing-test`
+
+**Audit log:** `INTERNAL_LINK_AUDIT.md` (4 Aug 2026).
 
 ## Footer / nav (when approved)
 

@@ -126,9 +126,9 @@ Pick-up detail: `SEO/NEXT_SESSION.md`. Plan: `WEBSITE_SEO_ROADMAP_PLAN.md` Part 
 | R1 | Weeks 0–1 foundation gate (on-site) | R | Shared | done | GSC/Bing requests still manual |
 | R2 | Weeks 1–2 P0 + E-E-A-T + Wave A start | R | Agent | done | |
 | R3 | Weeks 3–4 Wave A finish + tool depth + calculator | R | Agent | done | `06b912b` |
-| R4 | Week 3–4 leftover: internal-link audit | R | Agent | todo | **Next** |
-| R5 | Week 3–4 leftover: first off-site action | R | Shared | todo | Draft agent / post you |
-| R6 | Week 3–4 leftover: data study #2 collection start | R | Shared | todo | ChatGPT vs us vs examiner |
+| R4 | Week 3–4 leftover: internal-link audit | R | Agent | done | 4 Aug 2026 — `INTERNAL_LINK_AUDIT.md` |
+| R5 | Week 3–4 leftover: first off-site action | R | Shared | blocked_on_you | Draft: `offsite/FIRST_OFFSITE_DRAFT.md` — you post |
+| R6 | Week 3–4 leftover: data study #2 collection start | R | Shared | in_progress | Protocol done; need essay corpus |
 | R7 | Weeks 5–6 Wave B hub + 5 templates + TR/GRA | R | Agent | todo | After R4–R6 |
 | R8 | Weeks 5–6 homepage “latest from blog” | R | Agent | todo | |
 | R9 | Weeks 5–6 publish accuracy data study | R | Shared | todo | After R6 |
